@@ -1,8 +1,7 @@
 <div align="center">
 
-# [NAMA PROYEK]
-
-### [Tagline Singkat dan Menarik]
+# Radius
+### Hyperlocal Micro-Task & Freelancing Platform for Inclusive Digital Economy
 
 [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_Site-success?style=for-the-badge)](https://[URL_DEMO])
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://[URL_REPO])
@@ -10,7 +9,7 @@
 
 **Submission for ITECHNO CUP 2026 - Web Development**
 
-**By Tembalang Sakti**
+**By [Nama Tim]**
 
 </div>
 
@@ -23,6 +22,7 @@
 - [Demo & Screenshot](#-demo--screenshot)
 - [Teknologi](#-teknologi)
 - [Arsitektur Sistem](#-arsitektur-sistem)
+- [Penggunaan AI & Etika](#-penggunaan-ai--etika)
 - [Instalasi & Setup](#-instalasi--setup)
 - [Penggunaan](#-penggunaan)
 - [API Documentation](#-api-documentation)
@@ -34,29 +34,26 @@
 
 ## 👥 Tim Developer
 
-| Nama                     | Peran                               | GitHub                                   |
-| ------------------------ | ----------------------------------- | ---------------------------------------- |
-| **Ghufron Ainun Najib**  | Project Lead & Full Stack Developer | [GitHub](https://github.com/[username1]) |
-| **Bagaskara**            | Frontend Developer                  | [GitHub](https://github.com/[username2]) |
-| **Rajaba Hamim Maududi** | Backend Developer                   | [GitHub](https://github.com/[username3]) |
+| Nama | Peran | GitHub |
+|------|-------|--------|
+| **[Nama Lengkap 1]** | Project Lead & Full Stack Developer | [GitHub](https://github.com/[username1]) |
+| **[Nama Lengkap 2]** | Frontend & UI/UX Developer | [GitHub](https://github.com/[username2]) |
+| **[Nama Lengkap 3]** | Backend & Integration Engineer | [GitHub](https://github.com/[username3]) |
 
 ---
 
 ## 🎯 Tentang Proyek
 
 ### Latar Belakang
-
-[Jelaskan konteks permasalahan yang ingin diselesaikan. Gunakan data atau fakta untuk memperkuat argumen. Contoh: "Berdasarkan survei X, 70% pengguna mengalami kesulitan dalam..."]
+Banyak mahasiswa membutuhkan pekerjaan sampingan dengan jam kerja fleksibel yang menyesuaikan jadwal kuliah. Di sisi lain, UMKM lokal dan sesama mahasiswa sering membutuhkan bantuan pekerjaan mikro (*micro-tasks*) yang butuh penanganan cepat (seperti foto produk, entri data, atau bantuan acara). Platform freelancing tradisional seringkali terlalu rumit dan tidak memfasilitasi kebutuhan pekerjaan berskala mikro dan berbasis radius lokasi terdekat.
 
 ### Solusi yang Ditawarkan
-
-[Jelaskan bagaimana aplikasi ini menyelesaikan masalah tersebut dengan pendekatan yang unik atau inovatif]
+Platform *hyperlocal micro-freelancing* berbasis radius lokasi (hingga 2 km) yang menghubungkan mahasiswa dengan UMKM lokal. Menggunakan sistem dompet terintegrasi (*Escrow System*) untuk menjamin keamanan pembayaran, serta fitur *Realtime Chat* untuk komunikasi langsung.
 
 ### Tujuan Proyek
-
-- 🎯 **Tujuan Utama**: [Tujuan primer aplikasi]
-- 📊 **Target Pengguna**: [Siapa yang akan menggunakan aplikasi ini]
-- 💡 **Value Proposition**: [Apa yang membuat aplikasi ini berbeda dari solusi lain]
+- 🎯 **Tujuan Utama**: Meningkatkan akses pekerjaan layak dan pertumbuhan ekonomi lokal inklusif (Mendukung **SDG 8**).
+- 📊 **Target Pengguna**: Mahasiswa aktif dan Pelaku UMKM lokal perkotaan.
+- 💡 **Value Proposition**: Pekerjaan mikro cepat berbasis radius terdekat (max 2 km) dengan sistem potong-kunci saldo (*escrow balance*) otomatis yang aman.
 
 ---
 
@@ -64,43 +61,35 @@
 
 ### Fitur Utama
 
-| Fitur              | Deskripsi                 | Keunggulan                       |
-| ------------------ | ------------------------- | -------------------------------- |
-| **[Nama Fitur 1]** | [Deskripsi singkat fitur] | [Mengapa fitur ini penting/unik] |
-| **[Nama Fitur 2]** | [Deskripsi singkat fitur] | [Mengapa fitur ini penting/unik] |
-| **[Nama Fitur 3]** | [Deskripsi singkat fitur] | [Mengapa fitur ini penting/unik] |
-| **[Nama Fitur 4]** | [Deskripsi singkat fitur] | [Mengapa fitur ini penting/unik] |
-
-### Fitur Tambahan
-
-- **[Fitur A]** - [Penjelasan singkat]
-- **[Fitur B]** - [Penjelasan singkat]
-- **[Fitur C]** - [Penjelasan singkat]
-- **[Fitur D]** - [Penjelasan singkat]
+| Fitur | Deskripsi | Keunggulan |
+|----------|--------------|---------------|
+| **Unified Account** | Satu akun dapat berperan sebagai Pemberi Kerja (Poster) maupun Pekerja (Tasker). | Fleksibel tanpa perlu registrasi ulang dua peran. |
+| **Interactive Map & Radius Search** | Visualisasi tugas mikro berbasis peta interaktif dengan filter jarak radius terdekat (max 2km). | Memastikan tugas dekat secara geografis dan mudah dijangkau. |
+| **Escrow Balance System** | Saldo Poster dipotong & dikunci saat tugas dibuat, dan otomatis ditransfer ke Tasker setelah disetujui. | Menjamin kepastian pembayaran tanpa risiko penipuan. |
+| **In-App Realtime Chat** | Komunikasi instan dua arah antara Poster & Tasker setelah tugas diambil. | Didukung oleh Supabase Realtime Channels untuk koordinasi cepat. |
+| **Rating & Review System** | Penilaian ulasan & bintang 5 dua arah setelah status tugas `Completed`. | Membangun reputasi dan rasa percaya (*trust*) pengguna. |
 
 ---
 
 ## 📸 Demo & Screenshot
 
 ### Live Demo
-
 🔗 **[Kunjungi Website](https://[URL_DEMO])**
 
 ### Screenshot Aplikasi
 
 <div align="center">
   <img src="[URL_SCREENSHOT_1]" alt="Homepage" width="800"/>
-  <p><em>Homepage - Tampilan utama aplikasi</em></p>
+  <p><em>Homepage - Dashboard Peta Interaktif & Pencarian Radius</em></p>
 
-  <img src="[URL_SCREENSHOT_2]" alt="Dashboard" width="800"/>
-  <p><em>Dashboard - Panel kontrol pengguna</em></p>
+  <img src="[URL_SCREENSHOT_2]" alt="Task Detail & Escrow" width="800"/>
+  <p><em>Task Detail - Sistem Kunci Saldo Escrow & Form Pengerjaan</em></p>
 
-  <img src="[URL_SCREENSHOT_3]" alt="Feature" width="800"/>
-  <p><em>[Nama Fitur] - [Deskripsi screenshot]</em></p>
+  <img src="[URL_SCREENSHOT_3]" alt="Realtime Chat" width="800"/>
+  <p><em>In-App Realtime Chat & Task Status Tracker</em></p>
 </div>
 
 ### Video Demo
-
 📹 **[Link Video Demo](https://[URL_VIDEO])** _(opsional)_
 
 ---
@@ -110,84 +99,77 @@
 ### Tech Stack
 
 #### Frontend
-
 ```
-Framework  : [React / Next.js / Vue / dll]
-UI Library : [Tailwind CSS / Material-UI / Chakra UI / dll]
-State Mgmt : [Redux / Zustand / Context API / dll]
-Validation : [Zod / Yup / React Hook Form / dll]
+Framework  : Next.js 14 (App Router)
+UI Library : Tailwind CSS / Lucide React / Leaflet Map
+State Mgmt : React Context / Zustand
+Validation : Zod / React Hook Form
 ```
 
-#### Backend
-
+#### Backend & Database (BaaS)
 ```
-Runtime    : [Node.js / Bun / Deno / dll]
-Framework  : [Express / Fastify / Hono / dll]
-Database   : [PostgreSQL / MongoDB / MySQL / dll]
-ORM        : [Prisma / Drizzle / TypeORM / dll]
-Auth       : [JWT / NextAuth / Clerk / dll]
+Platform   : Supabase
+Database   : PostgreSQL (PostGIS / Spatial Query)
+Auth       : Supabase Auth (@supabase/ssr)
+Realtime   : Supabase Realtime Channels
+Storage    : Supabase Storage
 ```
 
 #### DevOps & Tools
-
 ```
-Deployment : [Vercel / Netlify / Railway / dll]
-CI/CD      : [GitHub Actions / Vercel / dll]
-Testing    : [Jest / Vitest / Playwright / dll]
-Monitoring : [Sentry / LogRocket / dll]
+Deployment : Vercel
+CI/CD      : GitHub Actions / Vercel CI
+Testing    : Vitest / Playwright
 ```
 
-### Alasan Pemilihan Teknologi
+---
 
-| Teknologi    | Alasan Pemilihan                                                         |
-| ------------ | ------------------------------------------------------------------------ |
-| **[Tech 1]** | [Jelaskan mengapa memilih teknologi ini, keunggulannya untuk proyek ini] |
-| **[Tech 2]** | [Jelaskan mengapa memilih teknologi ini, keunggulannya untuk proyek ini] |
-| **[Tech 3]** | [Jelaskan mengapa memilih teknologi ini, keunggulannya untuk proyek ini] |
+## 🤖 Penggunaan AI & Etika (Dokumentasi Wajib ITECHNO CUP)
 
-### Dependencies Utama
+Dalam pengembangan aplikasi **Radius**, Artificial Intelligence (AI) digunakan secara terukur dan etis sesuai ketentuan perlombaan ITECHNO CUP 2026:
 
-```json
-{
-  "dependencies": {
-    "[package-1]": "^x.x.x",
-    "[package-2]": "^x.x.x",
-    "[package-3]": "^x.x.x"
-  }
-}
-```
+1. **Peruntukan AI**:
+   * Membantu *brainstorming* arsitektur database (DDL SQL) dan optimasi algoritma perhitungan jarak *Haversine*.
+   * Menggenerasi *boilerplate code* dan refactoring komponen UI agar memenuhi standar aksesibilitas & responsivitas.
+2. **Prinsip Etika & Keamanan**:
+   * **Privasi Data**: AI tidak pernah digunakan untuk memproses atau menyimpan data kredensial atau informasi sensitif pengguna.
+   * **Bebas Pelanggaran Hak Cipta**: Seluruh kode visual dan fungsional dibangun secara custom tanpa menyalin repositori komersial.
+   * **Keamanan Kode**: Logika kritis seperti penguncian saldo *escrow* dieksekusi secara ketat di tingkat PostgreSQL Stored Procedure (*Security Definer*) untuk menghindari celah маниulasi data dari sisi client.
 
 ---
 
 ## 🏗️ Arsitektur Sistem
 
 ### System Architecture
-
 ```
-[Tambahkan diagram arsitektur sistem - bisa menggunakan Mermaid atau gambar]
-```
-
-### Database Schema
-
-```
-[Tambahkan diagram ERD atau schema database]
++-------------------------------------------------------+
+|                    Client / Browser                   |
+|          (Next.js App Router + Leaflet Maps)          |
++---------------------------+---------------------------+
+                            |
+           +----------------+----------------+
+           |                                 |
+           v                                 v
++-----------------------+       +-----------------------+
+|   Next.js Server      |       |    Supabase BaaS      |
+|  (Server Actions &    |       |  (PostgreSQL, Auth,   |
+|   Escrow API Logic)   |       |  Storage, Realtime)   |
++-----------------------+       +-----------------------+
 ```
 
 ### Folder Structure
-
 ```
 project-root/
 ├── src/
-│   ├── components/  # Reusable components
-│   ├── pages/       # Page components
-│   ├── hooks/       # Custom hooks
-│   ├── utils/       # Utility functions
-│   ├── services/    # API services
-│   ├── store/       # State management
-│   └── types/       # TypeScript types
-├── public/          # Static assets
-├── tests/           # Test files
-└── docs/            # Documentation
+│   ├── app/           # Next.js App Router (Pages, Layouts, API Routes)
+│   ├── components/    # Reusable UI components & Map components
+│   ├── hooks/         # Custom hooks (Geolocation, Realtime Chat)
+│   ├── lib/           # Supabase client (client.ts, server.ts)
+│   ├── utils/         # Helper functions (Distance calculator, Escrow handler)
+│   └── types/         # TypeScript types & Supabase generated DB types
+├── supabase/          # Supabase CLI config, migrations, & seed files
+├── public/            # Static assets
+└── docs/              # Dokumentasi & Context
 ```
 
 ---
@@ -195,185 +177,38 @@ project-root/
 ## ⚙️ Instalasi & Setup
 
 ### Prerequisites
-
-Pastikan Anda telah menginstall:
-
 - **Node.js** (v18.x atau lebih tinggi)
 - **npm** / **yarn** / **pnpm**
-- **[Database]** (jika diperlukan)
 - **Git**
+- **Akun Supabase**
 
 ### Langkah Instalasi
 
 #### 1️⃣ Clone Repository
-
 ```bash
 git clone https://github.com/[username]/[repo-name].git
 cd [repo-name]
 ```
 
 #### 2️⃣ Install Dependencies
-
 ```bash
-# Menggunakan npm
 npm install
-
-# Atau menggunakan yarn
-yarn install
-
-# Atau menggunakan pnpm
-pnpm install
 ```
 
 #### 3️⃣ Setup Environment Variables
-
-Buat file `.env` di root directory:
-
+Buat file `.env.local` di root directory:
 ```env
-# Database
-DATABASE_URL="[connection_string]"
-
-# Authentication
-JWT_SECRET="[your_jwt_secret]"
-NEXTAUTH_SECRET="[your_nextauth_secret]"
-
-# API Keys
-API_KEY="[your_api_key]"
-
-# Other configs
-NODE_ENV="development"
-PORT=3000
+NEXT_PUBLIC_SUPABASE_URL="https://[your-supabase-project-ref].supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="[your-supabase-anon-key]"
+SUPABASE_SERVICE_ROLE_KEY="[your-supabase-service-role-key]"
+NEXT_PUBLIC_SITE_URL="http://localhost:3000"
 ```
 
-#### 4️⃣ Setup Database
-
-```bash
-# Jalankan migrasi database
-npm run db:migrate
-
-# Seed data (opsional)
-npm run db:seed
-```
-
-#### 5️⃣ Run Development Server
-
+#### 4️⃣ Run Development Server
 ```bash
 npm run dev
 ```
-
 Aplikasi akan berjalan di `http://localhost:3000`
-
----
-
-## 🚀 Penggunaan
-
-### Menjalankan Aplikasi
-
-```bash
-# Development mode
-npm run dev
-
-# Production build
-npm run build
-npm run start
-
-# Run tests
-npm run test
-
-# Linting
-npm run lint
-```
-
-### User Guide
-
-#### Untuk Pengguna Umum
-
-1. **Registrasi/Login**: [Jelaskan cara mendaftar atau login]
-2. **[Fitur 1]**: [Jelaskan cara menggunakan fitur ini]
-3. **[Fitur 2]**: [Jelaskan cara menggunakan fitur ini]
-
-#### Untuk Admin
-
-1. **Akses Admin Panel**: [Jelaskan cara mengakses]
-2. **[Fungsi Admin 1]**: [Jelaskan cara menggunakan]
-3. **[Fungsi Admin 2]**: [Jelaskan cara menggunakan]
-
----
-
-## 📚 API Documentation
-
-### Base URL
-
-```
-Development: http://localhost:3000/api
-Production: https://[domain]/api
-```
-
-### Endpoints
-
-#### Authentication
-
-```http
-POST /api/auth/register
-POST /api/auth/login
-POST /api/auth/logout
-GET  /api/auth/me
-```
-
-#### [Resource 1]
-
-```http
-GET    /api/[resource]     # Get all
-GET    /api/[resource]/:id # Get by ID
-POST   /api/[resource]     # Create
-PUT    /api/[resource]/:id # Update
-DELETE /api/[resource]/:id # Delete
-```
-
-### Example Request
-
-```javascript
-// Login
-const response = await fetch('/api/auth/login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    email: 'user@example.com',
-    password: 'password123',
-  }),
-});
-```
-
-📖 **[Dokumentasi API Lengkap](./docs/API.md)** _(opsional)_
-
----
-
-## 🧪 Testing
-
-### Running Tests
-
-```bash
-# Unit tests
-npm run test
-
-# Integration tests
-npm run test:integration
-
-# E2E tests
-npm run test:e2e
-
-# Test coverage
-npm run test:coverage
-```
-
-### Test Coverage
-
-```
-Statements : XX%
-Branches   : XX%
-Functions  : XX%
-Lines      : XX%
-```
 
 ---
 
