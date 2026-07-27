@@ -6,6 +6,7 @@
 **Subtema:** "Smart Sustainable Digital Solution for Inclusive Society"
 
 Solusi web harus align ke minimal 1 dari 4 SDG berikut:
+
 - SDG 7 — Energi Bersih dan Terjangkau
 - SDG 8 — Pekerjaan Layak dan Pertumbuhan Ekonomi
 - SDG 9 — Industri, Inovasi, dan Infrastruktur
@@ -22,17 +23,18 @@ Solusi web harus align ke minimal 1 dari 4 SDG berikut:
 
 ## 3. Timeline
 
-| Tahap | Tanggal | Keterangan |
-|---|---|---|
-| Batas pengumpulan Babak Penyisihan | Minggu, 6 September 2026, 23.59 WIB | Submit link repo GitHub + link hosting via website ITechno Cup |
-| Babak Final (10 finalis) | Sabtu, 20 September 2026, 08.30–selesai | Online via Zoom/Google Meet, pitching + demo |
-| Pengumuman pemenang | 28 September 2026 | Saat closing ceremony |
+| Tahap                              | Tanggal                                 | Keterangan                                                     |
+| ---------------------------------- | --------------------------------------- | -------------------------------------------------------------- |
+| Batas pengumpulan Babak Penyisihan | Minggu, 6 September 2026, 23.59 WIB     | Submit link repo GitHub + link hosting via website ITechno Cup |
+| Babak Final (10 finalis)           | Sabtu, 20 September 2026, 08.30–selesai | Online via Zoom/Google Meet, pitching + demo                   |
+| Pengumuman pemenang                | 28 September 2026                       | Saat closing ceremony                                          |
 
 ## 4. Ketentuan Pengumpulan (Babak Penyisihan)
 
 Submit: link repo GitHub (source code) + link hasil deploy/hosting (disarankan Netlify/Vercel).
 
 Repo wajib berisi README.md/dokumentasi mencakup:
+
 1. Penjelasan aplikasi (latar belakang & tujuan)
 2. Fitur utama (pembeda & keunggulan)
 3. Teknologi yang digunakan (termasuk peruntukan tiap library/framework)
@@ -50,24 +52,24 @@ Format README wajib mengikuti template resmi ITechno Cup (Template README.md - I
 
 ## 6. Kriteria Penilaian — Babak Penyisihan
 
-| Aspek | Bobot |
-|---|---|
-| Kesesuaian Tema & Subtema | 20% |
-| Inovasi & Orisinalitas Ide | 20% |
-| Fungsionalitas Website | 20% |
-| UI/UX & Responsivitas | 15% |
-| Implementasi Teknologi | 15% |
-| Dokumentasi & Repositori | 10% |
+| Aspek                      | Bobot |
+| -------------------------- | ----- |
+| Kesesuaian Tema & Subtema  | 20%   |
+| Inovasi & Orisinalitas Ide | 20%   |
+| Fungsionalitas Website     | 20%   |
+| UI/UX & Responsivitas      | 15%   |
+| Implementasi Teknologi     | 15%   |
+| Dokumentasi & Repositori   | 10%   |
 
 ## 7. Kriteria Penilaian — Babak Final
 
-| Aspek | Bobot |
-|---|---|
-| Presentasi & Pitching | 25% |
-| Live Demo & Fungsionalitas Sistem | 25% |
-| Inovasi & Dampak Solusi | 20% |
-| Aspek Teknis & Teknologi | 20% |
-| Tanya Jawab Dengan Juri | 10% |
+| Aspek                             | Bobot |
+| --------------------------------- | ----- |
+| Presentasi & Pitching             | 25%   |
+| Live Demo & Fungsionalitas Sistem | 25%   |
+| Inovasi & Dampak Solusi           | 20%   |
+| Aspek Teknis & Teknologi          | 20%   |
+| Tanya Jawab Dengan Juri           | 10%   |
 
 Catatan: keputusan juri mutlak; plagiarisme/pelanggaran hak cipta → diskualifikasi.
 
@@ -81,7 +83,9 @@ Catatan: keputusan juri mutlak; plagiarisme/pelanggaran hak cipta → diskualifi
 # Konteks Proyek Tim
 
 ## Tim
+
 3 orang, pembagian peran umum yang disepakati:
+
 - **Frontend & UI/UX**: bangun antarmuka, komponen interaktif, responsivitas.
 - **Backend & Core Logic**: API, database, algoritma inti (matching/scoring engine).
 - **Integrasi, DevOps & Dokumentasi**: realtime feature, deployment, README, materi pitching.
@@ -97,6 +101,47 @@ Mahasiswa butuh penghasilan tambahan tapi kesulitan kerja part-time terikat kare
 
 **Konsep aplikasi:**
 Platform micro-freelancing & skill exchange berbasis lokasi, dengan radius pencarian terdekat (contoh: maksimal 2 km dari posisi user).
+
+## Alur Kerja Aplikasi (Barebone Awal)
+
+**Sisi Pemberi Tugas (Requester):**
+
+1. Login/register.
+2. Post task: judul, deskripsi, kategori skill, lokasi (auto-geolocation/pin manual), estimasi waktu, kompensasi.
+3. Task difilter otomatis ke user lain dalam radius (misal 2km).
+4. Requester dapat notifikasi saat ada yang apply/accept.
+5. Requester pilih pengerja (atau auto-assign first-accept).
+6. Setelah selesai, requester konfirmasi + kasih rating.
+
+**Sisi Pengerja (Worker):**
+
+1. Login/register, isi profil skill.
+2. Buka feed task terdekat (list/map view) sesuai radius + kategori minat.
+3. Apply/accept task.
+4. Update status task (in progress → selesai).
+5. Dapat kompensasi (uang/poin) + rating, masuk histori profil.
+
+Catatan: flow ini masih barebone, akan di-refine lebih lanjut.
+
+## Tech Stack
+
+```
+Next.js (PWA via next-pwa) + Tailwind CSS
+   ↓
+Leaflet.js + OpenStreetMap (map interaktif)
+   ↓
+Supabase (Postgres + PostGIS untuk geo-query radius, Auth, Realtime untuk update status)
+   ↓
+Firebase Cloud Messaging (push notification — gratis, unlimited di Spark plan)
+   ↓
+Vercel (hosting, sesuai anjuran panitia)
+```
+
+Catatan:
+
+- PWA ditambahkan agar mobile-friendly tanpa perlu develop app native terpisah (service worker + manifest via `next-pwa`).
+- FCM dipilih karena gratis tanpa limit dan sudah familiar bagi tim; alternatif yang dipertimbangkan: OneSignal, Web Push API native, atau Supabase Realtime (terbatas hanya realtime saat tab terbuka, bukan push asli).
+- Komponen inti sistem: geolocation & radius filtering (PostGIS), matching/feed algorithm (jarak + skill + rating), status/notification realtime, sistem rating & reputasi, serta kompensasi (disarankan mulai dari sistem poin internal dulu, bukan payment gateway riil, untuk menyederhanakan MVP).
 
 ## Catatan Strategis dari Diskusi Sebelumnya
 
