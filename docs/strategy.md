@@ -1,4 +1,4 @@
-# Strategi Kompetisi — KerjaMicro × ITechno Cup 2026
+# Strategi Kompetisi — CEPAT × ITechno Cup 2026
 
 ## 1. Fokus Penilaian & Strategi
 
@@ -31,7 +31,7 @@
 
 ### Pekerjaan Layak
 
-- KerjaMicro membuka **akses pekerjaan fleksibel** bagi mahasiswa yang tidak bisa kerja part-time terikat.
+- CEPAT membuka **akses pekerjaan fleksibel** bagi mahasiswa yang tidak bisa kerja part-time terikat.
 - Micro-task berbasis lokasi = **pekerjaan inklusif**, tidak perlu transportasi jauh.
 - Sistem rating & reputasi = membangun **track record kerja** sejak masih kuliah.
 
@@ -54,7 +54,7 @@
 
 ## 3. Diferensiasi dari Kompetitor
 
-| Platform Existing    | Kelemahan                                   | Keunggulan KerjaMicro                     |
+| Platform Existing    | Kelemahan                                   | Keunggulan CEPAT                          |
 | -------------------- | ------------------------------------------- | ----------------------------------------- |
 | Sribulancer/Fastwork | Fokus freelance jangka panjang, bukan micro | Micro-task dadakan, bisa selesai < 1 hari |
 | Fiverr/Upwork        | Global, mahal, tidak location-based         | Lokal, radius 2km, gratis                 |

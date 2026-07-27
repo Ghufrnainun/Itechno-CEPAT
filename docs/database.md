@@ -1,4 +1,4 @@
-# Database Schema — KerjaMicro
+# Database Schema — CEPAT (Cari Entry Pekerjaan Area Terdekat)
 
 ## 1. Overview
 

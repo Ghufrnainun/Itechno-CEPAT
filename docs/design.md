@@ -1,8 +1,8 @@
-# Design System & UI/UX — KerjaMicro
+# Design System & UI/UX — CEPAT (Cari Entry Pekerjaan Area Terdekat)
 
 ## 1. Design Philosophy
 
-KerjaMicro harus terasa **cepat, lokal, dan terpercaya**. Desain diarahkan mobile-first (PWA) dengan nuansa yang:
+CEPAT harus terasa **cepat, lokal, dan terpercaya**. Desain diarahkan mobile-first (PWA) dengan nuansa yang:
 
 - **Friendly & Approachable** — target user mahasiswa, jadi hindari kesan terlalu korporat
 - **Clean & Functional** — task-centric, informasi penting langsung terlihat

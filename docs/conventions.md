@@ -1,4 +1,4 @@
-# Konvensi & Aturan Kode — KerjaMicro
+# Konvensi & Aturan Kode — CEPAT (Cari Entry Pekerjaan Area Terdekat)
 
 ## 1. Naming Conventions
 

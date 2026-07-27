@@ -1,4 +1,4 @@
-# Deployment & DevOps — KerjaMicro
+# Deployment & DevOps — CEPAT (Cari Entry Pekerjaan Area Terdekat)
 
 ## 1. Hosting
 
@@ -7,7 +7,7 @@
 - **Platform**: Vercel (sesuai anjuran panitia)
 - **Framework preset**: Next.js (auto-detected)
 - **Deploy method**: Git push ke GitHub → auto-deploy
-- **Domain**: `kerjamicro.vercel.app` (default) atau custom domain
+- **Domain**: `cepat.vercel.app` (default) atau custom domain
 
 ### Supabase (Database + Auth + Realtime)
 

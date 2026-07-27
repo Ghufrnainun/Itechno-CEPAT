@@ -1,11 +1,11 @@
-# API Reference — KerjaMicro
+# API Reference — CEPAT (Cari Entry Pekerjaan Area Terdekat)
 
 ## 1. Overview
 
 - **Framework**: Next.js App Router API Routes (`src/app/api/`)
 - **Auth**: Supabase Auth JWT — setiap request authenticated harus menyertakan `Authorization: Bearer <token>` atau cookie session Supabase
 - **Format**: JSON request/response
-- **Base URL**: `http://localhost:3000/api` (dev) / `https://kerjamicro.vercel.app/api` (prod)
+- **Base URL**: `http://localhost:3000/api` (dev) / `https://cepat.vercel.app/api` (prod)
 
 ---
 

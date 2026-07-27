@@ -1,4 +1,4 @@
-# Panduan Prompting AI Agent — KerjaMicro
+# Panduan Prompting AI Agent — CEPAT (Cari Entry Pekerjaan Area Terdekat)
 
 Dokumen ini menjelaskan cara efektif menggunakan file-file di folder `docs/` untuk memberikan konteks ke AI coding agent (GitHub Copilot, Claude, ChatGPT, Cursor, dll).
 

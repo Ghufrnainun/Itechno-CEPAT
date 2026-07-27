@@ -1,4 +1,4 @@
-# Tech Stack & Dependencies — KerjaMicro
+# Tech Stack & Dependencies — CEPAT (Cari Entry Pekerjaan Area Terdekat)
 
 ## 1. Core Dependencies
 

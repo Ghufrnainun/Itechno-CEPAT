@@ -1,8 +1,8 @@
-# Fitur — KerjaMicro
+# Fitur — CEPAT (Cari Entry Pekerjaan Area Terdekat)
 
 ## 1. Ringkasan Produk
 
-**KerjaMicro** adalah platform micro-freelancing & skill exchange berbasis lokasi untuk mahasiswa dan UMKM lokal perkotaan. User bisa posting atau mengambil micro-task dadakan dalam radius terdekat (maks. 2 km).
+**CEPAT (Cari Entry Pekerjaan Area Terdekat)** adalah platform micro-freelancing & skill exchange berbasis lokasi untuk mahasiswa dan UMKM lokal perkotaan. User bisa posting atau mengambil micro-task dadakan dalam radius terdekat (maks. 2 km).
 
 **SDG 8** — Pekerjaan Layak dan Pertumbuhan Ekonomi: membuka akses penghasilan fleksibel bagi mahasiswa tanpa terikat jam kerja tetap, sekaligus membantu UMKM mendapatkan tenaga bantuan cepat.
 

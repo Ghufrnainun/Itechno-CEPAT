@@ -90,7 +90,7 @@ Catatan: keputusan juri mutlak; plagiarisme/pelanggaran hak cipta → diskualifi
 - **Backend & Core Logic**: API, database, algoritma inti (matching/scoring engine).
 - **Integrasi, DevOps & Dokumentasi**: realtime feature, deployment, README, materi pitching.
 
-## Ide Terpilih: "KerjaMicro / SkillTukar"
+## Ide Terpilih: "CEPAT (Cari Entry Pekerjaan Area Terdekat)"
 
 **Subtema SDG:** SDG 8 — Pekerjaan Layak dan Pertumbuhan Ekonomi
 

@@ -1,8 +1,8 @@
-# Arsitektur Sistem — KerjaMicro
+# Arsitektur Sistem — CEPAT (Cari Entry Pekerjaan Area Terdekat)
 
 ## 1. Ringkasan Arsitektur
 
-KerjaMicro menggunakan arsitektur **monolith modular** berbasis Next.js App Router. Semua fitur (frontend, API routes, server actions) berada dalam satu codebase Next.js yang di-deploy ke Vercel. Backend data layer menggunakan Supabase (PostgreSQL + PostGIS + Auth + Realtime). Push notification dihandle oleh Firebase Cloud Messaging (FCM).
+CEPAT (Cari Entry Pekerjaan Area Terdekat) menggunakan arsitektur **monolith modular** berbasis Next.js App Router. Semua fitur (frontend, API routes, server actions) berada dalam satu codebase Next.js yang di-deploy ke Vercel. Backend data layer menggunakan Supabase (PostgreSQL + PostGIS + Auth + Realtime). Push notification dihandle oleh Firebase Cloud Messaging (FCM).
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -57,7 +57,7 @@ KerjaMicro menggunakan arsitektur **monolith modular** berbasis Next.js App Rout
 ## 3. Folder Structure (Rencana)
 
 ```
-kerjamicro/
+cepat/
 ├── public/
 │   ├── icons/                # PWA icons (192x192, 512x512)
 │   ├── manifest.json         # PWA manifest
