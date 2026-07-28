@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+// Enums
+enum TransactionType {
+  MASUK
+  KELUAR
+}
+
+// Lookup Tables
+model Role {
+  id_role   String @id @default(uuid())
+  nama_role String @unique
+
+  users User[]
+}
+
+model StatusTask {
+  id_status_task String @id @default(uuid())
+  nama_status    String @unique
+
+  tasks Task[]
+}
+
+model StatusTaskApplicants {
+  id_status_task_applicants String @id @default(uuid())
+  nama_status               String @unique
+
+  applicants TaskApplicants[]
+}
+
+model SkillsMaster {
+  id_skill_master String @id @default(uuid())
+  nama_skill      String @unique
+
+  skills_user       SkillsUser[]
+  task_requirements TaskRequirements[]
+}
+
+// Main Entities
+model User {
+  id_user             String  @id @default(uuid())
+  id_role             String
+  nama_lengkap        String
+  avatar_url          String?
+  bio                 String?
+  pendidikan_terakhir String?
+  rating_avg          Float   @default(0.0)
+  total_completed     Int     @default(0)
+  total_balance       Float   @default(0.0)
+  username            String  @unique
+  alamat              String?
+  no_telpon           String? // String type to preserve leading zeros
+  email               String  @unique
+  password            String
+
+  role Role @relation(fields: [id_role], references: [id_role])
+
+  // Relations
+  transactions      Transactions[]
+  skills_user       SkillsUser[]
+  notifications     Notifications[]
+  tasks_posted      Task[]           @relation("RequesterTasks")
+  task_applications TaskApplicants[] @relation("WorkerApplications")
+  reviews_given     Reviews[]        @relation("RaterReviews")
+  reviews_received  Reviews[]        @relation("RateeReviews")
+}
+
+model Task {
+  id_tasks        String    @id @default(uuid())
+  id_requester    String
+  id_status_task  String
+  judul_tugas     String
+  deskripsi_tugas String
+  estimasi_waktu  String?
+  created_at      DateTime  @default(now())
+  completed_at    DateTime?
+  accepted_at     DateTime?
+
+  // PostGIS Spatial column for radius calculation
+  lokasi_geo Unsupported("geography(Point, 4326)")?
+
+  requester   User         @relation("RequesterTasks", fields: [id_requester], references: [id_user], onDelete: Cascade)
+  status_task StatusTask   @relation(fields: [id_status_task], references: [id_status_task])
+  
+  requirements TaskRequirements[]
+  applicants   TaskApplicants[]
+  reviews      Reviews[]
+}
+
+// Junctions & Sub-entities
+model Transactions {
+  id_transactions String          @id @default(uuid())
+  id_user         String
+  nominal         Float
+  tipe_transaksi  TransactionType
+  deskripsi       String?
+  created_at      DateTime        @default(now())
+
+  user User @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+}
+
+model SkillsUser {
+  id_skills_user       String  @id @default(uuid())
+  id_user              String
+  id_skills_master     String
+  deskripsi_pengalaman String?
+  portofolio_url       String?
+  certificate_url      String?
+
+  user          User         @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+  skills_master SkillsMaster @relation(fields: [id_skills_master], references: [id_skill_master], onDelete: Cascade)
+
+  // Composite unique constraint to prevent duplicate skill assignments
+  @@unique([id_user, id_skills_master]) 
+}
+
+model Notifications {
+  id_notifications String   @id @default(uuid())
+  user_id          String
+  type             String
+  title            String
+  message          String
+  data             Json?
+  is_read          Boolean  @default(false)
+  created_at       DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id_user], onDelete: Cascade)
+}
+
+model TaskRequirements {
+  id_task_requirements String @id @default(uuid())
+  id_tasks             String
+  id_skill_master      String
+
+  task          Task         @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)
+  skills_master SkillsMaster @relation(fields: [id_skill_master], references: [id_skill_master], onDelete: Cascade)
+}
+
+model TaskApplicants {
+  id_task_applicants        String   @id @default(uuid())
+  id_status_task_applicants String
+  id_worker                 String
+  id_tasks                  String
+  applied_at                DateTime @default(now())
+
+  status_applicant StatusTaskApplicants @relation(fields: [id_status_task_applicants], references: [id_status_task_applicants])
+  worker           User                 @relation("WorkerApplications", fields: [id_worker], references: [id_user], onDelete: Cascade)
+  task             Task                 @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)
+}
+
+model Reviews {
+  id_reviews String   @id @default(uuid())
+  id_tasks   String
+  id_rater   String
+  id_ratee   String
+  rating     Float
+  comment    String?
+  url_photo  String?
+  created_at DateTime @default(now())
+
+  task  Task @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)
+  rater User @relation("RaterReviews", fields: [id_rater], references: [id_user], onDelete: Cascade)
+  ratee User @relation("RateeReviews", fields: [id_ratee], references: [id_user], onDelete: Cascade)
+}
