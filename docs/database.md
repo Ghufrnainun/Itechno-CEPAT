@@ -1,326 +1,309 @@
-# Database Schema — CEPAT (Cari Entry Pekerjaan Area Terdekat)
+# Skema Database — CEPAT (Cari Entry Pekerjaan Area Terdekat)
 
-## 1. Overview
+## 1. Ringkasan
 
-- **Database**: PostgreSQL (via Supabase)
-- **Extension wajib**: `postgis` (untuk geo-query radius)
-- **Auth**: Supabase Auth (tabel `auth.users` managed oleh Supabase, kita buat tabel `profiles` sebagai extension)
-- **Realtime**: Supabase Realtime diaktifkan pada tabel `tasks` dan `notifications`
-
----
-
-## 2. Entity Relationship Diagram (ERD)
-
-```
-┌──────────────┐       ┌──────────────────┐       ┌──────────────┐
-│   profiles   │       │      tasks       │       │   reviews    │
-│──────────────│       │──────────────────│       │──────────────│
-│ id (PK/FK)   │──┐    │ id (PK)          │    ┌──│ id (PK)      │
-│ full_name    │  │    │ title            │    │  │ task_id (FK) │
-│ avatar_url   │  │    │ description      │    │  │ reviewer_id  │
-│ bio          │  ├───▶│ requester_id(FK) │◀───┤  │ reviewee_id  │
-│ university   │  │    │ worker_id (FK)   │◀───┘  │ rating       │
-│ skills[]     │  │    │ category         │       │ comment      │
-│ reputation   │  │    │ location (geo)   │       │ created_at   │
-│ total_points │  │    │ address_text     │       └──────────────┘
-│ role_pref    │  │    │ radius_m         │
-│ fcm_token    │  │    │ estimated_time   │       ┌──────────────────┐
-│ created_at   │  │    │ compensation     │       │  notifications   │
-│ updated_at   │  │    │ status           │       │──────────────────│
-└──────────────┘  │    │ created_at       │       │ id (PK)          │
-                  │    │ updated_at       │       │ user_id (FK)     │
-                  │    │ accepted_at      │       │ type             │
-                  │    │ completed_at     │       │ title            │
-                  │    └──────────────────┘       │ message          │
-                  │                               │ data (jsonb)     │
-                  │    ┌──────────────────┐       │ is_read          │
-                  │    │  task_applicants │       │ created_at       │
-                  │    │──────────────────│       └──────────────────┘
-                  │    │ id (PK)          │
-                  └───▶│ task_id (FK)     │       ┌──────────────────┐
-                       │ worker_id (FK)  │       │ point_transactions│
-                       │ message         │       │──────────────────│
-                       │ applied_at      │       │ id (PK)          │
-                       │ status          │       │ user_id (FK)     │
-                       └──────────────────┘       │ task_id (FK)     │
-                                                  │ amount           │
-                                                  │ type             │
-                                                  │ description      │
-                                                  │ created_at       │
-                                                  └──────────────────┘
-```
+- **Database**: PostgreSQL (dikelola melalui Supabase)
+- **Object-Relational Mapping (ORM)**: Prisma
+- **Ekstensi Wajib**: `postgis` (digunakan untuk kueri geospasial/radius lokasi)
+- **Autentikasi**: Supabase Auth (Integrasi melalui kolom `auth_id` di tabel `User`)
+- **Keamanan**: Implementasi Row Level Security (RLS) di tingkat database menggunakan skrip SQL terpisah.
 
 ---
 
-## 3. Tabel Detail
+## 2. Diagram Relasi Entitas (ERD)
 
-### 3.1 `profiles`
-
-Extension dari `auth.users`. ID sama dengan `auth.users.id`.
-
-```sql
-CREATE TABLE profiles (
-  id            UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  full_name     TEXT NOT NULL,
-  avatar_url    TEXT,
-  bio           TEXT,
-  university    TEXT,                          -- universitas / instansi
-  skills        TEXT[] DEFAULT '{}',           -- array of skill tags
-  reputation    DECIMAL(3,2) DEFAULT 0.00,     -- rata-rata rating (0.00 - 5.00)
-  total_reviews INTEGER DEFAULT 0,
-  total_points  INTEGER DEFAULT 100,           -- saldo poin awal (bonus registrasi)
-  role_pref     TEXT DEFAULT 'both'            -- 'requester' | 'worker' | 'both'
-                CHECK (role_pref IN ('requester', 'worker', 'both')),
-  fcm_token     TEXT,                          -- Firebase Cloud Messaging token
-  created_at    TIMESTAMPTZ DEFAULT NOW(),
-  updated_at    TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Index untuk search by skill
-CREATE INDEX idx_profiles_skills ON profiles USING GIN (skills);
-```
-
-### 3.2 `tasks`
-
-Tabel utama task/micro-job.
-
-```sql
-CREATE TABLE tasks (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title           TEXT NOT NULL,
-  description     TEXT NOT NULL,
-  category        TEXT NOT NULL,               -- kategori skill (e.g. 'fotografi', 'data_entry')
-  requester_id    UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  worker_id       UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  
-  -- Geolocation (PostGIS)
-  location        GEOGRAPHY(POINT, 4326) NOT NULL,  -- titik lokasi task
-  address_text    TEXT,                              -- alamat readable (opsional)
-  
-  -- Task details
-  estimated_time  INTEGER NOT NULL,            -- estimasi waktu dalam menit
-  compensation    INTEGER NOT NULL,            -- jumlah poin kompensasi
-  
-  -- Status tracking
-  status          TEXT DEFAULT 'open'
-                  CHECK (status IN ('open', 'accepted', 'in_progress', 'completed', 'cancelled')),
-  
-  -- Timestamps
-  created_at      TIMESTAMPTZ DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ DEFAULT NOW(),
-  accepted_at     TIMESTAMPTZ,
-  completed_at    TIMESTAMPTZ
-);
-
--- Index geospasial untuk radius query cepat
-CREATE INDEX idx_tasks_location ON tasks USING GIST (location);
-
--- Index untuk filter status + tanggal
-CREATE INDEX idx_tasks_status_created ON tasks (status, created_at DESC);
-
--- Index untuk lookup by requester / worker
-CREATE INDEX idx_tasks_requester ON tasks (requester_id);
-CREATE INDEX idx_tasks_worker ON tasks (worker_id);
-```
-
-### 3.3 `task_applicants`
-
-Tabel junction: worker yang apply ke suatu task.
-
-```sql
-CREATE TABLE task_applicants (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  task_id     UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-  worker_id   UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  message     TEXT,                            -- pesan singkat saat apply
-  status      TEXT DEFAULT 'pending'
-              CHECK (status IN ('pending', 'accepted', 'rejected')),
-  applied_at  TIMESTAMPTZ DEFAULT NOW(),
-
-  UNIQUE(task_id, worker_id)                  -- satu worker hanya bisa apply sekali per task
-);
-```
-
-### 3.4 `reviews`
-
-Rating & review setelah task selesai.
-
-```sql
-CREATE TABLE reviews (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  task_id      UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-  reviewer_id  UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  reviewee_id  UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  rating       INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-  comment      TEXT,
-  created_at   TIMESTAMPTZ DEFAULT NOW(),
-
-  UNIQUE(task_id, reviewer_id)                -- satu reviewer hanya bisa review sekali per task
-);
-
--- Trigger untuk update reputation di profiles setelah review baru
-CREATE OR REPLACE FUNCTION update_reputation()
-RETURNS TRIGGER AS $$
-BEGIN
-  UPDATE profiles
-  SET 
-    reputation = (
-      SELECT ROUND(AVG(rating)::NUMERIC, 2)
-      FROM reviews
-      WHERE reviewee_id = NEW.reviewee_id
-    ),
-    total_reviews = (
-      SELECT COUNT(*)
-      FROM reviews
-      WHERE reviewee_id = NEW.reviewee_id
-    ),
-    updated_at = NOW()
-  WHERE id = NEW.reviewee_id;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_update_reputation
-AFTER INSERT ON reviews
-FOR EACH ROW
-EXECUTE FUNCTION update_reputation();
-```
-
-### 3.5 `notifications`
-
-Notifikasi in-app.
-
-```sql
-CREATE TABLE notifications (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id     UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  type        TEXT NOT NULL,                   -- 'task_applied', 'task_accepted', 'task_completed', 'review_received', 'points_received'
-  title       TEXT NOT NULL,
-  message     TEXT NOT NULL,
-  data        JSONB DEFAULT '{}',             -- metadata tambahan (task_id, sender_id, dll)
-  is_read     BOOLEAN DEFAULT FALSE,
-  created_at  TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_notifications_user_read ON notifications (user_id, is_read, created_at DESC);
-```
-
-### 3.6 `point_transactions`
-
-Log transaksi poin.
-
-```sql
-CREATE TABLE point_transactions (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id     UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  task_id     UUID REFERENCES tasks(id) ON DELETE SET NULL,
-  amount      INTEGER NOT NULL,               -- positif = masuk, negatif = keluar
-  type        TEXT NOT NULL                    -- 'task_payment', 'task_earning', 'topup', 'bonus'
-              CHECK (type IN ('task_payment', 'task_earning', 'topup', 'bonus')),
-  description TEXT,
-  created_at  TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_point_transactions_user ON point_transactions (user_id, created_at DESC);
+```text
+┌──────────────┐       ┌──────────────────┐       ┌───────────────┐
+│     User     │       │       Task       │       │    Reviews    │
+│──────────────│       │──────────────────│       │───────────────│
+│ id_user (PK) │──┐    │ id_tasks (PK)    │    ┌──│ id_reviews(PK)│
+│ auth_id      │  │    │ judul_tugas      │    │  │ id_tasks (FK) │
+│ username     │  ├───▶│ id_requester(FK) │◀───┤  │ id_rater (FK) │
+│ email        │  │    │ id_status_task   │◀───┘  │ id_ratee (FK) │
+│ total_balance│  │    │ lokasi_geo       │       │ rating        │
+└──────────────┘  │    └──────────────────┘       └───────────────┘
+                  │    ┌──────────────────┐       │  Notifications  │
+                  │    │  TaskApplicants  │       │─────────────────│
+                  │    │──────────────────│       │ id_notif (PK)   │
+                  ├───▶│ id_task_app..(PK)│       │ user_id (FK)    │
+                  │    │ id_tasks (FK)    │       │ title           │
+                  │    │ id_worker (FK)   │       │ message         │
+                  │    └──────────────────┘       └─────────────────┘
+                  │    ┌──────────────────┐       ┌─────────────────┐
+                  │    │    ChatRoom      │       │  Transactions   │
+                  │    │──────────────────│       │─────────────────│
+                  └───▶│ id_chat_room (PK)│       │ id_trans (PK)   │
+                       │ id_tasks (FK)    │       │ id_user (FK)    │
+                       │ id_requester (FK)│       │ nominal         │
+                       │ id_worker (FK)   │       │ tipe_transaksi  │
+                       └──────────────────┘       └─────────────────┘
+                                ▲
+                                │
+                       ┌──────────────────┐
+                       │     Message      │
+                       │──────────────────│
+                       │ id_message (PK)  │
+                       │ id_chat_room (FK)│
+                       │ id_sender (FK)   │
+                       │ teks_pesan       │
+                       │ image_url        │
+                       └──────────────────┘
 ```
 
 ---
 
-## 4. PostGIS Geo-Query Contoh
+## 3. Skema Definisi Tabel (DDL Lengkap)
 
-### 4.1 Cari task dalam radius 2km
+Berikut adalah definisi struktur tabel secara menyeluruh, termasuk penambahan ekstensi spasial, indeks pencarian, dan relasi kunci asing (*Foreign Keys*) yang digunakan pada proyek ini.
 
+### 3.1 Prasyarat Ekstensi dan Enums
 ```sql
-SELECT 
-  t.*,
-  ST_Distance(t.location, ST_MakePoint(:lng, :lat)::GEOGRAPHY) AS distance_m
-FROM tasks t
-WHERE 
-  t.status = 'open'
-  AND ST_DWithin(
-    t.location,
-    ST_MakePoint(:lng, :lat)::GEOGRAPHY,
-    2000  -- radius dalam meter
+-- Mengaktifkan ekstensi pencarian geospasial (wajib untuk fitur radius/area terdekat)
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+-- Tipe data spesifik untuk mutasi saldo
+CREATE TYPE "TransactionType" AS ENUM ('MASUK', 'KELUAR');
+```
+
+### 3.2 Tabel Profil dan Entitas Utama (`User` dan `Task`)
+```sql
+-- Tabel Profil Pengguna (terhubung dengan Supabase Auth melalui auth_id)
+CREATE TABLE "User" (
+    "id_user" TEXT NOT NULL,
+    "id_role" TEXT NOT NULL,
+    "nama_lengkap" TEXT NOT NULL,
+    "avatar_url" TEXT,
+    "bio" TEXT,
+    "pendidikan_terakhir" TEXT,
+    "rating_avg" DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    "total_completed" INTEGER NOT NULL DEFAULT 0,
+    "total_balance" DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    "username" TEXT NOT NULL,
+    "alamat" TEXT,
+    "no_telpon" TEXT,
+    "email" TEXT NOT NULL,
+    "auth_id" UUID,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id_user")
+);
+
+-- Tabel Pekerjaan/Tugas (menyimpan lokasi titik secara presisi)
+CREATE TABLE "Task" (
+    "id_tasks" TEXT NOT NULL,
+    "id_requester" TEXT NOT NULL,
+    "id_status_task" TEXT NOT NULL,
+    "judul_tugas" TEXT NOT NULL,
+    "deskripsi_tugas" TEXT NOT NULL,
+    "estimasi_waktu" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "completed_at" TIMESTAMP(3),
+    "accepted_at" TIMESTAMP(3),
+    "lokasi_geo" geography(Point, 4326),
+
+    CONSTRAINT "Task_pkey" PRIMARY KEY ("id_tasks")
+);
+```
+
+### 3.3 Tabel Aktivitas (Transaksi, Lamaran, dan Ulasan)
+```sql
+-- Tabel Riwayat Saldo Pengguna
+CREATE TABLE "Transactions" (
+    "id_transactions" TEXT NOT NULL,
+    "id_user" TEXT NOT NULL,
+    "nominal" DOUBLE PRECISION NOT NULL,
+    "tipe_transaksi" "TransactionType" NOT NULL,
+    "deskripsi" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Transactions_pkey" PRIMARY KEY ("id_transactions")
+);
+
+-- Tabel Pendaftar Tugas (Pekerja yang mengajukan lamaran)
+CREATE TABLE "TaskApplicants" (
+    "id_task_applicants" TEXT NOT NULL,
+    "id_status_task_applicants" TEXT NOT NULL,
+    "id_worker" TEXT NOT NULL,
+    "id_tasks" TEXT NOT NULL,
+    "applied_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "TaskApplicants_pkey" PRIMARY KEY ("id_task_applicants")
+);
+
+-- Tabel Ulasan dan Penilaian Performa
+CREATE TABLE "Reviews" (
+    "id_reviews" TEXT NOT NULL,
+    "id_tasks" TEXT NOT NULL,
+    "id_rater" TEXT NOT NULL,
+    "id_ratee" TEXT NOT NULL,
+    "rating" DOUBLE PRECISION NOT NULL,
+    "comment" TEXT,
+    "url_photo" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Reviews_pkey" PRIMARY KEY ("id_reviews")
+);
+
+-- Tabel Notifikasi Sistem
+CREATE TABLE "Notifications" (
+    "id_notifications" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "data" JSONB,
+    "is_read" BOOLEAN NOT NULL DEFAULT false,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Notifications_pkey" PRIMARY KEY ("id_notifications")
+);
+
+-- Tabel Ruang Obrolan
+CREATE TABLE "ChatRoom" (
+    "id_chat_room" TEXT NOT NULL,
+    "id_tasks" TEXT NOT NULL,
+    "id_requester" TEXT NOT NULL,
+    "id_worker" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ChatRoom_pkey" PRIMARY KEY ("id_chat_room")
+);
+
+-- Tabel Pesan Obrolan
+CREATE TABLE "Message" (
+    "id_message" TEXT NOT NULL,
+    "id_chat_room" TEXT NOT NULL,
+    "id_sender" TEXT NOT NULL,
+    "teks_pesan" TEXT,
+    "image_url" TEXT,
+    "is_read" BOOLEAN NOT NULL DEFAULT false,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Message_pkey" PRIMARY KEY ("id_message")
+);
+```
+
+### 3.4 Tabel Referensi / Pemetaan (Lookup Tables)
+```sql
+CREATE TABLE "Role" (
+    "id_role" TEXT NOT NULL,
+    "nama_role" TEXT NOT NULL,
+    CONSTRAINT "Role_pkey" PRIMARY KEY ("id_role")
+);
+
+CREATE TABLE "StatusTask" (
+    "id_status_task" TEXT NOT NULL,
+    "nama_status" TEXT NOT NULL,
+    CONSTRAINT "StatusTask_pkey" PRIMARY KEY ("id_status_task")
+);
+
+CREATE TABLE "StatusTaskApplicants" (
+    "id_status_task_applicants" TEXT NOT NULL,
+    "nama_status" TEXT NOT NULL,
+    CONSTRAINT "StatusTaskApplicants_pkey" PRIMARY KEY ("id_status_task_applicants")
+);
+
+CREATE TABLE "SkillsMaster" (
+    "id_skill_master" TEXT NOT NULL,
+    "nama_skill" TEXT NOT NULL,
+    CONSTRAINT "SkillsMaster_pkey" PRIMARY KEY ("id_skill_master")
+);
+
+CREATE TABLE "SkillsUser" (
+    "id_skills_user" TEXT NOT NULL,
+    "id_user" TEXT NOT NULL,
+    "id_skills_master" TEXT NOT NULL,
+    "deskripsi_pengalaman" TEXT,
+    "portofolio_url" TEXT,
+    "certificate_url" TEXT,
+    CONSTRAINT "SkillsUser_pkey" PRIMARY KEY ("id_skills_user")
+);
+
+CREATE TABLE "TaskRequirements" (
+    "id_task_requirements" TEXT NOT NULL,
+    "id_tasks" TEXT NOT NULL,
+    "id_skill_master" TEXT NOT NULL,
+    CONSTRAINT "TaskRequirements_pkey" PRIMARY KEY ("id_task_requirements")
+);
+```
+
+### 3.5 Indeks Unik (Unique Constraints)
+```sql
+CREATE UNIQUE INDEX "Role_nama_role_key" ON "Role"("nama_role");
+CREATE UNIQUE INDEX "StatusTask_nama_status_key" ON "StatusTask"("nama_status");
+CREATE UNIQUE INDEX "StatusTaskApplicants_nama_status_key" ON "StatusTaskApplicants"("nama_status");
+CREATE UNIQUE INDEX "SkillsMaster_nama_skill_key" ON "SkillsMaster"("nama_skill");
+CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX "User_auth_id_key" ON "User"("auth_id");
+CREATE UNIQUE INDEX "SkillsUser_id_user_id_skills_master_key" ON "SkillsUser"("id_user", "id_skills_master");
+CREATE UNIQUE INDEX "ChatRoom_id_tasks_id_worker_key" ON "ChatRoom"("id_tasks", "id_worker");
+```
+
+### 3.6 Relasi Kunci Asing (Foreign Keys)
+```sql
+-- Relasi Pengguna
+ALTER TABLE "User" ADD CONSTRAINT "User_id_role_fkey" FOREIGN KEY ("id_role") REFERENCES "Role"("id_role") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- Relasi Tugas
+ALTER TABLE "Task" ADD CONSTRAINT "Task_id_requester_fkey" FOREIGN KEY ("id_requester") REFERENCES "User"("id_user") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Task" ADD CONSTRAINT "Task_id_status_task_fkey" FOREIGN KEY ("id_status_task") REFERENCES "StatusTask"("id_status_task") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- Relasi Transaksi dan Notifikasi
+ALTER TABLE "Transactions" ADD CONSTRAINT "Transactions_id_user_fkey" FOREIGN KEY ("id_user") REFERENCES "User"("id_user") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Notifications" ADD CONSTRAINT "Notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id_user") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Relasi Keahlian (Skills)
+ALTER TABLE "SkillsUser" ADD CONSTRAINT "SkillsUser_id_user_fkey" FOREIGN KEY ("id_user") REFERENCES "User"("id_user") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "SkillsUser" ADD CONSTRAINT "SkillsUser_id_skills_master_fkey" FOREIGN KEY ("id_skills_master") REFERENCES "SkillsMaster"("id_skill_master") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Relasi Kebutuhan Tugas (Task Requirements)
+ALTER TABLE "TaskRequirements" ADD CONSTRAINT "TaskRequirements_id_tasks_fkey" FOREIGN KEY ("id_tasks") REFERENCES "Task"("id_tasks") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TaskRequirements" ADD CONSTRAINT "TaskRequirements_id_skill_master_fkey" FOREIGN KEY ("id_skill_master") REFERENCES "SkillsMaster"("id_skill_master") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Relasi Pelamar Tugas (Task Applicants)
+ALTER TABLE "TaskApplicants" ADD CONSTRAINT "TaskApplicants_id_status_task_applicants_fkey" FOREIGN KEY ("id_status_task_applicants") REFERENCES "StatusTaskApplicants"("id_status_task_applicants") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "TaskApplicants" ADD CONSTRAINT "TaskApplicants_id_worker_fkey" FOREIGN KEY ("id_worker") REFERENCES "User"("id_user") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TaskApplicants" ADD CONSTRAINT "TaskApplicants_id_tasks_fkey" FOREIGN KEY ("id_tasks") REFERENCES "Task"("id_tasks") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Relasi Ulasan (Reviews)
+ALTER TABLE "Reviews" ADD CONSTRAINT "Reviews_id_tasks_fkey" FOREIGN KEY ("id_tasks") REFERENCES "Task"("id_tasks") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Reviews" ADD CONSTRAINT "Reviews_id_rater_fkey" FOREIGN KEY ("id_rater") REFERENCES "User"("id_user") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Reviews" ADD CONSTRAINT "Reviews_id_ratee_fkey" FOREIGN KEY ("id_ratee") REFERENCES "User"("id_user") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Relasi Obrolan (ChatRoom & Message)
+ALTER TABLE "ChatRoom" ADD CONSTRAINT "ChatRoom_id_tasks_fkey" FOREIGN KEY ("id_tasks") REFERENCES "Task"("id_tasks") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ChatRoom" ADD CONSTRAINT "ChatRoom_id_requester_fkey" FOREIGN KEY ("id_requester") REFERENCES "User"("id_user") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ChatRoom" ADD CONSTRAINT "ChatRoom_id_worker_fkey" FOREIGN KEY ("id_worker") REFERENCES "User"("id_user") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Message" ADD CONSTRAINT "Message_id_chat_room_fkey" FOREIGN KEY ("id_chat_room") REFERENCES "ChatRoom"("id_chat_room") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Message" ADD CONSTRAINT "Message_id_sender_fkey" FOREIGN KEY ("id_sender") REFERENCES "User"("id_user") ON DELETE CASCADE ON UPDATE CASCADE;
+```
+
+---
+
+## 4. Contoh Kueri Geospasial (PostGIS)
+
+Meskipun struktur ditangani oleh Prisma, kueri yang melibatkan kalkulasi jarak absolut wajib menggunakan `prisma.$queryRaw`:
+
+```typescript
+const radiusMeters = 2000;
+const tasksNearMe = await prisma.$queryRaw`
+  SELECT 
+    id_tasks, judul_tugas, deskripsi_tugas, 
+    ST_Distance(lokasi_geo, ST_MakePoint(${lng}, ${lat})::geography) AS distance_m
+  FROM "Task"
+  WHERE ST_DWithin(
+    lokasi_geo, 
+    ST_MakePoint(${lng}, ${lat})::geography, 
+    ${radiusMeters}
   )
-ORDER BY distance_m ASC;
-```
-
-### 4.2 Insert task dengan lokasi
-
-```sql
-INSERT INTO tasks (title, description, category, requester_id, location, address_text, estimated_time, compensation)
-VALUES (
-  'Foto Produk UMKM',
-  'Butuh bantuan foto 20 produk makanan untuk katalog online',
-  'fotografi',
-  :requester_id,
-  ST_MakePoint(:lng, :lat)::GEOGRAPHY,
-  'Jl. Prof. Sudarto No.13, Tembalang, Semarang',
-  120,
-  50
-);
+  ORDER BY distance_m ASC;
+`;
 ```
 
 ---
 
-## 5. Row Level Security (RLS)
+## 5. Keamanan Row Level Security (RLS)
 
-```sql
--- Aktifkan RLS di semua tabel
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE task_applicants ENABLE ROW LEVEL SECURITY;
-ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
-ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE point_transactions ENABLE ROW LEVEL SECURITY;
-
--- Contoh policy: profiles
-CREATE POLICY "Users can view all profiles"
-  ON profiles FOR SELECT USING (true);
-
-CREATE POLICY "Users can update own profile"
-  ON profiles FOR UPDATE USING (auth.uid() = id);
-
--- Contoh policy: tasks
-CREATE POLICY "Anyone can view open tasks"
-  ON tasks FOR SELECT USING (true);
-
-CREATE POLICY "Authenticated users can create tasks"
-  ON tasks FOR INSERT WITH CHECK (auth.uid() = requester_id);
-
-CREATE POLICY "Requester can update own tasks"
-  ON tasks FOR UPDATE USING (
-    auth.uid() = requester_id 
-    OR auth.uid() = worker_id
-  );
-
--- Contoh policy: notifications
-CREATE POLICY "Users can only view own notifications"
-  ON notifications FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own notifications"
-  ON notifications FOR UPDATE USING (auth.uid() = user_id);
-```
-
----
-
-## 6. Supabase Realtime Config
-
-Aktifkan realtime pada tabel berikut di Supabase Dashboard:
-
-| Tabel             | Event yang di-broadcast                         |
-| ----------------- | ----------------------------------------------- |
-| `tasks`           | INSERT, UPDATE (status changes)                 |
-| `notifications`   | INSERT (new notification)                       |
-| `task_applicants` | INSERT (new applicant)                          |
-
----
-
-## 7. Catatan untuk AI Agent
-
-- Selalu gunakan `gen_random_uuid()` untuk primary key (bukan auto-increment).
-- Semua timestamp harus `TIMESTAMPTZ` (timezone-aware).
-- Location disimpan sebagai `GEOGRAPHY(POINT, 4326)` — parameter: `(longitude, latitude)` (perhatikan urutan!).
-- Saat query Supabase dari client, gunakan `.rpc()` untuk geo-queries karena PostGIS functions tidak bisa langsung dari query builder.
-- Pastikan `profiles` row dibuat otomatis saat user register (gunakan Supabase Database Function / Trigger on `auth.users` INSERT).
-- Setiap perubahan skema harus didokumentasikan di file migrasi (`supabase/migrations/`).
+Implementasi keamanan data dikelola secara terpisah dari Prisma melalui berkas `supabase/migrations/20260729_enable_rls.sql`. 
+- Kueri `INSERT` diblokir secara mutlak pada tabel `Transactions` dari akses klien eksternal.
+- Sistem memvalidasi otoritas pengubahan data dengan mencocokkan `auth_id` dari token JWT dengan tabel `User`.
