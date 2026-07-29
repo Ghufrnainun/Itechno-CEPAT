@@ -43,3 +43,5 @@ next-env.d.ts
 .agents
 .agent
 /src/generated/prisma
+.claude
+.windsurf
