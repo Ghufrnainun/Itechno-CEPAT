@@ -1,3 +1,6 @@
+-- CreateExtension
+CREATE EXTENSION IF NOT EXISTS postgis;
+
 -- CreateEnum
 CREATE TYPE "TransactionType" AS ENUM ('MASUK', 'KELUAR');
 

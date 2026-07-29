@@ -1,9 +1,11 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider   = "postgresql"
+  extensions = [postgis]
 }
 
 // Enums
@@ -57,7 +59,7 @@ model User {
   alamat              String?
   no_telpon           String? // String type to preserve leading zeros
   email               String  @unique
-  password            String
+  auth_id             String? @unique @db.Uuid
 
   role Role @relation(fields: [id_role], references: [id_role])
 
