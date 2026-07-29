@@ -26,3 +26,20 @@ export async function createClient() {
     }
   )
 }
+
+export const createMockClient = () => {
+  return {
+    auth: {
+      getUser: async () => ({ data: { user: { id: "mock-user-id", email: "budi@cepat.com" } }, error: null }),
+    },
+    from: (table: string) => {
+      return {
+        select: () => ({
+          eq: () => ({
+            single: async () => ({ data: {}, error: null }),
+          }),
+        }),
+      };
+    },
+  };
+};
