@@ -15,6 +15,11 @@ $$ LANGUAGE sql SECURITY DEFINER STABLE;
 -- ============================================================
 ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
 
+-- Cleanup existing policies
+DROP POLICY IF EXISTS "Public can view all profiles" ON "User";
+DROP POLICY IF EXISTS "User can update own profile" ON "User";
+DROP POLICY IF EXISTS "No direct delete on users" ON "User";
+
 -- Allow public read access to all profiles
 CREATE POLICY "Public can view all profiles"
 ON "User" FOR SELECT
@@ -36,6 +41,12 @@ USING (false);
 -- 2. TABLE: Task
 -- ============================================================
 ALTER TABLE "Task" ENABLE ROW LEVEL SECURITY;
+
+-- Cleanup existing policies
+DROP POLICY IF EXISTS "Authenticated users can view all tasks" ON "Task";
+DROP POLICY IF EXISTS "User can create own task" ON "Task";
+DROP POLICY IF EXISTS "Requester can update own task" ON "Task";
+DROP POLICY IF EXISTS "Requester can delete own task" ON "Task";
 
 -- Allow authenticated users to view all tasks
 CREATE POLICY "Authenticated users can view all tasks"
@@ -68,6 +79,12 @@ USING (id_requester = public.get_current_user_id());
 -- ============================================================
 ALTER TABLE "Transactions" ENABLE ROW LEVEL SECURITY;
 
+-- Cleanup existing policies
+DROP POLICY IF EXISTS "User can view own transactions" ON "Transactions";
+DROP POLICY IF EXISTS "No direct insert on transactions" ON "Transactions";
+DROP POLICY IF EXISTS "No update on transactions" ON "Transactions";
+DROP POLICY IF EXISTS "No delete on transactions" ON "Transactions";
+
 -- Restrict visibility to the transaction owner
 CREATE POLICY "User can view own transactions"
 ON "Transactions" FOR SELECT
@@ -93,6 +110,12 @@ USING (false);
 -- 4. TABLE: SkillsUser
 -- ============================================================
 ALTER TABLE "SkillsUser" ENABLE ROW LEVEL SECURITY;
+
+-- Cleanup existing policies
+DROP POLICY IF EXISTS "Public can view all user skills" ON "SkillsUser";
+DROP POLICY IF EXISTS "User can add own skills" ON "SkillsUser";
+DROP POLICY IF EXISTS "User can update own skills" ON "SkillsUser";
+DROP POLICY IF EXISTS "User can delete own skills" ON "SkillsUser";
 
 -- Allow public read access to user skills
 CREATE POLICY "Public can view all user skills"
@@ -123,6 +146,11 @@ USING (id_user = public.get_current_user_id());
 -- ============================================================
 ALTER TABLE "Notifications" ENABLE ROW LEVEL SECURITY;
 
+-- Cleanup existing policies
+DROP POLICY IF EXISTS "User can view own notifications" ON "Notifications";
+DROP POLICY IF EXISTS "User can update own notifications" ON "Notifications";
+DROP POLICY IF EXISTS "No direct insert on notifications" ON "Notifications";
+
 -- Restrict visibility to the notification owner
 CREATE POLICY "User can view own notifications"
 ON "Notifications" FOR SELECT
@@ -145,6 +173,11 @@ WITH CHECK (false);
 -- 6. TABLE: TaskApplicants
 -- ============================================================
 ALTER TABLE "TaskApplicants" ENABLE ROW LEVEL SECURITY;
+
+-- Cleanup existing policies
+DROP POLICY IF EXISTS "User can view relevant applications" ON "TaskApplicants";
+DROP POLICY IF EXISTS "Worker can apply to task" ON "TaskApplicants";
+DROP POLICY IF EXISTS "Worker can withdraw own application" ON "TaskApplicants";
 
 -- Allow visibility for the applicant and the task owner
 CREATE POLICY "User can view relevant applications"
@@ -184,6 +217,11 @@ USING (id_worker = public.get_current_user_id());
 -- ============================================================
 ALTER TABLE "Reviews" ENABLE ROW LEVEL SECURITY;
 
+-- Cleanup existing policies
+DROP POLICY IF EXISTS "Authenticated users can view reviews" ON "Reviews";
+DROP POLICY IF EXISTS "User can create review, not for themselves" ON "Reviews";
+DROP POLICY IF EXISTS "No update on reviews" ON "Reviews";
+
 -- Allow public read access to reviews
 CREATE POLICY "Authenticated users can view reviews"
 ON "Reviews" FOR SELECT
@@ -209,21 +247,26 @@ USING (false);
 -- 8. LOOKUP TABLES
 -- ============================================================
 ALTER TABLE "Role" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read access on Role" ON "Role";
 CREATE POLICY "Public read access on Role"
 ON "Role" FOR SELECT USING (true);
 
 ALTER TABLE "StatusTask" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read access on StatusTask" ON "StatusTask";
 CREATE POLICY "Public read access on StatusTask"
 ON "StatusTask" FOR SELECT USING (true);
 
 ALTER TABLE "StatusTaskApplicants" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read access on StatusTaskApplicants" ON "StatusTaskApplicants";
 CREATE POLICY "Public read access on StatusTaskApplicants"
 ON "StatusTaskApplicants" FOR SELECT USING (true);
 
 ALTER TABLE "SkillsMaster" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read access on SkillsMaster" ON "SkillsMaster";
 CREATE POLICY "Public read access on SkillsMaster"
 ON "SkillsMaster" FOR SELECT USING (true);
 
 ALTER TABLE "TaskRequirements" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read access on TaskRequirements" ON "TaskRequirements";
 CREATE POLICY "Public read access on TaskRequirements"
 ON "TaskRequirements" FOR SELECT USING (true);

@@ -3,9 +3,10 @@
 ## 1. Overview
 
 - **Database**: PostgreSQL (via Supabase)
+- **ORM**: Prisma ORM v7 (`prisma/schema.prisma`) dengan `@prisma/adapter-pg` driver adapter
 - **Extension wajib**: `postgis` (untuk geo-query radius)
-- **Auth**: Supabase Auth (tabel `auth.users` managed oleh Supabase, kita buat tabel `profiles` sebagai extension)
-- **Realtime**: Supabase Realtime diaktifkan pada tabel `tasks` dan `notifications`
+- **Auth Bridging**: Supabase Auth (tabel `auth.users` terhubung ke tabel Prisma `User` melalui kolom `auth_id` UUID)
+- **Security**: Row Level Security (RLS) diaktifkan pada semua tabel via script SQL (`supabase/migrations/20260729_enable_rls.sql`)
 
 ---
 
