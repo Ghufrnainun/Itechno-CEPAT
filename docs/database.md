@@ -2,11 +2,11 @@
 
 ## 1. Ringkasan
 
-- **Database**: PostgreSQL (dikelola melalui Supabase)
-- **Object-Relational Mapping (ORM)**: Prisma
-- **Ekstensi Wajib**: `postgis` (digunakan untuk kueri geospasial/radius lokasi)
-- **Autentikasi**: Supabase Auth (Integrasi melalui kolom `auth_id` di tabel `User`)
-- **Keamanan**: Implementasi Row Level Security (RLS) di tingkat database menggunakan skrip SQL terpisah.
+- **Database**: PostgreSQL (via Supabase)
+- **ORM**: Prisma ORM v7 (`prisma/schema.prisma`) dengan `@prisma/adapter-pg` driver adapter
+- **Extension wajib**: `postgis` (untuk geo-query radius)
+- **Auth Bridging**: Supabase Auth (tabel `auth.users` terhubung ke tabel Prisma `User` melalui kolom `auth_id` UUID)
+- **Security**: Row Level Security (RLS) diaktifkan pada semua tabel via script SQL (`supabase/migrations/20260729_enable_rls.sql`)
 
 ---
 

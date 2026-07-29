@@ -11,36 +11,51 @@
 
 ## 2. Authentication
 
-Supabase Auth menangani auth flow. API routes memvalidasi session via Supabase server client.
+Supabase Auth menangani auth flow. API routes memvalidasi input menggunakan **Zod schemas** (`src/lib/validations.ts`) dan mengelola profil user via **Prisma ORM**.
 
 ### POST `/api/auth/register`
 
-Register user baru.
+Register user baru. Memvalidasi input via Zod, membuat user di Supabase Auth, lalu menyinkronkan profil ke tabel Prisma `User` dengan mapping `auth_id`.
+
+**Rate Limit:** 5 requests per 15 menit per IP (diatur via `src/lib/rate-limit.ts`).
 
 **Request Body:**
 ```json
 {
   "email": "user@example.com",
-  "password": "securePassword123",
-  "full_name": "John Doe",
-  "university": "Universitas Diponegoro"
+  "password": "password123",
+  "nama_lengkap": "John Doe",
+  "username": "johndoe",
+  "id_role": "uuid-opsional"
 }
 ```
 
-**Response (201):**
+**Validasi Rules (Zod):**
+- `email`: Format email valid, max 254 karakter, **disposable/temp mail diblokir otomatis** (100+ domain).
+- `password`: String (minimal 6 karakter).
+- `username`: String (3-30 karakter, alfanumerik + `.` + `_`, tidak boleh diawali/diakhiri simbol).
+- `nama_lengkap`: String (2-100 karakter, bebas XSS/tag HTML).
+- `id_role` *(opsional)*: UUID role. Jika tidak diisi, otomatis mengambil role default pertama dari tabel `Role`.
+
+**Response (201 Created):**
 ```json
 {
   "success": true,
+  "message": "Registrasi berhasil.",
   "data": {
-    "user_id": "uuid",
-    "email": "user@example.com"
+    "user_id": "uuid-prisma",
+    "email": "user@example.com",
+    "username": "johndoe",
+    "nama_lengkap": "John Doe",
+    "role": "Requester"
   }
 }
 ```
 
-**Side effects:**
-- Membuat entry di `auth.users` (Supabase managed)
-- Trigger membuat row di `profiles` dengan `total_points: 100` (bonus registrasi)
+**Response Error (400 / 409 / 429):**
+- `400 Bad Request`: Data tidak valid (misal email temp, password kurang dari 6 char, format username salah).
+- `409 Conflict`: Username atau email sudah terdaftar.
+- `429 Too Many Requests`: Melebihi rate limit.
 
 ---
 
@@ -48,58 +63,89 @@ Register user baru.
 
 Login via email + password.
 
+**Rate Limit:** 10 requests per 15 menit per IP.
+
 **Request Body:**
 ```json
 {
   "email": "user@example.com",
-  "password": "securePassword123"
+  "password": "password123"
 }
 ```
 
-**Response (200):**
+**Response (200 OK):**
 ```json
 {
   "success": true,
   "data": {
-    "session": { "access_token": "...", "refresh_token": "..." },
-    "user": { "id": "uuid", "email": "..." }
+    "session": {
+      "access_token": "ey...",
+      "refresh_token": "...",
+      "expires_at": 1785155159
+    },
+    "user": {
+      "id": "uuid-prisma",
+      "email": "user@example.com",
+      "username": "johndoe",
+      "nama_lengkap": "John Doe",
+      "avatar_url": null,
+      "bio": null,
+      "rating_avg": 0.0,
+      "total_completed": 0,
+      "total_balance": 0.0,
+      "role": "Requester"
+    }
   }
 }
 ```
+
+**Response Error (401 / 429):**
+- `401 Unauthorized`: `"Email atau password salah."` (sengaja generik untuk mencegah user enumeration).
 
 ---
 
 ### POST `/api/auth/logout`
 
-Logout, invalidate session.
+Logout, invalidate Supabase session cookie.
 
-**Response (200):**
+**Response (200 OK):**
 ```json
-{ "success": true }
+{
+  "success": true,
+  "message": "Berhasil logout."
+}
 ```
 
 ---
 
 ### GET `/api/auth/me`
 
-🔒 **Authenticated** — Get current user profile.
+🔒 **Authenticated** — Get profile user yang sedang login.
 
-**Response (200):**
+**Rate Limit:** 30 requests per 1 menit per IP.
+
+**Response (200 OK):**
 ```json
 {
   "success": true,
   "data": {
-    "id": "uuid",
+    "id": "uuid-prisma",
     "email": "user@example.com",
-    "full_name": "John Doe",
-    "avatar_url": "https://...",
-    "bio": "Mahasiswa Teknik Informatika",
-    "university": "Universitas Diponegoro",
-    "skills": ["fotografi", "desain_grafis"],
-    "reputation": 4.75,
-    "total_reviews": 12,
-    "total_points": 250,
-    "role_pref": "both"
+    "username": "johndoe",
+    "nama_lengkap": "John Doe",
+    "avatar_url": null,
+    "bio": null,
+    "pendidikan_terakhir": null,
+    "alamat": null,
+    "no_telpon": null,
+    "rating_avg": 0.0,
+    "total_completed": 0,
+    "total_balance": 0.0,
+    "role": {
+      "id_role": "uuid",
+      "nama_role": "Requester"
+    },
+    "skills": []
   }
 }
 ```
