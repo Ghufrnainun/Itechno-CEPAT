@@ -9,12 +9,11 @@ Dokumen ini berisi panduan untuk melakukan pengujian (*testing*) pada *endpoint*
 1. **Unduh dan Pasang Bruno**  
    Unduh Bruno dari situs resminya [usebruno.com](https://www.usebruno.com/downloads) dan lakukan instalasi.
 
-2. **Buat Koleksi Baru (Collection)**
+2. **Buka Koleksi Bawaan (Open Collection)**
    - Buka aplikasi Bruno.
-   - Klik tombol **"Create Collection"**.
-   - Beri nama koleksi, misalnya `CEPAT API`.
-   - Pilih folder di komputer Anda (misalnya di dalam folder proyek `Itechno/bruno-collection` agar tes API bisa tersimpan rapi dan masuk ke Git).
-   - Klik **Create**.
+   - Klik tombol **"Open Collection"**.
+   - Arahkan ke folder proyek Anda dan pilih folder `docs/api-cepat`.
+   - Bruno akan otomatis memuat seluruh pengaturan API, termasuk konfigurasi Environment dan *Script* cerdas yang akan otomatis menangkap token saat Anda Login.
 
 3. **Pastikan Server Lokal Berjalan**
    Sebelum melakukan *testing*, pastikan *backend* Next.js Anda sedang menyala:

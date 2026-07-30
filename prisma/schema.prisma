@@ -83,6 +83,7 @@ model Task {
   judul_tugas     String
   deskripsi_tugas String
   estimasi_waktu  String?
+  kompensasi      Float     @default(0.0)
   created_at      DateTime  @default(now())
   completed_at    DateTime?
   accepted_at     DateTime?
