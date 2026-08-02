@@ -183,6 +183,19 @@ The design system uses a **Soft (0.25rem)** rounding strategy. This provides eno
 - **Secondary:** White background with Teal border and text.
 - **Ghost:** No background/border, Teal text. Used for "Cancel" or "Back" actions.
 
+### Role Switcher (Dual-Role)
+- **Segmented Control:** Horizontal 2-option control (`[Pekerja] [Pemberi]`) with 4px soft rounding.
+- **Active State:** Solid Teal (#005c55) with White text and subtle shadow.
+- **Indicator:** Sleek vertical indicator pill (`3.5px width`) with soft teal background tint on active sidebar links.
+
+### Auth Pages (Diagonal Split)
+- **Brand Panel:** Dark Teal gradient (`clip-path: polygon(...)`) with grain texture overlay, trust statistics, and SDG 8 indicator.
+- **Form Panel:** Clean, cardless SaaS-style form with inline navigation links.
+
+### Dashboard (Asymmetric Bento)
+- **Grid Layout:** 12-column responsive Bento Grid with varying card spans (Featured Saldo, Rating, Task Selesai, Escrow Holdings).
+- **Map Radar:** Promoted interactive Leaflet map widget with live task counter overlay and 2km radius indicator.
+
 ### Task Cards
 - White background, `#DDE7E1` border.
 - Header contains the Task Title (Outfit) and Distance (JetBrains Mono).
