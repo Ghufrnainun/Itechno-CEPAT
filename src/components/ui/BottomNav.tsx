@@ -12,24 +12,37 @@ export function BottomNav({ role }: BottomNavProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-lowest border-t border-outline-variant flex items-center justify-around z-40 px-sm shadow-md">
+    <nav
+      aria-label="Navigasi Bawah Mobile"
+      className="lg:hidden fixed bottom-0 left-0 right-0 h-16 glass-card border-t border-outline-variant/60 flex items-center justify-around z-40 px-2 shadow-lg"
+    >
       <Link
-        href="/feed"
-        className={`flex flex-col items-center gap-xs text-[10px] font-medium transition-colors ${pathname === "/feed" ? "text-primary" : "text-on-surface-variant"}`}
+        href="/dashboard"
+        aria-label="Dashboard Utama"
+        className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-xl text-[11px] font-medium transition-all ${
+          pathname === "/dashboard"
+            ? "text-primary font-bold scale-105"
+            : "text-on-surface-variant hover:text-on-surface"
+        }`}
       >
         <span
           className="material-symbols-outlined text-[24px]"
-          style={{ fontVariationSettings: pathname === "/feed" ? "'FILL' 1" : "'FILL' 0" }}
+          style={{ fontVariationSettings: pathname === "/dashboard" ? "'FILL' 1" : "'FILL' 0" }}
         >
-          dashboard
+          home
         </span>
-        Feed
+        Home
       </Link>
 
       {role === "requester" ? (
         <Link
           href="/task/new"
-          className={`flex flex-col items-center gap-xs text-[10px] font-medium transition-colors ${pathname === "/task/new" ? "text-primary" : "text-on-surface-variant"}`}
+          aria-label="Post Tugas Baru"
+          className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-xl text-[11px] font-medium transition-all ${
+            pathname === "/task/new"
+              ? "text-primary font-bold scale-105"
+              : "text-on-surface-variant hover:text-on-surface"
+          }`}
         >
           <span
             className="material-symbols-outlined text-[24px]"
@@ -37,12 +50,17 @@ export function BottomNav({ role }: BottomNavProps) {
           >
             add_box
           </span>
-          Post Tugas
+          Post
         </Link>
       ) : (
         <Link
           href="/feed?tab=explore"
-          className={`flex flex-col items-center gap-xs text-[10px] font-medium transition-colors ${pathname.includes("explore") ? "text-primary" : "text-on-surface-variant"}`}
+          aria-label="Cari Tugas"
+          className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-xl text-[11px] font-medium transition-all ${
+            pathname.includes("explore")
+              ? "text-primary font-bold scale-105"
+              : "text-on-surface-variant hover:text-on-surface"
+          }`}
         >
           <span
             className="material-symbols-outlined text-[24px]"
@@ -56,7 +74,12 @@ export function BottomNav({ role }: BottomNavProps) {
 
       <Link
         href="/notifications"
-        className={`flex flex-col items-center gap-xs text-[10px] font-medium relative transition-colors ${pathname === "/notifications" ? "text-primary" : "text-on-surface-variant"}`}
+        aria-label="Notifikasi"
+        className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-xl text-[11px] font-medium relative transition-all ${
+          pathname === "/notifications"
+            ? "text-primary font-bold scale-105"
+            : "text-on-surface-variant hover:text-on-surface"
+        }`}
       >
         <span
           className="material-symbols-outlined text-[24px]"
@@ -65,14 +88,19 @@ export function BottomNav({ role }: BottomNavProps) {
           notifications
         </span>
         Notif
-        <span className="absolute -top-1 right-2 w-4 h-4 bg-primary text-white text-[9px] font-bold flex items-center justify-center rounded-full">
+        <span className="absolute top-1 right-2 w-4 h-4 bg-primary text-on-primary text-[9px] font-bold flex items-center justify-center rounded-full shadow-xs">
           3
         </span>
       </Link>
 
       <Link
         href="/wallet"
-        className={`flex flex-col items-center gap-xs text-[10px] font-medium transition-colors ${pathname === "/wallet" ? "text-primary" : "text-on-surface-variant"}`}
+        aria-label="Dompet Poin"
+        className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-xl text-[11px] font-medium transition-all ${
+          pathname === "/wallet"
+            ? "text-primary font-bold scale-105"
+            : "text-on-surface-variant hover:text-on-surface"
+        }`}
       >
         <span
           className="material-symbols-outlined text-[24px]"
@@ -85,7 +113,12 @@ export function BottomNav({ role }: BottomNavProps) {
 
       <Link
         href="/profile/budi"
-        className={`flex flex-col items-center gap-xs text-[10px] font-medium transition-colors ${pathname.includes("/profile/") ? "text-primary" : "text-on-surface-variant"}`}
+        aria-label="Profil Saya"
+        className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-xl text-[11px] font-medium transition-all ${
+          pathname.includes("/profile/")
+            ? "text-primary font-bold scale-105"
+            : "text-on-surface-variant hover:text-on-surface"
+        }`}
       >
         <span
           className="material-symbols-outlined text-[24px]"

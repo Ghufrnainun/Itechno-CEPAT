@@ -46,7 +46,7 @@ function hasNoHtmlTags(value: string): boolean {
 // ============================================================
 
 const emailField = z
-  .string({ required_error: 'Email wajib diisi.' })
+  .string({ message: 'Email wajib diisi.' })
   .trim()
   .toLowerCase()
   .email('Format email tidak valid.')
@@ -54,7 +54,7 @@ const emailField = z
   .refine(isNotTempEmail, 'Email temporer/disposable tidak diizinkan. Gunakan email asli.')
 
 const passwordField = z
-  .string({ required_error: 'Password wajib diisi.' })
+  .string({ message: 'Password wajib diisi.' })
   .min(6, 'Password minimal 6 karakter.')
   .max(72, 'Password maksimal 72 karakter.')
   // TODO: Perketat sebelum launch! Uncomment di bawah:
@@ -63,7 +63,7 @@ const passwordField = z
   // .regex(/[0-9]/, 'Password harus mengandung angka.')
 
 const usernameField = z
-  .string({ required_error: 'Username wajib diisi.' })
+  .string({ message: 'Username wajib diisi.' })
   .trim()
   .toLowerCase()
   .min(3, 'Username minimal 3 karakter.')
@@ -73,7 +73,7 @@ const usernameField = z
   .refine((val) => !/[_.]{2,}/.test(val), 'Username tidak boleh memiliki titik/underscore berurutan.')
 
 const namaLengkapField = z
-  .string({ required_error: 'Nama lengkap wajib diisi.' })
+  .string({ message: 'Nama lengkap wajib diisi.' })
   .trim()
   .min(2, 'Nama lengkap minimal 2 karakter.')
   .max(100, 'Nama lengkap maksimal 100 karakter.')
@@ -94,8 +94,8 @@ export const registerSchema = z.object({
 
 /** Schema untuk POST /api/auth/login */
 export const loginSchema = z.object({
-  email: z.string({ required_error: 'Email wajib diisi.' }).trim().toLowerCase().email('Format email tidak valid.'),
-  password: z.string({ required_error: 'Password wajib diisi.' }).min(1, 'Password wajib diisi.'),
+  email: z.string({ message: 'Email wajib diisi.' }).trim().toLowerCase().email('Format email tidak valid.'),
+  password: z.string({ message: 'Password wajib diisi.' }).min(1, 'Password wajib diisi.'),
 })
 
 // ============================================================

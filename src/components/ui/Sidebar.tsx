@@ -21,69 +21,93 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
   return (
     <aside
       id="sidebar"
-      className="hidden lg:flex flex-col h-screen py-lg px-md gap-lg border-r border-outline-variant bg-surface-container-lowest w-72 sticky top-0 shrink-0"
+      aria-label="Navigasi Utama Aplikasi"
+      className="hidden lg:flex flex-col h-screen py-6 px-4 gap-6 border-r border-outline-variant/60 bg-surface-container-lowest w-72 sticky top-0 shrink-0 shadow-sm overflow-x-hidden"
     >
-      {/* Brand / Header — logo.svg */}
-      <div className="flex items-center gap-sm px-xs mb-md">
-        <Link href="/dashboard" aria-label="Kembali ke dashboard" className="flex items-center gap-sm">
+      {/* Brand / Header */}
+      <div className="flex items-center gap-3 px-2 mb-2">
+        <Link
+          href="/dashboard"
+          aria-label="Kembali ke dashboard CEPAT"
+          className="flex items-center gap-3 group"
+        >
           <Image
             src="/logo.svg"
-            alt="CEPAT"
-            width={32}
-            height={32}
-            className="rounded-lg shrink-0"
+            alt="CEPAT Logo"
+            width={36}
+            height={36}
+            className="rounded-xl shrink-0 transition-transform group-hover:scale-105"
             style={{ objectFit: "contain" }}
           />
-          <span className="font-headline-md text-headline-md text-primary font-bold tracking-tight">
+          <span className="font-headline font-bold text-xl text-primary tracking-tight">
             CEPAT
           </span>
         </Link>
       </div>
 
       {/* User Profile Card */}
-      <div className="flex flex-col gap-sm px-md py-sm mb-sm bg-surface-container-low rounded-xl border border-outline-variant/30">
-        <div className="flex items-center gap-md">
-          <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-sm shrink-0">
+      <div className="flex flex-col gap-3 p-3.5 brand-card-teal rounded-xl shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-sm shrink-0 shadow-xs border border-primary-container">
             BS
           </div>
           <div className="flex flex-col overflow-hidden">
-            <span className="font-label-md text-label-md font-semibold text-on-surface truncate flex items-center gap-xs">
+            <span className="font-sans font-bold text-sm text-on-surface truncate flex items-center gap-1">
               Budi Santoso
               <span
-                className="material-symbols-outlined text-primary-container text-[14px]"
+                className="material-symbols-outlined text-primary text-[15px]"
                 style={{ fontVariationSettings: "'FILL' 1" }}
               >
                 verified
               </span>
             </span>
-            <span
-              className="font-label-sm text-label-sm text-on-surface-variant truncate"
-              style={{ fontFamily: "'JetBrains Mono'" }}
-            >
+            <span className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-primary">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>
               Saldo: 250k pts
             </span>
           </div>
         </div>
 
-        {/* Role switcher */}
-        <button
-          onClick={onRoleToggle}
-          className="mt-xs w-full py-1 px-2 text-xs font-semibold rounded-lg bg-primary-container/10 hover:bg-primary-container/20 text-primary-container flex items-center justify-center gap-xs cursor-pointer transition-colors"
-        >
-          <span className="material-symbols-outlined text-[14px]">swap_horiz</span>
-          Mode: {role === "worker" ? "Pekerja" : "Pemberi Kerja"}
-        </button>
+        {/* Segmented Control Role Switcher */}
+        <div className="flex bg-surface-container-high p-0.5 rounded border border-outline-variant/40">
+          <button
+            type="button"
+            onClick={() => role !== "worker" && onRoleToggle()}
+            aria-label="Mode Pekerja"
+            className={`flex-1 py-1.5 px-2 text-xs font-bold rounded transition-all flex items-center justify-center gap-1 cursor-pointer ${
+              role === "worker"
+                ? "bg-primary text-on-primary shadow-xs"
+                : "text-on-surface-variant hover:text-on-surface"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[14px]">work</span>
+            Pekerja
+          </button>
+          <button
+            type="button"
+            onClick={() => role !== "requester" && onRoleToggle()}
+            aria-label="Mode Pemberi Kerja"
+            className={`flex-1 py-1.5 px-2 text-xs font-bold rounded transition-all flex items-center justify-center gap-1 cursor-pointer ${
+              role === "requester"
+                ? "bg-primary text-on-primary shadow-xs"
+                : "text-on-surface-variant hover:text-on-surface"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[14px]">add_task</span>
+            Pemberi
+          </button>
+        </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 flex flex-col gap-xs overflow-y-auto custom-scrollbar">
-        {/* Dashboard — new */}
+      {/* Navigation Links */}
+      <nav className="flex-1 flex flex-col gap-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
         <Link
           href="/dashboard"
+          aria-current={pathname === "/dashboard" ? "page" : undefined}
           className={`sidebar-link ${pathname === "/dashboard" ? "active" : ""}`}
         >
           <span
-            className="material-symbols-outlined"
+            className="material-symbols-outlined text-[20px]"
             style={{ fontVariationSettings: pathname === "/dashboard" ? "'FILL' 1" : "'FILL' 0" }}
           >
             home
@@ -95,10 +119,11 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
           <>
             <Link
               href="/cari-tugas"
+              aria-current={pathname === "/cari-tugas" ? "page" : undefined}
               className={`sidebar-link ${pathname === "/cari-tugas" ? "active" : ""}`}
             >
               <span
-                className="material-symbols-outlined"
+                className="material-symbols-outlined text-[20px]"
                 style={{ fontVariationSettings: pathname === "/cari-tugas" ? "'FILL' 1" : "'FILL' 0" }}
               >
                 explore
@@ -108,10 +133,11 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
 
             <Link
               href="/feed"
+              aria-current={pathname === "/feed" ? "page" : undefined}
               className={`sidebar-link ${pathname === "/feed" ? "active" : ""}`}
             >
               <span
-                className="material-symbols-outlined"
+                className="material-symbols-outlined text-[20px]"
                 style={{ fontVariationSettings: pathname === "/feed" ? "'FILL' 1" : "'FILL' 0" }}
               >
                 list_alt
@@ -121,10 +147,11 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
 
             <Link
               href="/chat"
+              aria-current={pathname === "/chat" ? "page" : undefined}
               className={`sidebar-link ${pathname === "/chat" ? "active" : ""}`}
             >
               <span
-                className="material-symbols-outlined"
+                className="material-symbols-outlined text-[20px]"
                 style={{ fontVariationSettings: pathname === "/chat" ? "'FILL' 1" : "'FILL' 0" }}
               >
                 chat
@@ -136,10 +163,11 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
           <>
             <Link
               href="/task/new"
+              aria-current={pathname === "/task/new" ? "page" : undefined}
               className={`sidebar-link ${pathname === "/task/new" ? "active" : ""}`}
             >
               <span
-                className="material-symbols-outlined"
+                className="material-symbols-outlined text-[20px]"
                 style={{ fontVariationSettings: pathname === "/task/new" ? "'FILL' 1" : "'FILL' 0" }}
               >
                 add_box
@@ -149,10 +177,11 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
 
             <Link
               href="/feed"
+              aria-current={pathname === "/feed" ? "page" : undefined}
               className={`sidebar-link ${pathname === "/feed" ? "active" : ""}`}
             >
               <span
-                className="material-symbols-outlined"
+                className="material-symbols-outlined text-[20px]"
                 style={{ fontVariationSettings: pathname === "/feed" ? "'FILL' 1" : "'FILL' 0" }}
               >
                 assignment_ind
@@ -162,10 +191,11 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
 
             <Link
               href="/chat"
+              aria-current={pathname === "/chat" ? "page" : undefined}
               className={`sidebar-link ${pathname === "/chat" ? "active" : ""}`}
             >
               <span
-                className="material-symbols-outlined"
+                className="material-symbols-outlined text-[20px]"
                 style={{ fontVariationSettings: pathname === "/chat" ? "'FILL' 1" : "'FILL' 0" }}
               >
                 chat
@@ -177,28 +207,30 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
 
         <Link
           href="/notifications"
+          aria-current={pathname === "/notifications" ? "page" : undefined}
           className={`sidebar-link justify-between ${pathname === "/notifications" ? "active" : ""}`}
         >
-          <div className="flex items-center gap-md">
+          <div className="flex items-center gap-3">
             <span
-              className="material-symbols-outlined"
+              className="material-symbols-outlined text-[20px]"
               style={{ fontVariationSettings: pathname === "/notifications" ? "'FILL' 1" : "'FILL' 0" }}
             >
               notifications
             </span>
             Notifikasi
           </div>
-          <span className="bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+          <span className="bg-primary text-on-primary text-[11px] font-bold px-2 py-0.5 rounded-full shadow-xs">
             3
           </span>
         </Link>
 
         <Link
           href="/wallet"
+          aria-current={pathname === "/wallet" ? "page" : undefined}
           className={`sidebar-link ${pathname === "/wallet" ? "active" : ""}`}
         >
           <span
-            className="material-symbols-outlined"
+            className="material-symbols-outlined text-[20px]"
             style={{ fontVariationSettings: pathname === "/wallet" ? "'FILL' 1" : "'FILL' 0" }}
           >
             account_balance_wallet
@@ -208,10 +240,11 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
 
         <Link
           href="/profile/budi"
+          aria-current={pathname.includes("/profile/") ? "page" : undefined}
           className={`sidebar-link ${pathname.includes("/profile/") ? "active" : ""}`}
         >
           <span
-            className="material-symbols-outlined"
+            className="material-symbols-outlined text-[20px]"
             style={{ fontVariationSettings: pathname.includes("/profile/") ? "'FILL' 1" : "'FILL' 0" }}
           >
             person
@@ -220,30 +253,16 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
         </Link>
       </nav>
 
-      {/* CTA + Footer */}
-      <div className="flex flex-col gap-sm pt-md border-t border-outline-variant/50">
-        {role === "requester" && (
-          <Link
-            href="/task/new"
-            className="w-full bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-bold py-3 rounded-lg flex items-center justify-center gap-sm transition-colors shadow-sm"
-          >
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            Post Tugas Baru
-          </Link>
-        )}
-        <div className="flex flex-col gap-xs">
-          <a href="#" className="sidebar-link text-on-surface-variant">
-            <span className="material-symbols-outlined">help</span>
-            Bantuan
-          </a>
-          <button
-            onClick={handleLogout}
-            className="sidebar-link w-full text-left text-error hover:bg-error-container/20"
-          >
-            <span className="material-symbols-outlined">logout</span>
-            Keluar
-          </button>
-        </div>
+      {/* Footer */}
+      <div className="flex flex-col gap-2 pt-4 border-t border-outline-variant/50">
+        <button
+          onClick={handleLogout}
+          aria-label="Keluar dari akun"
+          className="sidebar-link w-full text-left text-error hover:bg-error-container/20 rounded-xl"
+        >
+          <span className="material-symbols-outlined text-[20px]">logout</span>
+          Keluar
+        </button>
       </div>
     </aside>
   );
