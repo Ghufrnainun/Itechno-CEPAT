@@ -72,6 +72,9 @@ model User {
   task_applications TaskApplicants[] @relation("WorkerApplications")
   reviews_given     Reviews[]        @relation("RaterReviews")
   reviews_received  Reviews[]        @relation("RateeReviews")
+  chat_rooms_as_requester ChatRoom[] @relation("RequesterChats")
+  chat_rooms_as_worker    ChatRoom[] @relation("WorkerChats")
+  messages_sent           Message[]  @relation("UserMessages")
 }
 
 model Task {
@@ -81,6 +84,7 @@ model Task {
   judul_tugas     String
   deskripsi_tugas String
   estimasi_waktu  String?
+  kompensasi      Float     @default(0.0)
   created_at      DateTime  @default(now())
   completed_at    DateTime?
   accepted_at     DateTime?
@@ -94,6 +98,7 @@ model Task {
   requirements TaskRequirements[]
   applicants   TaskApplicants[]
   reviews      Reviews[]
+  chat_rooms   ChatRoom[]
 }
 
 // Junctions & Sub-entities
@@ -170,4 +175,32 @@ model Reviews {
   task  Task @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)
   rater User @relation("RaterReviews", fields: [id_rater], references: [id_user], onDelete: Cascade)
   ratee User @relation("RateeReviews", fields: [id_ratee], references: [id_user], onDelete: Cascade)
+}
+
+model ChatRoom {
+  id_chat_room String   @id @default(uuid())
+  id_tasks     String
+  id_requester String
+  id_worker    String
+  created_at   DateTime @default(now())
+
+  task      Task      @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)
+  requester User      @relation("RequesterChats", fields: [id_requester], references: [id_user], onDelete: Cascade)
+  worker    User      @relation("WorkerChats", fields: [id_worker], references: [id_user], onDelete: Cascade)
+  messages  Message[]
+
+  @@unique([id_tasks, id_worker])
+}
+
+model Message {
+  id_message   String   @id @default(uuid())
+  id_chat_room String
+  id_sender    String
+  teks_pesan   String?
+  image_url    String?
+  is_read      Boolean  @default(false)
+  created_at   DateTime @default(now())
+
+  chat_room ChatRoom @relation(fields: [id_chat_room], references: [id_chat_room], onDelete: Cascade)
+  sender    User     @relation("UserMessages", fields: [id_sender], references: [id_user], onDelete: Cascade)
 }

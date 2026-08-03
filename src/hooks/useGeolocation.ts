@@ -15,10 +15,6 @@ export function useGeolocation() {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // For development/mock purposes, we bypass the real geolocation
-    // to ensure the mock tasks in Yogyakarta are always visible.
-    setLoading(false);
-    /*
     if (!navigator.geolocation) {
       setError("Geolocation is not supported by your browser");
       setLoading(false);
@@ -39,7 +35,6 @@ export function useGeolocation() {
       },
       { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
     );
-    */
   }, []);
 
   return { coords, setCoords, error, loading };

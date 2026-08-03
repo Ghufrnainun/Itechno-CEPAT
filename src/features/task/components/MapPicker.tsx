@@ -26,6 +26,7 @@ export default function MapPicker({
   const leafletMap = useRef<L.Map | null>(null);
   const circleMarker = useRef<L.Circle | null>(null);
   const clickMarker = useRef<L.Marker | null>(null);
+  const userMarker = useRef<L.CircleMarker | null>(null);
   const taskMarkers = useRef<{ [id: string]: L.Marker }>({});
 
   useEffect(() => {
@@ -61,15 +62,13 @@ export default function MapPicker({
     }).addTo(leafletMap.current);
 
     // Draw user location marker
-    L.circleMarker([center.latitude, center.longitude], {
+    userMarker.current = L.circleMarker([center.latitude, center.longitude], {
       radius: 8,
       color: "#ffffff",
       fillColor: "#0F766E",
       fillOpacity: 1,
       weight: 2,
-    })
-      .addTo(leafletMap.current)
-      .bindPopup("Lokasi Anda saat ini");
+    }).addTo(leafletMap.current).bindPopup("Lokasi Anda saat ini");
 
     // Add map click listener for selecting location (Requester form mode)
     if (onLocationSelect) {
@@ -99,6 +98,22 @@ export default function MapPicker({
       }
     };
   }, []);
+
+  // Update map view and user markers when center or radius changes
+  useEffect(() => {
+    if (leafletMap.current) {
+      leafletMap.current.setView([center.latitude, center.longitude]);
+      
+      if (circleMarker.current) {
+        circleMarker.current.setLatLng([center.latitude, center.longitude]);
+        circleMarker.current.setRadius(radiusKm * 1000);
+      }
+      
+      if (userMarker.current) {
+        userMarker.current.setLatLng([center.latitude, center.longitude]);
+      }
+    }
+  }, [center.latitude, center.longitude, radiusKm]);
 
   // Update center, circle and task markers
   useEffect(() => {

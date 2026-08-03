@@ -63,9 +63,9 @@ export function getDistance(lat1: number, lon1: number, lat2: number, lon2: numb
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const d = R * c; // Distance in km
   return d;
@@ -74,14 +74,43 @@ export function getDistance(lat1: number, lon1: number, lat2: number, lon2: numb
 export async function getNearbyTasks(
   lat: number,
   lng: number,
-  radiusKm: number = 2
+  radiusKm: number = 2,
+  query?: string
 ): Promise<(Task & { distance: number })[]> {
-  // Simulate PostGIS ST_DWithin query in client-side mock
-  // TODO: Implement actual Supabase RPC get_nearby_tasks using PostGIS ST_DWithin
-  const tasksWithDistance = MOCK_TASKS.map((task) => {
-    const distance = getDistance(lat, lng, task.latitude, task.longitude);
-    return { ...task, distance };
-  }).filter((task) => task.distance <= radiusKm);
+  try {
+    const url = new URL('/api/tasks/nearby', window.location.origin);
+    url.searchParams.append('lat', lat.toString());
+    url.searchParams.append('lng', lng.toString());
+    url.searchParams.append('radius', (radiusKm * 1000).toString()); // convert km to meters
+    if (query) {
+      url.searchParams.append('q', query);
+    }
 
-  return tasksWithDistance.sort((a, b) => a.distance - b.distance);
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status === 401) {
+      // User is not logged in, return empty array gracefully
+      return [];
+    }
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch nearby tasks');
+    }
+
+    const json = await response.json();
+
+    if (json.success && json.data) {
+      return json.data;
+    }
+
+    return [];
+  } catch (error) {
+    console.error('Error fetching nearby tasks:', error);
+    return [];
+  }
 }
