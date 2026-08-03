@@ -37,9 +37,9 @@ export default function Home() {
              <span className="text-sm text-on-surface-variant">© 2026 ITechno Cup.</span>
           </div>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-4 md:mt-0">
-            <a href="#" className="text-sm text-on-surface-variant hover:text-primary">Kebijakan Privasi</a>
-            <a href="#" className="text-sm text-on-surface-variant hover:text-primary">Syarat & Ketentuan</a>
-            <a href="#" className="text-sm text-on-surface-variant hover:text-primary">Bantuan</a>
+            <a href="/kebijakan-privasi" className="text-sm text-on-surface-variant hover:text-primary">Kebijakan Privasi</a>
+            <a href="/syarat-ketentuan" className="text-sm text-on-surface-variant hover:text-primary">Syarat &amp; Ketentuan</a>
+            <a href="/bantuan" className="text-sm text-on-surface-variant hover:text-primary">Bantuan</a>
           </div>
         </div>
       </footer>

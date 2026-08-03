@@ -6,10 +6,10 @@ export interface Coordinates {
 }
 
 export function useGeolocation() {
-  // Default coordinates (UGM, Yogyakarta)
+  // Default coordinates (Simpang Lima, Semarang)
   const [coords, setCoords] = useState<Coordinates>({
-    latitude: -7.774532,
-    longitude: 110.372134,
+    latitude: -6.990284,
+    longitude: 110.411332,
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);

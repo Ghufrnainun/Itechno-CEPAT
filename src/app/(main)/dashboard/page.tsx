@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { useCurrentRole } from "@/app/(main)/layout";
@@ -19,10 +19,15 @@ export default function DashboardPage() {
   const [featuredTask, setFeaturedTask] = useState<any | null>(null); // Rich task for featured card
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"activity" | "recommendations">("recommendations");
+  const hasLoadedOnce = useRef(false);
 
   useEffect(() => {
     async function loadData() {
-      setLoading(true);
+      // Only show full loading skeleton on first load.
+      // Subsequent geo-updates silently refresh in the background.
+      if (!hasLoadedOnce.current) {
+        setLoading(true);
+      }
       try {
         // 1. Fetch lightweight tasks for the mini-map
         const mapUrl = new URL('/api/tasks/nearby', window.location.origin);
@@ -53,6 +58,7 @@ export default function DashboardPage() {
       } catch (err) {
         console.error("Dashboard data load error:", err);
       } finally {
+        hasLoadedOnce.current = true;
         setLoading(false);
       }
     }

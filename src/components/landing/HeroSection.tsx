@@ -129,7 +129,7 @@ export function HeroSection() {
                   >
                     location_on
                   </span>
-                  <span className="text-sm font-semibold text-on-surface tracking-tight">Yogyakarta, ID</span>
+                  <span className="text-sm font-semibold text-on-surface tracking-tight">Semarang, ID</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-on-surface-variant font-mono">Area Kampus</span>
