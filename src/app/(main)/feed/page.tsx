@@ -38,26 +38,20 @@ export default function FeedPage() {
 
   useEffect(() => {
     async function loadTasks() {
-      // Fetch with a large radius since this is the main feed
-      let list = await getFeedTasks(coords.latitude, coords.longitude, 10);
-      
-      // If requester, mock that these are their posted tasks. 
-      // We will add random status to them for filtering.
       if (role === "requester") {
-        list = list.slice(0, 4); // Just show some tasks as their own
-        // add mock status to tasks
-        list[0] = { ...list[0], status: "open" } as any; // Sedang mencari
-        list[1] = { ...list[1], status: "completed" } as any; // Selesai
-        list[2] = { ...list[2], status: "open" } as any; // Sedang mencari
-        list[3] = { ...list[3], status: "completed" } as any; // Selesai
+        // Jika requester nyasar ke /feed, arahkan ke /tugas
+        router.push("/tugas");
+        return;
+      }
+
+      if (activeTab === "feed") {
+        // Fetch with a large radius since this is the main feed
+        let list = await getFeedTasks(coords.latitude, coords.longitude, 10);
         
-        if (sortBy === "open") list = list.filter((t: any) => t.status === "open");
-        if (sortBy === "completed") list = list.filter((t: any) => t.status === "completed");
-      } else {
-        // Search logic for worker
+        // Search
         if (searchQuery) {
           const query = searchQuery.toLowerCase();
-          list = list.filter(t => t.title.toLowerCase().includes(query) || t.description.toLowerCase().includes(query));
+          list = list.filter((t: any) => t.title.toLowerCase().includes(query) || t.description.toLowerCase().includes(query));
         }
 
         // Filter by category
@@ -78,16 +72,41 @@ export default function FeedPage() {
           // Default: newest or "all"
           list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         }
-      }
 
-      setTasks(list);
+        setTasks(list);
+      } else {
+        // Load Lamaran Saya
+        try {
+          const res = await fetch('/api/users/me/tasks?role=worker');
+          const data = await res.json();
+          if (data.success) {
+            setTasks(data.data.map((t: any) => ({
+              id_task: t.id_tasks,
+              title: t.judul_tugas,
+              description: "", 
+              duration_estimate: t.estimasi_waktu ?? "",
+              compensation: t.kompensasi,
+              status: t.task_status,
+              created_at: t.applied_at,
+              updated_at: t.applied_at,
+              id_requester: t.requester?.id_user ?? "",
+              application_status: t.application_status
+            })));
+          }
+        } catch (e) {
+          console.error("Gagal load history", e);
+        }
+      }
     }
     loadTasks();
-  }, [coords, sortBy, searchQuery, role]);
+  }, [coords, sortBy, searchQuery, role, activeTab, router]);
 
-  const handleApply = (taskId: string) => {
-    setAppliedTaskIds([...appliedTaskIds, taskId]);
-    showToast("Berhasil melamar tugas ini!");
+  const handleApply = async (taskId: string) => {
+    // Already handled in TaskInspector using the real API, 
+    // here we just close the inspector and refresh feed
+    setSelectedTask(null);
+    showToast("Lamaran berhasil dikirim!");
+    // Trigger refresh by updating some state if needed, or just let it be
   };
 
   return (

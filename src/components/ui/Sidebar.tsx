@@ -129,6 +129,19 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
             </Link>
 
             <Link
+              href="/history/riwayat"
+              className={`sidebar-link ${pathname === "/history/riwayat" ? "active" : ""}`}
+            >
+              <span
+                className="material-symbols-outlined"
+                style={{ fontVariationSettings: pathname === "/history/riwayat" ? "'FILL' 1" : "'FILL' 0" }}
+              >
+                history
+              </span>
+              Riwayat
+            </Link>
+
+            <Link
               href="/chat"
               className={`sidebar-link ${pathname === "/chat" ? "active" : ""}`}
             >
@@ -157,12 +170,12 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
             </Link>
 
             <Link
-              href="/feed"
-              className={`sidebar-link ${pathname === "/feed" ? "active" : ""}`}
+              href="/tugas"
+              className={`sidebar-link ${pathname === "/tugas" ? "active" : ""}`}
             >
               <span
                 className="material-symbols-outlined"
-                style={{ fontVariationSettings: pathname === "/feed" ? "'FILL' 1" : "'FILL' 0" }}
+                style={{ fontVariationSettings: pathname === "/tugas" ? "'FILL' 1" : "'FILL' 0" }}
               >
                 assignment_ind
               </span>

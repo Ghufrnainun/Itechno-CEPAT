@@ -93,8 +93,9 @@ export function useNotifications() {
 
       if (!isMounted) return;
 
+      const uniqueChannelName = `user-notifications-${user.id}-${Math.random().toString(36).substring(2, 9)}`;
       channel = supabase
-        .channel(channelName)
+        .channel(uniqueChannelName)
         .on(
           "postgres_changes",
           {

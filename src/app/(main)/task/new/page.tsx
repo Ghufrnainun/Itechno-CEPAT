@@ -30,7 +30,7 @@ export default function NewTaskPage() {
     setLng(selectedLng);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!lat || !lng) {
@@ -39,11 +39,35 @@ export default function NewTaskPage() {
     }
 
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          judul_tugas: title,
+          deskripsi_tugas: description,
+          kategori: category,
+          estimasi_waktu: duration,
+          kompensasi: parseFloat(compensation),
+          latitude: lat,
+          longitude: lng,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        showToast(data.message || "Gagal membuat task. Coba lagi.");
+        return;
+      }
+
+      showToast("Tugas berhasil diposting! Dana dikunci di Escrow.");
+      router.push(`/task/${data.data.id_tasks}`);
+    } catch {
+      showToast("Terjadi kesalahan jaringan. Coba lagi.");
+    } finally {
       setLoading(false);
-      showToast("Tugas berhasil diposting! Saldo poin Anda dikunci di Escrow.");
-      router.push("/feed");
-    }, 1000);
+    }
   };
 
   return (
