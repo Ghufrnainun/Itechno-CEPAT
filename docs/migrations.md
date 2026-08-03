@@ -1,29 +1,29 @@
-# Database Architecture and Migrations Guide
+# Panduan Arsitektur Database dan Migrasi
 
-## Overview
+## Ringkasan
 
-The CEPAT (Cari Entry Pekerjaan Area Terdekat) backend relies on a hybrid database management strategy. We utilize **Prisma ORM** for schema definition and migrations, coupled with **Supabase** for Authentication and Row Level Security (RLS). 
+Backend CEPAT (Cari Entry Pekerjaan Area Terdekat) menggunakan strategi manajemen *database hybrid*. Kita memanfaatkan **Prisma ORM** untuk mendefinisikan skema dan migrasi, yang dipadukan dengan **Supabase** untuk Autentikasi dan *Row Level Security* (RLS).
 
-This document outlines the setup, architecture, and deployment procedures for our database layer.
+Dokumen ini menjelaskan tentang pengaturan, arsitektur, dan prosedur *deployment* untuk lapisan *database* kita.
 
-## 1. Architecture Strategy
+## 1. Strategi Arsitektur
 
-We separate concerns between Prisma and Supabase to maximize development efficiency and security:
+Kita memisahkan peran antara Prisma dan Supabase untuk memaksimalkan efisiensi pengembangan dan keamanan:
 
-- **Prisma (`prisma/schema.prisma`)**: Acts as the single source of truth for the `public` schema. It defines all tables, columns, constraints, and relationships. 
-- **Supabase Auth (`auth.users`)**: Manages user credentials securely. The `public.User` table relies on an `auth_id` UUID column mapped to Supabase Auth instead of storing raw passwords.
-- **Supabase SQL Migrations (`supabase/migrations/`)**: Contains pure SQL scripts for advanced PostgreSQL features that Prisma does not natively manage, specifically Row Level Security (RLS) policies and PostGIS extensions.
+- **Prisma (`prisma/schema.prisma`)**: Bertindak sebagai sumber utama (single source of truth) untuk skema `public`. Ini mendefinisikan semua tabel, kolom, constraint, dan relasi.
+- **Supabase Auth (`auth.users`)**: Mengelola kredensial *user* dengan aman. Tabel `public.User` terhubung menggunakan kolom UUID `auth_id` yang dipetakan ke Supabase Auth, sehingga kita tidak perlu menyimpan *password* mentah.
+- **Supabase SQL Migrations (`supabase/migrations/`)**: Berisi *script* SQL murni untuk fitur-fitur lanjutan PostgreSQL yang tidak dikelola secara bawaan oleh Prisma, khususnya aturan *Row Level Security* (RLS) dan ekstensi PostGIS.
 
-## 2. Security and Row Level Security (RLS)
+## 2. Keamanan dan Row Level Security (RLS)
 
-All tables strictly enforce Row Level Security. Direct database mutations from the client side are highly restricted.
-- **User Verification**: A helper function maps the Supabase JWT `auth.uid()` to the internal `User.id_user`.
-- **Granular Access**: Users can only mutate their own records (e.g., Profiles, Tasks, Skills).
-- **Escrow Transactions**: Financial transactions (`Transactions` table) reject direct insertion. They are securely handled via internal backend functions/triggers.
+Semua tabel wajib menerapkan *Row Level Security*. Modifikasi *database* secara langsung dari sisi klien sangat dibatasi.
+- **Verifikasi User**: Terdapat fungsi pembantu (*helper*) yang memetakan JWT Supabase `auth.uid()` ke `User.id_user` internal kita.
+- **Akses Granular**: User hanya bisa memodifikasi datanya sendiri (misalnya: Profil, Tugas, Keahlian).
+- **Transaksi Escrow**: Transaksi keuangan (Tabel `Transactions`) menolak penyisipan data (insert) secara langsung. Transaksi ini ditangani dengan aman melalui fungsi/trigger internal *backend*.
 
-## 3. Local Development Setup
+## 3. Pengaturan Development Lokal
 
-To initialize the database layer locally, execute the following steps:
+Untuk menginisialisasi lapisan *database* secara lokal, jalankan langkah-langkah berikut:
 
 1. **Install Dependencies**:
    ```bash
@@ -31,28 +31,28 @@ To initialize the database layer locally, execute the following steps:
    ```
 
 2. **Environment Variables**:
-   Ensure you have a `.env` file at the project root with the correct database credentials:
+   Pastikan Anda memiliki file `.env` di *root* proyek dengan kredensial *database* yang benar:
    ```env
    DATABASE_URL="postgresql://[user]:[password]@[host]:6543/postgres?pgbouncer=true"
    DIRECT_URL="postgresql://[user]:[password]@[host]:5432/postgres"
    ```
 
 3. **Apply Prisma Schema**:
-   Synchronize your local Prisma client and apply the baseline schema structure:
+   Sinkronisasikan klien Prisma lokal Anda dan terapkan struktur skema dasar:
    ```bash
    npx prisma migrate dev
    ```
-   *(Note: This applies the schema up to the latest migration, including the secure `auth_id` mapping).*
+   *(Catatan: Ini akan menerapkan skema hingga migrasi terbaru, termasuk pemetaan `auth_id` yang aman).*
 
 4. **Apply Supabase Policies**:
-   Apply the advanced RLS policies by executing the raw SQL directly to the database:
+   Terapkan aturan RLS lanjutan dengan mengeksekusi SQL mentah langsung ke *database*:
    ```bash
    npx prisma db execute --file=supabase/migrations/20260729_enable_rls.sql
    ```
 
-## 4. Migration Workflow
+## 4. Alur Kerja Migrasi
 
-When modifying the database schema in the future, adhere to the following workflow:
+Jika ingin mengubah skema *database* di masa depan, ikuti alur kerja berikut:
 
-- **For Table/Column Changes**: Modify `prisma/schema.prisma` and run `npx prisma migrate dev` to generate a Prisma migration.
-- **For Security/Policy Changes**: Do not place RLS logic in Prisma migrations. Instead, modify or create `.sql` scripts in `supabase/migrations/` and apply them manually or via the Supabase CLI.
+- **Untuk Perubahan Tabel/Kolom**: Ubah file `prisma/schema.prisma` dan jalankan `npx prisma migrate dev` untuk membuat migrasi Prisma.
+- **Untuk Perubahan Keamanan/Kebijakan (RLS)**: Jangan masukkan logika RLS ke dalam migrasi Prisma. Sebagai gantinya, ubah atau buat file *script* `.sql` di folder `supabase/migrations/` dan terapkan secara manual atau melalui Supabase CLI.

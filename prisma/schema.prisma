@@ -44,6 +44,14 @@ model SkillsMaster {
   task_requirements TaskRequirements[]
 }
 
+model TaskCategory {
+  id_category   String @id @default(uuid())
+  nama_kategori String @unique
+  icon          String?
+
+  tasks         Task[]
+}
+
 // Main Entities
 model User {
   id_user             String  @id @default(uuid())
@@ -90,9 +98,11 @@ model Task {
 
   // PostGIS Spatial column for radius calculation
   lokasi_geo Unsupported("geography(Point, 4326)")?
+  id_category     String
 
   requester   User         @relation("RequesterTasks", fields: [id_requester], references: [id_user], onDelete: Cascade)
   status_task StatusTask   @relation(fields: [id_status_task], references: [id_status_task])
+  kategori    TaskCategory @relation(fields: [id_category], references: [id_category])
   
   requirements TaskRequirements[]
   applicants   TaskApplicants[]
