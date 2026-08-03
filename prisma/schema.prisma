@@ -60,6 +60,7 @@ model User {
   no_telpon           String? // String type to preserve leading zeros
   email               String  @unique
   auth_id             String? @unique @db.Uuid
+  fcm_token           String?
 
   role Role @relation(fields: [id_role], references: [id_role])
 
