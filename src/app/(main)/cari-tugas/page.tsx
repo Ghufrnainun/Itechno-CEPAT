@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getNearbyTasks } from "@/lib/supabase/queries/tasks";
+import { getFeedTasks } from "@/lib/supabase/queries/tasks";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { Task } from "@/types/database";
 import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
@@ -24,7 +24,7 @@ export default function CariTugasPage() {
 
   useEffect(() => {
     async function loadTasks() {
-      const fetched = await getNearbyTasks(coords.latitude, coords.longitude, radius);
+      const fetched = await getFeedTasks(coords.latitude, coords.longitude, radius);
       setTasks(fetched);
       
       // If selectedTask is no longer in radius, maybe clear it? 

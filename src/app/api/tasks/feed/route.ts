@@ -66,6 +66,8 @@ export async function GET(request: NextRequest) {
         t.estimasi_waktu as duration_estimate,
         t.kompensasi as compensation,
         t.created_at,
+        ST_Y(t.lokasi_geo::geometry) as latitude,
+        ST_X(t.lokasi_geo::geometry) as longitude,
         c.nama_kategori as category_name,
         c.icon as category_icon,
         u.nama_lengkap as requester_name,

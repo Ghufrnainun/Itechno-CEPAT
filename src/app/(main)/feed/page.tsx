@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCurrentRole } from "@/app/(main)/layout";
-import { getNearbyTasks, MOCK_TASKS } from "@/lib/supabase/queries/tasks";
+import { getFeedTasks, MOCK_TASKS } from "@/lib/supabase/queries/tasks";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { Task } from "@/types/database";
 import { TaskCard } from "@/features/task/components/TaskCard";
@@ -39,7 +39,7 @@ export default function FeedPage() {
   useEffect(() => {
     async function loadTasks() {
       // Fetch with a large radius since this is the main feed
-      let list = await getNearbyTasks(coords.latitude, coords.longitude, 10);
+      let list = await getFeedTasks(coords.latitude, coords.longitude, 10);
       
       // If requester, mock that these are their posted tasks. 
       // We will add random status to them for filtering.
