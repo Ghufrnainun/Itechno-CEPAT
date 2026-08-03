@@ -19,8 +19,7 @@ export default function CariTugasPage() {
   // Selected task for inspector
   const [selectedTask, setSelectedTask] = useState<(Task & { distance?: number }) | null>(null);
   
-  // Mock applied tasks
-  const [appliedTaskIds, setAppliedTaskIds] = useState<string[]>(["t1", "t2"]);
+  const [appliedTaskIds, setAppliedTaskIds] = useState<string[]>([]);
 
   useEffect(() => {
     async function loadTasks() {
@@ -33,9 +32,39 @@ export default function CariTugasPage() {
     loadTasks();
   }, [coords, radius]);
 
-  const handleApply = (taskId: string) => {
-    setAppliedTaskIds([...appliedTaskIds, taskId]);
-    showToast("Berhasil melamar tugas ini!");
+  useEffect(() => {
+    async function loadAppliedTaskIds() {
+      try {
+        const res = await fetch('/api/tasks/applications/me');
+        const data = await res.json();
+        if (data.success) {
+          setAppliedTaskIds(data.data.map((app: any) => app.id_tasks));
+        }
+      } catch (e) {
+        console.error("Gagal load applied task ids", e);
+      }
+    }
+    loadAppliedTaskIds();
+  }, []);
+
+  const handleApply = async (taskId: string) => {
+    try {
+      const res = await fetch('/api/tasks/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_tasks: taskId })
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        setAppliedTaskIds(prev => [...prev, taskId]);
+        showToast("Berhasil melamar tugas!");
+      } else {
+        showToast(data.message || "Gagal melamar tugas");
+      }
+    } catch (e) {
+      showToast("Terjadi kesalahan jaringan.");
+    }
   };
 
   return (

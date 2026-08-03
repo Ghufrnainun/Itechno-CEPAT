@@ -117,18 +117,18 @@ export async function getNearbyTasks(
 }
 
 export async function getFeedTasks(
-  lat: number,
-  lng: number,
-  radiusKm: number = 5,
+  lat?: number,
+  lng?: number,
+  radiusKm?: number,
   query?: string,
   categoryId?: string,
-  sort: string = 'distance_asc'
+  sort: string = 'newest'
 ): Promise<any[]> {
   try {
     const url = new URL('/api/tasks/feed', window.location.origin);
-    url.searchParams.append('lat', lat.toString());
-    url.searchParams.append('lng', lng.toString());
-    url.searchParams.append('radius', (radiusKm * 1000).toString());
+    if (lat != null) url.searchParams.append('lat', lat.toString());
+    if (lng != null) url.searchParams.append('lng', lng.toString());
+    if (radiusKm != null) url.searchParams.append('radius', (radiusKm * 1000).toString());
     url.searchParams.append('sort', sort);
     if (query) {
       url.searchParams.append('q', query);

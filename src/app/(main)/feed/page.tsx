@@ -21,19 +21,50 @@ export default function FeedPage() {
 
   const [activeTab, setActiveTab] = useState<"feed" | "mytasks">(role === "requester" ? "mytasks" : "feed");
   const [tasks, setTasks] = useState<(Task & { distance: number })[]>([]);
+  const [categories, setCategories] = useState<{id_category: string, nama_kategori: string}[]>([]);
   const [sortBy, setSortBy] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   
   // Selected task for inspector
   const [selectedTask, setSelectedTask] = useState<(Task & { distance?: number }) | null>(null);
   
-  // Mock data for currently logged in worker
-  const [appliedTaskIds, setAppliedTaskIds] = useState<string[]>(["t1", "t2"]);
+  const [appliedTaskIds, setAppliedTaskIds] = useState<string[]>([]);
 
   useEffect(() => {
     setActiveTab(role === "requester" ? "mytasks" : "feed");
     // Reset selected task when role changes
     setSelectedTask(null);
+  }, [role]);
+
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/categories');
+        const json = await res.json();
+        if (json.success) {
+          setCategories(json.data);
+        }
+      } catch (e) {
+        console.error("Gagal load kategori", e);
+      }
+    }
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    async function loadAppliedTaskIds() {
+      if (role !== "worker") return;
+      try {
+        const res = await fetch('/api/tasks/applications/me');
+        const data = await res.json();
+        if (data.success) {
+          setAppliedTaskIds(data.data.map((app: any) => app.id_tasks));
+        }
+      } catch (e) {
+        console.error("Gagal load applied task ids", e);
+      }
+    }
+    loadAppliedTaskIds();
   }, [role]);
 
   useEffect(() => {
@@ -45,33 +76,24 @@ export default function FeedPage() {
       }
 
       if (activeTab === "feed") {
-        // Fetch with a large radius since this is the main feed
-        let list = await getFeedTasks(coords.latitude, coords.longitude, 10);
-        
-        // Search
-        if (searchQuery) {
-          const query = searchQuery.toLowerCase();
-          list = list.filter((t: any) => t.title.toLowerCase().includes(query) || t.description.toLowerCase().includes(query));
+        let sortOrder = "newest";
+        let categoryId: string | undefined = undefined;
+
+        if (sortBy === "distance_asc" || sortBy === "price_desc") {
+           sortOrder = sortBy;
+        } else if (sortBy !== "all") {
+           categoryId = sortBy;
         }
 
-        // Filter by category
-        if (sortBy === "fotografi") {
-          list = list.filter(t => t.title.toLowerCase().includes("foto") || t.description.toLowerCase().includes("foto"));
-        } else if (sortBy === "survey") {
-          list = list.filter(t => t.title.toLowerCase().includes("survey") || t.description.toLowerCase().includes("survey"));
-        } else if (sortBy === "data_entry") {
-          list = list.filter(t => t.title.toLowerCase().includes("input") || t.title.toLowerCase().includes("data"));
-        }
-
-        // Sorting logic
-        if (sortBy === "distance") {
-          list.sort((a, b) => (a.distance || 0) - (b.distance || 0));
-        } else if (sortBy === "highest") {
-          list.sort((a, b) => b.compensation - a.compensation);
-        } else {
-          // Default: newest or "all"
-          list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        }
+        // Fetch all tasks without radius limit, but pass coords for distance calculation
+        let list = await getFeedTasks(
+           coords.latitude, 
+           coords.longitude, 
+           undefined, 
+           searchQuery || undefined, 
+           categoryId, 
+           sortOrder
+        );
 
         setTasks(list);
       } else {
@@ -102,11 +124,23 @@ export default function FeedPage() {
   }, [coords, sortBy, searchQuery, role, activeTab, router]);
 
   const handleApply = async (taskId: string) => {
-    // Already handled in TaskInspector using the real API, 
-    // here we just close the inspector and refresh feed
-    setSelectedTask(null);
-    showToast("Lamaran berhasil dikirim!");
-    // Trigger refresh by updating some state if needed, or just let it be
+    try {
+      const res = await fetch('/api/tasks/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_tasks: taskId })
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        setAppliedTaskIds(prev => [...prev, taskId]);
+        showToast("Berhasil melamar tugas!");
+      } else {
+        showToast(data.message || "Gagal melamar tugas");
+      }
+    } catch (e) {
+      showToast("Terjadi kesalahan jaringan.");
+    }
   };
 
   return (
@@ -221,11 +255,9 @@ export default function FeedPage() {
                     <div className="flex items-center gap-lg mt-md overflow-x-auto pb-sm no-scrollbar">
                       {[
                         { id: "all", label: "Semua" },
-                        { id: "distance", label: "Terdekat" },
-                        { id: "highest", label: "Imbalan tertinggi" },
-                        { id: "fotografi", label: "Fotografi" },
-                        { id: "survey", label: "Survey" },
-                        { id: "data_entry", label: "Data Entry" }
+                        { id: "distance_asc", label: "Terdekat" },
+                        { id: "price_desc", label: "Imbalan tertinggi" },
+                        ...categories.map(c => ({ id: c.id_category, label: c.nama_kategori }))
                       ].map(filter => (
                         <button 
                           key={filter.id}

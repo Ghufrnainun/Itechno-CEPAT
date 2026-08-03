@@ -4,9 +4,9 @@ import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const feedSchema = z.object({
-  lat: z.coerce.number().min(-90).max(90),
-  lng: z.coerce.number().min(-180).max(180),
-  radius: z.coerce.number().min(1).max(50000).default(5000), // Default 5km
+  lat: z.coerce.number().min(-90).max(90).nullish(),
+  lng: z.coerce.number().min(-180).max(180).nullish(),
+  radius: z.coerce.number().min(1).max(20000000).nullish(),
   q: z.string().nullish(),
   id_category: z.string().uuid().nullish(),
   sort: z.enum(['distance_asc', 'price_desc', 'price_asc', 'newest']).default('distance_asc'),
@@ -43,7 +43,8 @@ export async function GET(request: NextRequest) {
     const searchString = q ? `%${q}%` : `%`
     const offset = (page - 1) * limit
 
-    let orderByClause = 'distance ASC'
+    const hasLocation = lat != null && lng != null
+    let orderByClause = hasLocation ? 'distance ASC' : 't.created_at DESC'
     if (sort === 'price_desc') orderByClause = 't.kompensasi DESC'
     if (sort === 'price_asc') orderByClause = 't.kompensasi ASC'
     if (sort === 'newest') orderByClause = 't.created_at DESC'
@@ -56,6 +57,14 @@ export async function GET(request: NextRequest) {
     const categoryCondition = id_category 
       ? `AND t.id_category = '${id_category}'` 
       : ''
+      
+    const distanceSelect = hasLocation 
+      ? `(ST_Distance(t.lokasi_geo, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography) / 1000.0) AS distance`
+      : `NULL AS distance`
+      
+    const distanceCondition = (hasLocation && radius != null)
+      ? `AND ST_DWithin(t.lokasi_geo, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, ${radius})`
+      : ``
 
     const querySql = `
       SELECT 
@@ -73,18 +82,28 @@ export async function GET(request: NextRequest) {
         u.nama_lengkap as requester_name,
         u.rating_avg as requester_rating,
         u.total_completed as requester_completed_tasks,
-        (ST_Distance(t.lokasi_geo, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography) / 1000.0) AS distance
+        (
+          SELECT COALESCE(
+            json_agg(
+              json_build_object(
+                'id_skill', sm.id_skill_master,
+                'nama_skill', sm.nama_skill
+              )
+            ), 
+            '[]'::json
+          )
+          FROM "TaskRequirements" tr
+          JOIN "SkillsMaster" sm ON tr.id_skill_master = sm.id_skill_master
+          WHERE tr.id_tasks = t.id_tasks
+        ) as skills,
+        ${distanceSelect}
       FROM "Task" t
       JOIN "StatusTask" st ON t.id_status_task = st.id_status_task
       LEFT JOIN "TaskCategory" c ON t.id_category = c.id_category
       LEFT JOIN "User" u ON t.id_requester = u.id_user
       WHERE 
         st.nama_status = 'OPEN'
-        AND ST_DWithin(
-          t.lokasi_geo, 
-          ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, 
-          ${radius}
-        )
+        ${distanceCondition}
         AND (
           ${q ? 'true' : 'false'} = false OR 
           t.judul_tugas ILIKE '${searchString}' OR 
