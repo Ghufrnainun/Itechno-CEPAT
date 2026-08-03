@@ -68,6 +68,8 @@ export async function POST(request: NextRequest) {
         nama_lengkap: true,
         avatar_url: true,
         bio: true,
+        pendidikan_terakhir: true,
+        no_telpon: true,
         rating_avg: true,
         total_completed: true,
         total_balance: true,
@@ -83,6 +85,12 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       )
     }
+
+    const isOnboarded = Boolean(
+      userProfile.pendidikan_terakhir &&
+      userProfile.no_telpon &&
+      userProfile.bio
+    )
 
     return NextResponse.json({
       success: true,
@@ -103,6 +111,7 @@ export async function POST(request: NextRequest) {
           total_completed: userProfile.total_completed,
           total_balance: userProfile.total_balance,
           role: userProfile.role.nama_role,
+          is_onboarded: isOnboarded,
         },
       },
     })
