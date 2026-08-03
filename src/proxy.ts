@@ -29,15 +29,17 @@ export async function proxy(request: NextRequest) {
 
   // Refresh session — JANGAN hapus baris ini!
   // Ini memastikan token tidak expired di setiap request.
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  // Proteksi route: jika belum login dan mengakses halaman protected
-  // Uncomment dan sesuaikan path di bawah saat frontend sudah siap:
-  // if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
-  //   const url = request.nextUrl.clone()
-  //   url.pathname = '/login'
-  //   return NextResponse.redirect(url)
-  // }
+  const protectedPrefixes = ['/dashboard', '/feed', '/cari-tugas', '/chat', '/notifications', '/wallet', '/task', '/profile']
+  const isProtectedRoute = protectedPrefixes.some((prefix) => request.nextUrl.pathname.startsWith(prefix))
+
+  if (!user && isProtectedRoute) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    url.search = ''
+    return NextResponse.redirect(url)
+  }
 
   return supabaseResponse
 }
