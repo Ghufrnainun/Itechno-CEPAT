@@ -204,6 +204,25 @@ SUPABASE_SERVICE_ROLE_KEY="[your-supabase-service-role-key]"
 NEXT_PUBLIC_SITE_URL="http://localhost:3000"
 ```
 
+#### Seed akun demo
+
+Setelah migrasi database selesai, jalankan:
+
+```bash
+npm run db:seed
+```
+
+Semua akun memakai password `Password123!` secara default:
+
+| Nama | Email | Role |
+| --- | --- | --- |
+| Budi Santoso | `budi@cepat.com` | Requester |
+| Andi Pratama | `andi@cepat.com` | Worker |
+| Sari Lestari | `sari@cepat.com` | Requester |
+| Rina Maharani | `rina@cepat.com` | Worker |
+
+Password demo bisa diubah lewat `SEED_AUTH_PASSWORD`.
+
 #### 4️⃣ Run Development Server
 ```bash
 npm run dev

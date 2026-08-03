@@ -494,7 +494,7 @@ export default function LandingPage() {
           <p className="font-body-lg text-body-lg text-on-surface-variant max-w-lg">Daftar dalam 1 menit. Cari atau post tugas pertama kamu hari ini.</p>
           <div className="flex flex-wrap gap-md justify-center">
             <Link
-              href="/login?tab=register"
+              href="/register"
               className="bg-primary-container text-on-primary font-label-md text-label-md font-bold px-xl py-md rounded-lg hover:bg-primary transition-colors flex items-center gap-sm"
             >
               <span className="material-symbols-outlined text-[18px]">login</span>

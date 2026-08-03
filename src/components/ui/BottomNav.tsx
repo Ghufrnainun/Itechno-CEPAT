@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface BottomNavProps {
   role: "worker" | "requester";
@@ -10,6 +11,7 @@ interface BottomNavProps {
 
 export function BottomNav({ role }: BottomNavProps) {
   const pathname = usePathname();
+  const { unreadCount } = useNotifications();
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-lowest border-t border-outline-variant flex items-center justify-around z-40 px-sm shadow-md">
@@ -65,9 +67,11 @@ export function BottomNav({ role }: BottomNavProps) {
           notifications
         </span>
         Notif
-        <span className="absolute -top-1 right-2 w-4 h-4 bg-primary text-white text-[9px] font-bold flex items-center justify-center rounded-full">
-          3
-        </span>
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 right-2 w-4 h-4 bg-primary text-white text-[9px] font-bold flex items-center justify-center rounded-full font-mono">
+            {unreadCount}
+          </span>
+        )}
       </Link>
 
       <Link
