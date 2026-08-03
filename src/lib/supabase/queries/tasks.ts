@@ -91,6 +91,7 @@ export async function getNearbyTasks(
       headers: {
         'Content-Type': 'application/json',
       },
+      cache: 'no-store'
     });
 
     if (response.status === 401) {
@@ -111,6 +112,56 @@ export async function getNearbyTasks(
     return [];
   } catch (error) {
     console.error('Error fetching nearby tasks:', error);
+    return [];
+  }
+}
+
+export async function getFeedTasks(
+  lat?: number,
+  lng?: number,
+  radiusKm?: number,
+  query?: string,
+  categoryId?: string,
+  sort: string = 'newest'
+): Promise<any[]> {
+  try {
+    const url = new URL('/api/tasks/feed', window.location.origin);
+    if (lat != null) url.searchParams.append('lat', lat.toString());
+    if (lng != null) url.searchParams.append('lng', lng.toString());
+    if (radiusKm != null) url.searchParams.append('radius', (radiusKm * 1000).toString());
+    url.searchParams.append('sort', sort);
+    if (query) {
+      url.searchParams.append('q', query);
+    }
+    if (categoryId) {
+      url.searchParams.append('id_category', categoryId);
+    }
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store'
+    });
+
+    if (response.status === 401) {
+      return [];
+    }
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch feed tasks');
+    }
+
+    const json = await response.json();
+
+    if (json.success && json.data) {
+      return json.data;
+    }
+
+    return [];
+  } catch (error) {
+    console.error('Error fetching feed tasks:', error);
     return [];
   }
 }

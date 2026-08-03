@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCurrentRole } from "@/app/(main)/layout";
-import { getNearbyTasks, MOCK_TASKS } from "@/lib/supabase/queries/tasks";
+import { getFeedTasks, MOCK_TASKS } from "@/lib/supabase/queries/tasks";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { Task } from "@/types/database";
 import { TaskCard } from "@/features/task/components/TaskCard";
@@ -21,14 +21,14 @@ export default function FeedPage() {
 
   const [activeTab, setActiveTab] = useState<"feed" | "mytasks">(role === "requester" ? "mytasks" : "feed");
   const [tasks, setTasks] = useState<(Task & { distance: number })[]>([]);
+  const [categories, setCategories] = useState<{id_category: string, nama_kategori: string}[]>([]);
   const [sortBy, setSortBy] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   
   // Selected task for inspector
   const [selectedTask, setSelectedTask] = useState<(Task & { distance?: number }) | null>(null);
   
-  // Mock data for currently logged in worker
-  const [appliedTaskIds, setAppliedTaskIds] = useState<string[]>(["t1", "t2"]);
+  const [appliedTaskIds, setAppliedTaskIds] = useState<string[]>([]);
 
   useEffect(() => {
     setActiveTab(role === "requester" ? "mytasks" : "feed");
@@ -37,57 +37,110 @@ export default function FeedPage() {
   }, [role]);
 
   useEffect(() => {
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/categories');
+        const json = await res.json();
+        if (json.success) {
+          setCategories(json.data);
+        }
+      } catch (e) {
+        console.error("Gagal load kategori", e);
+      }
+    }
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    async function loadAppliedTaskIds() {
+      if (role !== "worker") return;
+      try {
+        const res = await fetch('/api/tasks/applications/me');
+        const data = await res.json();
+        if (data.success) {
+          setAppliedTaskIds(data.data.map((app: any) => app.id_tasks));
+        }
+      } catch (e) {
+        console.error("Gagal load applied task ids", e);
+      }
+    }
+    loadAppliedTaskIds();
+  }, [role]);
+
+  useEffect(() => {
     async function loadTasks() {
-      // Fetch with a large radius since this is the main feed
-      let list = await getNearbyTasks(coords.latitude, coords.longitude, 10);
-      
-      // If requester, mock that these are their posted tasks. 
-      // We will add random status to them for filtering.
       if (role === "requester") {
-        list = list.slice(0, 4); // Just show some tasks as their own
-        // add mock status to tasks
-        list[0] = { ...list[0], status: "open" } as any; // Sedang mencari
-        list[1] = { ...list[1], status: "completed" } as any; // Selesai
-        list[2] = { ...list[2], status: "open" } as any; // Sedang mencari
-        list[3] = { ...list[3], status: "completed" } as any; // Selesai
-        
-        if (sortBy === "open") list = list.filter((t: any) => t.status === "open");
-        if (sortBy === "completed") list = list.filter((t: any) => t.status === "completed");
-      } else {
-        // Search logic for worker
-        if (searchQuery) {
-          const query = searchQuery.toLowerCase();
-          list = list.filter(t => t.title.toLowerCase().includes(query) || t.description.toLowerCase().includes(query));
-        }
-
-        // Filter by category
-        if (sortBy === "fotografi") {
-          list = list.filter(t => t.title.toLowerCase().includes("foto") || t.description.toLowerCase().includes("foto"));
-        } else if (sortBy === "survey") {
-          list = list.filter(t => t.title.toLowerCase().includes("survey") || t.description.toLowerCase().includes("survey"));
-        } else if (sortBy === "data_entry") {
-          list = list.filter(t => t.title.toLowerCase().includes("input") || t.title.toLowerCase().includes("data"));
-        }
-
-        // Sorting logic
-        if (sortBy === "distance") {
-          list.sort((a, b) => (a.distance || 0) - (b.distance || 0));
-        } else if (sortBy === "highest") {
-          list.sort((a, b) => b.compensation - a.compensation);
-        } else {
-          // Default: newest or "all"
-          list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        }
+        // Jika requester nyasar ke /feed, arahkan ke /tugas
+        router.push("/tugas");
+        return;
       }
 
-      setTasks(list);
+      if (activeTab === "feed") {
+        let sortOrder = "newest";
+        let categoryId: string | undefined = undefined;
+
+        if (sortBy === "distance_asc" || sortBy === "price_desc") {
+           sortOrder = sortBy;
+        } else if (sortBy !== "all") {
+           categoryId = sortBy;
+        }
+
+        // Fetch all tasks without radius limit, but pass coords for distance calculation
+        let list = await getFeedTasks(
+           coords.latitude, 
+           coords.longitude, 
+           undefined, 
+           searchQuery || undefined, 
+           categoryId, 
+           sortOrder
+        );
+
+        setTasks(list);
+      } else {
+        // Load Lamaran Saya
+        try {
+          const res = await fetch('/api/users/me/tasks?role=worker');
+          const data = await res.json();
+          if (data.success) {
+            setTasks(data.data.map((t: any) => ({
+              id_task: t.id_tasks,
+              title: t.judul_tugas,
+              description: "", 
+              duration_estimate: t.estimasi_waktu ?? "",
+              compensation: t.kompensasi,
+              status: t.task_status,
+              created_at: t.applied_at,
+              updated_at: t.applied_at,
+              id_requester: t.requester?.id_user ?? "",
+              application_status: t.application_status
+            })));
+          }
+        } catch (e) {
+          console.error("Gagal load history", e);
+        }
+      }
     }
     loadTasks();
-  }, [coords, sortBy, searchQuery, role]);
+  }, [coords, sortBy, searchQuery, role, activeTab, router]);
 
-  const handleApply = (taskId: string) => {
-    setAppliedTaskIds([...appliedTaskIds, taskId]);
-    showToast("Berhasil melamar tugas ini!");
+  const handleApply = async (taskId: string) => {
+    try {
+      const res = await fetch('/api/tasks/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_tasks: taskId })
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        setAppliedTaskIds(prev => [...prev, taskId]);
+        showToast("Berhasil melamar tugas!");
+      } else {
+        showToast(data.message || "Gagal melamar tugas");
+      }
+    } catch (e) {
+      showToast("Terjadi kesalahan jaringan.");
+    }
   };
 
   return (
@@ -202,11 +255,9 @@ export default function FeedPage() {
                     <div className="flex items-center gap-lg mt-md overflow-x-auto pb-sm no-scrollbar">
                       {[
                         { id: "all", label: "Semua" },
-                        { id: "distance", label: "Terdekat" },
-                        { id: "highest", label: "Imbalan tertinggi" },
-                        { id: "fotografi", label: "Fotografi" },
-                        { id: "survey", label: "Survey" },
-                        { id: "data_entry", label: "Data Entry" }
+                        { id: "distance_asc", label: "Terdekat" },
+                        { id: "price_desc", label: "Imbalan tertinggi" },
+                        ...categories.map(c => ({ id: c.id_category, label: c.nama_kategori }))
                       ].map(filter => (
                         <button 
                           key={filter.id}

@@ -136,7 +136,7 @@ export default function MapPicker({
 
       const m = L.marker([task.latitude, task.longitude], { icon: customIcon })
         .addTo(leafletMap.current!)
-        .bindPopup(`<b>${task.title}</b><br/>Rp${task.compensation.toLocaleString()}`);
+        .bindPopup(`<b>${task.title || 'Peluang Tugas'}</b>${task.compensation ? `<br/>Rp${task.compensation.toLocaleString()}` : ''}`);
 
       if (onTaskClick) {
         m.on("click", () => {

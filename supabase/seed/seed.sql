@@ -25,6 +25,15 @@ INSERT INTO "StatusTaskApplicants" ("id_status_task_applicants", "nama_status") 
 (gen_random_uuid()::text, 'REJECTED')
 ON CONFLICT ("nama_status") DO NOTHING;
 
+-- Seed Task Categories
+INSERT INTO "TaskCategory" ("id_category", "nama_kategori", "icon") VALUES 
+(gen_random_uuid()::text, 'Fotografi & Videografi', 'camera_alt'),
+(gen_random_uuid()::text, 'Administrasi & Data', 'description'),
+(gen_random_uuid()::text, 'Teknologi & Komputer', 'computer'),
+(gen_random_uuid()::text, 'Kreatif & Desain', 'palette'),
+(gen_random_uuid()::text, 'Pekerjaan Kasar', 'build')
+ON CONFLICT ("nama_kategori") DO NOTHING;
+
 -- Seed initial Skills Master
 INSERT INTO "SkillsMaster" ("id_skill_master", "nama_skill") VALUES 
 (gen_random_uuid()::text, 'Fotografi & Videografi'),

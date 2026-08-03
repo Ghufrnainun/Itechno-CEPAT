@@ -152,26 +152,11 @@ Logout, invalidate Supabase session cookie.
 
 ---
 
-## 3. Tasks
+## 3. Categories
 
-### GET `/api/tasks`
+### GET `/api/categories`
 
-Ambil daftar task. Mendukung geo-query dan filter.
-
-**Query Parameters:**
-
-| Param      | Type    | Required | Default | Deskripsi                          |
-| ---------- | ------- | -------- | ------- | ---------------------------------- |
-| `lat`      | number  | Ya*      | -       | Latitude posisi user               |
-| `lng`      | number  | Ya*      | -       | Longitude posisi user              |
-| `radius`   | number  | Tidak    | 2000    | Radius pencarian dalam meter       |
-| `category` | string  | Tidak    | -       | Filter by kategori skill           |
-| `status`   | string  | Tidak    | 'open'  | Filter by status task              |
-| `sort`     | string  | Tidak    | 'distance' | Sort: 'distance', 'newest', 'compensation' |
-| `page`     | number  | Tidak    | 1       | Pagination page                    |
-| `limit`    | number  | Tidak    | 20      | Items per page                     |
-
-> *`lat` dan `lng` wajib untuk geo-query. Jika tidak disertakan, return semua task tanpa sorting by distance.
+Ambil daftar master kategori tugas (TaskCategory). Diurutkan secara alfabetis.
 
 **Response (200):**
 ```json
@@ -179,128 +164,175 @@ Ambil daftar task. Mendukung geo-query dan filter.
   "success": true,
   "data": [
     {
-      "id": "uuid",
-      "title": "Foto Produk UMKM",
-      "description": "Butuh bantuan foto 20 produk makanan...",
-      "category": "fotografi",
-      "requester": {
-        "id": "uuid",
-        "full_name": "Jane Doe",
-        "avatar_url": "...",
-        "reputation": 4.8
-      },
-      "location": { "lat": -6.9823, "lng": 110.4093 },
-      "address_text": "Jl. Prof. Sudarto No.13, Tembalang",
-      "estimated_time": 120,
-      "compensation": 50,
-      "status": "open",
-      "distance_m": 850,
-      "applicant_count": 3,
-      "created_at": "2026-07-27T10:00:00Z"
+      "id_category": "uuid",
+      "nama_kategori": "Administrasi & Data",
+      "icon": "description"
+    },
+    {
+      "id_category": "uuid",
+      "nama_kategori": "Fotografi & Videografi",
+      "icon": "camera_alt"
     }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 20,
-    "total": 45,
-    "total_pages": 3
-  }
+  ]
 }
 ```
 
 ---
 
-### GET `/api/tasks/:id`
+## 4. Tasks
 
-Detail satu task.
+### GET `/api/tasks/map` -> (Diganti menjadi `/api/tasks/nearby`)
+
+Endpoint yang sangat ringan (lightweight) khusus untuk menampilkan *marker* di atas peta. Hanya mereturn data spasial dan ikon kategori.
+
+**Query Parameters:**
+
+| Param      | Type    | Required | Default | Deskripsi                          |
+| ---------- | ------- | -------- | ------- | ---------------------------------- |
+| `lat`      | number  | Ya       | -       | Latitude posisi user               |
+| `lng`      | number  | Ya       | -       | Longitude posisi user              |
+| `radius`   | number  | Tidak    | 2000    | Radius pencarian dalam meter       |
+| `q`        | string  | Tidak    | -       | Pencarian kata kunci               |
 
 **Response (200):**
 ```json
 {
   "success": true,
-  "data": {
-    "id": "uuid",
-    "title": "Foto Produk UMKM",
-    "description": "Butuh bantuan foto 20 produk makanan untuk katalog online",
-    "category": "fotografi",
-    "requester": { "id": "uuid", "full_name": "Jane", "reputation": 4.8 },
-    "worker": null,
-    "location": { "lat": -6.9823, "lng": 110.4093 },
-    "address_text": "Jl. Prof. Sudarto No.13, Tembalang",
-    "estimated_time": 120,
-    "compensation": 50,
-    "status": "open",
-    "applicants": [
-      { "id": "uuid", "worker": { "id": "uuid", "full_name": "...", "reputation": 4.5 }, "message": "Saya bisa bantu!", "applied_at": "..." }
-    ],
-    "created_at": "2026-07-27T10:00:00Z",
-    "updated_at": "2026-07-27T10:00:00Z"
+  "data": [
+    {
+      "id_task": "uuid",
+      "latitude": -7.79194,
+      "longitude": 111.003746,
+      "category_icon": "camera_alt",
+      "id_category": "uuid"
+    }
+  ]
+}
+```
+
+---
+
+### GET `/api/tasks/feed`
+
+Endpoint utama untuk daftar/feed tugas. Menghasilkan data yang kaya lengkap dengan info Requester, Kalkulasi Jarak, dan mendukung fitur Pagination, Filter Kategori, serta Sorting.
+
+**Query Parameters:**
+
+| Param         | Type    | Required | Default        | Deskripsi                                             |
+| ------------- | ------- | -------- | -------------- | ----------------------------------------------------- |
+| `lat`         | number  | Ya       | -              | Latitude posisi user                                  |
+| `lng`         | number  | Ya       | -              | Longitude posisi user                                 |
+| `radius`      | number  | Tidak    | 5000           | Radius pencarian dalam meter                          |
+| `q`           | string  | Tidak    | -              | Pencarian teks pada judul/deskripsi                   |
+| `id_category` | string  | Tidak    | -              | UUID Kategori untuk filter                            |
+| `sort`        | string  | Tidak    | `distance_asc` | `distance_asc`, `price_desc`, `price_asc`, `newest`   |
+| `page`        | number  | Tidak    | 1              | Halaman pagination                                    |
+| `limit`       | number  | Tidak    | 10             | Jumlah maksimal item per halaman                      |
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id_task": "uuid",
+      "id_requester": "uuid",
+      "title": "Foto Produk UMKM",
+      "description": "Butuh bantuan foto 20 produk makanan...",
+      "duration_estimate": 120,
+      "compensation": 50000,
+      "created_at": "2026-07-27T10:00:00.000Z",
+      "category_name": "Fotografi & Videografi",
+      "category_icon": "camera_alt",
+      "requester_name": "John Doe",
+      "requester_rating": 4.8,
+      "requester_completed_tasks": 10,
+      "distance": 1.25
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10
   }
 }
 ```
 
 ---
 
-### POST `/api/tasks`
+### POST `/api/tasks/apply`
 
-🔒 **Authenticated** — Buat task baru.
+🔒 **Authenticated (Worker)** — Mengirimkan lamaran (Apply) ke sebuah tugas.
 
 **Request Body:**
 ```json
 {
-  "title": "Foto Produk UMKM",
-  "description": "Butuh bantuan foto 20 produk makanan untuk katalog online",
-  "category": "fotografi",
-  "lat": -6.9823,
-  "lng": 110.4093,
-  "address_text": "Jl. Prof. Sudarto No.13, Tembalang",
-  "estimated_time": 120,
-  "compensation": 50
+  "id_tasks": "uuid"
 }
 ```
 
 **Validasi:**
-- `compensation` harus ≤ `total_points` user (saldo cukup)
-- `estimated_time` dalam menit, minimal 15
-- `category` harus dari daftar kategori valid
+- Tidak bisa melamar tugas buatan sendiri.
+- Tidak bisa melamar tugas yang sama lebih dari sekali.
+- User harus dalam keadaan login (Authenticated).
 
 **Response (201):**
 ```json
 {
   "success": true,
-  "data": { "id": "uuid", "status": "open", "created_at": "..." }
+  "message": "Berhasil melamar tugas.",
+  "data": { 
+    "id_task_applicants": "uuid",
+    "id_tasks": "uuid",
+    "id_worker": "uuid",
+    "id_status_task_applicants": "uuid",
+    "applied_at": "2026-08-03T10:00:00.000Z",
+    "status_applicant": {
+      "id_status_task_applicants": "uuid",
+      "nama_status": "PENDING"
+    }
+  }
 }
 ```
-
-**Side effects:**
-- Poin requester di-hold (dikurangi sementara)
-- Supabase Realtime broadcast: new task ke channel area
 
 ---
 
-### POST `/api/tasks/:id/apply`
+### GET `/api/tasks/applications/me`
 
-🔒 **Authenticated (Worker)** — Apply ke task.
+🔒 **Authenticated (Worker)** — Melihat daftar lamaran yang pernah diajukan oleh user saat ini.
 
-**Request Body:**
-```json
-{
-  "message": "Saya punya pengalaman fotografi 2 tahun, bisa mulai sekarang!"
-}
-```
+**Query Parameters:**
 
-**Response (201):**
+| Param    | Type   | Required | Default | Deskripsi                                        |
+| -------- | ------ | -------- | ------- | ------------------------------------------------ |
+| `status` | string | Tidak    | -       | Filter status lamaran (`PENDING`, `ACCEPTED`, dll) |
+
+**Response (200):**
 ```json
 {
   "success": true,
-  "data": { "applicant_id": "uuid", "status": "pending" }
+  "data": [
+    {
+      "id_task_applicants": "uuid",
+      "applied_at": "2026-08-03T10:00:00.000Z",
+      "status_applicant": {
+        "nama_status": "PENDING"
+      },
+      "task": {
+        "judul_tugas": "Perbaiki Pipa Bocor",
+        "kompensasi": 100000,
+        "status_task": {
+          "nama_status": "OPEN"
+        },
+        "requester": {
+          "nama_lengkap": "Bapak Budi",
+          "rating_avg": 4.5,
+          "total_completed": 5
+        }
+      }
+    }
+  ]
 }
 ```
-
-**Validasi:**
-- Tidak bisa apply ke task sendiri
-- Tidak bisa apply 2x ke task yang sama
-- Task harus berstatus `open`
 
 ---
 
