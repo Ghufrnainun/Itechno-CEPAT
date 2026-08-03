@@ -484,6 +484,31 @@ export const taskService = {
           })
         } catch (_) { /* non-blocking */ }
       }
+    } else if (newStatus === 'cancelled') {
+      // Refund kompensasi ke requester
+      await prisma.user.update({
+        where: { id_user: task.id_requester },
+        data: { total_balance: { increment: task.kompensasi } },
+      })
+      // Catat transaksi refund
+      await prisma.transactions.create({
+        data: {
+          id_user: task.id_requester,
+          nominal: task.kompensasi,
+          tipe_transaksi: 'MASUK',
+          deskripsi: `Pengembalian dana (refund) dari task dibatalkan: ${task.judul_tugas}`,
+        },
+      })
+      // Notifikasi ke requester
+      try {
+        await notificationService.createNotification({
+          userId: task.id_requester,
+          type: 'points',
+          title: 'Dana Dikembalikan! 🔄',
+          message: `Task "${task.judul_tugas}" dibatalkan. ${task.kompensasi.toLocaleString('id-ID')} poin telah dikembalikan ke saldo kamu.`,
+          data: { task_id: taskId },
+        })
+      } catch (_) { /* non-blocking */ }
     }
 
     await prisma.task.update({
