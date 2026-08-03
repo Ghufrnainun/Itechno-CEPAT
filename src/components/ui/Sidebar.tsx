@@ -212,7 +212,6 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
             </Link>
 
             <Link
-<<<<<<< HEAD
               href="/feed"
               aria-current={pathname === "/feed" ? "page" : undefined}
               className={`sidebar-link ${pathname === "/feed" ? "active" : ""}`}
@@ -220,14 +219,6 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
               <span
                 className="material-symbols-outlined text-[20px]"
                 style={{ fontVariationSettings: pathname === "/feed" ? "'FILL' 1" : "'FILL' 0" }}
-=======
-              href="/tugas"
-              className={`sidebar-link ${pathname === "/tugas" ? "active" : ""}`}
-            >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontVariationSettings: pathname === "/tugas" ? "'FILL' 1" : "'FILL' 0" }}
->>>>>>> origin/main
               >
                 assignment_ind
               </span>
