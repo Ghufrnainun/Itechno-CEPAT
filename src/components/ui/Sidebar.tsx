@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface SidebarProps {
   role: "worker" | "requester";
@@ -13,9 +14,17 @@ interface SidebarProps {
 export function Sidebar({ role, onRoleToggle }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { unreadCount } = useNotifications();
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  const handleLogout = () => {
-    router.push("/");
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      router.replace("/login");
+    }
   };
 
   return (
@@ -188,9 +197,11 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
             </span>
             Notifikasi
           </div>
-          <span className="bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-            3
-          </span>
+          {unreadCount > 0 && (
+            <span className="bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono">
+              {unreadCount}
+            </span>
+          )}
         </Link>
 
         <Link
@@ -238,10 +249,11 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
           </a>
           <button
             onClick={handleLogout}
+            disabled={loggingOut}
             className="sidebar-link w-full text-left text-error hover:bg-error-container/20"
           >
             <span className="material-symbols-outlined">logout</span>
-            Keluar
+            {loggingOut ? "Keluar..." : "Keluar"}
           </button>
         </div>
       </div>

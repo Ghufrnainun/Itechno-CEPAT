@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { Sidebar } from "@/components/ui/Sidebar";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { ToastProvider } from "@/components/ui/Toast";
+import { useFCM } from "@/hooks/useFCM";
 
 type Role = "worker" | "requester";
 
@@ -14,6 +15,11 @@ interface RoleContextType {
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
+
+function FcmBridge() {
+  useFCM();
+  return null;
+}
 
 export function useCurrentRole() {
   const context = useContext(RoleContext);
@@ -50,6 +56,7 @@ export default function MainAppLayout({
   return (
     <RoleContext.Provider value={{ role, setRole, toggleRole }}>
       <ToastProvider>
+        <FcmBridge />
         <div className="flex h-screen w-screen overflow-hidden bg-layout-bg font-sans">
           {/* Sidebar Left */}
           <Sidebar role={role} onRoleToggle={toggleRole} />
