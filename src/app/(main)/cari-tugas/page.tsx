@@ -24,11 +24,35 @@ export default function CariTugasPage() {
 
   useEffect(() => {
     async function loadTasks() {
-      const fetched = await getNearbyTasks(coords.latitude, coords.longitude, radius);
-      setTasks(fetched);
-      
-      // If selectedTask is no longer in radius, maybe clear it? 
-      // For now we keep it so the user can still read it.
+      try {
+        const params = new URLSearchParams({ 
+          lat: coords.latitude.toString(), 
+          lng: coords.longitude.toString(), 
+          radius: radius.toString()
+        });
+        const res = await fetch(`/api/tasks?${params.toString()}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          const fetched = data.data.map((t: any) => ({
+            id_task: t.id_tasks,
+            title: t.judul_tugas,
+            description: t.deskripsi_tugas,
+            duration_estimate: t.estimasi_waktu ?? "",
+            compensation: t.kompensasi,
+            status: t.status,
+            created_at: t.created_at,
+            updated_at: t.created_at,
+            id_requester: t.id_requester,
+            latitude: t.latitude,
+            longitude: t.longitude,
+            distance: t.distance_m ? t.distance_m / 1000 : undefined
+          }));
+          setTasks(fetched);
+        }
+      } catch (e) {
+        console.error("Gagal memuat tugas sekitar", e);
+      }
     }
     loadTasks();
   }, [coords, radius]);

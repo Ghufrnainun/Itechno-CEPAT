@@ -20,9 +20,37 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function loadTasks() {
-      const list = await getNearbyTasks(coords.latitude, coords.longitude, 5);
-      setTasks(list);
-      if (list.length > 0) setFeaturedTask(list[0]);
+      try {
+        const params = new URLSearchParams({ 
+          lat: coords.latitude.toString(), 
+          lng: coords.longitude.toString(), 
+          radius: "5" 
+        });
+        const res = await fetch(`/api/tasks?${params.toString()}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          const list = data.data.map((t: any) => ({
+            id_task: t.id_tasks,
+            title: t.judul_tugas,
+            description: t.deskripsi_tugas,
+            duration_estimate: t.estimasi_waktu ?? "",
+            compensation: t.kompensasi,
+            status: t.status,
+            created_at: t.created_at,
+            updated_at: t.created_at,
+            id_requester: t.id_requester,
+            latitude: t.latitude,
+            longitude: t.longitude,
+            distance: t.distance_m ? t.distance_m / 1000 : undefined
+          }));
+          
+          setTasks(list);
+          if (list.length > 0) setFeaturedTask(list[0]);
+        }
+      } catch (e) {
+        console.error("Gagal memuat tasks dashboard", e);
+      }
     }
     loadTasks();
   }, [coords]);
