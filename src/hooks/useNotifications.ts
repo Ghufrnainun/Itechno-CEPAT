@@ -93,6 +93,7 @@ export function useNotifications() {
 
       if (!isMounted) return;
 
+      const channelName = `user-notifications-${user.id}-${Math.random().toString(36).substring(2, 9)}`;
       channel = supabase
         .channel(channelName)
         .on(

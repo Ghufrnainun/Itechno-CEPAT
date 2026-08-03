@@ -38,56 +38,102 @@ export default function FeedPage() {
 
   useEffect(() => {
     async function loadTasks() {
-      // Fetch with a large radius since this is the main feed
-      let list = await getNearbyTasks(coords.latitude, coords.longitude, 10);
-      
-      // If requester, mock that these are their posted tasks. 
-      // We will add random status to them for filtering.
       if (role === "requester") {
-        list = list.slice(0, 4); // Just show some tasks as their own
-        // add mock status to tasks
-        list[0] = { ...list[0], status: "open" } as any; // Sedang mencari
-        list[1] = { ...list[1], status: "completed" } as any; // Selesai
-        list[2] = { ...list[2], status: "open" } as any; // Sedang mencari
-        list[3] = { ...list[3], status: "completed" } as any; // Selesai
-        
-        if (sortBy === "open") list = list.filter((t: any) => t.status === "open");
-        if (sortBy === "completed") list = list.filter((t: any) => t.status === "completed");
-      } else {
-        // Search logic for worker
-        if (searchQuery) {
-          const query = searchQuery.toLowerCase();
-          list = list.filter(t => t.title.toLowerCase().includes(query) || t.description.toLowerCase().includes(query));
-        }
-
-        // Filter by category
-        if (sortBy === "fotografi") {
-          list = list.filter(t => t.title.toLowerCase().includes("foto") || t.description.toLowerCase().includes("foto"));
-        } else if (sortBy === "survey") {
-          list = list.filter(t => t.title.toLowerCase().includes("survey") || t.description.toLowerCase().includes("survey"));
-        } else if (sortBy === "data_entry") {
-          list = list.filter(t => t.title.toLowerCase().includes("input") || t.title.toLowerCase().includes("data"));
-        }
-
-        // Sorting logic
-        if (sortBy === "distance") {
-          list.sort((a, b) => (a.distance || 0) - (b.distance || 0));
-        } else if (sortBy === "highest") {
-          list.sort((a, b) => b.compensation - a.compensation);
-        } else {
-          // Default: newest or "all"
-          list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        }
+        // Jika requester nyasar ke /feed, arahkan ke /tugas
+        router.push("/tugas");
+        return;
       }
 
-      setTasks(list);
+      if (activeTab === "feed") {
+        // Load nearby tasks
+        try {
+          const params = new URLSearchParams({ 
+            lat: coords.latitude.toString(), 
+            lng: coords.longitude.toString(), 
+            radius: "10" 
+          });
+          const res = await fetch(`/api/tasks?${params.toString()}`);
+          const data = await res.json();
+          if (data.success) {
+            let list = data.data;
+
+            // Search
+            if (searchQuery) {
+              const query = searchQuery.toLowerCase();
+              list = list.filter((t: any) => t.judul_tugas.toLowerCase().includes(query) || t.deskripsi_tugas.toLowerCase().includes(query));
+            }
+
+            // Filter (Mock category check based on string, in real app should check requirements)
+            if (sortBy === "fotografi") {
+              list = list.filter((t: any) => t.judul_tugas.toLowerCase().includes("foto") || t.deskripsi_tugas.toLowerCase().includes("foto") || t.requirements?.includes("Fotografi"));
+            } else if (sortBy === "survey") {
+              list = list.filter((t: any) => t.judul_tugas.toLowerCase().includes("survey") || t.deskripsi_tugas.toLowerCase().includes("survey") || t.requirements?.includes("Surveyor"));
+            } else if (sortBy === "data_entry") {
+              list = list.filter((t: any) => t.judul_tugas.toLowerCase().includes("input") || t.judul_tugas.toLowerCase().includes("data") || t.requirements?.includes("Data Entry"));
+            }
+
+            // Sorting
+            if (sortBy === "distance") {
+              list.sort((a: any, b: any) => (a.distance_m || 0) - (b.distance_m || 0));
+            } else if (sortBy === "highest") {
+              list.sort((a: any, b: any) => b.kompensasi - a.kompensasi);
+            } else {
+              list.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            }
+
+            // Map data to expected format for TaskCard
+            setTasks(list.map((t: any) => ({
+              id_task: t.id_tasks,
+              title: t.judul_tugas,
+              description: t.deskripsi_tugas,
+              duration_estimate: t.estimasi_waktu ?? "",
+              compensation: t.kompensasi,
+              status: t.status,
+              created_at: t.created_at,
+              updated_at: t.created_at,
+              id_requester: t.id_requester,
+              latitude: t.latitude,
+              longitude: t.longitude,
+              distance: t.distance_m ? t.distance_m / 1000 : undefined
+            })));
+          }
+        } catch (e) {
+          console.error("Gagal load feed", e);
+        }
+      } else {
+        // Load Lamaran Saya
+        try {
+          const res = await fetch('/api/users/me/tasks?role=worker');
+          const data = await res.json();
+          if (data.success) {
+            // Kita simpan di state tasks atau state baru. Untuk sekarang map ke format TaskCard
+            setTasks(data.data.map((t: any) => ({
+              id_task: t.id_tasks,
+              title: t.judul_tugas,
+              description: "", // gak dikasih di history API
+              duration_estimate: t.estimasi_waktu ?? "",
+              compensation: t.kompensasi,
+              status: t.task_status,
+              created_at: t.applied_at,
+              updated_at: t.applied_at,
+              id_requester: t.requester?.id_user ?? "",
+              application_status: t.application_status
+            })));
+          }
+        } catch (e) {
+          console.error("Gagal load history", e);
+        }
+      }
     }
     loadTasks();
-  }, [coords, sortBy, searchQuery, role]);
+  }, [coords, sortBy, searchQuery, role, activeTab, router]);
 
-  const handleApply = (taskId: string) => {
-    setAppliedTaskIds([...appliedTaskIds, taskId]);
-    showToast("Berhasil melamar tugas ini!");
+  const handleApply = async (taskId: string) => {
+    // Already handled in TaskInspector using the real API, 
+    // here we just close the inspector and refresh feed
+    setSelectedTask(null);
+    showToast("Lamaran berhasil dikirim!");
+    // Trigger refresh by updating some state if needed, or just let it be
   };
 
   return (
