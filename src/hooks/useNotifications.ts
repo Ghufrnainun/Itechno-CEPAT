@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 export interface NotificationItem {
   id: string;
@@ -24,7 +25,14 @@ export function useNotifications() {
     try {
       setIsLoading(true);
       const res = await fetch("/api/notifications");
-      if (!res.ok) throw new Error("Gagal mengambil notifikasi.");
+      if (!res.ok) {
+        if (res.status === 401) {
+          // User tidak logged in, stop silently
+          setIsLoading(false);
+          return;
+        }
+        throw new Error("Gagal mengambil notifikasi.");
+      }
 
       const data = await res.json();
       if (data.success) {
@@ -40,7 +48,6 @@ export function useNotifications() {
   }, []);
 
   const markAsRead = async (id: string) => {
-    // Optimistic UI update
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
     );
@@ -54,7 +61,6 @@ export function useNotifications() {
   };
 
   const markAllAsRead = async () => {
-    // Optimistic UI update
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     setUnreadCount(0);
 
@@ -70,22 +76,35 @@ export function useNotifications() {
     fetchNotifications();
 
     const supabase = createClient();
-    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let channel: RealtimeChannel | null = null;
+    let isMounted = true;
 
     async function initRealtime() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || !isMounted) return;
+
+      const channelName = `user-notifications-${user.id}`;
+      
+      // Hapus channel lama jika ada
+      const existingChannel = supabase.getChannels().find((ch) => ch.topic === `realtime:${channelName}`);
+      if (existingChannel) {
+        await supabase.removeChannel(existingChannel);
+      }
+
+      if (!isMounted) return;
 
       channel = supabase
-        .channel(`user-notifications-${user.id}`)
+        .channel(channelName)
         .on(
           "postgres_changes",
           {
             event: "INSERT",
             schema: "public",
             table: "Notifications",
+            filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
+            if (!isMounted) return;
             const newNotif = payload.new as any;
             const formatted: NotificationItem = {
               id: newNotif.id_notifications || newNotif.id,
@@ -101,13 +120,15 @@ export function useNotifications() {
             setNotifications((prev) => [formatted, ...prev]);
             setUnreadCount((prev) => prev + 1);
           }
-        )
-        .subscribe();
+        );
+
+      channel.subscribe();
     }
 
     initRealtime();
 
     return () => {
+      isMounted = false;
       if (channel) {
         supabase.removeChannel(channel);
       }
