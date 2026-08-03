@@ -170,27 +170,39 @@ Depth is purely structural; an element is "above" another only if it is a modal 
 
 ## Shapes
 
-The design system uses a **Soft (0.25rem)** rounding strategy. This provides enough friendliness to feel "student-oriented" while maintaining the rigid, professional structure of a marketplace.
+The design system uses a **Trust-Oriented Moderate Rounding** strategy (`rounded-lg` / `rounded-xl`). This strikes the perfect balance between institutional marketplace credibility and modern SaaS friendliness.
 
-- **Standard Elements:** 4px radius (Buttons, Input fields).
-- **Large Elements:** 8px radius (Cards, Modals).
-- **Status Pills:** Fully rounded (pill-shaped) to distinguish them from interactive buttons.
+- **Primary CTAs & Action Buttons:** `8px (0.5rem)` radius (`rounded-lg`) - Crisp, precise, and highly trustworthy.
+- **Interactive Icon Boxes & Micro-actions:** `6px (0.375rem)` radius (`rounded-md`) - Proportional inner radius ($r_{inner} < r_{outer}$).
+- **Cards, Modals & Onboarding Containers:** `12px (0.75rem)` radius (`rounded-xl`).
+- **Section Outer Shells & Header Banners:** `12px (0.75rem)` to `16px (1rem)` radius (`rounded-xl` / `rounded-2xl`).
+- **Status Badges & Category Tags:** Fully rounded (`rounded-full`) or `rounded-lg` chips.
 
 ## Components
 
 ### Buttons
-- **Primary:** Teal (#0F766E) background with White text. Bold weight.
-- **Secondary:** White background with Teal border and text.
+- **Primary:** Teal (#0F766E) background with White text, 8px radius (`rounded-lg`). Bold weight.
+- **Secondary:** White background with Teal border and text, 8px radius (`rounded-lg`).
 - **Ghost:** No background/border, Teal text. Used for "Cancel" or "Back" actions.
 
 ### Role Switcher (Dual-Role)
-- **Segmented Control:** Horizontal 2-option control (`[Pekerja] [Pemberi]`) with 4px soft rounding.
+- **Segmented Control:** Horizontal 2-option control (`[Pekerja] [Pemberi]`) with 8px soft rounding.
 - **Active State:** Solid Teal (#005c55) with White text and subtle shadow.
 - **Indicator:** Sleek vertical indicator pill (`3.5px width`) with soft teal background tint on active sidebar links.
 
-### Auth Pages (Diagonal Split)
-- **Brand Panel:** Dark Teal gradient (`clip-path: polygon(...)`) with grain texture overlay, trust statistics, and SDG 8 indicator.
-- **Form Panel:** Clean, cardless SaaS-style form with inline navigation links.
+### Auth Pages (Split Layout)
+- **Brand Panel (Login/Register):** Dark Teal gradient left panel with grain texture overlay, glowing radial accent, trust statistics, and SDG 8 indicator.
+- **Form Panel:** Clean white right panel with cardless SaaS-style form, inline validation, and unified trust-oriented components.
+
+### Onboarding Page (Full-Screen Multi-Step SaaS)
+- **Layout:** Full-screen single-column layout. No split panel. Minimal top nav bar (logo + "Masuk" link) with a thin teal progress bar beneath it.
+- **Steps (2 total):** Role is already set on the register page and read from `localStorage` — not re-asked.
+  - **Step 1 – Kontak:** WhatsApp number (required) + Instansi field (optional).
+  - **Step 2 – Profil:** Bio textarea with quick-fill chips + multi-select skill grid.
+- **Transitions:** `animate-fadeIn` (translateY 12px → 0, opacity 0 → 1, 300ms ease-out) between steps.
+- **Progress Bar:** Thin 4px bar at the top; fills to 50% / 100% per step.
+- **Header:** Logo only (centered), no "Sudah punya akun?" link — user is already authenticated.
+- **Footer:** Minimal `© 2026 CEPAT · SDG 8` footer.
 
 ### Dashboard (Asymmetric Bento)
 - **Grid Layout:** 12-column responsive Bento Grid with varying card spans (Featured Saldo, Rating, Task Selesai, Escrow Holdings).

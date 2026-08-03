@@ -129,7 +129,7 @@ export function HowItWorks() {
             {/* CTA */}
             <Link
               href="/login"
-              className={`inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-lg transition-colors text-sm ${
+              className={`inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-xl transition-colors text-sm shadow-xs ${
                 activeTab === 0
                   ? "bg-primary text-on-primary hover:bg-primary-container"
                   : "bg-secondary text-on-secondary hover:brightness-95"

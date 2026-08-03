@@ -12,7 +12,7 @@ import { formatCurrency } from "@/lib/utils/format";
 import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
 
 export default function DashboardPage() {
-  const { role } = useCurrentRole();
+  const { role, user } = useCurrentRole();
   const { coords } = useGeolocation();
 
   const [tasks, setTasks] = useState<(Task & { distance: number })[]>([]);
@@ -31,7 +31,7 @@ export default function DashboardPage() {
     loadTasks();
   }, [coords]);
 
-  const userName = "Budi";
+  const userName = user?.nama_lengkap?.split(" ")[0] || user?.username || "Pekerja";
   const nearbyCount = tasks.length;
 
   return (
@@ -40,7 +40,7 @@ export default function DashboardPage() {
       <header className="page-header bg-surface-container-lowest border-b border-outline-variant/30 px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-headline font-extrabold text-2xl text-on-surface tracking-tight">
-            Halo, {userName} 👋
+            Halo, {userName}
           </h1>
           <p className="font-body-sm text-sm text-on-surface-variant mt-0.5">
             {role === "worker" ? (

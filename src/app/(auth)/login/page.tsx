@@ -1,48 +1,90 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { RoleCard } from "@/features/auth/components/RoleCard";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/Input";
+import { createClient } from "@/lib/supabase/client";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
-  const [role, setRole] = useState<"worker" | "requester">("worker");
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(result.message || "Email atau password tidak cocok. Silakan periksa kembali.");
+      }
+
+      if (result.data?.user?.is_onboarded === false) {
+        const onboardingTarget = redirectParam
+          ? `/onboarding?redirect=${encodeURIComponent(redirectParam)}`
+          : "/onboarding";
+        router.replace(onboardingTarget);
+      } else {
+        router.replace(redirectParam || "/feed");
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Login gagal. Coba lagi.");
+    } finally {
       setLoading(false);
-      localStorage.setItem("cepat_role", role);
-      router.push("/feed");
-    }, 1000);
+    }
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
+    setError("");
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const supabase = createClient();
+      const callbackNext = redirectParam ? `?next=${encodeURIComponent(redirectParam)}` : "";
+      const { error: googleError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback${callbackNext}`,
+        },
+      });
+      if (googleError) throw googleError;
+    } catch (err: any) {
+      setError(err.message || "Gagal masuk dengan Google. Pastikan OAuth Google telah dikonfigurasi di Supabase.");
       setLoading(false);
-      localStorage.setItem("cepat_role", role);
-      router.push("/feed");
-    }, 1000);
+    }
   };
+
+  const registerHref = redirectParam
+    ? `/register?redirect=${encodeURIComponent(redirectParam)}`
+    : "/register";
 
   return (
     <main className="w-full min-h-screen flex flex-col lg:flex-row overflow-hidden bg-white font-sans">
       {/* ───────────── LEFT: BRAND PANEL ───────────── */}
-      <section className="relative hidden lg:flex w-[52%] flex-col justify-between overflow-hidden bg-[#0a3d38]">
-        {/* Diagonal clip on the right edge */}
+      <section
+        className="relative hidden lg:flex w-[54%] xl:w-[55%] flex-col justify-between overflow-hidden bg-gradient-to-br from-[#0d4f48] via-[#083832] to-[#072e29]"
+        style={{
+          clipPath: "polygon(0 0, 100% 0, 90% 100%, 0 100%)",
+        }}
+      >
+        {/* Subtle accent glow line along the slash edge */}
         <div
-          className="absolute inset-0 z-0"
+          className="absolute inset-0 z-0 pointer-events-none opacity-40"
           style={{
-            clipPath: "polygon(0 0, 100% 0, 88% 100%, 0 100%)",
-            background: "linear-gradient(160deg, #0d4f48 0%, #083832 40%, #072e29 100%)",
+            background: "radial-gradient(ellipse at 95% 50%, rgba(132, 204, 22, 0.25) 0%, transparent 60%)",
           }}
         />
 
@@ -60,7 +102,7 @@ export default function LoginPage() {
         <div className="absolute bottom-[-15%] left-[10%] w-[400px] h-[400px] rounded-full bg-[#84CC16]/10 blur-[100px] z-[1]" />
 
         {/* Content */}
-        <div className="relative z-10 flex flex-col h-full justify-between p-12 lg:p-16 xl:p-20">
+        <div className="relative z-10 flex flex-col h-full justify-between p-12 lg:p-14 xl:p-18 pr-16 lg:pr-24 xl:pr-28">
           {/* Top: Logo */}
           <Link href="/" className="flex items-center" aria-label="Kembali ke beranda">
             <Image
@@ -84,34 +126,33 @@ export default function LoginPage() {
               Cari penghasilan fleksibel atau post bantuan cepat untuk UMKM dan kegiatan kampus — langsung dari daerah terdekat.
             </p>
 
-            {/* Trust Metrics Row */}
-            <div className="flex items-center gap-6">
-              <div className="flex flex-col">
-                <span className="text-2xl font-extrabold text-white font-mono tracking-tight">500+</span>
-                <span className="text-[11px] text-white/40 font-medium uppercase tracking-wider mt-0.5">Mahasiswa</span>
+            {/* Trust Stats */}
+            <div className="grid grid-cols-3 gap-6 pt-6 border-t border-white/10 max-w-sm">
+              <div>
+                <p className="text-2xl font-extrabold text-white font-mono tracking-tight">500+</p>
+                <p className="text-[11px] text-white/40 uppercase tracking-wider font-semibold mt-0.5">Mahasiswa</p>
               </div>
-              <div className="w-px h-10 bg-white/10" />
-              <div className="flex flex-col">
-                <span className="text-2xl font-extrabold text-white font-mono tracking-tight">1.2k</span>
-                <span className="text-[11px] text-white/40 font-medium uppercase tracking-wider mt-0.5">Tugas Selesai</span>
+              <div>
+                <p className="text-2xl font-extrabold text-white font-mono tracking-tight">1.2k</p>
+                <p className="text-[11px] text-white/40 uppercase tracking-wider font-semibold mt-0.5">Tugas Selesai</p>
               </div>
-              <div className="w-px h-10 bg-white/10" />
-              <div className="flex flex-col">
-                <span className="text-2xl font-extrabold text-white font-mono tracking-tight">&lt;5m</span>
-                <span className="text-[11px] text-white/40 font-medium uppercase tracking-wider mt-0.5">Respons</span>
+              <div>
+                <p className="text-2xl font-extrabold text-[#84CC16] font-mono tracking-tight">&lt;5m</p>
+                <p className="text-[11px] text-white/40 uppercase tracking-wider font-semibold mt-0.5">Respons</p>
               </div>
             </div>
           </div>
 
-          {/* Bottom: Features + Footer */}
-          <div>
-            <div className="flex items-center gap-6 mb-8">
+          {/* Bottom: Footer */}
+          <div className="flex flex-col gap-4">
+            {/* Trust Badges */}
+            <div className="flex items-center gap-6">
               {[
                 { icon: "verified_user", label: "Escrow Aman" },
                 { icon: "star", label: "Rating 2-Arah" },
                 { icon: "radar", label: "Radius GPS" },
               ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2">
+                <div key={item.label} className="flex items-center gap-1.5">
                   <span
                     className="material-symbols-outlined text-[16px] text-[#84CC16]"
                     style={{ fontVariationSettings: "'FILL' 1" }}
@@ -123,16 +164,16 @@ export default function LoginPage() {
               ))}
             </div>
 
-            <div className="flex items-center justify-between text-[11px] text-white/25 font-mono">
+            <div className="flex items-center justify-between text-[11px] text-white/40 font-mono pt-3 border-t border-white/5">
               <span>© 2026 CEPAT Marketplace</span>
               <span className="flex items-center gap-1.5">
                 <span
-                  className="material-symbols-outlined text-[14px]"
+                  className="material-symbols-outlined text-[14px] text-[#84CC16]"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
                   public
                 </span>
-                SDG 8 — Decent Work
+                SDG 8 — Decent <span className="text-[#84CC16] font-bold tracking-wider">Work</span>
               </span>
             </div>
           </div>
@@ -140,7 +181,7 @@ export default function LoginPage() {
       </section>
 
       {/* ───────────── RIGHT: AUTH FORM ───────────── */}
-      <section className="relative w-full lg:w-[48%] flex items-center justify-center p-6 md:p-10 lg:p-16 min-h-screen">
+      <section className="relative w-full lg:flex-1 flex items-center justify-center p-6 md:p-10 lg:p-16 min-h-screen">
         {/* Subtle grid background */}
         <div
           className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -167,37 +208,20 @@ export default function LoginPage() {
             </h2>
             <p className="text-sm text-on-surface-variant">
               Belum punya akun?{" "}
-              <Link href="/register" className="text-primary font-semibold hover:underline">
+              <Link href={registerHref} className="text-primary font-semibold hover:underline">
                 Daftar gratis
               </Link>
             </p>
           </div>
 
+          {error && (
+            <p role="alert" className="mb-5 rounded-lg border border-error/30 bg-error-container/20 p-3.5 text-xs text-error font-medium">
+              {error}
+            </p>
+          )}
+
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-5">
-            {/* Role Selection — compact inline toggle */}
-            <div>
-              <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block mb-2">
-                Peran
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <RoleCard
-                  isSelected={role === "worker"}
-                  onClick={() => setRole("worker")}
-                  title="Cari tugas"
-                  description="Ambil pekerjaan fleksibel terdekat."
-                  iconName="work"
-                />
-                <RoleCard
-                  isSelected={role === "requester"}
-                  onClick={() => setRole("requester")}
-                  title="Post tugas"
-                  description="Cari bantuan dari mahasiswa sekitar."
-                  iconName="add_task"
-                />
-              </div>
-            </div>
-
             {/* Inputs */}
             <Input
               label="Email / Username"
@@ -252,7 +276,8 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={handleGoogleLogin}
-              className="w-full flex items-center justify-center gap-3 border border-outline-variant rounded py-3 min-h-[48px] bg-white hover:bg-surface-container-low transition-colors text-sm font-bold text-on-surface cursor-pointer active:scale-[0.98]"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-3 border border-outline-variant rounded py-3 min-h-[48px] bg-white hover:bg-surface-container-low transition-colors text-sm font-bold text-on-surface cursor-pointer active:scale-[0.98] disabled:opacity-60"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -266,5 +291,19 @@ export default function LoginPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-layout-bg font-sans">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

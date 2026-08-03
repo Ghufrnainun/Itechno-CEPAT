@@ -90,10 +90,10 @@ export function HeroSection() {
           <Link href="/task/new" className="block w-full sm:flex-1">
             <button
               type="button"
-              className="w-full group bg-primary text-on-primary font-bold px-5 py-3 rounded hover:bg-primary-container transition-colors flex items-center justify-center gap-3 min-h-[52px] shadow-sm cursor-pointer"
+              className="w-full group bg-primary text-on-primary font-bold px-5 py-3 rounded-lg hover:bg-primary-container transition-colors flex items-center justify-center gap-3 min-h-[52px] shadow-sm cursor-pointer"
             >
               <span className="whitespace-nowrap">Post Tugas UMKM</span>
-              <span className="w-8 h-8 rounded bg-black/15 flex items-center justify-center group-hover:translate-x-0.5 transition-all shrink-0">
+              <span className="w-8 h-8 rounded-md bg-black/15 flex items-center justify-center group-hover:translate-x-0.5 transition-all shrink-0">
                 <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
               </span>
             </button>
@@ -101,10 +101,10 @@ export function HeroSection() {
           <Link href="/feed" className="block w-full sm:flex-1">
             <button
               type="button"
-              className="w-full group bg-white border border-outline-variant text-on-surface font-bold px-5 py-3 rounded hover:bg-surface-container-low transition-colors flex items-center justify-center gap-3 min-h-[52px] cursor-pointer shadow-2xs"
+              className="w-full group bg-white border border-outline-variant text-on-surface font-bold px-5 py-3 rounded-lg hover:bg-surface-container-low transition-colors flex items-center justify-center gap-3 min-h-[52px] cursor-pointer shadow-2xs"
             >
               <span className="whitespace-nowrap">Cari Tugas Terdekat</span>
-              <span className="w-8 h-8 rounded bg-black/5 flex items-center justify-center group-hover:translate-x-0.5 transition-all shrink-0">
+              <span className="w-8 h-8 rounded-md bg-black/5 flex items-center justify-center group-hover:translate-x-0.5 transition-all shrink-0">
                 <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>search</span>
               </span>
             </button>
@@ -117,9 +117,9 @@ export function HeroSection() {
           style={{ animationDelay: "700ms" }}
         >
           {/* Outer Shell */}
-          <div className="p-1 md:p-1.5 rounded-xl bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 shadow-lg">
+          <div className="p-1.5 md:p-2 rounded-2xl bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 shadow-lg">
             {/* Inner Core */}
-            <div className="rounded-lg border border-white/40 dark:border-white/10 bg-white overflow-hidden shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)]">
+            <div className="rounded-xl border border-white/40 dark:border-white/10 bg-white overflow-hidden shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)]">
               {/* App Header */}
               <div className="px-5 py-3.5 border-b border-outline-variant bg-surface-container-lowest flex justify-between items-center">
                 <div className="flex items-center gap-2">
@@ -133,7 +133,7 @@ export function HeroSection() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-on-surface-variant font-mono">Area Kampus</span>
-                  <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center border border-outline-variant shadow-sm">
+                  <div className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant shadow-sm">
                     <span className="material-symbols-outlined text-primary text-[16px]">person</span>
                   </div>
                 </div>
@@ -158,7 +158,7 @@ export function HeroSection() {
                   <circle cx="260" cy="90" r="5" fill="#0F766E" stroke="white" strokeWidth="1.5" />
                   <circle cx="380" cy="110" r="5" fill="#D97706" stroke="white" strokeWidth="1.5" />
                 </svg>
-                <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md border border-outline-variant rounded-lg px-2.5 py-1.5 flex items-center gap-2 shadow-sm">
+                <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md border border-outline-variant rounded-xl px-2.5 py-1.5 flex items-center gap-2 shadow-sm">
                   <span className="pulse-dot w-2 h-2 rounded-full bg-primary inline-block" />
                   <span className="text-[11px] font-bold tracking-wide uppercase text-on-surface">Radar Aktif</span>
                 </div>
@@ -167,7 +167,7 @@ export function HeroSection() {
               {/* Task Preview Cards */}
               <div className="p-4 flex flex-col gap-3 bg-layout-bg">
                 {/* Active Card (Level 2 Interaction / Focus) */}
-                <div className="bg-white border-2 border-primary rounded-lg p-4 shadow-[0_4px_16px_rgba(15,118,110,0.12)] ring-4 ring-offset-2 ring-primary/10 transition-all">
+                <div className="bg-white border-2 border-primary rounded-xl p-4 shadow-[0_4px_16px_rgba(15,118,110,0.12)] ring-4 ring-offset-2 ring-primary/10 transition-all">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-lg font-headline-sm text-on-surface leading-tight">Foto Katalog 15 Menu Makanan</h3>
                     <div className="flex items-center gap-1 shrink-0 ml-3">
@@ -186,7 +186,7 @@ export function HeroSection() {
                 </div>
   
                 {/* Standard Card (Level 1 Surface) */}
-                <div className="bg-white border border-outline-variant rounded-lg p-4 opacity-70">
+                <div className="bg-white border border-outline-variant rounded-xl p-4 opacity-70">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-lg font-headline-sm text-on-surface leading-tight">Input 50 Data Stok Barang</h3>
                     <div className="flex items-center gap-1 shrink-0 ml-3">

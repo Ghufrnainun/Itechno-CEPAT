@@ -62,7 +62,7 @@ export default function NewTaskPage() {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto w-full p-lg md:p-xl flex flex-col gap-lg overflow-y-auto custom-scrollbar">
+      <div className="max-w-4xl mx-auto w-full p-4 md:p-8 pb-28 md:pb-8 flex flex-col gap-lg overflow-y-auto custom-scrollbar">
         <EscrowBanner />
 
         <form onSubmit={handleSubmit} className="bg-white border border-outline-variant rounded-xl p-md md:p-lg flex flex-col gap-md shadow-sm">
@@ -100,7 +100,7 @@ export default function NewTaskPage() {
                   <option value="">-- Pilih kategori skill --</option>
                   {SKILL_CATEGORIES.map((s) => (
                     <option key={s.value} value={s.value}>
-                      {s.emoji} {s.label}
+                      {s.label}
                     </option>
                   ))}
                 </select>

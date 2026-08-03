@@ -21,13 +21,13 @@ function SpotlightCard({ children, className = "" }: SpotlightCardProps) {
   };
 
   return (
-    <div className={`p-1.5 md:p-2 rounded-xl bg-black/[0.03] dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 ${className}`}>
+    <div className={`p-1.5 md:p-2 rounded-2xl bg-black/[0.03] dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 ${className}`}>
       <div
         ref={divRef}
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setOpacity(1)}
         onMouseLeave={() => setOpacity(0)}
-        className="relative h-full spotlight-card rounded-lg border border-white/60 dark:border-white/10 bg-white/80 backdrop-blur-xl p-6 md:p-8 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_4px_12px_rgba(0,0,0,0.03)] overflow-hidden"
+        className="relative h-full spotlight-card rounded-xl border border-white/60 dark:border-white/10 bg-white/80 backdrop-blur-xl p-6 md:p-8 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_4px_12px_rgba(0,0,0,0.03)] overflow-hidden"
         style={{
           // @ts-ignore - Custom properties used by CSS
           "--x": `${position.x}px`,

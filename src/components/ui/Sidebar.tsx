@@ -1,21 +1,44 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface SidebarProps {
   role: "worker" | "requester";
   onRoleToggle: () => void;
+  user?: {
+    nama_lengkap?: string;
+    username?: string;
+    email?: string;
+    total_balance?: number;
+  } | null;
 }
 
-export function Sidebar({ role, onRoleToggle }: SidebarProps) {
+export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { unreadCount } = useNotifications();
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  const handleLogout = () => {
-    router.push("/");
+  const displayName = user?.nama_lengkap || user?.username || "Pengguna CEPAT";
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase();
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      router.replace("/login");
+    }
   };
 
   return (
@@ -49,11 +72,11 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
       <div className="flex flex-col gap-3 p-3.5 brand-card-teal rounded-xl shadow-xs">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-sm shrink-0 shadow-xs border border-primary-container">
-            BS
+            {initials}
           </div>
           <div className="flex flex-col overflow-hidden">
             <span className="font-sans font-bold text-sm text-on-surface truncate flex items-center gap-1">
-              Budi Santoso
+              {displayName}
               <span
                 className="material-symbols-outlined text-primary text-[15px]"
                 style={{ fontVariationSettings: "'FILL' 1" }}
@@ -63,7 +86,7 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
             </span>
             <span className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-primary">
               <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>
-              Saldo: 250k pts
+              Saldo: {user?.total_balance ?? 0} pts
             </span>
           </div>
         </div>
@@ -219,9 +242,11 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
             </span>
             Notifikasi
           </div>
-          <span className="bg-primary text-on-primary text-[11px] font-bold px-2 py-0.5 rounded-full shadow-xs">
-            3
-          </span>
+          {unreadCount > 0 && (
+            <span className="bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono">
+              {unreadCount}
+            </span>
+          )}
         </Link>
 
         <Link
@@ -257,11 +282,12 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
       <div className="flex flex-col gap-2 pt-4 border-t border-outline-variant/50">
         <button
           onClick={handleLogout}
+          disabled={loggingOut}
           aria-label="Keluar dari akun"
-          className="sidebar-link w-full text-left text-error hover:bg-error-container/20 rounded-xl"
+          className="sidebar-link w-full text-left text-error hover:bg-error-container/20 rounded-xl disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-[20px]">logout</span>
-          Keluar
+          {loggingOut ? "Keluar..." : "Keluar"}
         </button>
       </div>
     </aside>

@@ -4,16 +4,30 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { Sidebar } from "@/components/ui/Sidebar";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { ToastProvider } from "@/components/ui/Toast";
+import { useFCM } from "@/hooks/useFCM";
 
 type Role = "worker" | "requester";
+
+export interface UserProfileData {
+  nama_lengkap?: string;
+  username?: string;
+  email?: string;
+  total_balance?: number;
+}
 
 interface RoleContextType {
   role: Role;
   setRole: (role: Role) => void;
   toggleRole: () => void;
+  user: UserProfileData | null;
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
+
+function FcmBridge() {
+  useFCM();
+  return null;
+}
 
 export function useCurrentRole() {
   const context = useContext(RoleContext);
@@ -29,12 +43,28 @@ export default function MainAppLayout({
   children: React.ReactNode;
 }) {
   const [role, setRoleState] = useState<Role>("worker");
+  const [user, setUser] = useState<UserProfileData | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("cepat_role") as Role;
     if (saved === "worker" || saved === "requester") {
       setRoleState(saved);
     }
+
+    async function fetchUser() {
+      try {
+        const res = await fetch("/api/users/me");
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            setUser(json.data);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch user profile:", e);
+      }
+    }
+    fetchUser();
   }, []);
 
   const setRole = (newRole: Role) => {
@@ -48,11 +78,12 @@ export default function MainAppLayout({
   };
 
   return (
-    <RoleContext.Provider value={{ role, setRole, toggleRole }}>
+    <RoleContext.Provider value={{ role, setRole, toggleRole, user }}>
       <ToastProvider>
+        <FcmBridge />
         <div className="flex h-screen w-screen overflow-hidden bg-layout-bg font-sans">
           {/* Sidebar Left */}
-          <Sidebar role={role} onRoleToggle={toggleRole} />
+          <Sidebar role={role} onRoleToggle={toggleRole} user={user} />
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col h-full overflow-hidden relative">

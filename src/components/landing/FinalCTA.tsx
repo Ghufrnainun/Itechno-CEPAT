@@ -53,7 +53,7 @@ export function FinalCTA() {
               whileHover={reduce ? undefined : { scale: 1.02 }}
               whileTap={reduce ? undefined : { scale: 0.97 }}
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className="w-full sm:w-auto bg-primary text-on-primary font-semibold px-8 py-4 rounded hover:bg-primary-container transition-colors flex items-center justify-center gap-2 min-h-[56px] text-lg shadow-[0_4px_16px_rgba(15,118,110,0.2)] cursor-pointer"
+              className="w-full sm:w-auto bg-primary text-on-primary font-semibold px-8 py-4 rounded-lg hover:bg-primary-container transition-colors flex items-center justify-center gap-2 min-h-[56px] text-lg shadow-[0_4px_16px_rgba(15,118,110,0.2)] cursor-pointer"
             >
               Daftar Sekarang
             </motion.button>
@@ -63,7 +63,7 @@ export function FinalCTA() {
               whileHover={reduce ? undefined : { scale: 1.02 }}
               whileTap={reduce ? undefined : { scale: 0.97 }}
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className="w-full sm:w-auto bg-white border-2 border-outline-variant text-on-surface font-semibold px-8 py-4 rounded hover:bg-surface-container-low transition-colors flex items-center justify-center gap-2 min-h-[56px] text-lg cursor-pointer"
+              className="w-full sm:w-auto bg-white border-2 border-outline-variant text-on-surface font-semibold px-8 py-4 rounded-lg hover:bg-surface-container-low transition-colors flex items-center justify-center gap-2 min-h-[56px] text-lg cursor-pointer"
             >
               Masuk
             </motion.button>

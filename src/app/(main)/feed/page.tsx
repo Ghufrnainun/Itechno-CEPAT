@@ -121,7 +121,7 @@ export default function FeedPage() {
             // REQUESTER VIEW: KELOLA TUGAS
             <div className="flex flex-col h-full relative">
               {/* Header for Requester */}
-              <div className="pt-xl px-xl pb-md shrink-0 border-b border-outline-variant/30 bg-surface/95 backdrop-blur-sm z-10 sticky top-0 flex flex-col sm:flex-row justify-between sm:items-end gap-md">
+              <div className="pt-4 md:pt-8 px-4 md:px-8 pb-4 shrink-0 border-b border-outline-variant/30 bg-surface/95 backdrop-blur-sm z-10 sticky top-0 flex flex-col sm:flex-row justify-between sm:items-end gap-md">
                 <div>
                   <h2 className="font-headline-lg text-headline-lg text-on-surface font-extrabold">Kelola Tugas</h2>
                   <p className="font-body-md text-body-md text-on-surface-variant mt-xs font-medium">
@@ -153,7 +153,7 @@ export default function FeedPage() {
               </div>
 
               {/* Task List for Requester */}
-              <div className="flex-1 p-xl">
+              <div className="flex-1 p-4 md:p-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-md pb-32">
                   {tasks.length === 0 ? (
                     <div className="col-span-1 md:col-span-2 flex flex-col items-center gap-sm py-16 text-center">
@@ -162,9 +162,9 @@ export default function FeedPage() {
                       <p className="font-body-sm text-body-sm text-on-surface-variant">Belum ada tugas yang sesuai dengan filter.</p>
                     </div>
                   ) : (
-                    tasks.map((task) => (
+                    tasks.map((task, index) => (
                       <TaskCard
-                        key={task.id_task}
+                        key={task.id_task || `req-task-${index}`}
                         task={task}
                         isSelected={false}
                         onClick={() => router.push(`/task/${task.id_task}`)}
@@ -180,9 +180,9 @@ export default function FeedPage() {
               // FEED TAB (List View)
               <div className="flex flex-col h-full relative">
                 {/* Header with Search and Filters */}
-                <div className="pt-xl px-xl pb-md shrink-0 border-b border-outline-variant/30 bg-surface/95 backdrop-blur-sm z-10 sticky top-0">
+                <div className="pt-4 md:pt-8 px-4 md:px-8 pb-4 shrink-0 border-b border-outline-variant/30 bg-surface/95 backdrop-blur-sm z-10 sticky top-0">
                   <h2 className="font-headline-lg text-headline-lg text-on-surface font-extrabold">Tugas Terdekat</h2>
-                  <p className="font-body-md text-body-md text-on-surface-variant mt-sm font-medium">
+                  <p className="font-body-md text-body-md text-on-surface-variant mt-xs font-medium">
                     {tasks.length} tugas aktif dalam radius pencarian
                   </p>
                   
@@ -221,7 +221,7 @@ export default function FeedPage() {
                 </div>
 
                 {/* Task List */}
-                <div className="flex-1 p-xl">
+                <div className="flex-1 p-4 md:p-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-md pb-32">
                     {tasks.length === 0 ? (
                       <div className="col-span-1 md:col-span-2 flex flex-col items-center gap-sm py-16 text-center">
@@ -232,9 +232,9 @@ export default function FeedPage() {
                         <p className="font-body-sm text-body-sm text-on-surface-variant">Coba sesuaikan filter atau kata kunci pencarian Anda.</p>
                       </div>
                     ) : (
-                      tasks.map((task) => (
+                      tasks.map((task, index) => (
                         <TaskCard
-                          key={task.id_task}
+                          key={task.id_task ? `${task.id_task}-${index}` : `task-${index}`}
                           task={task}
                           isSelected={selectedTask?.id_task === task.id_task}
                           onClick={() => setSelectedTask(task)}

@@ -20,9 +20,9 @@ export function LandingNavbar() {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className={`fixed top-4 left-4 right-4 mx-auto max-w-5xl z-50 transition-all duration-300 rounded-2xl ${
+        className={`fixed top-4 left-4 right-4 mx-auto max-w-5xl z-50 transition-all duration-300 rounded-xl ${
           isScrolled 
-            ? "bg-white/80 backdrop-blur-md shadow-sm border border-outline-variant/60" 
+            ? "bg-white/85 backdrop-blur-md shadow-sm border border-outline-variant/60" 
             : "bg-transparent border-transparent"
         }`}
       >
@@ -48,10 +48,10 @@ export function LandingNavbar() {
 
           {/* Desktop CTAs */}
           <div className="hidden md:flex items-center gap-3">
-            <Link href="/login" className="text-sm font-semibold text-on-surface hover:text-primary transition-colors px-3 py-2">
+            <Link href="/login" className="text-sm font-semibold text-on-surface hover:text-primary transition-colors px-3.5 py-2 rounded-lg">
               Masuk
             </Link>
-            <Link href="/register" className="text-sm font-semibold text-on-primary bg-primary px-4 py-2 rounded hover:bg-primary-container transition-colors shadow-sm inline-flex items-center justify-center">
+            <Link href="/register" className="text-sm font-semibold text-on-primary bg-primary px-5 py-2.5 rounded-lg hover:bg-primary-container transition-colors shadow-sm inline-flex items-center justify-center">
               Daftar
             </Link>
           </div>
@@ -59,10 +59,10 @@ export function LandingNavbar() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden z-50 w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-on-surface"
+            className="md:hidden z-50 w-11 h-11 rounded-lg bg-surface-container flex items-center justify-center text-on-surface cursor-pointer"
             aria-label="Menu"
           >
-            <span className="material-symbols-outlined text-[20px]">
+            <span className="material-symbols-outlined text-[22px]">
               {isOpen ? "close" : "menu"}
             </span>
           </button>
@@ -84,7 +84,7 @@ export function LandingNavbar() {
             <a href="#untuk-umkm" onClick={() => setIsOpen(false)} className="text-2xl font-bold text-on-surface">Untuk UMKM</a>
             
             <div className="flex flex-col w-full max-w-xs gap-3 mt-8">
-              <Link href="/login" onClick={() => setIsOpen(false)} className="w-full text-center text-lg font-semibold text-on-primary bg-primary px-6 py-4 rounded-lg">
+              <Link href="/register" onClick={() => setIsOpen(false)} className="w-full text-center text-lg font-semibold text-on-primary bg-primary px-6 py-4 rounded-lg shadow-sm">
                 Daftar
               </Link>
               <Link href="/login" onClick={() => setIsOpen(false)} className="w-full text-center text-lg font-semibold text-on-surface bg-surface-container px-6 py-4 rounded-lg">
