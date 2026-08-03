@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCurrentRole } from "@/app/(main)/layout";
-import { getNearbyTasks, MOCK_TASKS } from "@/lib/supabase/queries/tasks";
+import { getFeedTasks, MOCK_TASKS } from "@/lib/supabase/queries/tasks";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { Task } from "@/types/database";
 import { TaskCard } from "@/features/task/components/TaskCard";
@@ -21,19 +21,50 @@ export default function FeedPage() {
 
   const [activeTab, setActiveTab] = useState<"feed" | "mytasks">(role === "requester" ? "mytasks" : "feed");
   const [tasks, setTasks] = useState<(Task & { distance: number })[]>([]);
+  const [categories, setCategories] = useState<{id_category: string, nama_kategori: string}[]>([]);
   const [sortBy, setSortBy] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   
   // Selected task for inspector
   const [selectedTask, setSelectedTask] = useState<(Task & { distance?: number }) | null>(null);
   
-  // Mock data for currently logged in worker
-  const [appliedTaskIds, setAppliedTaskIds] = useState<string[]>(["t1", "t2"]);
+  const [appliedTaskIds, setAppliedTaskIds] = useState<string[]>([]);
 
   useEffect(() => {
     setActiveTab(role === "requester" ? "mytasks" : "feed");
     // Reset selected task when role changes
     setSelectedTask(null);
+  }, [role]);
+
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/categories');
+        const json = await res.json();
+        if (json.success) {
+          setCategories(json.data);
+        }
+      } catch (e) {
+        console.error("Gagal load kategori", e);
+      }
+    }
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    async function loadAppliedTaskIds() {
+      if (role !== "worker") return;
+      try {
+        const res = await fetch('/api/tasks/applications/me');
+        const data = await res.json();
+        if (data.success) {
+          setAppliedTaskIds(data.data.map((app: any) => app.id_tasks));
+        }
+      } catch (e) {
+        console.error("Gagal load applied task ids", e);
+      }
+    }
+    loadAppliedTaskIds();
   }, [role]);
 
   useEffect(() => {
@@ -45,72 +76,36 @@ export default function FeedPage() {
       }
 
       if (activeTab === "feed") {
-        // Load nearby tasks
-        try {
-          const params = new URLSearchParams({ 
-            lat: coords.latitude.toString(), 
-            lng: coords.longitude.toString(), 
-            radius: "10" 
-          });
-          const res = await fetch(`/api/tasks?${params.toString()}`);
-          const data = await res.json();
-          if (data.success) {
-            let list = data.data;
+        let sortOrder = "newest";
+        let categoryId: string | undefined = undefined;
 
-            // Search
-            if (searchQuery) {
-              const query = searchQuery.toLowerCase();
-              list = list.filter((t: any) => t.judul_tugas.toLowerCase().includes(query) || t.deskripsi_tugas.toLowerCase().includes(query));
-            }
-
-            // Filter (Mock category check based on string, in real app should check requirements)
-            if (sortBy === "fotografi") {
-              list = list.filter((t: any) => t.judul_tugas.toLowerCase().includes("foto") || t.deskripsi_tugas.toLowerCase().includes("foto") || t.requirements?.includes("Fotografi"));
-            } else if (sortBy === "survey") {
-              list = list.filter((t: any) => t.judul_tugas.toLowerCase().includes("survey") || t.deskripsi_tugas.toLowerCase().includes("survey") || t.requirements?.includes("Surveyor"));
-            } else if (sortBy === "data_entry") {
-              list = list.filter((t: any) => t.judul_tugas.toLowerCase().includes("input") || t.judul_tugas.toLowerCase().includes("data") || t.requirements?.includes("Data Entry"));
-            }
-
-            // Sorting
-            if (sortBy === "distance") {
-              list.sort((a: any, b: any) => (a.distance_m || 0) - (b.distance_m || 0));
-            } else if (sortBy === "highest") {
-              list.sort((a: any, b: any) => b.kompensasi - a.kompensasi);
-            } else {
-              list.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-            }
-
-            // Map data to expected format for TaskCard
-            setTasks(list.map((t: any) => ({
-              id_task: t.id_tasks,
-              title: t.judul_tugas,
-              description: t.deskripsi_tugas,
-              duration_estimate: t.estimasi_waktu ?? "",
-              compensation: t.kompensasi,
-              status: t.status,
-              created_at: t.created_at,
-              updated_at: t.created_at,
-              id_requester: t.id_requester,
-              latitude: t.latitude,
-              longitude: t.longitude,
-              distance: t.distance_m ? t.distance_m / 1000 : undefined
-            })));
-          }
-        } catch (e) {
-          console.error("Gagal load feed", e);
+        if (sortBy === "distance_asc" || sortBy === "price_desc") {
+           sortOrder = sortBy;
+        } else if (sortBy !== "all") {
+           categoryId = sortBy;
         }
+
+        // Fetch all tasks without radius limit, but pass coords for distance calculation
+        let list = await getFeedTasks(
+           coords.latitude, 
+           coords.longitude, 
+           undefined, 
+           searchQuery || undefined, 
+           categoryId, 
+           sortOrder
+        );
+
+        setTasks(list);
       } else {
         // Load Lamaran Saya
         try {
           const res = await fetch('/api/users/me/tasks?role=worker');
           const data = await res.json();
           if (data.success) {
-            // Kita simpan di state tasks atau state baru. Untuk sekarang map ke format TaskCard
             setTasks(data.data.map((t: any) => ({
               id_task: t.id_tasks,
               title: t.judul_tugas,
-              description: "", // gak dikasih di history API
+              description: "", 
               duration_estimate: t.estimasi_waktu ?? "",
               compensation: t.kompensasi,
               status: t.task_status,
@@ -129,11 +124,23 @@ export default function FeedPage() {
   }, [coords, sortBy, searchQuery, role, activeTab, router]);
 
   const handleApply = async (taskId: string) => {
-    // Already handled in TaskInspector using the real API, 
-    // here we just close the inspector and refresh feed
-    setSelectedTask(null);
-    showToast("Lamaran berhasil dikirim!");
-    // Trigger refresh by updating some state if needed, or just let it be
+    try {
+      const res = await fetch('/api/tasks/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_tasks: taskId })
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        setAppliedTaskIds(prev => [...prev, taskId]);
+        showToast("Berhasil melamar tugas!");
+      } else {
+        showToast(data.message || "Gagal melamar tugas");
+      }
+    } catch (e) {
+      showToast("Terjadi kesalahan jaringan.");
+    }
   };
 
   return (
@@ -248,11 +255,9 @@ export default function FeedPage() {
                     <div className="flex items-center gap-lg mt-md overflow-x-auto pb-sm no-scrollbar">
                       {[
                         { id: "all", label: "Semua" },
-                        { id: "distance", label: "Terdekat" },
-                        { id: "highest", label: "Imbalan tertinggi" },
-                        { id: "fotografi", label: "Fotografi" },
-                        { id: "survey", label: "Survey" },
-                        { id: "data_entry", label: "Data Entry" }
+                        { id: "distance_asc", label: "Terdekat" },
+                        { id: "price_desc", label: "Imbalan tertinggi" },
+                        ...categories.map(c => ({ id: c.id_category, label: c.nama_kategori }))
                       ].map(filter => (
                         <button 
                           key={filter.id}

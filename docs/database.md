@@ -23,15 +23,22 @@
 │ auth_id      │  │    │ judul_tugas      │    │  │ id_tasks (FK) │
 │ username     │  ├───▶│ id_requester(FK) │◀───┤  │ id_rater (FK) │
 │ email        │  │    │ id_status_task   │◀───┘  │ id_ratee (FK) │
-│ total_balance│  │    │ lokasi_geo       │       │ rating        │
+│ total_balance│  │    │ id_category (FK) │       │ rating        │
 └──────────────┘  │    └──────────────────┘       └───────────────┘
-                  │    ┌──────────────────┐       │  Notifications  │
-                  │    │  TaskApplicants  │       │─────────────────│
-                  │    │──────────────────│       │ id_notif (PK)   │
-                  ├───▶│ id_task_app..(PK)│       │ user_id (FK)    │
-                  │    │ id_tasks (FK)    │       │ title           │
-                  │    │ id_worker (FK)   │       │ message         │
-                  │    └──────────────────┘       └─────────────────┘
+                  │    ┌──────────────────┐       ┌───────────────┐
+                  │    │  TaskCategory    │       │  Notifications│
+                  │    │──────────────────│       │───────────────│
+                  │    │ id_category (PK) │◀───┐  │ id_notif (PK) │
+                  │    │ nama_kategori    │    │  │ user_id (FK)  │
+                  │    │ icon             │    │  └───────────────┘
+                  │    └──────────────────┘    │
+                  │    ┌──────────────────┐    │
+                  │    │  TaskApplicants  │    │
+                  │    │──────────────────│    │
+                  ├───▶│ id_task_app..(PK)│    │
+                  │    │ id_tasks (FK)    │────┘
+                  │    │ id_worker (FK)   │
+                  │    └──────────────────┘
                   │    ┌──────────────────┐       ┌─────────────────┐
                   │    │    ChatRoom      │       │  Transactions   │
                   │    │──────────────────│       │─────────────────│
@@ -125,6 +132,7 @@ CREATE TABLE "Task" (
     "completed_at" TIMESTAMP(3),
     "accepted_at" TIMESTAMP(3),
     "lokasi_geo" geography(Point, 4326),
+    "id_category" TEXT NOT NULL,
 
     CONSTRAINT "Task_pkey" PRIMARY KEY ("id_tasks")
 );
@@ -408,6 +416,13 @@ CREATE TABLE notifications (
 
 );
 
+CREATE TABLE "TaskCategory" (
+    "id_category" TEXT NOT NULL,
+    "nama_kategori" TEXT NOT NULL,
+    "icon" TEXT,
+    CONSTRAINT "TaskCategory_pkey" PRIMARY KEY ("id_category")
+);
+
 CREATE TABLE "StatusTask" (
     "id_status_task" TEXT NOT NULL,
     "nama_status" TEXT NOT NULL,
@@ -448,6 +463,7 @@ CREATE TABLE "TaskRequirements" (
 ### 3.5 Indeks Unik (Unique Constraints)
 ```sql
 CREATE UNIQUE INDEX "Role_nama_role_key" ON "Role"("nama_role");
+CREATE UNIQUE INDEX "TaskCategory_nama_kategori_key" ON "TaskCategory"("nama_kategori");
 CREATE UNIQUE INDEX "StatusTask_nama_status_key" ON "StatusTask"("nama_status");
 CREATE UNIQUE INDEX "StatusTaskApplicants_nama_status_key" ON "StatusTaskApplicants"("nama_status");
 CREATE UNIQUE INDEX "SkillsMaster_nama_skill_key" ON "SkillsMaster"("nama_skill");
@@ -466,6 +482,7 @@ ALTER TABLE "User" ADD CONSTRAINT "User_id_role_fkey" FOREIGN KEY ("id_role") RE
 -- Relasi Tugas
 ALTER TABLE "Task" ADD CONSTRAINT "Task_id_requester_fkey" FOREIGN KEY ("id_requester") REFERENCES "User"("id_user") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "Task" ADD CONSTRAINT "Task_id_status_task_fkey" FOREIGN KEY ("id_status_task") REFERENCES "StatusTask"("id_status_task") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Task" ADD CONSTRAINT "Task_id_category_fkey" FOREIGN KEY ("id_category") REFERENCES "TaskCategory"("id_category") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- Relasi Transaksi dan Notifikasi
 ALTER TABLE "Transactions" ADD CONSTRAINT "Transactions_id_user_fkey" FOREIGN KEY ("id_user") REFERENCES "User"("id_user") ON DELETE CASCADE ON UPDATE CASCADE;

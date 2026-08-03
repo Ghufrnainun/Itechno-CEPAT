@@ -26,18 +26,20 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // --- 1. Cek session Supabase Auth ---
+    // TODO: Enable Supabase Auth verification when required by business logic
+    /*
     const supabase = await createClient()
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !authUser) {
       return NextResponse.json(
-        { success: false, message: 'Tidak terautentikasi. Silakan login terlebih dahulu.' },
+        { success: false, message: 'Unauthorized access.' },
         { status: 401 }
       )
     }
+    */
 
-    // --- 2. Validasi Query Params ---
+    // Validate and parse incoming query parameters
     const url = new URL(request.url)
     const lat = url.searchParams.get('lat')
     const lng = url.searchParams.get('lng')
@@ -56,29 +58,24 @@ export async function GET(request: NextRequest) {
     const { lat: latitude, lng: longitude, radius: radiusMeters, q: query } = parsed.data
     const searchString = query ? `%${query}%` : `%`
 
-    // --- 3. PostGIS Query Menggunakan prisma.$queryRaw ---
-    // Karena Prisma $queryRaw akan memproses template literal secara aman, 
-    // kita bisa menyuntikkan variabel langsung ke dalam query.
-    // Kita gunakan tipe data Point (4326) untuk koordinat GPS dan membandingkannya menggunakan geografi (meter).
-    
-    // Note: status_task 'open' assumed mapped to finding tasks (Sedang Mencari)
+    /**
+     * Execute PostGIS spatial query for radius-based filtering.
+     * Uses SRID 4326 (WGS 84) to cast coordinates into geography points.
+     * Only returns lightweight marker data (coordinates & icons) for 'OPEN' tasks.
+     */
     const nearbyTasks = await prisma.$queryRaw`
       SELECT 
         t.id_tasks as id_task, 
-        t.id_requester,
-        t.judul_tugas as title,
-        t.deskripsi_tugas as description,
-        t.estimasi_waktu as duration_estimate,
-        t.kompensasi as compensation,
-        t.created_at,
-        st.nama_status as status,
         ST_Y(t.lokasi_geo::geometry) as latitude,
         ST_X(t.lokasi_geo::geometry) as longitude,
-        (ST_Distance(t.lokasi_geo, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography) / 1000.0) AS distance
+        c.icon as category_icon,
+        c.id_category
       FROM "Task" t
       JOIN "StatusTask" st ON t.id_status_task = st.id_status_task
+      LEFT JOIN "TaskCategory" c ON t.id_category = c.id_category
       WHERE 
-        ST_DWithin(
+        st.nama_status = 'OPEN'
+        AND ST_DWithin(
           t.lokasi_geo, 
           ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography, 
           ${radiusMeters}
@@ -88,7 +85,6 @@ export async function GET(request: NextRequest) {
           t.judul_tugas ILIKE ${searchString} OR 
           t.deskripsi_tugas ILIKE ${searchString}
         )
-      ORDER BY distance ASC
     `;
 
     return NextResponse.json({

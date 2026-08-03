@@ -51,6 +51,7 @@ export interface Task {
   duration_estimate: string;
   created_at: string;
   updated_at: string;
+  skills?: { id_skill: string; nama_skill: string }[];
 }
 
 export interface TaskRequirement {

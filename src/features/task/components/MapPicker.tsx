@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Task } from "@/types/database";
@@ -28,82 +28,6 @@ export default function MapPicker({
   const clickMarker = useRef<L.Marker | null>(null);
   const userMarker = useRef<L.CircleMarker | null>(null);
   const taskMarkers = useRef<{ [id: string]: L.Marker }>({});
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
-
-  // Address search using OpenStreetMap Nominatim
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    setIsSearching(true);
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`);
-      const data = await res.json();
-      if (data && data.length > 0) {
-        const { lat, lon } = data[0];
-        const newLat = parseFloat(lat);
-        const newLng = parseFloat(lon);
-        
-        leafletMap.current?.flyTo([newLat, newLng], 16);
-        
-        if (onLocationSelect) {
-          onLocationSelect(newLat, newLng);
-          
-          if (clickMarker.current) {
-            clickMarker.current.setLatLng([newLat, newLng]);
-          } else {
-            clickMarker.current = L.marker([newLat, newLng], { draggable: true }).addTo(leafletMap.current!);
-            clickMarker.current.on("dragend", () => {
-              const position = clickMarker.current!.getLatLng();
-              onLocationSelect(position.lat, position.lng);
-            });
-          }
-        }
-      } else {
-        alert("Alamat tidak ditemukan.");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Gagal mencari alamat.");
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  // Get current GPS location
-  const handleCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const newLat = position.coords.latitude;
-          const newLng = position.coords.longitude;
-          
-          leafletMap.current?.flyTo([newLat, newLng], 16);
-          
-          if (onLocationSelect) {
-            onLocationSelect(newLat, newLng);
-            
-            if (clickMarker.current) {
-              clickMarker.current.setLatLng([newLat, newLng]);
-            } else {
-              clickMarker.current = L.marker([newLat, newLng], { draggable: true }).addTo(leafletMap.current!);
-              clickMarker.current.on("dragend", () => {
-                const position = clickMarker.current!.getLatLng();
-                onLocationSelect(position.lat, position.lng);
-              });
-            }
-          }
-        },
-        (error) => {
-          alert("Gagal mendapatkan lokasi saat ini: " + error.message);
-        },
-        { enableHighAccuracy: true }
-      );
-    } else {
-      alert("Browser Anda tidak mendukung GPS / Geolocation.");
-    }
-  };
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -212,7 +136,7 @@ export default function MapPicker({
 
       const m = L.marker([task.latitude, task.longitude], { icon: customIcon })
         .addTo(leafletMap.current!)
-        .bindPopup(`<b>${task.title}</b><br/>Rp${task.compensation.toLocaleString()}`);
+        .bindPopup(`<b>${task.title || 'Peluang Tugas'}</b>${task.compensation ? `<br/>Rp${task.compensation.toLocaleString()}` : ''}`);
 
       if (onTaskClick) {
         m.on("click", () => {
@@ -225,50 +149,8 @@ export default function MapPicker({
   }, [tasks, selectedTaskId]);
 
   return (
-    <div className="w-full h-full flex flex-col relative rounded-lg overflow-hidden border border-outline-variant">
-      
-      {/* Search overlay: only when onLocationSelect is provided */}
-      {onLocationSelect && (
-        <div className="absolute top-2 left-2 right-2 z-[400] flex flex-col sm:flex-row gap-2 pointer-events-none">
-          <div className="flex-1 flex pointer-events-auto bg-white rounded-lg shadow-md overflow-hidden border border-outline-variant">
-            <input
-              type="text"
-              placeholder="Cari alamat atau lokasi..."
-              className="flex-1 px-3 py-2 text-sm focus:outline-none"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSearch(e as any);
-                }
-              }}
-            />
-            <button
-              type="button"
-              onClick={handleSearch}
-              disabled={isSearching}
-              className="px-3 py-2 bg-surface-container-low text-on-surface hover:bg-surface-container transition-colors border-l border-outline-variant flex items-center justify-center disabled:opacity-50"
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                {isSearching ? "hourglass_empty" : "search"}
-              </span>
-            </button>
-          </div>
-          <button
-            type="button"
-            onClick={handleCurrentLocation}
-            className="pointer-events-auto bg-primary text-on-primary px-3 py-2 rounded-lg shadow-md hover:bg-primary/90 transition-colors flex items-center justify-center gap-1 shrink-0"
-            title="Gunakan Lokasi Saat Ini"
-          >
-            <span className="material-symbols-outlined text-[18px]">my_location</span>
-            <span className="text-sm font-semibold hidden sm:inline">Lokasi Saya</span>
-          </button>
-        </div>
-      )}
-
-      {/* Map container */}
-      <div ref={mapRef} className="w-full h-full flex-1 z-0" style={{ minHeight: "250px" }} />
+    <div className="w-full h-full relative rounded-lg overflow-hidden border border-outline-variant">
+      <div ref={mapRef} className="w-full h-full" style={{ minHeight: "250px" }} />
     </div>
   );
 }

@@ -33,36 +33,40 @@ model SkillsMaster {
   task_requirements TaskRequirements[]
 }
 
+model TaskCategory {
+  id_category   String  @id @default(uuid())
+  nama_kategori String  @unique
+  icon          String?
+  tasks         Task[]
+}
+
 model User {
-  id_user             String  @id @default(uuid())
-  id_role             String
-  nama_lengkap        String
-  avatar_url          String?
-  bio                 String?
-  pendidikan_terakhir String?
-  rating_avg          Float   @default(0.0)
-  total_completed     Int     @default(0)
-  total_balance       Float   @default(0.0)
-  username            String  @unique
-  alamat              String?
-  no_telpon           String? // String type to preserve leading zeros
-  email               String  @unique
-  auth_id             String? @unique @db.Uuid
-  fcm_token           String?
-
-  role Role @relation(fields: [id_role], references: [id_role])
-
-  // Relations
-  transactions            Transactions[]
-  skills_user             SkillsUser[]
-  notifications           Notifications[]
-  tasks_posted            Task[]           @relation("RequesterTasks")
-  task_applications       TaskApplicants[] @relation("WorkerApplications")
-  reviews_given           Reviews[]        @relation("RaterReviews")
-  reviews_received        Reviews[]        @relation("RateeReviews")
+  id_user                 String           @id @default(uuid())
+  id_role                 String
+  nama_lengkap            String
+  avatar_url              String?
+  bio                     String?
+  pendidikan_terakhir     String?
+  rating_avg              Float            @default(0.0)
+  total_completed         Int              @default(0)
+  total_balance           Float            @default(0.0)
+  username                String           @unique
+  alamat                  String?
+  no_telpon               String?
+  email                   String           @unique
+  auth_id                 String?          @unique @db.Uuid
+  fcm_token               String?
   chat_rooms_as_requester ChatRoom[]       @relation("RequesterChats")
   chat_rooms_as_worker    ChatRoom[]       @relation("WorkerChats")
   messages_sent           Message[]        @relation("UserMessages")
+  notifications           Notifications[]
+  reviews_received        Reviews[]        @relation("RateeReviews")
+  reviews_given           Reviews[]        @relation("RaterReviews")
+  skills_user             SkillsUser[]
+  tasks_posted            Task[]           @relation("RequesterTasks")
+  task_applications       TaskApplicants[] @relation("WorkerApplications")
+  transactions            Transactions[]
+  role                    Role             @relation(fields: [id_role], references: [id_role])
 }
 
 model Task {
@@ -72,23 +76,19 @@ model Task {
   judul_tugas     String
   deskripsi_tugas String
   estimasi_waktu  String?
-  kompensasi      Float                     @default(0.0)
-  id_category     String?
   created_at      DateTime                  @default(now())
   completed_at    DateTime?
   accepted_at     DateTime?
-
-  // PostGIS Spatial column for radius calculation
-  lokasi_geo Unsupported("geography(Point, 4326)")?
-
-  requester    User               @relation("RequesterTasks", fields: [id_requester], references: [id_user], onDelete: Cascade)
-  status_task  StatusTask         @relation(fields: [id_status_task], references: [id_status_task])
-  TaskCategory TaskCategory?      @relation(fields: [id_category], references: [id_category])
-  
-  requirements TaskRequirements[]
-  applicants   TaskApplicants[]
-  reviews      Reviews[]
-  chat_rooms   ChatRoom[]
+  lokasi_geo      Unsupported("geography")?
+  kompensasi      Float                     @default(0.0)
+  id_category     String
+  chat_rooms      ChatRoom[]
+  reviews         Reviews[]
+  kategori        TaskCategory              @relation(fields: [id_category], references: [id_category])
+  requester       User                      @relation("RequesterTasks", fields: [id_requester], references: [id_user], onDelete: Cascade)
+  status_task     StatusTask                @relation(fields: [id_status_task], references: [id_status_task])
+  applicants      TaskApplicants[]
+  requirements    TaskRequirements[]
 }
 
 model Transactions {
@@ -139,8 +139,8 @@ model TaskApplicants {
   id_status_task_applicants String
   id_worker                 String
   id_tasks                  String
-  pesan                     String?
   applied_at                DateTime             @default(now())
+  pesan                     String?
   status_applicant          StatusTaskApplicants @relation(fields: [id_status_task_applicants], references: [id_status_task_applicants])
   task                      Task                 @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)
   worker                    User                 @relation("WorkerApplications", fields: [id_worker], references: [id_user], onDelete: Cascade)
@@ -161,16 +161,15 @@ model Reviews {
 }
 
 model ChatRoom {
-  id_chat_room String   @id @default(uuid())
+  id_chat_room String    @id @default(uuid())
   id_tasks     String
   id_requester String
   id_worker    String
-  created_at   DateTime @default(now())
-
-  task      Task      @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)
-  requester User      @relation("RequesterChats", fields: [id_requester], references: [id_user], onDelete: Cascade)
-  worker    User      @relation("WorkerChats", fields: [id_worker], references: [id_user], onDelete: Cascade)
-  messages  Message[]
+  created_at   DateTime  @default(now())
+  requester    User      @relation("RequesterChats", fields: [id_requester], references: [id_user], onDelete: Cascade)
+  task         Task      @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)
+  worker       User      @relation("WorkerChats", fields: [id_worker], references: [id_user], onDelete: Cascade)
+  messages     Message[]
 
   @@unique([id_tasks, id_worker])
 }
@@ -183,16 +182,8 @@ model Message {
   image_url    String?
   is_read      Boolean  @default(false)
   created_at   DateTime @default(now())
-
-  chat_room ChatRoom @relation(fields: [id_chat_room], references: [id_chat_room], onDelete: Cascade)
-  sender    User     @relation("UserMessages", fields: [id_sender], references: [id_user], onDelete: Cascade)
-}
-
-model TaskCategory {
-  id_category   String  @id @default(uuid())
-  nama_kategori String  @unique
-  icon          String?
-  Task          Task[]
+  chat_room    ChatRoom @relation(fields: [id_chat_room], references: [id_chat_room], onDelete: Cascade)
+  sender       User     @relation("UserMessages", fields: [id_sender], references: [id_user], onDelete: Cascade)
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.

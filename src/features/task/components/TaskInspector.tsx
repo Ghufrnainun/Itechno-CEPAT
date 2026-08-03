@@ -103,21 +103,18 @@ export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspect
         </div>
 
         <div className="mb-xl">
-          <h3 className="font-headline-sm text-headline-sm text-on-surface mb-md">Daftar Pekerjaan</h3>
-          <ul className="flex flex-col gap-sm">
-            <li className="flex items-start gap-md">
-              <span className="material-symbols-outlined text-outline mt-xs text-[18px]">radio_button_unchecked</span>
-              <span className="font-body-md text-body-md text-on-surface">Datang ke lokasi</span>
-            </li>
-            <li className="flex items-start gap-md">
-              <span className="material-symbols-outlined text-outline mt-xs text-[18px]">radio_button_unchecked</span>
-              <span className="font-body-md text-body-md text-on-surface">Lakukan pekerjaan sesuai instruksi</span>
-            </li>
-            <li className="flex items-start gap-md">
-              <span className="material-symbols-outlined text-outline mt-xs text-[18px]">radio_button_unchecked</span>
-              <span className="font-body-md text-body-md text-on-surface">Selesai dalam {task.duration_estimate}</span>
-            </li>
-          </ul>
+          <h3 className="font-headline-sm text-headline-sm text-on-surface mb-md">Skill yang Dibutuhkan</h3>
+          {task.skills && task.skills.length > 0 ? (
+            <div className="flex flex-wrap gap-xs">
+              {task.skills.map((skill) => (
+                <div key={skill.id_skill} className="px-sm py-1 bg-primary-container/30 text-primary font-body-sm text-body-sm rounded-full border border-primary/20">
+                  {skill.nama_skill}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="font-body-sm text-body-sm text-on-surface-variant italic">Tidak ada spesifikasi skill khusus.</p>
+          )}
         </div>
       </div>
 

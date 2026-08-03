@@ -15,44 +15,39 @@ export default function DashboardPage() {
   const { role } = useCurrentRole();
   const { coords } = useGeolocation();
 
-  const [tasks, setTasks] = useState<(Task & { distance: number })[]>([]);
-  const [featuredTask, setFeaturedTask] = useState<(Task & { distance?: number }) | null>(null);
+  const [tasks, setTasks] = useState<any[]>([]); // Lightweight tasks for map
+  const [featuredTask, setFeaturedTask] = useState<any | null>(null); // Rich task for featured card
 
   useEffect(() => {
-    async function loadTasks() {
-      try {
-        const params = new URLSearchParams({ 
-          lat: coords.latitude.toString(), 
-          lng: coords.longitude.toString(), 
-          radius: "5" 
-        });
-        const res = await fetch(`/api/tasks?${params.toString()}`);
-        const data = await res.json();
-        
-        if (data.success) {
-          const list = data.data.map((t: any) => ({
-            id_task: t.id_tasks,
-            title: t.judul_tugas,
-            description: t.deskripsi_tugas,
-            duration_estimate: t.estimasi_waktu ?? "",
-            compensation: t.kompensasi,
-            status: t.status,
-            created_at: t.created_at,
-            updated_at: t.created_at,
-            id_requester: t.id_requester,
-            latitude: t.latitude,
-            longitude: t.longitude,
-            distance: t.distance_m ? t.distance_m / 1000 : undefined
-          }));
-          
-          setTasks(list);
-          if (list.length > 0) setFeaturedTask(list[0]);
+    async function loadData() {
+      // 1. Fetch lightweight tasks for the mini-map
+      const mapUrl = new URL('/api/tasks/nearby', window.location.origin);
+      mapUrl.searchParams.append('lat', coords.latitude.toString());
+      mapUrl.searchParams.append('lng', coords.longitude.toString());
+      mapUrl.searchParams.append('radius', '5000'); // 5km
+      
+      const mapRes = await fetch(mapUrl.toString(), { cache: 'no-store' });
+      if (mapRes.ok) {
+        const mapJson = await mapRes.json();
+        setTasks(mapJson.data || []);
+      }
+
+      // 2. Fetch 1 featured task with rich data from the feed API
+      const feedUrl = new URL('/api/tasks/feed', window.location.origin);
+      feedUrl.searchParams.append('lat', coords.latitude.toString());
+      feedUrl.searchParams.append('lng', coords.longitude.toString());
+      feedUrl.searchParams.append('limit', '1');
+      feedUrl.searchParams.append('sort', 'distance_asc');
+
+      const feedRes = await fetch(feedUrl.toString(), { cache: 'no-store' });
+      if (feedRes.ok) {
+        const feedJson = await feedRes.json();
+        if (feedJson.data && feedJson.data.length > 0) {
+          setFeaturedTask(feedJson.data[0]);
         }
-      } catch (e) {
-        console.error("Gagal memuat tasks dashboard", e);
       }
     }
-    loadTasks();
+    loadData();
   }, [coords]);
 
   const userName = "Budi";
