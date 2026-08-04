@@ -9,6 +9,14 @@ Dokumen ini menjelaskan alur pengguna (*User Journey*), perpindahan layar (*Scre
 ```
 [ L0: Landing Page ] ──► [ L1: Auth (Login/Register) ]
                                    │
+                        ┌──────────┴──────────┐
+                        ▼ (user baru)         ▼ (user lama)
+              [ L1.5: Onboarding ]            │
+              Step 1 – Pilih Peran            │
+              Step 2 – Kontak WA              │
+              Step 3 – Bio & Skills           │
+                        │                     │
+                        └──────────┬──────────┘
                                    ▼
                       [ L2: Map & Task Dashboard ]
                                    │

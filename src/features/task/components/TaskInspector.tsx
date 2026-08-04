@@ -18,7 +18,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspect
   const router = useRouter();
 
   return (
-    <aside className="w-[440px] bg-surface border-l border-outline-variant flex-shrink-0 h-full flex flex-col relative z-20 shadow-[-4px_0_24px_rgba(0,0,0,0.02)] animate-slide-in">
+    <aside className="w-full sm:w-[440px] fixed inset-y-0 right-0 sm:relative bg-surface border-l border-outline-variant flex-shrink-0 h-full flex flex-col z-50 sm:z-20 shadow-xl sm:shadow-[-4px_0_24px_rgba(0,0,0,0.02)] animate-slide-in">
       {/* Top Nav / Action Bar */}
       <div className="px-lg py-md flex items-center justify-between border-b border-outline-variant/50">
         <button 

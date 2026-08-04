@@ -41,8 +41,24 @@ export default function UserProfilePage() {
   const [reviews, setReviews] = useState<ReviewData[]>([]);
   const [loadingReviews, setLoadingReviews] = useState<boolean>(true);
 
-  // Load from local storage if available
+  // Load from API & local storage
   useEffect(() => {
+    async function loadUser() {
+      try {
+        const res = await fetch("/api/users/me");
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            if (json.data.nama_lengkap) setName(json.data.nama_lengkap);
+            if (json.data.pendidikan_terakhir) setUniv(json.data.pendidikan_terakhir);
+            if (json.data.bio) setBio(json.data.bio);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
     const savedName = localStorage.getItem("cepat_user_name");
     const savedUniv = localStorage.getItem("cepat_user_univ");
     const savedBio = localStorage.getItem("cepat_user_bio");
@@ -58,6 +74,8 @@ export default function UserProfilePage() {
         console.error(e);
       }
     }
+
+    loadUser();
   }, []);
 
   // Fetch Reviews from Backend API
@@ -203,7 +221,7 @@ export default function UserProfilePage() {
                       key={skillVal}
                       className="inline-flex items-center gap-xs bg-surface-container px-sm py-xs rounded-lg border border-outline-variant text-[11px] font-semibold text-primary font-sans"
                     >
-                      <span>{skillInfo.emoji}</span>
+                      <span className="material-symbols-outlined text-[15px]">{skillInfo.icon}</span>
                       <span>{skillInfo.label}</span>
                     </span>
                   );
