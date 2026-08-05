@@ -7,7 +7,7 @@ import { RealtimeChannel } from "@supabase/supabase-js";
 export interface NotificationItem {
   id: string;
   userId: string;
-  type: "apply" | "accept" | "points" | "review" | "system";
+  type: "apply" | "accept" | "reject" | "cancel" | "progress" | "points" | "review" | "system" | "welcome" | "escrow" | "chat" | "reminder" | "milestone" | "topup";
   title: string;
   message: string;
   data?: Record<string, unknown>;
@@ -83,7 +83,19 @@ export function useNotifications() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !isMounted) return;
 
-      const channelName = `user-notifications-${user.id}`;
+      // Ambil Prisma user_id (berbeda dengan Supabase auth user.id)
+      let prismaUserId: string | null = null;
+      try {
+        const res = await fetch("/api/users/me");
+        if (res.ok) {
+          const json = await res.json();
+          prismaUserId = json.data?.id_user || null;
+        }
+      } catch (_) { /* fallback: realtime won't work but app still functional */ }
+
+      if (!prismaUserId || !isMounted) return;
+
+      const channelName = `user-notifications-${prismaUserId}`;
       
       // Hapus channel lama jika ada
       const existingChannel = supabase.getChannels().find((ch) => ch.topic === `realtime:${channelName}`);
@@ -93,33 +105,50 @@ export function useNotifications() {
 
       if (!isMounted) return;
 
-      const uniqueChannelName = `user-notifications-${user.id}-${Math.random().toString(36).substring(2, 9)}`;
+      const uniqueChannelName = `user-notifications-${prismaUserId}-${Math.random().toString(36).substring(2, 9)}`;
       channel = supabase
         .channel(uniqueChannelName)
         .on(
           "postgres_changes",
           {
-            event: "INSERT",
+            event: "*",
             schema: "public",
             table: "Notifications",
-            filter: `user_id=eq.${user.id}`,
+            filter: `user_id=eq.${prismaUserId}`,
           },
           (payload) => {
             if (!isMounted) return;
-            const newNotif = payload.new as any;
-            const formatted: NotificationItem = {
-              id: newNotif.id_notifications || newNotif.id,
-              userId: newNotif.user_id,
-              type: newNotif.type || "system",
-              title: newNotif.title,
-              message: newNotif.message,
-              data: newNotif.data,
-              isRead: newNotif.is_read || false,
-              createdAt: newNotif.created_at || new Date().toISOString(),
-            };
+            
+            if (payload.eventType === 'INSERT') {
+              const newNotif = payload.new as any;
+              const formatted: NotificationItem = {
+                id: newNotif.id_notifications || newNotif.id,
+                userId: newNotif.user_id,
+                type: newNotif.type || "system",
+                title: newNotif.title,
+                message: newNotif.message,
+                data: newNotif.data,
+                isRead: newNotif.is_read || false,
+                createdAt: newNotif.created_at || new Date().toISOString(),
+              };
 
-            setNotifications((prev) => [formatted, ...prev]);
-            setUnreadCount((prev) => prev + 1);
+              setNotifications((prev) => [formatted, ...prev]);
+              setUnreadCount((prev) => prev + 1);
+            } else if (payload.eventType === 'UPDATE') {
+              const updated = payload.new as any;
+              const targetId = updated.id_notifications || updated.id;
+              
+              setNotifications((prev) => {
+                const isCurrentlyUnread = prev.find(n => n.id === targetId)?.isRead === false;
+                
+                // Jika dari belum dibaca menjadi dibaca
+                if (isCurrentlyUnread && updated.is_read) {
+                  setUnreadCount((count) => Math.max(0, count - 1));
+                }
+                
+                return prev.map(n => n.id === targetId ? { ...n, isRead: updated.is_read } : n);
+              });
+            }
           }
         );
 

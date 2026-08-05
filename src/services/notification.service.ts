@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client'
 
 export interface CreateNotificationParams {
   userId: string
-  type: 'apply' | 'accept' | 'points' | 'review' | 'system'
+  type: 'apply' | 'accept' | 'reject' | 'cancel' | 'progress' | 'points' | 'review' | 'system' | 'welcome' | 'escrow' | 'chat' | 'reminder' | 'milestone' | 'topup'
   title: string
   message: string
   data?: Record<string, unknown>
@@ -37,16 +37,27 @@ export const notificationService = {
       })
 
       if (user?.fcm_token) {
-        await sendPushNotification({
+        const success = await sendPushNotification({
           token: user.fcm_token,
           title,
           body: message,
           data: {
             notification_id: notification.id_notifications,
             type,
-            ...(data ? Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])) : {}),
+            ...(data ? Object.fromEntries(Object.entries(data).map(([k, v]) => [k, typeof v === 'object' ? JSON.stringify(v) : String(v)])) : {}),
           },
         })
+
+        // Jika FCM gagal (token expired/invalid), hapus token agar tidak retry terus
+        if (!success) {
+          try {
+            await prisma.user.update({
+              where: { id_user: userId },
+              data: { fcm_token: null },
+            })
+            console.warn(`[notificationService] Stale FCM token cleared for user ${userId}`)
+          } catch (_) { /* non-blocking */ }
+        }
       }
     } catch (fcmError) {
       console.warn('[notificationService.createNotification] Push FCM skipped or failed:', fcmError)

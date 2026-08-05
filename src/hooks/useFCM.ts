@@ -13,8 +13,18 @@ export function useFCM() {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
     // Register Service Worker untuk FCM
+    const firebaseConfig = {
+      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    };
+    const configString = encodeURIComponent(JSON.stringify(firebaseConfig));
+
     navigator.serviceWorker
-      .register("/firebase-messaging-sw.js")
+      .register(`/firebase-messaging-sw.js?firebaseConfig=${configString}`)
       .then((registration) => {
         console.log("[FCM SW Registered]:", registration.scope);
       })
@@ -27,28 +37,26 @@ export function useFCM() {
     }
   }, []);
 
-  useEffect(() => {
-    async function syncToken() {
-      const token = await requestFcmToken();
-      if (token) {
-        setFcmToken(token);
-        setPermission(Notification.permission);
+  const requestPermission = async () => {
+    const token = await requestFcmToken();
+    if (token) {
+      setFcmToken(token);
+      setPermission(Notification.permission);
 
-        // Send token to backend API to save in user profile
-        try {
-          await fetch("/api/users/me/fcm-token", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fcm_token: token }),
-          });
-        } catch (err) {
-          console.warn("[useFCM] Failed to sync FCM token to server:", err);
-        }
+      // Send token to backend API to save in user profile
+      try {
+        await fetch("/api/users/me/fcm-token", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fcm_token: token }),
+        });
+      } catch (err) {
+        console.warn("[useFCM] Failed to sync FCM token to server:", err);
       }
+    } else {
+      setPermission(Notification.permission);
     }
-
-    syncToken();
-  }, []);
+  };
 
   // Listen to foreground FCM messages
   useEffect(() => {
@@ -66,5 +74,6 @@ export function useFCM() {
   return {
     fcmToken,
     permission,
+    requestPermission,
   };
 }

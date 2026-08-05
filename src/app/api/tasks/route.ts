@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { createTaskSchema } from '@/lib/validations/task.schema'
 import { taskService } from '@/services/task.service'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
+import { notificationService } from '@/services/notification.service'
 
 // GET /api/tasks — list tasks dengan filter opsional
 export async function GET(request: NextRequest) {
@@ -90,6 +91,43 @@ export async function POST(request: NextRequest) {
         deskripsi: `Escrow ditahan: ${parsed.data.judul_tugas}`,
       },
     })
+
+    // Notifikasi escrow hold ke requester
+    try {
+      await notificationService.createNotification({
+        userId: currentUser.id_user,
+        type: 'escrow',
+        title: 'Dana Dikunci untuk Tugas 🔒',
+        message: `${parsed.data.kompensasi.toLocaleString('id-ID')} poin telah dikunci di escrow untuk task "${parsed.data.judul_tugas}".`,
+        data: { task_id: taskId },
+      })
+    } catch (_) { /* non-blocking */ }
+
+    // Notifikasi broadcast ke worker terdekat (nearby task)
+    if (parsed.data.latitude && parsed.data.longitude) {
+      try {
+        const nearbyWorkers = await prisma.$queryRaw<Array<{ id_user: string }>>`
+          SELECT u.id_user
+          FROM "User" u
+          JOIN "Role" r ON r.id_role = u.id_role
+          WHERE r.nama_role = 'Worker'
+            AND u.id_user != ${currentUser.id_user}
+          LIMIT 20
+        `
+
+        await Promise.allSettled(
+          nearbyWorkers.map((worker) =>
+            notificationService.createNotification({
+              userId: worker.id_user,
+              type: 'system',
+              title: 'Tugas Baru di Sekitarmu! 📍',
+              message: `"${parsed.data.judul_tugas}" — Kompensasi: ${parsed.data.kompensasi.toLocaleString('id-ID')} poin. Lamar sekarang!`,
+              data: { task_id: taskId },
+            })
+          )
+        )
+      } catch (_) { /* non-blocking */ }
+    }
 
     return NextResponse.json(
       { success: true, message: 'Task berhasil dibuat.', data: { id_tasks: taskId } },

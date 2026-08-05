@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { notificationService } from "@/services/notification.service";
 
 export async function GET(request: NextRequest) {
   try {
@@ -133,6 +134,19 @@ export async function PUT(request: NextRequest) {
           });
         }
       }
+    }
+
+    // Kirim notifikasi onboarding selesai jika ada skills (indikasi onboarding pertama kali)
+    if (Array.isArray(skills) && skills.length > 0) {
+      try {
+        await notificationService.createNotification({
+          userId: updatedUser.id_user,
+          type: 'system',
+          title: 'Profil Lengkap! 🎯',
+          message: 'Profilmu sudah siap! Mulai jelajahi tugas di sekitarmu atau buat tugas pertamamu sekarang.',
+          data: { onboarding_complete: true },
+        })
+      } catch (_) { /* non-blocking */ }
     }
 
     return NextResponse.json({

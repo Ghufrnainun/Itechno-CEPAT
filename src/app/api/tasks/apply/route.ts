@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
-import { applyTaskSchema } from '@/lib/validations/task.schema'
 import { z } from 'zod'
+import { taskService } from '@/services/task.service'
 
-const applyRouteSchema = applyTaskSchema.extend({
+const applySchema = z.object({
   id_tasks: z.string().uuid('ID Task tidak valid'),
+  pesan: z.string().optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Validate request payload
     const body = await request.json()
-    const parsed = applyRouteSchema.safeParse(body)
+    const parsed = applySchema.safeParse(body)
     
     if (!parsed.success) {
       return NextResponse.json(
@@ -46,65 +47,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 4. Verify target task exists
-    const task = await prisma.task.findUnique({
-      where: { id_tasks }
-    })
-
-    if (!task) {
-      return NextResponse.json(
-        { success: false, message: 'Tugas tidak ditemukan.' },
-        { status: 404 }
-      )
-    }
-
-    // Prevent self-application
-    if (task.id_requester === dbUser.id_user) {
-      return NextResponse.json(
-        { success: false, message: 'Anda tidak dapat melamar tugas Anda sendiri.' },
-        { status: 400 }
-      )
-    }
-
-    // 5. Check for duplicate applications
-    const existingApplication = await prisma.taskApplicants.findFirst({
-      where: {
-        id_worker: dbUser.id_user,
-        id_tasks: id_tasks
-      }
-    })
-
-    if (existingApplication) {
-      return NextResponse.json(
-        { success: false, message: 'Anda sudah melamar tugas ini.' },
-        { status: 409 }
-      )
-    }
-
-    // 6. Resolve 'PENDING' status UUID
-    const pendingStatus = await prisma.statusTaskApplicants.findUnique({
-      where: { nama_status: 'PENDING' }
-    })
-
-    if (!pendingStatus) {
-      return NextResponse.json(
-        { success: false, message: 'Status PENDING tidak ditemukan di database.' },
-        { status: 500 }
-      )
-    }
-
-    // 7. Persist application to database
-    const newApplication = await prisma.taskApplicants.create({
-      data: {
-        id_tasks: id_tasks,
-        id_worker: dbUser.id_user,
-        id_status_task_applicants: pendingStatus.id_status_task_applicants,
-        pesan: pesan,
-      },
-      include: {
-        status_applicant: true
-      }
-    })
+    // 4. Apply via taskService (includes validation + notification to requester)
+    const newApplication = await taskService.applyToTask(id_tasks, dbUser.id_user, pesan)
 
     return NextResponse.json({
       success: true,
@@ -113,10 +57,11 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
 
   } catch (error) {
+    const errMessage = error instanceof Error ? error.message : 'Terjadi kesalahan internal server.'
     console.error('[POST /api/tasks/apply] Error:', error)
     return NextResponse.json(
-      { success: false, message: 'Terjadi kesalahan internal server.' },
-      { status: 500 }
+      { success: false, message: errMessage },
+      { status: error instanceof Error && error.message.includes('tidak') ? 400 : 500 }
     )
   }
 }
@@ -134,7 +79,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const body = await request.json()
-    const parsed = applyRouteSchema.safeParse(body)
+    const parsed = applySchema.safeParse(body)
     
     if (!parsed.success) {
       return NextResponse.json(
@@ -156,44 +101,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Pastikan task masih open
-    const task = await prisma.task.findUnique({
-      where: { id_tasks },
-      include: { status_task: true }
-    })
-
-    if (!task) {
-      return NextResponse.json(
-        { success: false, message: 'Tugas tidak ditemukan.' },
-        { status: 404 }
-      )
-    }
-
-    if (task.status_task.nama_status.toLowerCase() !== 'open' && task.status_task.nama_status.toUpperCase() !== 'OPEN') {
-      return NextResponse.json(
-        { success: false, message: 'Tidak dapat membatalkan lamaran, task sudah tidak menerima pelamar.' },
-        { status: 400 }
-      )
-    }
-
-    // Hapus lamaran
-    const existingApplication = await prisma.taskApplicants.findFirst({
-      where: {
-        id_worker: dbUser.id_user,
-        id_tasks: id_tasks
-      }
-    })
-
-    if (!existingApplication) {
-      return NextResponse.json(
-        { success: false, message: 'Lamaran tidak ditemukan.' },
-        { status: 404 }
-      )
-    }
-
-    await prisma.taskApplicants.delete({
-      where: { id_task_applicants: existingApplication.id_task_applicants }
-    })
+    await taskService.cancelApplication(id_tasks, dbUser.id_user)
 
     return NextResponse.json({
       success: true,
@@ -201,10 +109,12 @@ export async function DELETE(request: NextRequest) {
     })
 
   } catch (error) {
+    const errMessage = error instanceof Error ? error.message : 'Terjadi kesalahan internal server.'
     console.error('[DELETE /api/tasks/apply] Error:', error)
     return NextResponse.json(
-      { success: false, message: 'Terjadi kesalahan internal server.' },
-      { status: 500 }
+      { success: false, message: errMessage },
+      { status: error instanceof Error && error.message.includes('tidak') ? 400 : 500 }
     )
   }
 }
+
