@@ -86,6 +86,12 @@
 
 Berikut adalah definisi struktur tabel secara menyeluruh, termasuk penambahan ekstensi spasial, indeks pencarian, dan relasi kunci asing (*Foreign Keys*) yang digunakan pada proyek ini.
 
+> [!WARNING]
+> **Penting: Case-Sensitivity pada Status (Mirip Enum)**
+> Saat melakukan *query* Prisma untuk mencari berdasarkan string di tabel referensi (seperti `status_task` atau `status_task_applicants`), ingat bahwa PostgreSQL dan Prisma secara default bersifat **case-sensitive**. 
+> Jika di database status tersimpan sebagai huruf kapital (contoh: `ACCEPTED`), sedangkan query mencari `'accepted'`, hasilnya akan **kosong**. 
+> Selalu pastikan menggunakan `mode: 'insensitive'` pada klausa `where` Prisma untuk string enum:
+> `where: { nama_status: { equals: 'accepted', mode: 'insensitive' } }`
 ### 3.1 `role`
 
 ### 3.1 Prasyarat Ekstensi dan Enums
@@ -141,6 +147,9 @@ CREATE TABLE "Task" (
     "judul_tugas" TEXT NOT NULL,
     "deskripsi_tugas" TEXT NOT NULL,
     "estimasi_waktu" TEXT,
+    "kompensasi" DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    "worker_started" BOOLEAN NOT NULL DEFAULT FALSE,
+    "requester_started" BOOLEAN NOT NULL DEFAULT FALSE,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "completed_at" TIMESTAMP(3),
     "accepted_at" TIMESTAMP(3),
@@ -159,6 +168,7 @@ CREATE TABLE "Transactions" (
     "id_user" TEXT NOT NULL,
     "nominal" DOUBLE PRECISION NOT NULL,
     "tipe_transaksi" "TransactionType" NOT NULL,
+    "sub_type" "TransactionSubType" NOT NULL,
     "deskripsi" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
