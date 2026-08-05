@@ -282,9 +282,7 @@ export default function TaskDetailPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-xl gap-sm min-h-[50vh]">
-        <span className="material-symbols-outlined text-primary text-[48px] animate-spin" aria-hidden="true">
-          sync
-        </span>
+        <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
         <p className="font-body-md text-body-md text-on-surface-variant">Memuat detail tugas...</p>
       </div>
     );

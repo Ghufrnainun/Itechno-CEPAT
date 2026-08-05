@@ -229,7 +229,7 @@ export default function RiwayatPage() {
           {/* Task list */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-sm">
-              <span className="material-symbols-outlined text-primary text-[40px] animate-spin" aria-hidden="true">sync</span>
+              <div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
               <p className="font-body-sm text-on-surface-variant">Memuat riwayat...</p>
             </div>
           ) : filteredTasks.length === 0 ? (
