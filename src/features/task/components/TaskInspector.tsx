@@ -44,7 +44,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspect
           <h2 className="font-headline-lg text-headline-lg text-on-surface leading-tight mb-sm">{task.title}</h2>
           <div className="flex items-center justify-between mb-md">
             <div className="flex items-center gap-sm">
-              <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold">
+              <div className="w-10 h-10 min-w-[40px] rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold shrink-0">
                 {task.description.charAt(0)}
               </div>
               <div>
@@ -119,7 +119,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspect
       </div>
 
       {/* Bottom CTA Fixed */}
-      <div className="p-lg bg-surface border-t border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.02)] flex gap-sm">
+      <div className="p-lg pb-24 sm:pb-lg bg-surface border-t border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.02)] flex gap-sm">
         <Button 
           variant="secondary"
           className="flex-1 py-md text-[16px] flex items-center justify-center gap-xs"

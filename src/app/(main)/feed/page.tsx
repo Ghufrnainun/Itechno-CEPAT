@@ -12,6 +12,7 @@ import { TaskInspector } from "@/features/task/components/TaskInspector";
 import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/utils/format";
 import { useToast } from "@/components/ui/Toast";
+import { Modal } from "@/components/ui/Modal";
 
 export default function FeedPage() {
   const router = useRouter();
@@ -29,6 +30,12 @@ export default function FeedPage() {
   const [selectedTask, setSelectedTask] = useState<(Task & { distance?: number }) | null>(null);
   
   const [appliedTaskIds, setAppliedTaskIds] = useState<string[]>([]);
+
+  // Apply Modal state
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+  const [applyMessage, setApplyMessage] = useState("");
+  const [taskToApply, setTaskToApply] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     setActiveTab(role === "requester" ? "mytasks" : "feed");
@@ -123,23 +130,36 @@ export default function FeedPage() {
     loadTasks();
   }, [coords, sortBy, searchQuery, role, activeTab, router]);
 
-  const handleApply = async (taskId: string) => {
+  const handleApply = (taskId: string) => {
+    setTaskToApply(taskId);
+    setApplyMessage("");
+    setIsApplyModalOpen(true);
+  };
+
+  const handleApplySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!taskToApply) return;
+    
+    setActionLoading(true);
     try {
-      const res = await fetch('/api/tasks/apply', {
+      const res = await fetch(`/api/tasks/${taskToApply}/apply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_tasks: taskId })
+        body: JSON.stringify({ pesan: applyMessage })
       });
       const data = await res.json();
       
       if (res.ok && data.success) {
-        setAppliedTaskIds(prev => [...prev, taskId]);
+        setAppliedTaskIds(prev => [...prev, taskToApply]);
         showToast("Berhasil melamar tugas!");
+        setIsApplyModalOpen(false);
       } else {
         showToast(data.message || "Gagal melamar tugas");
       }
     } catch (e) {
       showToast("Terjadi kesalahan jaringan.");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -353,6 +373,37 @@ export default function FeedPage() {
           />
         )}
       </div>
+
+      {/* Modal: Lamar Pekerjaan */}
+      <Modal isOpen={isApplyModalOpen} onClose={() => setIsApplyModalOpen(false)} title="Kirim Lamaran Kerja">
+        <form onSubmit={handleApplySubmit} className="flex flex-col gap-md">
+          <div className="flex flex-col gap-xs">
+            <label className="font-body-sm text-body-sm text-on-surface-variant font-medium">
+              Pesan (Opsional)
+            </label>
+            <textarea
+              value={applyMessage}
+              onChange={(e) => setApplyMessage(e.target.value)}
+              placeholder="Ceritakan mengapa Anda cocok untuk pekerjaan ini..."
+              rows={4}
+              maxLength={500}
+              className="w-full bg-surface-container border border-outline rounded p-sm text-on-surface font-body-sm text-body-sm focus:outline-none focus:border-primary resize-none"
+            />
+            <span className="text-right font-label-sm text-label-sm text-on-surface-variant">
+              {applyMessage.length}/500
+            </span>
+          </div>
+
+          <div className="flex gap-sm justify-end mt-sm">
+            <Button type="button" variant="ghost" onClick={() => setIsApplyModalOpen(false)} disabled={actionLoading}>
+              Batal
+            </Button>
+            <Button type="submit" variant="primary" disabled={actionLoading}>
+              {actionLoading ? "Mengirim..." : "Kirim Lamaran"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -1,23 +1,46 @@
-import { prisma } from '@/lib/prisma'
-import { CreateTaskInput } from '@/lib/validations/task.schema'
-import { notificationService } from '@/services/notification.service'
+import { prisma } from '@/lib/prisma';
+import { CreateTaskInput } from '@/lib/validations/task.schema';
+import { notificationService } from '@/services/notification.service';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
+const STATUS_MAP: Record<string, string> = {
+  accepted: 'ASSIGNED',
+};
+
+const REVERSE_STATUS_MAP: Record<string, string> = {
+  ASSIGNED: 'accepted',
+};
+
+function getDbStatusName(namaStatus: string): string {
+  return STATUS_MAP[namaStatus.toLowerCase()] ?? namaStatus.toUpperCase();
+}
+
+function getFrontendStatusName(dbStatusName: string): string {
+  const upper = dbStatusName.toUpperCase();
+  return REVERSE_STATUS_MAP[upper] ?? upper.toLowerCase();
+}
+
 async function getStatusId(namaStatus: string): Promise<string> {
+  const dbName = getDbStatusName(namaStatus);
+
   const status = await prisma.statusTask.findFirst({
-    where: { nama_status: namaStatus.toUpperCase() },
-  })
-  if (!status) throw new Error(`Status task '${namaStatus}' tidak ditemukan di database.`)
-  return status.id_status_task
+    where: { nama_status: dbName },
+  });
+  if (!status)
+    throw new Error(`Status task '${namaStatus}' tidak ditemukan di database.`);
+  return status.id_status_task;
 }
 
 async function getApplicantStatusId(namaStatus: string): Promise<string> {
   const status = await prisma.statusTaskApplicants.findFirst({
     where: { nama_status: namaStatus.toUpperCase() },
-  })
-  if (!status) throw new Error(`Status applicant '${namaStatus}' tidak ditemukan di database.`)
-  return status.id_status_task_applicants
+  });
+  if (!status)
+    throw new Error(
+      `Status applicant '${namaStatus}' tidak ditemukan di database.`,
+    );
+  return status.id_status_task_applicants;
 }
 
 // ─── Task Service ────────────────────────────────────────────────────────────
@@ -28,27 +51,38 @@ export const taskService = {
    * Simpan lokasi menggunakan raw SQL (PostGIS GEOGRAPHY).
    */
   async createTask(params: CreateTaskInput & { requesterId: string }) {
-    const { judul_tugas, deskripsi_tugas, estimasi_waktu, kompensasi, latitude, longitude, requesterId, kategori } = params
+    const {
+      judul_tugas,
+      deskripsi_tugas,
+      estimasi_waktu,
+      kompensasi,
+      latitude,
+      longitude,
+      requesterId,
+      kategori,
+    } = params;
 
-    const openStatusId = await getStatusId('open')
+    const openStatusId = await getStatusId('open');
 
     // Cari kategori yang sesuai — atau gunakan default (kategori pertama)
-    let categoryId: string
+    let categoryId: string;
     if (kategori) {
       const cat = await prisma.taskCategory.findFirst({
         where: { nama_kategori: { contains: kategori, mode: 'insensitive' } },
-      })
+      });
       if (cat) {
-        categoryId = cat.id_category
+        categoryId = cat.id_category;
       } else {
-        const defaultCat = await prisma.taskCategory.findFirst()
-        if (!defaultCat) throw new Error('Tidak ada kategori task yang tersedia di database.')
-        categoryId = defaultCat.id_category
+        const defaultCat = await prisma.taskCategory.findFirst();
+        if (!defaultCat)
+          throw new Error('Tidak ada kategori task yang tersedia di database.');
+        categoryId = defaultCat.id_category;
       }
     } else {
-      const defaultCat = await prisma.taskCategory.findFirst()
-      if (!defaultCat) throw new Error('Tidak ada kategori task yang tersedia di database.')
-      categoryId = defaultCat.id_category
+      const defaultCat = await prisma.taskCategory.findFirst();
+      if (!defaultCat)
+        throw new Error('Tidak ada kategori task yang tersedia di database.');
+      categoryId = defaultCat.id_category;
     }
 
     // Insert task dengan raw SQL agar bisa pakai ST_MakePoint untuk PostGIS
@@ -70,28 +104,28 @@ export const taskService = {
         ${categoryId}
       )
       RETURNING id_tasks
-    `
+    `;
 
-    const taskId = result[0]?.id_tasks
-    if (!taskId) throw new Error('Gagal membuat task.')
+    const taskId = result[0]?.id_tasks;
+    if (!taskId) throw new Error('Gagal membuat task.');
 
     // Jika ada kategori, link ke skill master juga
     if (kategori) {
       try {
         const skill = await prisma.skillsMaster.findFirst({
           where: { nama_skill: { contains: kategori, mode: 'insensitive' } },
-        })
+        });
         if (skill) {
           await prisma.taskRequirements.create({
             data: { id_tasks: taskId, id_skill_master: skill.id_skill_master },
-          })
+          });
         }
       } catch (_) {
         // Non-blocking: skip jika skill tidak ditemukan
       }
     }
 
-    return taskId
+    return taskId;
   },
 
   /**
@@ -99,34 +133,34 @@ export const taskService = {
    * Untuk nearby tasks, kita pakai raw PostGIS query.
    */
   async getTasks(params: {
-    status?: string
-    lat?: number
-    lng?: number
-    radiusKm?: number
-    requesterId?: string
+    status?: string;
+    lat?: number;
+    lng?: number;
+    radiusKm?: number;
+    requesterId?: string;
   }) {
-    const { status, lat, lng, radiusKm = 2, requesterId } = params
+    const { status, lat, lng, radiusKm = 2, requesterId } = params;
 
     // Jika ada koordinat, gunakan PostGIS geo-query
     if (lat !== undefined && lng !== undefined) {
-      const radiusMeters = radiusKm * 1000
-      const statusValue = (status ?? 'open').toUpperCase()
+      const radiusMeters = radiusKm * 1000;
+      const statusValue = getDbStatusName(status ?? 'open');
 
       const tasks = await prisma.$queryRaw<
         Array<{
-          id_tasks: string
-          judul_tugas: string
-          deskripsi_tugas: string
-          estimasi_waktu: string | null
-          kompensasi: number
-          status: string
-          created_at: Date
-          id_requester: string
-          requester_name: string
-          requester_avatar: string | null
-          distance_m: number
-          latitude: number
-          longitude: number
+          id_tasks: string;
+          judul_tugas: string;
+          deskripsi_tugas: string;
+          estimasi_waktu: string | null;
+          kompensasi: number;
+          status: string;
+          created_at: Date;
+          id_requester: string;
+          requester_name: string;
+          requester_avatar: string | null;
+          distance_m: number;
+          latitude: number;
+          longitude: number;
         }>
       >`
         SELECT
@@ -135,7 +169,7 @@ export const taskService = {
           t.deskripsi_tugas,
           t.estimasi_waktu,
           t.kompensasi,
-          LOWER(st.nama_status) AS status,
+          getFrontendStatusName(st.nama_status) AS status,
           t.created_at,
           t.id_requester,
           u.nama_lengkap AS requester_name,
@@ -152,24 +186,26 @@ export const taskService = {
           AND st.nama_status = ${statusValue}
         ORDER BY distance_m ASC
         LIMIT 50
-      `
-      return tasks
+      `;
+      return tasks;
     }
 
     // Tanpa koordinat: filter biasa
-    const whereClause: Record<string, unknown> = {}
+    const whereClause: Record<string, unknown> = {};
     if (status) {
-      whereClause.status_task = { nama_status: status.toUpperCase() }
+      whereClause.status_task = { nama_status: getDbStatusName(status) };
     }
     if (requesterId) {
-      whereClause.id_requester = requesterId
+      whereClause.id_requester = requesterId;
     }
 
     const tasks = await prisma.task.findMany({
       where: whereClause,
       include: {
         status_task: { select: { nama_status: true } },
-        requester: { select: { id_user: true, nama_lengkap: true, avatar_url: true } },
+        requester: {
+          select: { id_user: true, nama_lengkap: true, avatar_url: true },
+        },
         requirements: {
           include: { skills_master: { select: { nama_skill: true } } },
         },
@@ -177,7 +213,7 @@ export const taskService = {
       },
       orderBy: { created_at: 'desc' },
       take: 50,
-    })
+    });
 
     return tasks.map((t) => ({
       id_tasks: t.id_tasks,
@@ -185,7 +221,7 @@ export const taskService = {
       deskripsi_tugas: t.deskripsi_tugas,
       estimasi_waktu: t.estimasi_waktu,
       kompensasi: t.kompensasi,
-      status: t.status_task.nama_status.toLowerCase(),
+      status: getFrontendStatusName(t.status_task.nama_status),
       created_at: t.created_at,
       completed_at: t.completed_at,
       accepted_at: t.accepted_at,
@@ -194,7 +230,7 @@ export const taskService = {
       requester_avatar: t.requester.avatar_url,
       requirements: t.requirements.map((r) => r.skills_master.nama_skill),
       applicant_count: t._count.applicants,
-    }))
+    }));
   },
 
   /**
@@ -236,33 +272,37 @@ export const taskService = {
         },
         reviews: {
           include: {
-            rater: { select: { id_user: true, nama_lengkap: true, avatar_url: true } },
+            rater: {
+              select: { id_user: true, nama_lengkap: true, avatar_url: true },
+            },
           },
           orderBy: { created_at: 'desc' },
         },
       },
-    })
+    });
 
-    if (!task) return null
+    if (!task) return null;
 
     // Ambil koordinat via raw query (karena PostGIS tidak bisa lewat Prisma select biasa)
-    const geoResult = await prisma.$queryRaw<Array<{ latitude: number; longitude: number }>>`
+    const geoResult = await prisma.$queryRaw<
+      Array<{ latitude: number; longitude: number }>
+    >`
       SELECT
         ST_Y(lokasi_geo::geometry) AS latitude,
         ST_X(lokasi_geo::geometry) AS longitude
       FROM "Task"
       WHERE id_tasks = ${taskId}
-    `
+    `;
 
-    const geo = geoResult[0] ?? { latitude: null, longitude: null }
+    const geo = geoResult[0] ?? { latitude: null, longitude: null };
 
     // Cek apakah viewer sudah apply
-    let hasApplied = false
+    let hasApplied = false;
     if (viewerUserId) {
       const app = await prisma.taskApplicants.findFirst({
         where: { id_tasks: taskId, id_worker: viewerUserId },
-      })
-      hasApplied = !!app
+      });
+      hasApplied = !!app;
     }
 
     return {
@@ -271,7 +311,9 @@ export const taskService = {
       deskripsi_tugas: task.deskripsi_tugas,
       estimasi_waktu: task.estimasi_waktu,
       kompensasi: task.kompensasi,
-      status: task.status_task.nama_status.toLowerCase(),
+      status: getFrontendStatusName(task.status_task.nama_status),
+      worker_started: task.worker_started,
+      requester_started: task.requester_started,
       created_at: task.created_at,
       completed_at: task.completed_at,
       accepted_at: task.accepted_at,
@@ -296,7 +338,7 @@ export const taskService = {
         rater: r.rater,
       })),
       has_applied: hasApplied,
-    }
+    };
   },
 
   /**
@@ -306,19 +348,24 @@ export const taskService = {
     // Validasi: task harus 'open'
     const task = await prisma.task.findUnique({
       where: { id_tasks: taskId },
-      include: { status_task: true, requester: { select: { id_user: true, nama_lengkap: true } } },
-    })
-    if (!task) throw new Error('Task tidak ditemukan.')
-    if (task.status_task.nama_status.toLowerCase() !== 'open') throw new Error('Task sudah tidak menerima lamaran.')
-    if (task.id_requester === workerId) throw new Error('Anda tidak bisa melamar task milik sendiri.')
+      include: {
+        status_task: true,
+        requester: { select: { id_user: true, nama_lengkap: true } },
+      },
+    });
+    if (!task) throw new Error('Task tidak ditemukan.');
+    if (task.status_task.nama_status.toLowerCase() !== 'open')
+      throw new Error('Task sudah tidak menerima lamaran.');
+    if (task.id_requester === workerId)
+      throw new Error('Anda tidak bisa melamar task milik sendiri.');
 
     // Cek duplikasi
     const existing = await prisma.taskApplicants.findFirst({
       where: { id_tasks: taskId, id_worker: workerId },
-    })
-    if (existing) throw new Error('Anda sudah melamar task ini sebelumnya.')
+    });
+    if (existing) throw new Error('Anda sudah melamar task ini sebelumnya.');
 
-    const pendingStatusId = await getApplicantStatusId('pending')
+    const pendingStatusId = await getApplicantStatusId('pending');
 
     const applicant = await prisma.taskApplicants.create({
       data: {
@@ -327,13 +374,13 @@ export const taskService = {
         id_status_task_applicants: pendingStatusId,
         pesan: pesan ?? null,
       },
-    })
+    });
 
     // Notifikasi ke Requester
     const workerData = await prisma.user.findUnique({
       where: { id_user: workerId },
       select: { nama_lengkap: true },
-    })
+    });
 
     try {
       await notificationService.createNotification({
@@ -342,16 +389,51 @@ export const taskService = {
         title: 'Ada Pelamar Baru! 🎉',
         message: `${workerData?.nama_lengkap ?? 'Seseorang'} melamar task "${task.judul_tugas}".`,
         data: { task_id: taskId, applicant_id: applicant.id_task_applicants },
-      })
-    } catch (_) { /* non-blocking */ }
+      });
+    } catch (_) {
+      /* non-blocking */
+    }
 
-    return applicant
+    return applicant;
+  },
+
+  /**
+   * Worker membatalkan lamaran (hanya jika task masih open)
+   */
+  async cancelApplication(taskId: string, workerId: string) {
+    const task = await prisma.task.findUnique({
+      where: { id_tasks: taskId },
+      include: { status_task: true },
+    });
+
+    if (!task) throw new Error('Task tidak ditemukan.');
+    if (task.status_task.nama_status.toLowerCase() !== 'open') {
+      throw new Error(
+        'Tidak dapat membatalkan lamaran, task sudah tidak menerima pelamar.',
+      );
+    }
+
+    const existing = await prisma.taskApplicants.findFirst({
+      where: { id_tasks: taskId, id_worker: workerId },
+    });
+
+    if (!existing) throw new Error('Lamaran tidak ditemukan.');
+
+    await prisma.taskApplicants.delete({
+      where: { id_task_applicants: existing.id_task_applicants },
+    });
+
+    return { success: true };
   },
 
   /**
    * Requester: accept atau reject applicant
    */
-  async updateApplicantStatus(applicantId: string, requesterId: string, action: 'accept' | 'reject') {
+  async updateApplicantStatus(
+    applicantId: string,
+    requesterId: string,
+    action: 'accept' | 'reject',
+  ) {
     const applicant = await prisma.taskApplicants.findUnique({
       where: { id_task_applicants: applicantId },
       include: {
@@ -359,24 +441,26 @@ export const taskService = {
         worker: { select: { id_user: true, nama_lengkap: true } },
         status_applicant: true,
       },
-    })
+    });
 
-    if (!applicant) throw new Error('Data lamaran tidak ditemukan.')
-    if (applicant.task.id_requester !== requesterId) throw new Error('Anda tidak memiliki akses ke task ini.')
-    if (applicant.task.status_task.nama_status.toLowerCase() !== 'open') throw new Error('Task sudah tidak dalam status open.')
+    if (!applicant) throw new Error('Data lamaran tidak ditemukan.');
+    if (applicant.task.id_requester !== requesterId)
+      throw new Error('Anda tidak memiliki akses ke task ini.');
+    if (applicant.task.status_task.nama_status.toLowerCase() !== 'open')
+      throw new Error('Task sudah tidak dalam status open.');
 
     if (action === 'accept') {
       // Accept: update applicant ke 'accepted', task ke 'accepted', reject sisanya
-      const acceptedStatusId = await getApplicantStatusId('accepted')
-      const rejectedStatusId = await getApplicantStatusId('rejected')
-      const taskAcceptedStatusId = await getStatusId('accepted')
+      const acceptedStatusId = await getApplicantStatusId('accepted');
+      const rejectedStatusId = await getApplicantStatusId('rejected');
+      const taskAcceptedStatusId = await getStatusId('accepted');
 
       await prisma.$transaction(async (tx) => {
         // Update applicant ini ke accepted
         await tx.taskApplicants.update({
           where: { id_task_applicants: applicantId },
           data: { id_status_task_applicants: acceptedStatusId },
-        })
+        });
 
         // Reject semua applicant lain
         await tx.taskApplicants.updateMany({
@@ -385,7 +469,7 @@ export const taskService = {
             id_task_applicants: { not: applicantId },
           },
           data: { id_status_task_applicants: rejectedStatusId },
-        })
+        });
 
         // Update task status ke 'accepted'
         await tx.task.update({
@@ -394,8 +478,8 @@ export const taskService = {
             id_status_task: taskAcceptedStatusId,
             accepted_at: new Date(),
           },
-        })
-      })
+        });
+      });
 
       // Notifikasi ke worker yang diterima
       try {
@@ -405,8 +489,10 @@ export const taskService = {
           title: 'Lamaranmu Diterima! ✅',
           message: `Kamu dipilih untuk mengerjakan "${applicant.task.judul_tugas}". Segera mulai!`,
           data: { task_id: applicant.id_tasks },
-        })
-      } catch (_) { /* non-blocking */ }
+        });
+      } catch (_) {
+        /* non-blocking */
+      }
 
       // Notifikasi ke SEMUA pelamar lain yang otomatis di-reject (Bug Fix #2)
       try {
@@ -416,7 +502,7 @@ export const taskService = {
             id_task_applicants: { not: applicantId },
           },
           select: { id_worker: true },
-        })
+        });
 
         await Promise.allSettled(
           otherApplicants.map((other) =>
@@ -426,18 +512,19 @@ export const taskService = {
               title: 'Lamaran Belum Terpilih 😔',
               message: `Maaf, posisi untuk task "${applicant.task.judul_tugas}" sudah terisi. Jangan menyerah, coba task lain!`,
               data: { task_id: applicant.id_tasks },
-            })
-          )
-        )
-      } catch (_) { /* non-blocking */ }
-
+            }),
+          ),
+        );
+      } catch (_) {
+        /* non-blocking */
+      }
     } else {
       // Reject
-      const rejectedStatusId = await getApplicantStatusId('rejected')
+      const rejectedStatusId = await getApplicantStatusId('rejected');
       await prisma.taskApplicants.update({
         where: { id_task_applicants: applicantId },
         data: { id_status_task_applicants: rejectedStatusId },
-      })
+      });
 
       // Notifikasi ke worker yang ditolak
       try {
@@ -447,75 +534,156 @@ export const taskService = {
           title: 'Lamaran Ditolak 😔',
           message: `Maaf, lamaranmu untuk task "${applicant.task.judul_tugas}" belum terpilih. Jangan menyerah dan coba task lain!`,
           data: { task_id: applicant.id_tasks },
-        })
-      } catch (_) { /* non-blocking */ }
+        });
+      } catch (_) {
+        /* non-blocking */
+      }
     }
 
-    return { success: true }
+    return { success: true };
   },
 
   /**
-   * Update status task (worker: in_progress; requester: completed/cancelled)
+   * Update status task (worker: confirm_start; requester: confirm_start/completed/cancelled)
    */
-  async updateTaskStatus(taskId: string, userId: string, newStatus: 'in_progress' | 'completed' | 'cancelled') {
+  async updateTaskStatus(
+    taskId: string,
+    userId: string,
+    newStatus: 'confirm_start' | 'completed' | 'cancelled',
+  ) {
     const task = await prisma.task.findUnique({
       where: { id_tasks: taskId },
       include: {
         status_task: true,
         applicants: {
-          where: { status_applicant: { nama_status: 'accepted' } },
-          include: { worker: { select: { id_user: true, nama_lengkap: true } } },
+          where: {
+            status_applicant: {
+              nama_status: { equals: 'accepted', mode: 'insensitive' },
+            },
+          },
+          include: {
+            worker: { select: { id_user: true, nama_lengkap: true } },
+          },
         },
       },
-    })
+    });
 
-    if (!task) throw new Error('Task tidak ditemukan.')
+    if (!task) throw new Error('Task tidak ditemukan.');
 
-    const currentStatus = task.status_task.nama_status.toLowerCase()
-    const isRequester = task.id_requester === userId
-    const acceptedWorker = task.applicants[0]
-    const isWorker = acceptedWorker?.id_worker === userId
+    const currentStatus = getFrontendStatusName(task.status_task.nama_status);
+    const isRequester = task.id_requester === userId;
+    const acceptedWorker = task.applicants[0];
+    const isWorker = acceptedWorker?.id_worker === userId;
 
     // Validasi transisi status
-    if (newStatus === 'in_progress' && currentStatus === 'accepted' && isWorker) {
-      // Worker mulai kerjakan
-      try {
-        await notificationService.createNotification({
-          userId: task.id_requester,
-          type: 'progress',
-          title: 'Task Dikerjakan 🏃‍♂️',
-          message: `${acceptedWorker?.worker.nama_lengkap ?? 'Worker'} telah mulai mengerjakan task "${task.judul_tugas}".`,
-          data: { task_id: taskId },
-        })
-      } catch (_) { /* non-blocking */ }
-    } else if (newStatus === 'completed' && (currentStatus === 'accepted' || currentStatus === 'in_progress') && isRequester) {
+    if (
+      newStatus === 'confirm_start' &&
+      currentStatus === 'accepted' &&
+      (isWorker || isRequester)
+    ) {
+      // Dua pihak konfirmasi
+      const updateData: any = {};
+
+      if (isWorker) {
+        updateData.worker_started = true;
+        // Worker mulai kerjakan, notif ke requester
+        try {
+          await notificationService.createNotification({
+            userId: task.id_requester,
+            type: 'progress',
+            title: 'Task Dikerjakan \uD83C\uDFC3\u200D\u2642\uFE0F',
+            message: `${acceptedWorker?.worker.nama_lengkap ?? 'Worker'} telah konfirmasi mulai mengerjakan task "${task.judul_tugas}".`,
+            data: { task_id: taskId },
+          });
+        } catch (_) {
+          /* non-blocking */
+        }
+      }
+      
+      if (isRequester) {
+        updateData.requester_started = true;
+      }
+
+      // Update konfirmasi di db
+      const updatedTask = await prisma.task.update({
+        where: { id_tasks: taskId },
+        data: updateData,
+      });
+
+      // Cek apakah KEDUANYA sudah konfirmasi
+      if (updatedTask.worker_started && updatedTask.requester_started) {
+        const inProgressStatusId = await getStatusId('in_progress');
+        await prisma.task.update({
+          where: { id_tasks: taskId },
+          data: { id_status_task: inProgressStatusId },
+        });
+      }
+
+      return { success: true };
+    } else if (
+      newStatus === 'completed' &&
+      (currentStatus === 'accepted' || currentStatus === 'in_progress') &&
+      isRequester
+    ) {
       // Requester konfirmasi selesai
-    } else if (newStatus === 'cancelled' && (currentStatus === 'open' || currentStatus === 'accepted') && isRequester) {
+    } else if (
+      newStatus === 'cancelled' &&
+      (currentStatus === 'open' || currentStatus === 'accepted') &&
+      isRequester
+    ) {
       // Requester cancel task
     } else {
-      throw new Error(`Transisi status dari '${currentStatus}' ke '${newStatus}' tidak diizinkan.`)
+      throw new Error(
+        `Transisi status dari '${currentStatus}' ke '${newStatus}' tidak diizinkan.`,
+      );
     }
 
-    const newStatusId = await getStatusId(newStatus)
-    const updateData: Record<string, unknown> = { id_status_task: newStatusId }
+    const newStatusId = await getStatusId(newStatus);
+    const updateData: Record<string, unknown> = { id_status_task: newStatusId };
     if (newStatus === 'completed') {
-      updateData.completed_at = new Date()
+      updateData.completed_at = new Date();
 
-      // Transfer kompensasi ke worker (update total_balance)
+      // Release escrow ke worker: kurangi total & held requester, tambah total worker
       if (acceptedWorker) {
-        await prisma.user.update({
-          where: { id_user: acceptedWorker.id_worker },
-          data: { total_balance: { increment: task.kompensasi }, total_completed: { increment: 1 } },
-        })
-        // Catat transaksi
-        await prisma.transactions.create({
-          data: {
-            id_user: acceptedWorker.id_worker,
-            nominal: task.kompensasi,
-            tipe_transaksi: 'MASUK',
-            deskripsi: `Kompensasi dari task: ${task.judul_tugas}`,
-          },
-        })
+        await prisma.$transaction([
+          // 1. Update Requester
+          prisma.user.update({
+            where: { id_user: task.id_requester },
+            data: {
+              total_balance: { decrement: task.kompensasi },
+              held_balance: { decrement: task.kompensasi },
+            },
+          }),
+          // 2. Transaksi KELUAR untuk Requester
+          prisma.transactions.create({
+            data: {
+              id_user: task.id_requester,
+              nominal: task.kompensasi,
+              tipe_transaksi: 'KELUAR',
+              sub_type: 'task_payment',
+              deskripsi: `Pembayaran task: ${task.judul_tugas}`,
+            },
+          }),
+          // 3. Update Worker
+          prisma.user.update({
+            where: { id_user: acceptedWorker.id_worker },
+            data: {
+              total_balance: { increment: task.kompensasi },
+              total_completed: { increment: 1 },
+            },
+          }),
+          // 4. Transaksi MASUK untuk Worker
+          prisma.transactions.create({
+            data: {
+              id_user: acceptedWorker.id_worker,
+              nominal: task.kompensasi,
+              tipe_transaksi: 'MASUK',
+              sub_type: 'task_earning',
+              deskripsi: `Kompensasi dari task: ${task.judul_tugas}`,
+            },
+          }),
+        ]);
+
         // Notifikasi ke worker
         try {
           await notificationService.createNotification({
@@ -524,8 +692,10 @@ export const taskService = {
             title: 'Poin Diterima! 💰',
             message: `Task "${task.judul_tugas}" selesai. ${task.kompensasi.toLocaleString('id-ID')} poin telah masuk ke saldo kamu.`,
             data: { task_id: taskId },
-          })
-        } catch (_) { /* non-blocking */ }
+          });
+        } catch (_) {
+          /* non-blocking */
+        }
 
         // Notifikasi escrow release ke requester
         try {
@@ -535,24 +705,27 @@ export const taskService = {
             title: 'Dana Escrow Dicairkan 💸',
             message: `${task.kompensasi.toLocaleString('id-ID')} poin telah dicairkan kepada ${acceptedWorker.worker.nama_lengkap} untuk task "${task.judul_tugas}".`,
             data: { task_id: taskId },
-          })
-        } catch (_) { /* non-blocking */ }
+          });
+        } catch (_) {
+          /* non-blocking */
+        }
       }
     } else if (newStatus === 'cancelled') {
-      // Refund kompensasi ke requester
+      // Refund escrow: held_balance turun (escrow dilepas), total_balance tetap
       await prisma.user.update({
         where: { id_user: task.id_requester },
-        data: { total_balance: { increment: task.kompensasi } },
-      })
+        data: { held_balance: { decrement: task.kompensasi } },
+      });
       // Catat transaksi refund
       await prisma.transactions.create({
         data: {
           id_user: task.id_requester,
           nominal: task.kompensasi,
           tipe_transaksi: 'MASUK',
+          sub_type: 'refund',
           deskripsi: `Pengembalian dana (refund) dari task dibatalkan: ${task.judul_tugas}`,
         },
-      })
+      });
       // Notifikasi ke requester
       try {
         await notificationService.createNotification({
@@ -561,8 +734,10 @@ export const taskService = {
           title: 'Dana Dikembalikan! 🔄',
           message: `Task "${task.judul_tugas}" dibatalkan. ${task.kompensasi.toLocaleString('id-ID')} poin telah dikembalikan ke saldo kamu.`,
           data: { task_id: taskId },
-        })
-      } catch (_) { /* non-blocking */ }
+        });
+      } catch (_) {
+        /* non-blocking */
+      }
 
       // Notifikasi ke worker yang sudah diterima (jika ada)
       if (acceptedWorker) {
@@ -573,27 +748,33 @@ export const taskService = {
             title: 'Task Dibatalkan ❌',
             message: `Maaf, task "${task.judul_tugas}" telah dibatalkan oleh requester.`,
             data: { task_id: taskId },
-          })
-        } catch (_) { /* non-blocking */ }
+          });
+        } catch (_) {
+          /* non-blocking */
+        }
       }
     }
 
     await prisma.task.update({
       where: { id_tasks: taskId },
       data: updateData,
-    })
+    });
 
-    return { success: true, new_status: newStatus }
+    return { success: true, new_status: newStatus };
   },
 
   /**
    * Histori task user (sebagai requester & sebagai worker)
    */
-  async getUserTaskHistory(userId: string, role: 'requester' | 'worker', statusFilter?: string) {
+  async getUserTaskHistory(
+    userId: string,
+    role: 'requester' | 'worker',
+    statusFilter?: string,
+  ) {
     if (role === 'requester') {
-      const where: Record<string, unknown> = { id_requester: userId }
+      const where: Record<string, unknown> = { id_requester: userId };
       if (statusFilter) {
-        where.status_task = { nama_status: statusFilter.toUpperCase() }
+        where.status_task = { nama_status: statusFilter.toUpperCase() };
       }
 
       const tasks = await prisma.task.findMany({
@@ -603,13 +784,17 @@ export const taskService = {
           _count: { select: { applicants: true } },
           applicants: {
             where: { status_applicant: { nama_status: 'accepted' } },
-            include: { worker: { select: { id_user: true, nama_lengkap: true, avatar_url: true } } },
+            include: {
+              worker: {
+                select: { id_user: true, nama_lengkap: true, avatar_url: true },
+              },
+            },
             take: 1,
           },
           reviews: { where: { id_rater: { not: userId } }, take: 1 }, // review dari worker ke requester
         },
         orderBy: { created_at: 'desc' },
-      })
+      });
 
       return tasks.map((t) => ({
         id_tasks: t.id_tasks,
@@ -622,26 +807,34 @@ export const taskService = {
         applicant_count: t._count.applicants,
         accepted_worker: t.applicants[0]?.worker ?? null,
         received_rating: t.reviews[0]?.rating ?? null,
-      }))
+      }));
     } else {
       // Worker: ambil semua task yang pernah diapply (berbagai status)
       const applications = await prisma.taskApplicants.findMany({
         where: {
           id_worker: userId,
-          ...(statusFilter ? { task: { status_task: { nama_status: statusFilter.toUpperCase() } } } : {}),
+          ...(statusFilter
+            ? {
+                task: {
+                  status_task: { nama_status: statusFilter.toUpperCase() },
+                },
+              }
+            : {}),
         },
         include: {
           task: {
             include: {
               status_task: { select: { nama_status: true } },
-              requester: { select: { id_user: true, nama_lengkap: true, avatar_url: true } },
+              requester: {
+                select: { id_user: true, nama_lengkap: true, avatar_url: true },
+              },
               reviews: { where: { id_ratee: userId }, take: 1 }, // review yang diterima worker
             },
           },
           status_applicant: { select: { nama_status: true } },
         },
         orderBy: { applied_at: 'desc' },
-      })
+      });
 
       return applications.map((a) => ({
         id_task_applicants: a.id_task_applicants,
@@ -656,7 +849,7 @@ export const taskService = {
         requester: a.task.requester,
         received_rating: a.task.reviews[0]?.rating ?? null,
         received_comment: a.task.reviews[0]?.comment ?? null,
-      }))
+      }));
     }
   },
-}
+};

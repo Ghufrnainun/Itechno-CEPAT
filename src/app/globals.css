@@ -350,6 +350,9 @@ body {
 
 /* ── Page header (inner app pages) ── */
 .page-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   background-color: #e8fff0;
   border-bottom: 1px solid #bdc9c6;
   padding: 16px 24px;
