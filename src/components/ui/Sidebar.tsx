@@ -106,12 +106,6 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
             <div className="flex flex-col overflow-hidden">
               <span className="font-sans font-bold text-sm text-on-surface truncate flex items-center gap-1">
                 {displayName}
-                <span
-                  className="material-symbols-outlined text-primary text-[15px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                 aria-hidden="true">
-                  verified
-                </span>
               </span>
               <span className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-primary">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>
