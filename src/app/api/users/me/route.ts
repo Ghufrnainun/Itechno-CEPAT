@@ -85,3 +85,46 @@ export async function PUT(request: NextRequest) {
     );
   }
 }
+
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user: authUser },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !authUser?.email) {
+      return NextResponse.json(
+        { success: false, message: "Tidak terautentikasi." },
+        { status: 401 }
+      );
+    }
+
+    const currentUser = await prisma.user.findUnique({
+      where: { email: authUser.email },
+      include: {
+        role: true,
+      },
+    });
+
+    if (!currentUser) {
+      return NextResponse.json(
+        { success: false, message: "Pengguna tidak ditemukan." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: currentUser,
+    });
+  } catch (error: any) {
+    console.error("[GET /api/users/me] Error:", error);
+    return NextResponse.json(
+      { success: false, message: error.message || "Gagal mengambil profil." },
+      { status: 500 }
+    );
+  }
+}
+

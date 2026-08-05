@@ -5,14 +5,34 @@ export interface Coordinates {
   longitude: number;
 }
 
+const CACHE_KEY = "itechno_location_cache";
+
 export function useGeolocation() {
-  // Default coordinates (UGM, Yogyakarta)
-  const [coords, setCoords] = useState<Coordinates>({
-    latitude: -7.774532,
-    longitude: 110.372134,
+  const [coords, setCoords] = useState<Coordinates>(() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch (e) {}
+      }
+    }
+    // Default fallback only if no cache
+    return {
+      latitude: -7.774532,
+      longitude: 110.372134,
+    };
   });
+  
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  
+  // Start loading as false if we have a cache, so UI renders instantly
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== "undefined" && localStorage.getItem(CACHE_KEY)) {
+      return false;
+    }
+    return true;
+  });
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -23,10 +43,12 @@ export function useGeolocation() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setCoords({
+        const newCoords = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
-        });
+        };
+        setCoords(newCoords);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(newCoords));
         setLoading(false);
       },
       (err) => {

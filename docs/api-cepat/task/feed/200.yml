@@ -5,16 +5,13 @@ info:
 
 http:
   method: GET
-  url: http://localhost:3000/api/tasks/feed?lat=-7.791940&lng=111.003746&radius=10000&sort=distance_asc&page=1&limit=10
+  url: http://localhost:3000/api/tasks/feed?lat=-7.791940&lng=111.003746&sort=distance_asc&page=1&limit=10
   params:
     - name: lat
       value: "-7.791940"
       type: query
     - name: lng
       value: "111.003746"
-      type: query
-    - name: radius
-      value: "10000"
       type: query
     - name: sort
       value: distance_asc

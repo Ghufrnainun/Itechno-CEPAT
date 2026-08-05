@@ -4,8 +4,8 @@ info:
   seq: 1
 
 http:
-  method: GET
-  url: http://localhost:3000/api/tasks/applications/me
+  method: PUT
+  url: http://localhost:3000/api/chat/a95897a2-a35e-4b9d-99b8-b418d10c2b1b
   auth:
     type: bearer
     token: "{{access_token}}"

@@ -13,13 +13,14 @@ import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
 
 export default function DashboardPage() {
   const { role } = useCurrentRole();
-  const { coords } = useGeolocation();
+  const { coords, loading: locLoading } = useGeolocation();
 
   const [tasks, setTasks] = useState<any[]>([]); // Lightweight tasks for map
   const [featuredTask, setFeaturedTask] = useState<any | null>(null); // Rich task for featured card
 
   useEffect(() => {
     async function loadData() {
+      if (locLoading) return;
       // 1. Fetch lightweight tasks for the mini-map
       const mapUrl = new URL('/api/tasks/nearby', window.location.origin);
       mapUrl.searchParams.append('lat', coords.latitude.toString());
@@ -48,7 +49,7 @@ export default function DashboardPage() {
       }
     }
     loadData();
-  }, [coords]);
+  }, [coords, locLoading]);
 
   const userName = "Budi";
   const nearbyCount = tasks.length;

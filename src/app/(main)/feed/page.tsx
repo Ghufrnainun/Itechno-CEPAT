@@ -16,7 +16,7 @@ import { useToast } from "@/components/ui/Toast";
 export default function FeedPage() {
   const router = useRouter();
   const { role } = useCurrentRole();
-  const { coords } = useGeolocation();
+  const { coords, loading: locLoading } = useGeolocation();
   const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState<"feed" | "mytasks">(role === "requester" ? "mytasks" : "feed");
@@ -76,12 +76,14 @@ export default function FeedPage() {
       }
 
       if (activeTab === "feed") {
+        if (locLoading) return;
+        
         let sortOrder = "newest";
         let categoryId: string | undefined = undefined;
 
         if (sortBy === "distance_asc" || sortBy === "price_desc") {
            sortOrder = sortBy;
-        } else if (sortBy !== "all") {
+        } else if (sortBy !== "all" && sortBy !== "skills_match") {
            categoryId = sortBy;
         }
 
@@ -121,7 +123,7 @@ export default function FeedPage() {
       }
     }
     loadTasks();
-  }, [coords, sortBy, searchQuery, role, activeTab, router]);
+  }, [coords, sortBy, searchQuery, role, activeTab, router, locLoading]);
 
   const handleApply = async (taskId: string) => {
     try {
@@ -145,25 +147,7 @@ export default function FeedPage() {
 
   return (
     <div className="flex flex-col h-full bg-layout-bg font-sans">
-      {/* Header Tabs (Only for Worker) */}
-      {role === "worker" && (
-        <header className="page-header shrink-0 flex items-end">
-          <div className="flex gap-lg">
-            <button
-              onClick={() => { setActiveTab("feed"); setSelectedTask(null); }}
-              className={`tab-underline ${activeTab === "feed" ? "active" : ""}`}
-            >
-              Tugas Tersedia
-            </button>
-            <button
-              onClick={() => { setActiveTab("mytasks"); setSelectedTask(null); }}
-              className={`tab-underline ${activeTab === "mytasks" ? "active" : ""}`}
-            >
-              Lamaran Saya
-            </button>
-          </div>
-        </header>
-      )}
+
 
       {/* Main Container - Split Layout */}
       <div className="flex-1 flex overflow-hidden">
@@ -228,9 +212,7 @@ export default function FeedPage() {
               </div>
             </div>
           ) : (
-            // WORKER VIEW: TUGAS TERSEDIA & LAMARAN SAYA
-            activeTab === "feed" ? (
-              // FEED TAB (List View)
+            // WORKER VIEW: TUGAS TERSEDIA
               <div className="flex flex-col h-full relative">
                 {/* Header with Search and Filters */}
                 <div className="pt-xl px-xl pb-md shrink-0 border-b border-outline-variant/30 bg-surface/95 backdrop-blur-sm z-10 sticky top-0">
@@ -256,8 +238,8 @@ export default function FeedPage() {
                       {[
                         { id: "all", label: "Semua" },
                         { id: "distance_asc", label: "Terdekat" },
-                        { id: "price_desc", label: "Imbalan tertinggi" },
-                        ...categories.map(c => ({ id: c.id_category, label: c.nama_kategori }))
+                        { id: "price_desc", label: "Bayaran Tertinggi" },
+                        { id: "skills_match", label: "Rekomendasi" }
                       ].map(filter => (
                         <button 
                           key={filter.id}
@@ -295,51 +277,7 @@ export default function FeedPage() {
                   </div>
                 </div>
               </div>
-            ) : (
-              // TAB 2 - MY TASKS / APPLICATIONS
-              <div className="max-w-4xl mx-auto p-lg flex flex-col gap-md pt-xl">
-                <h2 className="font-headline-md text-headline-md text-on-surface font-extrabold">Lamaran Pekerjaan Anda</h2>
-                <div className="bg-white border border-outline-variant rounded-xl divide-y divide-outline-variant overflow-hidden mt-sm shadow-sm">
-                  {appliedTaskIds.length === 0 ? (
-                    <div className="p-xl text-center flex flex-col items-center gap-sm py-16">
-                      <span className="material-symbols-outlined text-outline text-[48px]">
-                        assignment_turned_in
-                      </span>
-                      <p className="font-body-md text-body-md text-on-surface-variant">
-                        Anda belum melamar pekerjaan apapun hari ini.
-                      </p>
-                      <Button onClick={() => setActiveTab("feed")} className="mt-sm font-bold">
-                        Mulai Cari Tugas
-                      </Button>
-                    </div>
-                  ) : (
-                    appliedTaskIds.map((taskId) => {
-                      const task = MOCK_TASKS.find((t) => t.id_task === taskId);
-                      if (!task) return null;
-                      return (
-                        <div 
-                          key={taskId} 
-                          onClick={() => setSelectedTask(task)}
-                          className={`p-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-md cursor-pointer transition-colors ${selectedTask?.id_task === taskId ? "bg-surface-container border-l-4 border-l-primary" : "hover:bg-surface-container-low"}`}
-                        >
-                          <div>
-                            <h3 className="font-body-md text-body-md font-bold text-on-surface">{task.title}</h3>
-                            <p className="font-body-sm text-body-sm text-on-surface-variant font-mono mt-xs">
-                              Kompensasi: <span className="font-bold text-on-surface">{formatCurrency(task.compensation)}</span>
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-md">
-                            <span className="bg-amber-500/10 text-amber-600 font-label-sm text-label-sm px-sm py-[4px] border border-amber-500/20 rounded-full font-bold uppercase">
-                              MENUNGGU PERSETUJUAN
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            )
+
           )}
         </div>
 

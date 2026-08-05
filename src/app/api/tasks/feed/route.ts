@@ -107,7 +107,13 @@ export async function GET(request: NextRequest) {
         AND (
           ${q ? 'true' : 'false'} = false OR 
           t.judul_tugas ILIKE '${searchString}' OR 
-          t.deskripsi_tugas ILIKE '${searchString}'
+          t.deskripsi_tugas ILIKE '${searchString}' OR
+          c.nama_kategori ILIKE '${searchString}' OR
+          EXISTS (
+            SELECT 1 FROM "TaskRequirements" tr
+            JOIN "SkillsMaster" sm ON tr.id_skill_master = sm.id_skill_master
+            WHERE tr.id_tasks = t.id_tasks AND sm.nama_skill ILIKE '${searchString}'
+          )
         )
         ${categoryCondition}
       ORDER BY ${orderByClause}

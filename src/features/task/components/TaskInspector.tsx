@@ -16,6 +16,49 @@ interface TaskInspectorProps {
 
 export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspectorProps) {
   const router = useRouter();
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const { showToast } = useToast();
+
+  const handleChatClick = async () => {
+    try {
+      setIsChatLoading(true);
+      
+      // Get current user (worker)
+      const resMe = await fetch('/api/users/me');
+      const meData = await resMe.json();
+      if (!meData.success) throw new Error("Gagal mengambil data user");
+      
+      const currentUserId = meData.data.id_user;
+      
+      // If current user is the requester, they shouldn't chat with themselves
+      if (currentUserId === task.id_requester) {
+        showToast("Ini adalah tugas Anda sendiri.");
+        return;
+      }
+      
+      // Init chat
+      const res = await fetch('/api/chat/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_tasks: task.id_task || (task as any).id_tasks,
+          id_worker: currentUserId
+        })
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        router.push(`/chat?room=${data.data.id_chat_room}`);
+      } else {
+        throw new Error(data.message || "Gagal membuat obrolan");
+      }
+    } catch (error: any) {
+      console.error(error);
+      showToast(error.message);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
 
   return (
     <aside className="w-[440px] bg-surface border-l border-outline-variant flex-shrink-0 h-full flex flex-col relative z-20 shadow-[-4px_0_24px_rgba(0,0,0,0.02)] animate-slide-in">
@@ -123,9 +166,12 @@ export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspect
         <Button 
           variant="secondary"
           className="flex-1 py-md text-[16px] flex items-center justify-center gap-xs"
-          onClick={() => router.push("/chat")}
+          onClick={handleChatClick}
+          disabled={isChatLoading}
         >
-          <span className="material-symbols-outlined text-[20px]">chat</span>
+          <span className="material-symbols-outlined text-[20px]">
+            {isChatLoading ? 'hourglass_empty' : 'chat'}
+          </span>
           Chat
         </Button>
         <Button 
