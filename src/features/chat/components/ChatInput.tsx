@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import EmojiPicker from 'emoji-picker-react';
 
 interface ChatInputProps {
   onSendMessage: (text: string | null, imageUrl: string | null) => Promise<void>;
@@ -16,6 +17,7 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
@@ -108,11 +110,9 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+  const handleSendForm = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSend();
   };
 
   return (
@@ -139,7 +139,7 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
         </div>
       )}
 
-      <div className="flex items-end gap-sm w-full z-20">
+      <div className="flex items-center gap-md w-full z-20">
         <input
           type="file"
           accept="image/*"
@@ -151,30 +151,56 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
           type="button"
           disabled={disabled || isUploading}
           onClick={() => fileInputRef.current?.click()}
-          className="w-12 h-12 rounded-full shrink-0 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors disabled:opacity-50"
+          className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-[24px]">
-            {isUploading ? 'hourglass_empty' : 'attach_file'}
+            {isUploading ? 'hourglass_empty' : 'add_photo_alternate'}
           </span>
         </button>
+        <div className="relative">
+          <button 
+            type="button"
+            disabled={disabled || isUploading}
+            onClick={() => setShowEmojiPicker(prev => !prev)}
+            className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer hidden sm:flex disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-[24px]" aria-hidden="true">mood</span>
+          </button>
+          
+          {showEmojiPicker && (
+            <div className="absolute bottom-12 left-0 z-50">
+              <EmojiPicker 
+                onEmojiClick={(emojiData) => {
+                  setText(prev => prev + emojiData.emoji);
+                  setShowEmojiPicker(false);
+                }}
+              />
+            </div>
+          )}
+        </div>
 
-        <textarea 
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={disabled || isUploading}
-          placeholder={isUploading ? "Mengirim pesan..." : (selectedFile ? "Tambah keterangan..." : "Ketik pesan...")}
-          className="flex-1 bg-surface-container-lowest border border-outline-variant rounded-xl p-3 resize-none h-[48px] max-h-[120px] custom-scrollbar focus:outline-none focus:border-primary font-body-md text-on-surface disabled:opacity-50"
-          rows={1}
-        />
-
-        <button 
-          onClick={handleSend}
-          disabled={(!text.trim() && !selectedFile) || disabled || isUploading}
-          className="w-12 h-12 rounded-full shrink-0 flex items-center justify-center bg-primary text-on-primary hover:bg-primary/90 transition-colors disabled:opacity-50"
+        <form 
+          onSubmit={handleSendForm} 
+          className="flex-1 flex items-center gap-sm bg-white rounded-full px-4 py-2 border border-outline-variant/60 focus-within:border-primary transition-colors"
         >
-          <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
-        </button>
+          <input 
+            type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            disabled={disabled || isUploading}
+            placeholder={isUploading ? "Mengirim pesan..." : (selectedFile ? "Tambah keterangan..." : "Ketik pesan...")}
+            className="flex-1 bg-transparent border-none focus:outline-none font-body-sm text-body-sm text-on-surface disabled:opacity-50"
+          />
+          <button 
+            type="submit" 
+            disabled={(!text.trim() && !selectedFile) || disabled || isUploading}
+            className={`flex items-center justify-center transition-colors ${((text.trim() || selectedFile) && !disabled && !isUploading) ? 'text-primary cursor-pointer' : 'text-outline-variant opacity-50'}`}
+          >
+            <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">
+              send
+            </span>
+          </button>
+        </form>
       </div>
     </div>
   );

@@ -75,16 +75,23 @@ function ChatContent() {
   const selectedRoomInfo = rooms.find(r => r.id_chat_room === selectedRoomId);
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-layout-bg font-sans overflow-hidden">
-      {/* Left Sidebar: Chat List */}
-      <div 
-        className={`w-full md:w-[350px] lg:w-[400px] shrink-0 border-r border-outline-variant bg-white flex flex-col h-full
-          ${selectedRoomId ? 'hidden md:flex' : 'flex'}`}
-      >
-        <header className="px-md py-sm border-b border-outline-variant shrink-0 bg-surface">
-          <h1 className="font-headline-md text-headline-md font-extrabold text-on-surface">Pesan</h1>
-        </header>
-        <div className="flex-1 overflow-hidden">
+    <div className="flex flex-col h-[100dvh] lg:h-full w-full bg-layout-bg font-sans">
+      {/* Page Header */}
+      <header className="page-header shrink-0 bg-surface-container-lowest border-b border-outline-variant/30 px-6 py-5">
+        <div>
+          <h1 className="font-headline font-extrabold text-2xl text-on-surface tracking-tight">Chat</h1>
+          <p className="font-body-sm text-sm text-on-surface-variant font-medium mt-0.5">
+            Berkomunikasi langsung dengan pemberi atau penerima tugas terkait detail pekerjaan.
+          </p>
+        </div>
+      </header>
+
+      <div className="flex flex-1 w-full overflow-hidden">
+        {/* Left Panel: Contact List */}
+        <div 
+          className={`w-full md:w-[320px] lg:w-[380px] bg-white border-r border-outline-variant/60 flex flex-col flex-shrink-0
+            ${selectedRoomId ? 'hidden md:flex' : 'flex'}`}
+        >
           <ChatList 
             rooms={rooms}
             selectedRoomId={selectedRoomId}
@@ -93,36 +100,38 @@ function ChatContent() {
             isLoading={isLoading}
           />
         </div>
-      </div>
 
-      {/* Right Area: Chat Room */}
-      <div 
-        className={`flex-1 bg-surface-container-lowest h-full relative
-          ${!selectedRoomId ? 'hidden md:flex flex-col items-center justify-center' : 'flex flex-col'}`}
-      >
-        {!selectedRoomId ? (
-          <div className="text-center opacity-60">
-            <span className="material-symbols-outlined text-[64px] text-outline mb-sm">forum</span>
-            <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">Itechno Chat</h2>
-            <p className="font-body-md text-body-md text-on-surface-variant">Pilih pesan di samping untuk mulai membalas</p>
-          </div>
-        ) : selectedRoomInfo ? (
-          <ChatRoom 
-            roomId={selectedRoomId}
-            currentUserId={currentUserId}
-            onBack={() => setSelectedRoomId(null)}
-            roomInfo={{
-              title: selectedRoomInfo.task.judul_tugas,
-              otherUserName: selectedRoomInfo.requester.id_user === currentUserId 
-                ? selectedRoomInfo.worker.nama_lengkap 
-                : selectedRoomInfo.requester.nama_lengkap
-            }}
-          />
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-          </div>
-        )}
+        {/* Right Panel: Chat Area */}
+        <div 
+          className={`flex-1 flex flex-col bg-layout-bg relative
+            ${!selectedRoomId ? 'hidden md:flex' : 'flex'}`}
+        >
+          {!selectedRoomId ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center gap-md p-xl">
+              <span className="material-symbols-outlined text-[64px] text-outline-variant" aria-hidden="true">forum</span>
+              <h2 className="font-headline-sm text-headline-sm text-on-surface">Pilih obrolan untuk mulai mengirim pesan</h2>
+              <p className="font-body-sm text-body-sm text-on-surface-variant max-w-sm">
+                Gunakan fitur chat untuk berdiskusi mengenai detail tugas, negosiasi, atau mengabarkan status pekerjaan Anda.
+              </p>
+            </div>
+          ) : selectedRoomInfo ? (
+            <ChatRoom 
+              roomId={selectedRoomId}
+              currentUserId={currentUserId}
+              onBack={() => setSelectedRoomId(null)}
+              roomInfo={{
+                title: selectedRoomInfo.task.judul_tugas,
+                otherUserName: selectedRoomInfo.requester.id_user === currentUserId 
+                  ? selectedRoomInfo.worker.nama_lengkap 
+                  : selectedRoomInfo.requester.nama_lengkap
+              }}
+            />
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

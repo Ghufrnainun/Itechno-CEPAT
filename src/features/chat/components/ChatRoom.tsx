@@ -195,25 +195,36 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomPr
       )}
 
       {/* Header */}
-      <header className="px-md py-sm bg-white border-b border-outline-variant flex items-center gap-md shrink-0 z-10">
+      <div className="h-[72px] px-lg border-b border-outline-variant/60 flex items-center gap-md bg-white shadow-sm z-10 flex-shrink-0">
         <button 
           onClick={onBack}
-          className="md:hidden w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container transition-colors"
+          className="md:hidden w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container transition-colors shrink-0"
         >
           <span className="material-symbols-outlined text-[24px]">arrow_back</span>
         </button>
-        <div className="flex-1 min-w-0">
-          <h2 className="font-headline-sm text-headline-sm font-bold text-on-surface truncate">
-            {roomInfo.otherUserName}
-          </h2>
-          <p className="font-body-sm text-body-sm text-primary truncate">
-            {roomInfo.title}
-          </p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center border border-outline-variant/30 shrink-0 overflow-hidden">
+          <span className="material-symbols-outlined text-on-surface-variant">person</span>
         </div>
-      </header>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-body-md text-body-md font-semibold text-on-surface truncate">{roomInfo.otherUserName}</h3>
+          <span className="font-label-sm text-label-sm text-primary flex items-center gap-xs">
+            <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
+            Online
+          </span>
+        </div>
+        <div className="flex gap-sm text-on-surface-variant shrink-0">
+          <button className="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors cursor-pointer">
+            <span className="material-symbols-outlined" aria-hidden="true">call</span>
+          </button>
+          <button className="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors cursor-pointer">
+            <span className="material-symbols-outlined" aria-hidden="true">more_vert</span>
+          </button>
+        </div>
+      </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-md flex flex-col gap-sm custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-lg flex flex-col gap-sm custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
@@ -226,49 +237,43 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomPr
         ) : (
           messages.map((msg, index) => {
             const isMe = msg.id_sender === currentUserId;
-            const showTail = index === messages.length - 1 || messages[index + 1].id_sender !== msg.id_sender;
 
             return (
               <div 
                 key={msg.id_message} 
-                className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}
+                className={`flex flex-col max-w-[70%] ${isMe ? 'self-end items-end' : 'self-start items-start'}`}
               >
                 <div 
-                  className={`max-w-[75%] md:max-w-[60%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
+                  className={`p-sm md:p-md rounded-2xl shadow-sm relative group ${
+                    isMe 
+                      ? 'bg-surface-container text-on-surface rounded-tr-sm border border-outline-variant/40' 
+                      : 'bg-white text-on-surface rounded-tl-sm border border-outline-variant/40'
+                  }`}
                 >
-                  <div 
-                    className={`px-4 py-2 relative group
-                      ${isMe 
-                        ? 'bg-primary text-on-primary rounded-2xl rounded-tr-sm' 
-                        : 'bg-white border border-outline-variant text-on-surface rounded-2xl rounded-tl-sm shadow-sm'
-                      }
-                    `}
-                  >
-                    {msg.image_url && (
-                      <div className="mb-2 max-w-full overflow-hidden rounded-lg bg-black/5">
-                        <img 
-                          src={msg.image_url} 
-                          alt="Attachment" 
-                          className="max-h-[300px] w-auto object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => window.open(msg.image_url!, '_blank')}
-                        />
-                      </div>
-                    )}
-                    {msg.teks_pesan && (
-                      <p className="font-body-md text-body-md whitespace-pre-wrap break-words">
-                        {msg.teks_pesan}
-                      </p>
-                    )}
-                    <div 
-                      className={`text-[10px] mt-1 flex items-center justify-end gap-1 font-mono ${isMe ? 'text-on-primary/70' : 'text-on-surface-variant'}`}
-                    >
-                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      {isMe && (
-                        <span className="material-symbols-outlined text-[14px]">
-                          {msg.is_read ? 'done_all' : 'check'}
-                        </span>
-                      )}
+                  {msg.image_url ? (
+                    <div className="flex flex-col gap-xs">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img 
+                        src={msg.image_url} 
+                        alt="Attachment" 
+                        className="rounded-lg max-w-[250px] object-cover border border-outline-variant/20 cursor-pointer hover:opacity-90 transition-opacity" 
+                        onClick={() => window.open(msg.image_url!, '_blank')}
+                      />
+                      {msg.teks_pesan && <p className="font-body-sm text-body-sm whitespace-pre-wrap break-words">{msg.teks_pesan}</p>}
                     </div>
+                  ) : (
+                    <p className="font-body-sm text-body-sm leading-relaxed whitespace-pre-wrap break-words">{msg.teks_pesan}</p>
+                  )}
+                  
+                  <div className={`flex items-center gap-1 mt-1 justify-end ${msg.image_url && !msg.teks_pesan ? 'absolute bottom-2 right-2 bg-black/40 text-white px-2 rounded-full' : 'text-outline'}`}>
+                    <span className="text-[10px] font-mono">
+                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    {isMe && (
+                      <span className="material-symbols-outlined text-[14px] text-blue-500" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">
+                        {msg.is_read ? 'done_all' : 'check'}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
