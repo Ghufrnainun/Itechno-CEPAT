@@ -5,12 +5,13 @@ info:
 
 http:
   method: POST
-  url: http://localhost:3000/api/tasks/apply
+  url: http://localhost:3000/api/chat/init
   body:
     type: json
-    data: |-
+    data: |
       {
-        "id_tasks": "c5a87fed-d632-4a06-af37-c728239ee2af"
+        "id_tasks": "d67dd93d-6ec9-4bda-bffc-30e3081f4596",
+        "id_worker": "8b316201-da60-4601-9751-98e75e38d006"
       }
   auth:
     type: bearer

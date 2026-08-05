@@ -12,7 +12,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 
 export default function CariTugasPage() {
-  const { coords } = useGeolocation();
+  const { coords, loading: locLoading } = useGeolocation();
   const { showToast } = useToast();
   
   const [tasks, setTasks] = useState<(Task & { distance: number })[]>([]);
@@ -31,6 +31,7 @@ export default function CariTugasPage() {
 
   useEffect(() => {
     async function loadTasks() {
+      if (locLoading) return;
       const fetched = await getFeedTasks(coords.latitude, coords.longitude, radius);
       setTasks(fetched);
       
@@ -38,7 +39,7 @@ export default function CariTugasPage() {
       // For now we keep it so the user can still read it.
     }
     loadTasks();
-  }, [coords, radius]);
+  }, [coords, radius, locLoading]);
 
   useEffect(() => {
     async function loadAppliedTaskIds() {

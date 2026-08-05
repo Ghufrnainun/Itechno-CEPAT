@@ -646,7 +646,142 @@ Semua error mengikuti format standar:
 
 ---
 
-## 10. Catatan untuk AI Agent
+## 10. Chat (Real-time Messaging)
+
+### GET `/api/chat`
+
+🔒 **Authenticated** — Ambil daftar ruang obrolan (*chat rooms*) yang melibatkan pengguna saat ini (baik sebagai pembuat tugas maupun pekerja).
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id_chat_room": "uuid",
+      "created_at": "2023-01-01T00:00:00Z",
+      "task": {
+        "judul_tugas": "Nama Tugas"
+      },
+      "requester": {
+        "id_user": "uuid",
+        "nama_lengkap": "Nama Requester",
+        "avatar_url": "url_foto"
+      },
+      "worker": {
+        "id_user": "uuid",
+        "nama_lengkap": "Nama Pekerja",
+        "avatar_url": "url_foto"
+      },
+      "messages": [
+        {
+          "id_message": "uuid",
+          "teks_pesan": "Isi pesan terakhir",
+          "image_url": null,
+          "created_at": "2023-01-01T00:00:00Z"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### POST `/api/chat/init`
+
+🔒 **Authenticated** — Membuat ruang obrolan baru atau mendapatkan ruangan obrolan yang sudah ada untuk sebuah tugas antara pembuat tugas dan pekerja.
+
+**Request Body:**
+```json
+{
+  "id_tasks": "uuid",
+  "id_worker": "uuid"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "id_chat_room": "uuid"
+  }
+}
+```
+
+### GET `/api/chat/[roomId]`
+
+🔒 **Authenticated** — Mengambil seluruh isi pesan di dalam satu ruang obrolan secara urut dari yang paling lama.
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id_message": "uuid",
+      "id_sender": "uuid",
+      "teks_pesan": "Halo mas",
+      "image_url": null,
+      "is_read": true,
+      "created_at": "2023-01-01T00:00:00Z",
+      "sender": {
+        "id_user": "uuid",
+        "nama_lengkap": "Nama Pengirim",
+        "avatar_url": "url_foto"
+      }
+    }
+  ]
+}
+```
+
+### POST `/api/chat/[roomId]`
+
+🔒 **Authenticated** — Mengirim pesan teks atau gambar ke dalam ruang obrolan tertentu.
+
+**Request Body:** (Zod Validated, minimal satu dari teks atau gambar harus ada)
+```json
+{
+  "teks_pesan": "Halo mas",
+  "image_url": "https://url.com/gambar.jpg"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "id_message": "uuid",
+    "id_chat_room": "uuid",
+    "id_sender": "uuid",
+    "teks_pesan": "Halo mas",
+    "image_url": "https://url.com/gambar.jpg",
+    "is_read": false,
+    "created_at": "2023-01-01T00:00:00Z",
+    "sender": {
+      "id_user": "uuid",
+      "nama_lengkap": "Nama Pengirim",
+      "avatar_url": "url_foto"
+    }
+  }
+}
+```
+
+### PUT `/api/chat/[roomId]`
+
+🔒 **Authenticated** — Menandai semua pesan yang dikirim oleh **lawan bicara** di ruang obrolan ini sebagai telah dibaca (`is_read: true`). Ini digunakan untuk memicu centang 2 biru secara *real-time*.
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "updated_count": 2
+}
+```
+
+---
+
+## 11. Catatan untuk AI Agent
 
 - Semua API route ada di `src/app/api/` menggunakan Next.js App Router conventions (`route.ts` file).
 - Auth check: gunakan `createServerClient` dari `@supabase/ssr` lalu `supabase.auth.getUser()`.
