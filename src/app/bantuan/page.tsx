@@ -175,7 +175,7 @@ export default function BantuanPage() {
             href="mailto:bantuan@cepat.id"
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-on-primary font-semibold text-sm hover:bg-primary/90 transition-colors shrink-0"
           >
-            <span className="material-symbols-outlined text-[18px]">mail</span>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">mail</span>
             bantuan@cepat.id
           </a>
         </div>
@@ -189,7 +189,7 @@ export default function BantuanPage() {
                   <span
                     className="material-symbols-outlined text-primary text-[18px]"
                     style={{ fontVariationSettings: "'FILL' 1" }}
-                  >
+                   aria-hidden="true">
                     {cat.icon}
                   </span>
                 </div>
@@ -227,7 +227,7 @@ export default function BantuanPage() {
             href="/"
             className="inline-flex items-center gap-2 text-sm text-on-surface-variant hover:text-primary transition-colors"
           >
-            <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_back</span>
             Kembali ke Beranda
           </Link>
           <Link

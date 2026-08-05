@@ -81,7 +81,7 @@ export default function NewTaskPage() {
           </div>
         </div>
         <div className="flex items-center gap-sm px-md py-sm rounded-lg bg-amber-50 border border-amber-200">
-          <span className="material-symbols-outlined text-[16px] text-amber-600">lock</span>
+          <span className="material-symbols-outlined text-[16px] text-amber-600" aria-hidden="true">lock</span>
           <span className="font-label-sm text-label-sm text-amber-600 font-medium">Dana dikunci escrow saat tugas diterima</span>
         </div>
       </header>
@@ -153,7 +153,7 @@ export default function NewTaskPage() {
             {/* Location Picker Map */}
             <div className="flex flex-col gap-xs">
               <label className="font-body-sm text-body-sm text-on-surface-variant font-medium flex items-center gap-xs">
-                <span className="material-symbols-outlined text-[16px]">location_on</span>
+                <span className="material-symbols-outlined text-[16px]" aria-hidden="true">location_on</span>
                 Titik Lokasi Tugas (Klik pada Peta)
               </label>
               
@@ -166,12 +166,12 @@ export default function NewTaskPage() {
 
               {lat && lng ? (
                 <span className="font-label-sm text-label-sm text-primary font-mono mt-xs flex items-center gap-xs">
-                  <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
+                  <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">location_on</span>
                   Koordinat Terpilih: {lat.toFixed(6)}, {lng.toFixed(6)}
                 </span>
               ) : (
                 <span className="font-label-sm text-label-sm text-error mt-xs flex items-center gap-xs">
-                  <span className="material-symbols-outlined text-[14px]">info</span>
+                  <span className="material-symbols-outlined text-[14px]" aria-hidden="true">info</span>
                   Silakan klik titik di peta untuk menandai lokasi.
                 </span>
               )}

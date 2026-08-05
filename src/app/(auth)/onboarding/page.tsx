@@ -190,7 +190,7 @@ function StepProfile({
                       : "border-outline-variant/60 bg-white hover:bg-surface-container-low text-on-surface-variant hover:border-primary/30"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[22px]">{skill.icon}</span>
+                  <span className="material-symbols-outlined text-[22px]" aria-hidden="true">{skill.icon}</span>
                   <span className="text-[11px] font-semibold leading-tight">
                     {skill.label.split(" ")[0]}
                   </span>

@@ -88,7 +88,7 @@ export function Navbar() {
             aria-label={isDark ? "Beralih ke Mode Terang" : "Beralih ke Mode Gelap"}
             className="w-10 h-10 rounded-lg bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-on-surface transition-colors active:scale-95 border border-outline-variant/60"
           >
-            <span className="material-symbols-outlined text-[20px]">
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
               {isDark ? "light_mode" : "dark_mode"}
             </span>
           </button>
@@ -103,7 +103,7 @@ export function Navbar() {
               variant="primary"
               size="sm"
               icon={
-                <span className="material-symbols-outlined text-[16px]">
+                <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
                   arrow_forward
                 </span>
               }
@@ -120,7 +120,7 @@ export function Navbar() {
             aria-label={isDark ? "Beralih ke Mode Terang" : "Beralih ke Mode Gelap"}
             className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-on-surface border border-outline-variant/60"
           >
-            <span className="material-symbols-outlined text-[20px]">
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
               {isDark ? "light_mode" : "dark_mode"}
             </span>
           </button>
@@ -132,7 +132,7 @@ export function Navbar() {
             aria-label="Buka/Tutup Menu Navigasi Mobile"
             className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-on-surface border border-outline-variant/60 active:scale-95 min-h-[44px] min-w-[44px]"
           >
-            <span className="material-symbols-outlined text-[22px]">
+            <span className="material-symbols-outlined text-[22px]" aria-hidden="true">
               {isOpen ? "close" : "menu"}
             </span>
           </button>

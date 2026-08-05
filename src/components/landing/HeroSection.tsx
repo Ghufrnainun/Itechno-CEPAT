@@ -35,7 +35,7 @@ export function HeroSection() {
             <span className="font-medium">ITechno Cup 2026</span>
             <span className="text-outline">•</span>
             <span>SDG 8 Project</span>
-            <span className="material-symbols-outlined text-[14px] group-hover:translate-x-0.5 transition-transform">
+            <span className="material-symbols-outlined text-[14px] group-hover:translate-x-0.5 transition-transform" aria-hidden="true">
               arrow_forward
             </span>
           </Link>
@@ -94,7 +94,7 @@ export function HeroSection() {
             >
               <span className="whitespace-nowrap">Post Tugas UMKM</span>
               <span className="w-8 h-8 rounded-md bg-black/15 flex items-center justify-center group-hover:translate-x-0.5 transition-all shrink-0">
-                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
+                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">add</span>
               </span>
             </button>
           </Link>
@@ -105,7 +105,7 @@ export function HeroSection() {
             >
               <span className="whitespace-nowrap">Cari Tugas Terdekat</span>
               <span className="w-8 h-8 rounded-md bg-black/5 flex items-center justify-center group-hover:translate-x-0.5 transition-all shrink-0">
-                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>search</span>
+                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">search</span>
               </span>
             </button>
           </Link>
@@ -126,7 +126,7 @@ export function HeroSection() {
                   <span
                     className="material-symbols-outlined text-primary text-[18px]"
                     style={{ fontVariationSettings: "'FILL' 1" }}
-                  >
+                   aria-hidden="true">
                     location_on
                   </span>
                   <span className="text-sm font-semibold text-on-surface tracking-tight">Semarang, ID</span>
@@ -134,7 +134,7 @@ export function HeroSection() {
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-on-surface-variant font-mono">Area Kampus</span>
                   <div className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant shadow-sm">
-                    <span className="material-symbols-outlined text-primary text-[16px]">person</span>
+                    <span className="material-symbols-outlined text-primary text-[16px]" aria-hidden="true">person</span>
                   </div>
                 </div>
               </div>
@@ -171,7 +171,7 @@ export function HeroSection() {
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-lg font-headline-sm text-on-surface leading-tight">Foto Katalog 15 Menu Makanan</h3>
                     <div className="flex items-center gap-1 shrink-0 ml-3">
-                      <span className="material-symbols-outlined text-[14px] text-on-surface-variant" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
+                      <span className="material-symbols-outlined text-[14px] text-on-surface-variant" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">location_on</span>
                       <span className="text-xs text-on-surface-variant font-mono font-medium">0.8 km</span>
                     </div>
                   </div>
@@ -179,7 +179,7 @@ export function HeroSection() {
                   <div className="flex justify-between items-end border-t border-outline-variant pt-3 mt-1">
                     <span className="text-base font-bold text-on-surface font-mono tracking-tight">Rp75.000</span>
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-[10px] font-bold font-mono uppercase tracking-wider">
-                      <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>handshake</span>
+                      <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">handshake</span>
                       Decent Work
                     </span>
                   </div>
@@ -190,7 +190,7 @@ export function HeroSection() {
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-lg font-headline-sm text-on-surface leading-tight">Input 50 Data Stok Barang</h3>
                     <div className="flex items-center gap-1 shrink-0 ml-3">
-                      <span className="material-symbols-outlined text-[14px] text-on-surface-variant">location_on</span>
+                      <span className="material-symbols-outlined text-[14px] text-on-surface-variant" aria-hidden="true">location_on</span>
                       <span className="text-xs text-on-surface-variant font-mono font-medium">2.5 km</span>
                     </div>
                   </div>

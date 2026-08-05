@@ -177,7 +177,7 @@ export default function KebijakanPrivasiPage() {
             href="/"
             className="inline-flex items-center gap-2 text-sm text-on-surface-variant hover:text-primary transition-colors"
           >
-            <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_back</span>
             Kembali ke Beranda
           </Link>
           <Link

@@ -140,11 +140,11 @@ export default function ChatPage() {
             <div className="flex justify-between items-center">
               <h2 className="font-headline-sm text-headline-sm font-bold text-on-surface">Daftar Kontak</h2>
               <button className="w-8 h-8 rounded-full hover:bg-interaction-bg flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer">
-                <span className="material-symbols-outlined text-[20px]">edit_square</span>
+                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">edit_square</span>
               </button>
             </div>
             <div className="relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" aria-hidden="true">search</span>
             <input 
               type="text" 
               placeholder="Cari pesan atau nama..." 
@@ -204,10 +204,10 @@ export default function ChatPage() {
               </div>
               <div className="flex gap-sm text-on-surface-variant">
                 <button className="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors cursor-pointer">
-                  <span className="material-symbols-outlined">call</span>
+                  <span className="material-symbols-outlined" aria-hidden="true">call</span>
                 </button>
                 <button className="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors cursor-pointer">
-                  <span className="material-symbols-outlined">more_vert</span>
+                  <span className="material-symbols-outlined" aria-hidden="true">more_vert</span>
                 </button>
               </div>
             </div>
@@ -239,7 +239,7 @@ export default function ChatPage() {
                     <div className={`flex items-center gap-1 mt-1 justify-end ${msg.imageUrl && !msg.text ? 'absolute bottom-2 right-2 bg-black/40 text-white px-2 rounded-full' : 'text-outline'}`}>
                       <span className="text-[10px] font-mono">{msg.time}</span>
                       {msg.isMe && (
-                        <span className="material-symbols-outlined text-[14px] text-blue-500" style={{ fontVariationSettings: "'FILL' 1" }}>
+                        <span className="material-symbols-outlined text-[14px] text-blue-500" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">
                           done_all
                         </span>
                       )}
@@ -252,10 +252,10 @@ export default function ChatPage() {
             {/* Input Area */}
             <div className="p-md bg-surface border-t border-outline-variant/60 flex items-center gap-md">
               <button className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
-                <span className="material-symbols-outlined text-[24px]">add_photo_alternate</span>
+                <span className="material-symbols-outlined text-[24px]" aria-hidden="true">add_photo_alternate</span>
               </button>
               <button className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
-                <span className="material-symbols-outlined text-[24px]">mood</span>
+                <span className="material-symbols-outlined text-[24px]" aria-hidden="true">mood</span>
               </button>
               
               <form onSubmit={handleSendMessage} className="flex-1 flex items-center gap-sm bg-white rounded-full px-4 py-2 border border-outline-variant/60 focus-within:border-primary transition-colors">
@@ -271,7 +271,7 @@ export default function ChatPage() {
                   disabled={!messageInput.trim()}
                   className={`flex items-center justify-center transition-colors cursor-pointer ${messageInput.trim() ? 'text-primary' : 'text-outline-variant'}`}
                 >
-                  <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">
                     send
                   </span>
                 </button>
@@ -280,7 +280,7 @@ export default function ChatPage() {
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-md p-xl">
-            <span className="material-symbols-outlined text-[64px] text-outline-variant">forum</span>
+            <span className="material-symbols-outlined text-[64px] text-outline-variant" aria-hidden="true">forum</span>
             <h2 className="font-headline-sm text-headline-sm text-on-surface">Pilih obrolan untuk mulai mengirim pesan</h2>
             <p className="font-body-sm text-body-sm text-on-surface-variant max-w-sm">
               Gunakan fitur chat untuk berdiskusi mengenai detail tugas, negosiasi, atau mengabarkan status pekerjaan Anda.

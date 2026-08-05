@@ -25,7 +25,7 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
             <span
               className="material-symbols-outlined text-[14px] text-primary"
               style={{ fontVariationSettings: "'FILL' 1" }}
-            >
+             aria-hidden="true">
               near_me
             </span>
             <span

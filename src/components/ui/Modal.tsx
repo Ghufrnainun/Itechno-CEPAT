@@ -37,7 +37,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
             onClick={onClose}
             className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center cursor-pointer text-on-surface-variant hover:text-on-surface"
           >
-            <span className="material-symbols-outlined text-[20px]">close</span>
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
           </button>
         </div>
         

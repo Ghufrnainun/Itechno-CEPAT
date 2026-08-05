@@ -62,7 +62,7 @@ export function LandingNavbar() {
             className="md:hidden z-50 w-11 h-11 rounded-lg bg-surface-container flex items-center justify-center text-on-surface cursor-pointer"
             aria-label="Menu"
           >
-            <span className="material-symbols-outlined text-[22px]">
+            <span className="material-symbols-outlined text-[22px]" aria-hidden="true">
               {isOpen ? "close" : "menu"}
             </span>
           </button>

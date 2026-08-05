@@ -17,8 +17,11 @@ export default function DashboardPage() {
 
   const [tasks, setTasks] = useState<any[]>([]); // Lightweight tasks for map
   const [featuredTask, setFeaturedTask] = useState<any | null>(null); // Rich task for featured card
+  const [escrowAmount, setEscrowAmount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"activity" | "recommendations">("recommendations");
+  const [myActiveTasks, setMyActiveTasks] = useState<any[]>([]);
+  const [loadingActivity, setLoadingActivity] = useState(false);
   const hasLoadedOnce = useRef(false);
 
   useEffect(() => {
@@ -55,6 +58,15 @@ export default function DashboardPage() {
             setFeaturedTask(feedJson.data[0]);
           }
         }
+
+        // 3. Fetch escrow amount
+        const escrowRes = await fetch('/api/wallet/escrow', { cache: 'no-store' });
+        if (escrowRes.ok) {
+          const escrowJson = await escrowRes.json();
+          if (escrowJson.success && escrowJson.data) {
+            setEscrowAmount(escrowJson.data.escrow_amount);
+          }
+        }
       } catch (err) {
         console.error("Dashboard data load error:", err);
       } finally {
@@ -65,8 +77,40 @@ export default function DashboardPage() {
     loadData();
   }, [coords]);
 
+  // Fetch user's active task applications when switching to activity tab
+  useEffect(() => {
+    if (activeTab !== "activity" || myActiveTasks.length > 0) return;
+    async function loadMyTasks() {
+      setLoadingActivity(true);
+      try {
+        const res = await fetch('/api/tasks/applications/me', { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            setMyActiveTasks(json.data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load activity:", err);
+      } finally {
+        setLoadingActivity(false);
+      }
+    }
+    loadMyTasks();
+  }, [activeTab]);
+
   const userName = user?.nama_lengkap?.split(" ")[0] || user?.username || "Pekerja";
   const nearbyCount = tasks.length;
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Selamat Pagi";
+    if (hour < 15) return "Selamat Siang";
+    if (hour < 18) return "Selamat Sore";
+    return "Selamat Malam";
+  };
+
+  const totalCompleted = user?.total_completed ?? 0;
 
   return (
     <div className="flex flex-col h-full bg-layout-bg font-sans transition-colors duration-300">
@@ -74,7 +118,7 @@ export default function DashboardPage() {
       <header className="page-header bg-surface-container-lowest border-b border-outline-variant/30 px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-headline font-extrabold text-2xl text-on-surface tracking-tight">
-            Halo, {userName}
+            {getGreeting()}, {userName} 👋
           </h1>
           <p className="font-body-sm text-sm text-on-surface-variant mt-0.5">
             {role === "worker" ? (
@@ -92,14 +136,14 @@ export default function DashboardPage() {
           {role === "requester" ? (
             <Link href="/task/new">
               <Button variant="primary" size="md" className="font-bold">
-                <span className="material-symbols-outlined text-[18px]">add</span>
+                <span className="material-symbols-outlined text-[18px]" aria-hidden="true">add</span>
                 Post Tugas Baru
               </Button>
             </Link>
           ) : (
             <Link href="/feed">
               <Button variant="primary" size="md" className="font-bold">
-                <span className="material-symbols-outlined text-[18px]">search</span>
+                <span className="material-symbols-outlined text-[18px]" aria-hidden="true">search</span>
                 Cari Tugas Terdekat
               </Button>
             </Link>
@@ -117,42 +161,31 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
-            className="col-span-12 lg:col-span-5 p-1 md:p-1.5 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs"
+            className="col-span-12 lg:col-span-5 p-1 md:p-1.5 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs hover:-translate-y-1 hover:shadow-md active:scale-[0.98] transition-all"
           >
             <div className="h-full rounded-lg border border-primary/20 bg-primary/5 p-5 flex flex-col justify-between relative overflow-hidden">
               <div className="flex items-center justify-between mb-4 text-primary font-bold">
                 <span className="text-xs font-mono uppercase tracking-wider">Saldo Poin Utama</span>
                 <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-[18px] text-primary">account_balance_wallet</span>
+                  <span className="material-symbols-outlined text-[18px] text-primary" aria-hidden="true">account_balance_wallet</span>
                 </div>
               </div>
 
               {loading ? (
-                <div className="h-12 bg-primary/10 rounded animate-pulse w-3/4 mb-4" />
+                <div className="h-12 bg-primary/10 rounded animate-pulse w-3/4 mb-4" aria-label="Memuat saldo" />
               ) : (
-                <div>
-                  <div className="text-4xl md:text-5xl font-extrabold text-on-surface font-mono tracking-tight mb-2">
-                    250.000 <span className="text-sm font-sans font-bold text-on-surface-variant">pts</span>
-                  </div>
-
-                  {/* Level Progress Bar */}
-                  <div className="space-y-1.5 mt-3">
-                    <div className="flex justify-between text-[11px] font-mono text-on-surface-variant font-medium">
-                      <span>Level 3 Worker</span>
-                      <span>75% to Level 4</span>
-                    </div>
-                    <div className="w-full h-2 rounded-full bg-primary/10 overflow-hidden">
-                      <div className="h-full bg-primary rounded-full w-[75%]" />
-                    </div>
+                <div aria-live="polite">
+                  <div className="text-4xl md:text-5xl font-extrabold text-on-surface font-mono tracking-tight mb-2 flex items-center gap-2">
+                    {user?.total_balance ? formatCurrency(user.total_balance).replace('Rp', '') : '-'} <span className="text-sm font-sans font-bold text-on-surface-variant">pts</span>
                   </div>
 
                   <div className="mt-4 flex items-center justify-between">
-                    <div className="text-[11px] text-primary font-bold flex items-center gap-1.5 bg-white/80 backdrop-blur px-2.5 py-1 rounded border border-primary/10 shadow-2xs">
-                      <span className="material-symbols-outlined text-[14px]">trending_up</span>
-                      +15rb minggu ini
+                    <div className="text-xs text-primary font-bold flex items-center gap-1.5 bg-white px-2.5 py-1 rounded border border-primary/10 shadow-2xs">
+                      <span className="material-symbols-outlined text-[16px]" aria-hidden="true">trending_up</span>
+                      Lihat riwayat
                     </div>
                     <Link href="/wallet" className="text-xs text-primary font-semibold hover:underline flex items-center gap-0.5">
-                      Detail <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+                      Detail <span className="material-symbols-outlined text-[14px]" aria-hidden="true">chevron_right</span>
                     </Link>
                   </div>
                 </div>
@@ -165,7 +198,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            className="col-span-6 lg:col-span-3 p-1 md:p-1.5 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs"
+            className="col-span-6 lg:col-span-3 p-1 md:p-1.5 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs hover:-translate-y-1 hover:shadow-md active:scale-[0.98] transition-all"
           >
             <div className="h-full rounded-lg border border-outline-variant/60 bg-white p-4 md:p-5 flex flex-col justify-between">
               <div className="flex items-center justify-between mb-3 text-on-surface-variant font-bold">
@@ -173,20 +206,20 @@ export default function DashboardPage() {
                 <span
                   className="material-symbols-outlined text-[20px] text-amber-500"
                   style={{ fontVariationSettings: "'FILL' 1" }}
-                >
+                 aria-hidden="true">
                   star
                 </span>
               </div>
               {loading ? (
-                <div className="h-8 bg-surface-container-high rounded animate-pulse w-1/2" />
+                <div className="h-8 bg-surface-container-high rounded animate-pulse w-1/2" aria-label="Memuat rating" />
               ) : (
-                <div>
-                  <div className="text-3xl font-extrabold text-on-surface font-mono tracking-tight">
-                    4.8 <span className="text-sm text-amber-500 font-sans">/ 5.0</span>
+                <div aria-live="polite">
+                  <div className="text-3xl font-extrabold text-on-surface font-mono tracking-tight flex items-center gap-2">
+                    {user?.rating_avg ?? 0} <span className="text-sm text-tertiary font-sans">/ 5.0</span>
                   </div>
-                  <div className="text-[11px] text-on-surface-variant mt-1.5 font-medium flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#84CC16]" />
-                    Dari 24 review terverifikasi
+                  <div className="text-xs text-on-surface-variant mt-1.5 font-medium flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-secondary" />
+                    Dari {totalCompleted} task selesai
                   </div>
                 </div>
               )}
@@ -198,28 +231,22 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.3 }}
-            className="col-span-6 lg:col-span-4 p-1 md:p-1.5 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs"
+            className="col-span-6 lg:col-span-4 p-1 md:p-1.5 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs hover:-translate-y-1 hover:shadow-md active:scale-[0.98] transition-all"
           >
-            <div className="h-full rounded-lg border border-[#84CC16]/30 bg-[#84CC16]/10 p-4 md:p-5 flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute -right-4 -top-4 text-[#84CC16] opacity-15 pointer-events-none">
-                <span className="material-symbols-outlined text-[80px]">task_alt</span>
+            <div className="h-full rounded-lg border border-secondary-container bg-secondary-fixed p-4 md:p-5 flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute -right-4 -top-4 text-on-secondary-fixed opacity-15 pointer-events-none">
+                <span className="material-symbols-outlined text-[80px]" aria-hidden="true">task_alt</span>
               </div>
-              <div className="flex items-center justify-between mb-3 text-[#4D7C0F] font-bold relative z-10">
+              <div className="flex items-center justify-between mb-3 text-on-secondary-fixed font-bold relative z-10">
                 <span className="text-xs font-mono uppercase tracking-wider">Task Selesai</span>
-                <span className="material-symbols-outlined text-[20px]">task_alt</span>
+                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">task_alt</span>
               </div>
               {loading ? (
-                <div className="h-8 bg-[#84CC16]/20 rounded animate-pulse w-1/2" />
+                <div className="h-8 bg-secondary-container rounded animate-pulse w-1/2" aria-label="Memuat task selesai" />
               ) : (
-                <div className="relative z-10">
-                  <div className="text-3xl font-extrabold text-on-surface font-mono tracking-tight">
-                    17 <span className="text-xs text-[#4D7C0F] font-sans font-bold">tugas</span>
-                  </div>
-                  <div className="text-[11px] text-[#4D7C0F] font-bold mt-1.5 flex items-center gap-1.5">
-                    <span>Badge:</span>
-                    <span className="bg-[#84CC16] text-white px-2 py-0.5 rounded shadow-2xs text-[9px] uppercase tracking-wide">
-                      Pekerja Aktif
-                    </span>
+                <div className="relative z-10" aria-live="polite">
+                  <div className="text-3xl font-extrabold text-on-surface font-mono tracking-tight flex flex-wrap items-center gap-2">
+                    {totalCompleted} <span className="text-xs text-on-secondary-fixed font-sans font-bold">tugas</span>
                   </div>
                 </div>
               )}
@@ -231,30 +258,28 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.4 }}
-            className="col-span-12 p-1 md:p-1.5 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs"
+            className="col-span-12 p-1 md:p-1.5 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs hover:-translate-y-1 hover:shadow-md active:scale-[0.98] transition-all"
           >
-            <div className="h-full rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="h-full rounded-lg border border-tertiary-container bg-tertiary-fixed p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded bg-amber-500/10 flex items-center justify-center text-amber-700 shrink-0">
-                  <span className="material-symbols-outlined text-[22px]">lock_clock</span>
+                <div className="w-10 h-10 rounded bg-tertiary/10 flex items-center justify-center text-tertiary shrink-0">
+                  <span className="material-symbols-outlined text-[22px]" aria-hidden="true">lock_clock</span>
                 </div>
                 <div>
-                  <div className="text-xs font-mono text-amber-800 font-bold uppercase tracking-wider">
+                  <div className="text-xs font-mono text-tertiary font-bold uppercase tracking-wider">
                     Dana Terkunci Escrow
                   </div>
-                  <div className="text-2xl font-extrabold text-on-surface font-mono tracking-tight mt-0.5">
-                    Rp 100.000
+                  <div className="text-2xl font-extrabold text-on-surface font-mono tracking-tight mt-0.5 flex flex-wrap items-center gap-2">
+                    {formatCurrency(escrowAmount || 0)}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 border-amber-200/50 pt-2 sm:pt-0">
-                <span className="text-xs text-amber-800/80 font-medium hidden md:inline">
+              <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 border-tertiary-container pt-2 sm:pt-0">
+                <span className="text-xs text-on-tertiary-fixed font-medium hidden md:inline">
                   Aman di Escrow hingga task disetujui
                 </span>
-                <Link href="/wallet">
-                  <button type="button" className="px-3.5 py-1.5 text-xs font-bold text-amber-800 bg-white border border-amber-300 rounded hover:bg-amber-50 transition-colors cursor-pointer shadow-2xs">
-                    Lihat Status
-                  </button>
+                <Link href="/wallet" className="px-3.5 py-1.5 text-xs font-bold text-on-tertiary bg-tertiary rounded hover:bg-tertiary/90 transition-colors cursor-pointer shadow-2xs">
+                  Lihat Status
                 </Link>
               </div>
             </div>
@@ -338,18 +363,18 @@ export default function DashboardPage() {
           {/* Featured Task Card (col-span 3) */}
           <section className="xl:col-span-3 p-1.5 md:p-2 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs flex flex-col">
             <div className="h-full rounded-lg border border-white/60 bg-white flex flex-col overflow-hidden shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_2px_8px_rgba(0,0,0,0.02)]">
-              <div className="px-5 py-3.5 border-b border-outline-variant/60 bg-surface-container-lowest flex justify-between items-center shrink-0">
+              <div className="px-5 py-4 border-b border-outline-variant/60 bg-surface-container-lowest flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-[18px]">local_fire_department</span>
+                  <span className="material-symbols-outlined text-tertiary text-[18px]" aria-hidden="true">local_fire_department</span>
                   <h2 className="text-sm font-bold text-on-surface">Peluang Utama Sekitar</h2>
                 </div>
-                <span className="bg-orange-50 text-orange-600 border border-orange-200/50 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1 uppercase tracking-wider">
+                <span className="bg-tertiary-fixed text-on-tertiary-fixed border border-tertiary-container text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 uppercase tracking-wider">
                   HOT TASK
                 </span>
               </div>
 
               {loading ? (
-                <div className="p-6 flex flex-col sm:flex-row gap-6 items-center">
+                <div className="p-6 flex flex-col sm:flex-row gap-6 items-center" aria-label="Memuat tugas">
                   <div className="w-full sm:w-2/5 h-36 bg-surface-container-high rounded-lg animate-pulse" />
                   <div className="flex-1 space-y-3 w-full">
                     <div className="h-6 bg-surface-container-high rounded animate-pulse w-3/4" />
@@ -358,20 +383,8 @@ export default function DashboardPage() {
                   </div>
                 </div>
               ) : featuredTask ? (
-                <div className="flex-1 p-5 md:p-6 flex flex-col sm:flex-row gap-5">
-                  {/* Category Gradient Thumbnail */}
-                  <div className="w-full sm:w-2/5 h-36 sm:h-auto rounded-lg overflow-hidden shrink-0 border border-outline-variant/30 relative bg-gradient-to-br from-primary/10 via-surface-container-high to-primary-container/20 flex flex-col items-center justify-center p-4 text-center shadow-inner">
-                    <span className="material-symbols-outlined text-[42px] text-primary mb-1" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      storefront
-                    </span>
-                    <span className="text-xs font-bold text-on-surface line-clamp-1">UMKM Lokal</span>
-                    <div className="absolute top-2.5 left-2.5 bg-white/90 backdrop-blur text-on-surface px-2 py-1 rounded shadow-2xs border border-outline-variant/50 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-primary text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                        verified
-                      </span>
-                      <span className="text-[10px] font-bold">Terverifikasi</span>
-                    </div>
-                  </div>
+                <div className="flex-1 p-5 md:p-6 flex flex-col sm:flex-row gap-5" aria-live="polite">
+                  {/* Task Image removed as requested */}
 
                   {/* Task Details */}
                   <div className="flex-1 flex flex-col justify-between gap-3">
@@ -385,7 +398,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 text-on-surface-variant text-xs font-semibold mb-2">
-                        <span className="material-symbols-outlined text-[15px] text-primary">location_on</span>
+                        <span className="material-symbols-outlined text-[15px] text-primary" aria-hidden="true">location_on</span>
                         <span className="text-primary font-mono">
                           {featuredTask.distance ? `${featuredTask.distance.toFixed(1)} km dari posisi` : "~"}
                         </span>
@@ -395,9 +408,9 @@ export default function DashboardPage() {
                       </p>
                     </div>
 
-                    <div className="pt-2 flex items-center justify-between border-t border-outline-variant/40">
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono uppercase text-on-surface-variant font-bold">
-                        <span className="material-symbols-outlined text-[14px] text-primary">shield</span>
+                    <div className="pt-3 flex items-center justify-between border-t border-outline-variant/40 mt-1">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase text-on-surface-variant font-bold">
+                        <span className="material-symbols-outlined text-[16px] text-tertiary" aria-hidden="true">shield</span>
                         Escrow Protected
                       </span>
                       <Link href={`/task/${featuredTask.id_task}`}>
@@ -410,7 +423,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-3">
-                  <span className="material-symbols-outlined text-[48px] text-outline-variant/40">location_off</span>
+                  <span className="material-symbols-outlined text-[48px] text-outline-variant/40" aria-hidden="true">location_off</span>
                   <p className="text-sm text-on-surface-variant font-medium">Tidak ada tugas terdekat di radius 2km.</p>
                   <Link href="/feed">
                     <Button variant="secondary" size="sm">Jelajahi Semua Area</Button>
@@ -425,9 +438,9 @@ export default function DashboardPage() {
             <div className="h-full rounded-lg border border-white/60 bg-interaction-bg overflow-hidden relative shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_2px_8px_rgba(0,0,0,0.02)]">
               {/* Overlay controls */}
               <div className="absolute top-3 left-3 right-3 z-10 flex justify-between pointer-events-none">
-                <div className="bg-white/95 backdrop-blur border border-outline-variant shadow-2xs rounded px-2.5 py-1.5 flex items-center gap-2 pointer-events-auto">
-                  <div className="w-2 h-2 rounded-full bg-primary pulse-dot" />
-                  <span className="text-[10px] font-bold text-on-surface uppercase tracking-wider font-mono">
+                <div className="bg-white border border-outline-variant shadow-2xs rounded px-3 py-2 flex items-center gap-2 pointer-events-auto">
+                  <div className="w-2.5 h-2.5 rounded-full bg-primary pulse-dot" />
+                  <span className="text-xs font-bold text-on-surface uppercase tracking-wider font-mono">
                     Radar • {nearbyCount} Task
                   </span>
                 </div>
@@ -436,7 +449,7 @@ export default function DashboardPage() {
                   className="w-8 h-8 bg-white/95 backdrop-blur border border-outline-variant rounded shadow-2xs flex items-center justify-center text-on-surface-variant pointer-events-auto hover:text-primary transition-colors"
                   title="Buka Peta Penuh"
                 >
-                  <span className="material-symbols-outlined text-[16px]">open_in_full</span>
+                  <span className="material-symbols-outlined text-[16px]" aria-hidden="true">open_in_full</span>
                 </Link>
               </div>
 
@@ -450,8 +463,8 @@ export default function DashboardPage() {
               </div>
 
               {/* Bottom indicator */}
-              <div className="absolute bottom-2 left-2 right-2 z-10 text-center pointer-events-none">
-                <span className="inline-block bg-white/90 backdrop-blur border border-outline-variant/60 px-3 py-1 rounded text-[10px] text-on-surface-variant font-mono font-bold uppercase tracking-wider shadow-2xs">
+              <div className="absolute bottom-3 left-3 right-3 z-10 text-center pointer-events-none">
+                <span className="inline-block bg-white border border-outline-variant/60 px-3 py-1.5 rounded text-xs text-on-surface-variant font-mono font-bold uppercase tracking-wider shadow-2xs">
                   Radius 2 KM Terdeteksi
                 </span>
               </div>
@@ -467,10 +480,14 @@ export default function DashboardPage() {
           className="bg-white border border-outline-variant/60 rounded-xl p-5 shadow-2xs flex flex-col gap-4"
         >
           {/* Tab Header */}
-          <div className="flex items-center justify-between border-b border-outline-variant/40 pb-3">
+          <div className="flex items-center justify-between border-b border-outline-variant/40 pb-3" role="tablist">
             <div className="flex items-center gap-4">
               <button
                 type="button"
+                role="tab"
+                aria-selected={activeTab === "recommendations"}
+                aria-controls="panel-recommendations"
+                id="tab-recommendations"
                 onClick={() => setActiveTab("recommendations")}
                 className={`text-sm font-bold pb-1 transition-all cursor-pointer relative ${
                   activeTab === "recommendations" ? "text-primary" : "text-on-surface-variant hover:text-on-surface"
@@ -483,6 +500,10 @@ export default function DashboardPage() {
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={activeTab === "activity"}
+                aria-controls="panel-activity"
+                id="tab-activity"
                 onClick={() => setActiveTab("activity")}
                 className={`text-sm font-bold pb-1 transition-all cursor-pointer relative ${
                   activeTab === "activity" ? "text-primary" : "text-on-surface-variant hover:text-on-surface"
@@ -496,13 +517,13 @@ export default function DashboardPage() {
             </div>
 
             <Link href="/feed" className="text-xs font-bold text-primary hover:underline flex items-center gap-0.5">
-              Lihat Semua <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+              Lihat Semua <span className="material-symbols-outlined text-[14px]" aria-hidden="true">arrow_forward</span>
             </Link>
           </div>
 
           {/* Tab Content */}
           {activeTab === "recommendations" ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1" id="panel-recommendations" role="tabpanel" aria-labelledby="tab-recommendations">
               {tasks.slice(0, 3).map((task) => (
                 <Link key={task.id_task} href={`/task/${task.id_task}`}>
                   <div className="group border border-outline-variant/60 rounded-lg p-3.5 hover:border-primary/50 hover:bg-surface-container-low transition-all cursor-pointer flex flex-col justify-between h-full space-y-3 shadow-2xs">
@@ -515,18 +536,18 @@ export default function DashboardPage() {
                           {formatCurrency(task.compensation)}
                         </span>
                       </div>
-                      <p className="text-[11px] text-on-surface-variant line-clamp-2">
+                      <p className="text-xs text-on-surface-variant line-clamp-2">
                         {task.description}
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-on-surface-variant pt-2 border-t border-outline-variant/30 font-mono">
-                      <span className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[13px]">storefront</span>
+                    <div className="flex items-center justify-between text-xs text-on-surface-variant pt-3 border-t border-outline-variant/30 font-mono">
+                      <span className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[16px]" aria-hidden="true">storefront</span>
                         UMKM
                       </span>
-                      <span className="flex items-center gap-1 text-primary font-bold">
-                        <span className="material-symbols-outlined text-[13px]">directions_walk</span>
+                      <span className="flex items-center gap-1.5 text-primary font-bold">
+                        <span className="material-symbols-outlined text-[16px]" aria-hidden="true">directions_walk</span>
                         {task.distance ? `${task.distance.toFixed(1)} km` : "~"}
                       </span>
                     </div>
@@ -536,7 +557,7 @@ export default function DashboardPage() {
 
               {tasks.length === 0 && (
                 <div className="col-span-3 py-10 flex flex-col items-center justify-center text-center gap-2">
-                  <span className="material-symbols-outlined text-[40px] text-outline-variant/40">search_off</span>
+                  <span className="material-symbols-outlined text-[40px] text-outline-variant/40" aria-hidden="true">search_off</span>
                   <p className="text-sm font-semibold text-on-surface-variant">Belum ada rekomendasi tugas saat ini.</p>
                   <Link href="/feed">
                     <Button variant="secondary" size="sm">Buka Feed Tugas</Button>
@@ -545,34 +566,71 @@ export default function DashboardPage() {
               )}
             </div>
           ) : (
-            <div className="space-y-3 pt-1">
-              {/* Actionable Empty State */}
-              <div className="bg-surface-container-low/50 border border-outline-variant/60 border-dashed rounded-lg p-5 flex flex-col items-center justify-center text-center">
-                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-2xs border border-outline-variant mb-2">
-                  <span className="material-symbols-outlined text-primary text-[20px]">pending_actions</span>
+            <div className="space-y-3 pt-1" id="panel-activity" role="tabpanel" aria-labelledby="tab-activity">
+              {loadingActivity ? (
+                <div className="py-8 flex flex-col items-center justify-center gap-3" aria-live="polite">
+                  <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                  <span className="text-sm text-on-surface-variant font-medium">Memuat aktivitas...</span>
                 </div>
-                <h4 className="text-sm font-bold text-on-surface">Belum ada tugas aktif</h4>
-                <p className="text-xs text-on-surface-variant mt-0.5 max-w-sm mb-3">
-                  {role === "worker"
-                    ? "Ambil tugas terdekat di sekitarmu untuk mulai mengumpulkan poin."
-                    : "Post tugas baru untuk menemukan mahasiswa yang siap membantu."}
-                </p>
-                {role === "worker" ? (
-                  <Link href="/feed">
-                    <Button variant="primary" size="sm">Cari Tugas Sekarang</Button>
-                  </Link>
-                ) : (
-                  <Link href="/task/new">
-                    <Button variant="primary" size="sm">Post Tugas Pertama</Button>
-                  </Link>
-                )}
-              </div>
+              ) : myActiveTasks.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {myActiveTasks.slice(0, 4).map((app) => {
+                    const statusName = app.status_applicant?.nama_status || "Pending";
+                    const statusColor = statusName === "Accepted" ? "bg-secondary text-on-secondary" : statusName === "Rejected" ? "bg-error text-on-error" : "bg-tertiary text-on-tertiary";
+                    return (
+                      <Link key={app.id_task_applicants} href={`/task/${app.task?.id_tasks}`}>
+                        <div className="group border border-outline-variant/60 rounded-lg p-4 hover:border-primary/50 hover:bg-surface-container-low transition-all cursor-pointer flex flex-col gap-3 shadow-2xs">
+                          <div className="flex justify-between items-start gap-2">
+                            <h4 className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-2 leading-snug flex-1">
+                              {app.task?.judul_tugas || "Tugas"}
+                            </h4>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${statusColor}`}>
+                              {statusName}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-on-surface-variant">
+                            <span className="flex items-center gap-1.5 font-medium">
+                              <span className="material-symbols-outlined text-[14px]" aria-hidden="true">person</span>
+                              {app.task?.requester?.nama_lengkap || "Pemberi Kerja"}
+                            </span>
+                            <span className="font-mono font-bold text-primary">
+                              {app.task?.kompensasi ? formatCurrency(app.task.kompensasi) : "-"}
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* Actionable Empty State */
+                <div className="bg-surface-container-low/50 border border-outline-variant/60 border-dashed rounded-lg p-5 flex flex-col items-center justify-center text-center">
+                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-2xs border border-outline-variant mb-2">
+                    <span className="material-symbols-outlined text-primary text-[20px]" aria-hidden="true">pending_actions</span>
+                  </div>
+                  <h4 className="text-sm font-bold text-on-surface">Belum ada tugas aktif</h4>
+                  <p className="text-xs text-on-surface-variant mt-0.5 max-w-sm mb-3">
+                    {role === "worker"
+                      ? "Ambil tugas terdekat di sekitarmu untuk mulai mengumpulkan poin."
+                      : "Post tugas baru untuk menemukan mahasiswa yang siap membantu."}
+                  </p>
+                  {role === "worker" ? (
+                    <Link href="/feed">
+                      <Button variant="primary" size="sm">Cari Tugas Sekarang</Button>
+                    </Link>
+                  ) : (
+                    <Link href="/task/new">
+                      <Button variant="primary" size="sm">Post Tugas Pertama</Button>
+                    </Link>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
           {/* Footer Trust Indicator */}
-          <div className="pt-2 flex items-center justify-center gap-2 text-on-surface-variant/60 text-[11px] font-mono border-t border-outline-variant/30">
-            <span className="material-symbols-outlined text-[14px] text-primary">verified_user</span>
+          <div className="pt-4 flex items-center justify-center gap-2 text-on-surface-variant/80 text-xs font-mono border-t border-outline-variant/30 mt-2">
+            <span className="material-symbols-outlined text-[16px] text-tertiary" aria-hidden="true">verified_user</span>
             <span>Semua transaksi dilindungi sistem Escrow CEPAT • SDG 8</span>
           </div>
         </motion.section>

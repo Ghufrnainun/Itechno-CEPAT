@@ -20,15 +20,15 @@ export default function NotificationsPage() {
   const getIcon = (type: string) => {
     switch (type) {
       case "points":
-        return <span className="material-symbols-outlined text-secondary text-[24px]">account_balance_wallet</span>;
+        return <span className="material-symbols-outlined text-secondary text-[24px]" aria-hidden="true">account_balance_wallet</span>;
       case "accept":
-        return <span className="material-symbols-outlined text-primary text-[24px]">check_circle</span>;
+        return <span className="material-symbols-outlined text-primary text-[24px]" aria-hidden="true">check_circle</span>;
       case "apply":
-        return <span className="material-symbols-outlined text-amber-500 text-[24px]">assignment_ind</span>;
+        return <span className="material-symbols-outlined text-amber-500 text-[24px]" aria-hidden="true">assignment_ind</span>;
       case "review":
-        return <span className="material-symbols-outlined text-amber-400 text-[24px]">star</span>;
+        return <span className="material-symbols-outlined text-amber-400 text-[24px]" aria-hidden="true">star</span>;
       default:
-        return <span className="material-symbols-outlined text-outline text-[24px]">info</span>;
+        return <span className="material-symbols-outlined text-outline text-[24px]" aria-hidden="true">info</span>;
     }
   };
 
@@ -60,7 +60,7 @@ export default function NotificationsPage() {
         </div>
         {unreadCount > 0 && (
           <Button variant="secondary" className="py-1.5 px-3 text-xs font-bold" onClick={handleMarkAllAsRead}>
-            <span className="material-symbols-outlined text-[14px]">done_all</span>
+            <span className="material-symbols-outlined text-[14px]" aria-hidden="true">done_all</span>
             Tandai Dibaca
           </Button>
         )}
@@ -100,12 +100,12 @@ export default function NotificationsPage() {
         <div className="bg-white border border-outline-variant rounded-xl divide-y divide-outline-variant/60 overflow-hidden shadow-sm">
           {isLoading ? (
             <div className="p-xl text-center py-12 flex flex-col items-center gap-sm">
-              <span className="material-symbols-outlined text-primary text-[36px] animate-spin">sync</span>
+              <span className="material-symbols-outlined text-primary text-[36px] animate-spin" aria-hidden="true">sync</span>
               <p className="font-body-sm text-on-surface-variant font-medium">Memuat notifikasi...</p>
             </div>
           ) : filteredNotifications.length === 0 ? (
             <div className="p-xl text-center flex flex-col items-center gap-sm py-16">
-              <span className="material-symbols-outlined text-outline text-[48px]">notifications_off</span>
+              <span className="material-symbols-outlined text-outline text-[48px]" aria-hidden="true">notifications_off</span>
               <p className="font-headline-sm text-headline-sm text-on-surface font-bold">Tidak ada notifikasi</p>
               <p className="font-body-sm text-body-sm text-on-surface-variant">
                 {filterTab === "unread" ? "Semua notifikasi sudah Anda baca." : "Tidak ada notifikasi yang sesuai dengan filter ini."}

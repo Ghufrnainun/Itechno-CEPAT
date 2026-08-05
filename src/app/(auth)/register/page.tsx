@@ -152,7 +152,7 @@ export default function RegisterPage() {
                     <span
                       className="material-symbols-outlined text-[18px] text-[#84CC16]"
                       style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
+                     aria-hidden="true">
                       {item.icon}
                     </span>
                   </div>
@@ -174,7 +174,7 @@ export default function RegisterPage() {
               <span
                 className="material-symbols-outlined text-[14px] text-[#84CC16]"
                 style={{ fontVariationSettings: "'FILL' 1" }}
-              >
+               aria-hidden="true">
                 public
               </span>
               SDG 8 — Decent{' '}
