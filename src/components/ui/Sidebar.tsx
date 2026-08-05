@@ -9,13 +9,28 @@ import { useNotifications } from "@/hooks/useNotifications";
 interface SidebarProps {
   role: "worker" | "requester";
   onRoleToggle: () => void;
+  user?: {
+    nama_lengkap?: string;
+    username?: string;
+    email?: string;
+    total_balance?: number;
+  } | null;
 }
 
-export function Sidebar({ role, onRoleToggle }: SidebarProps) {
+export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { unreadCount } = useNotifications();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  const displayName = user?.nama_lengkap || user?.username || "Pengguna CEPAT";
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase();
 
   const handleLogout = async () => {
     if (loggingOut) return;
@@ -30,246 +45,309 @@ export function Sidebar({ role, onRoleToggle }: SidebarProps) {
   return (
     <aside
       id="sidebar"
-      className="hidden lg:flex flex-col h-screen py-lg px-md gap-lg border-r border-outline-variant bg-surface-container-lowest w-72 sticky top-0 shrink-0"
+      aria-label="Navigasi Utama Aplikasi"
+      className={`hidden lg:flex flex-col h-screen py-6 gap-6 border-r border-outline-variant/60 bg-surface-container-lowest sticky top-0 shrink-0 shadow-sm overflow-x-hidden transition-all duration-300 ease-in-out ${
+        isExpanded ? "w-72 px-4" : "w-20 px-2 items-center"
+      }`}
     >
-      {/* Brand / Header — logo.svg */}
-      <div className="flex items-center gap-sm px-xs mb-md">
-        <Link href="/dashboard" aria-label="Kembali ke dashboard" className="flex items-center gap-sm">
-          <Image
-            src="/logo.svg"
-            alt="CEPAT"
-            width={32}
-            height={32}
-            className="rounded-lg shrink-0"
-            style={{ objectFit: "contain" }}
-          />
-          <span className="font-headline-md text-headline-md text-primary font-bold tracking-tight">
-            CEPAT
-          </span>
-        </Link>
-      </div>
-
-      {/* User Profile Card */}
-      <div className="flex flex-col gap-sm px-md py-sm mb-sm bg-surface-container-low rounded-xl border border-outline-variant/30">
-        <div className="flex items-center gap-md">
-          <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-sm shrink-0">
-            BS
-          </div>
-          <div className="flex flex-col overflow-hidden">
-            <span className="font-label-md text-label-md font-semibold text-on-surface truncate flex items-center gap-xs">
-              Budi Santoso
-              <span
-                className="material-symbols-outlined text-primary-container text-[14px]"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                verified
-              </span>
+      {/* Brand / Header */}
+      <div className={`flex items-center ${isExpanded ? "justify-between" : "justify-center flex-col gap-4"} px-2 mb-2 w-full relative`}>
+        {isExpanded ? (
+          <Link
+            href="/dashboard"
+            aria-label="Kembali ke dashboard CEPAT"
+            className="flex items-center gap-3 group"
+          >
+            <Image
+              src="/logo.svg"
+              alt="CEPAT Logo"
+              width={36}
+              height={36}
+              className="rounded-xl shrink-0 transition-transform group-hover:scale-105"
+              style={{ objectFit: "contain" }}
+            />
+            <span className="font-headline font-bold text-xl text-primary tracking-tight">
+              CEPAT
             </span>
-            <span
-              className="font-label-sm text-label-sm text-on-surface-variant truncate"
-              style={{ fontFamily: "'JetBrains Mono'" }}
-            >
-              Saldo: 250k pts
-            </span>
-          </div>
-        </div>
-
-        {/* Role switcher */}
+          </Link>
+        ) : (
+          <Link href="/dashboard" className="flex items-center justify-center">
+            <Image
+              src="/logo.svg"
+              alt="CEPAT Logo"
+              width={36}
+              height={36}
+              className="rounded-xl shrink-0 transition-transform hover:scale-105"
+              style={{ objectFit: "contain" }}
+            />
+          </Link>
+        )}
         <button
-          onClick={onRoleToggle}
-          className="mt-xs w-full py-1 px-2 text-xs font-semibold rounded-lg bg-primary-container/10 hover:bg-primary-container/20 text-primary-container flex items-center justify-center gap-xs cursor-pointer transition-colors"
+          onClick={() => setIsExpanded(!isExpanded)}
+          aria-label={isExpanded ? "Tutup Sidebar" : "Buka Sidebar"}
+          className={`text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+            isExpanded ? "" : "w-8 h-8 bg-surface-container-high rounded-full border border-outline-variant shadow-sm"
+          }`}
+          title={isExpanded ? "Tutup Sidebar" : "Buka Sidebar"}
         >
-          <span className="material-symbols-outlined text-[14px]">swap_horiz</span>
-          Mode: {role === "worker" ? "Pekerja" : "Pemberi Kerja"}
+          <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+            {isExpanded ? "menu_open" : "menu"}
+          </span>
         </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 flex flex-col gap-xs overflow-y-auto custom-scrollbar">
-        {/* Dashboard — new */}
+      {/* User Profile Card */}
+      <div className={`flex flex-col gap-3 p-3.5 brand-card-teal rounded-xl shadow-xs transition-all w-full ${!isExpanded && "items-center px-1"}`}>
+        <div className={`flex items-center ${isExpanded ? "gap-3" : "justify-center"}`}>
+          <div className="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-sm shrink-0 shadow-xs border border-primary-container" title={!isExpanded ? displayName : undefined}>
+            {initials}
+          </div>
+          {isExpanded && (
+            <div className="flex flex-col overflow-hidden">
+              <span className="font-sans font-bold text-sm text-on-surface truncate flex items-center gap-1">
+                {displayName}
+                <span
+                  className="material-symbols-outlined text-primary text-[15px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                 aria-hidden="true">
+                  verified
+                </span>
+              </span>
+              <span className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-primary">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>
+                Saldo: {user?.total_balance ?? 0} pts
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Segmented Control Role Switcher */}
+        <div className={`flex w-full bg-surface-container-high rounded border border-outline-variant/40 ${isExpanded ? "p-0.5" : "flex-col p-1 gap-1 border-none bg-transparent"}`}>
+          <button
+            type="button"
+            onClick={() => role !== "worker" && onRoleToggle()}
+            aria-label="Mode Pekerja"
+            className={`flex-1 py-1.5 px-2 text-xs font-bold rounded transition-colors flex items-center justify-center gap-1 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-[0.97] ${
+              role === "worker"
+                ? "bg-primary text-on-primary shadow-xs"
+                : "text-on-surface-variant hover:text-on-surface hover:bg-black/5"
+            } ${!isExpanded && "w-10 h-10 rounded-lg p-0"}`}
+            title={!isExpanded ? "Mode Pekerja" : undefined}
+          >
+            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">work</span>
+            {isExpanded && "Pekerja"}
+          </button>
+          <button
+            type="button"
+            onClick={() => role !== "requester" && onRoleToggle()}
+            aria-label="Mode Pemberi Kerja"
+            className={`flex-1 py-1.5 px-2 text-xs font-bold rounded transition-colors flex items-center justify-center gap-1 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-[0.97] ${
+              role === "requester"
+                ? "bg-primary text-on-primary shadow-xs"
+                : "text-on-surface-variant hover:text-on-surface hover:bg-black/5"
+            } ${!isExpanded && "w-10 h-10 rounded-lg p-0"}`}
+            title={!isExpanded ? "Mode Pemberi" : undefined}
+          >
+            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">add_task</span>
+            {isExpanded && "Pemberi"}
+          </button>
+        </div>
+      </div>
+
+      {/* Navigation Links */}
+      <nav className={`flex-1 flex flex-col gap-1 overflow-y-auto overflow-x-hidden custom-scrollbar w-full ${!isExpanded && "items-center px-1"}`}>
         <Link
           href="/dashboard"
-          className={`sidebar-link ${pathname === "/dashboard" ? "active" : ""}`}
+          title={!isExpanded ? "Dashboard" : undefined}
+          aria-current={pathname === "/dashboard" ? "page" : undefined}
+          className={`sidebar-link flex items-center gap-3 ${pathname === "/dashboard" ? "active" : ""} ${!isExpanded && "justify-center w-12 h-12 rounded-xl p-0"}`}
         >
           <span
-            className="material-symbols-outlined"
+            className="material-symbols-outlined text-[20px]"
             style={{ fontVariationSettings: pathname === "/dashboard" ? "'FILL' 1" : "'FILL' 0" }}
-          >
+           aria-hidden="true">
             home
           </span>
-          Dashboard
+          {isExpanded && "Dashboard"}
         </Link>
 
         {role === "worker" ? (
           <>
             <Link
               href="/cari-tugas"
-              className={`sidebar-link ${pathname === "/cari-tugas" ? "active" : ""}`}
+              title={!isExpanded ? "Cari Tugas" : undefined}
+              aria-current={pathname === "/cari-tugas" ? "page" : undefined}
+              className={`sidebar-link flex items-center gap-3 ${pathname === "/cari-tugas" ? "active" : ""} ${!isExpanded && "justify-center w-12 h-12 rounded-xl p-0"}`}
             >
               <span
-                className="material-symbols-outlined"
+                className="material-symbols-outlined text-[20px]"
                 style={{ fontVariationSettings: pathname === "/cari-tugas" ? "'FILL' 1" : "'FILL' 0" }}
-              >
+               aria-hidden="true">
                 explore
               </span>
-              Cari Tugas
+              {isExpanded && "Cari Tugas"}
             </Link>
 
             <Link
               href="/feed"
-              className={`sidebar-link ${pathname === "/feed" ? "active" : ""}`}
+              title={!isExpanded ? "Feeds" : undefined}
+              aria-current={pathname === "/feed" ? "page" : undefined}
+              className={`sidebar-link flex items-center gap-3 ${pathname === "/feed" ? "active" : ""} ${!isExpanded && "justify-center w-12 h-12 rounded-xl p-0"}`}
             >
               <span
-                className="material-symbols-outlined"
+                className="material-symbols-outlined text-[20px]"
                 style={{ fontVariationSettings: pathname === "/feed" ? "'FILL' 1" : "'FILL' 0" }}
-              >
+               aria-hidden="true">
                 list_alt
               </span>
-              Feeds
+              {isExpanded && "Feeds"}
             </Link>
 
             <Link
               href="/history/riwayat"
-              className={`sidebar-link ${pathname === "/history/riwayat" ? "active" : ""}`}
+              title={!isExpanded ? "Riwayat" : undefined}
+              className={`sidebar-link flex items-center gap-3 ${pathname === "/history/riwayat" ? "active" : ""} ${!isExpanded && "justify-center w-12 h-12 rounded-xl p-0"}`}
             >
               <span
-                className="material-symbols-outlined"
+                className="material-symbols-outlined text-[20px]"
                 style={{ fontVariationSettings: pathname === "/history/riwayat" ? "'FILL' 1" : "'FILL' 0" }}
-              >
+               aria-hidden="true">
                 history
               </span>
-              Riwayat
+              {isExpanded && "Riwayat"}
             </Link>
 
             <Link
               href="/chat"
-              className={`sidebar-link ${pathname === "/chat" ? "active" : ""}`}
+              title={!isExpanded ? "Chat" : undefined}
+              aria-current={pathname === "/chat" ? "page" : undefined}
+              className={`sidebar-link flex items-center gap-3 ${pathname === "/chat" ? "active" : ""} ${!isExpanded && "justify-center w-12 h-12 rounded-xl p-0"}`}
             >
               <span
-                className="material-symbols-outlined"
+                className="material-symbols-outlined text-[20px]"
                 style={{ fontVariationSettings: pathname === "/chat" ? "'FILL' 1" : "'FILL' 0" }}
-              >
+               aria-hidden="true">
                 chat
               </span>
-              Chat
+              {isExpanded && "Chat"}
             </Link>
           </>
         ) : (
           <>
             <Link
               href="/task/new"
-              className={`sidebar-link ${pathname === "/task/new" ? "active" : ""}`}
+              title={!isExpanded ? "Post Tugas Baru" : undefined}
+              aria-current={pathname === "/task/new" ? "page" : undefined}
+              className={`sidebar-link flex items-center gap-3 ${pathname === "/task/new" ? "active" : ""} ${!isExpanded && "justify-center w-12 h-12 rounded-xl p-0"}`}
             >
               <span
-                className="material-symbols-outlined"
+                className="material-symbols-outlined text-[20px]"
                 style={{ fontVariationSettings: pathname === "/task/new" ? "'FILL' 1" : "'FILL' 0" }}
-              >
+               aria-hidden="true">
                 add_box
               </span>
-              Post Tugas Baru
+              {isExpanded && "Post Tugas Baru"}
             </Link>
 
             <Link
               href="/tugas"
-              className={`sidebar-link ${pathname === "/tugas" ? "active" : ""}`}
+              title={!isExpanded ? "Kelola Tugas" : undefined}
+              aria-current={pathname === "/tugas" ? "page" : undefined}
+              className={`sidebar-link flex items-center gap-3 ${pathname === "/tugas" ? "active" : ""} ${!isExpanded && "justify-center w-12 h-12 rounded-xl p-0"}`}
             >
               <span
-                className="material-symbols-outlined"
+                className="material-symbols-outlined text-[20px]"
                 style={{ fontVariationSettings: pathname === "/tugas" ? "'FILL' 1" : "'FILL' 0" }}
-              >
+               aria-hidden="true">
                 assignment_ind
               </span>
-              Kelola Tugas
+              {isExpanded && "Kelola Tugas"}
             </Link>
 
             <Link
               href="/chat"
-              className={`sidebar-link ${pathname === "/chat" ? "active" : ""}`}
+              title={!isExpanded ? "Chat" : undefined}
+              aria-current={pathname === "/chat" ? "page" : undefined}
+              className={`sidebar-link flex items-center gap-3 ${pathname === "/chat" ? "active" : ""} ${!isExpanded && "justify-center w-12 h-12 rounded-xl p-0"}`}
             >
               <span
-                className="material-symbols-outlined"
+                className="material-symbols-outlined text-[20px]"
                 style={{ fontVariationSettings: pathname === "/chat" ? "'FILL' 1" : "'FILL' 0" }}
-              >
+               aria-hidden="true">
                 chat
               </span>
-              Chat
+              {isExpanded && "Chat"}
             </Link>
           </>
         )}
 
         <Link
           href="/notifications"
-          className={`sidebar-link justify-between ${pathname === "/notifications" ? "active" : ""}`}
+          title={!isExpanded ? "Notifikasi" : undefined}
+          aria-current={pathname === "/notifications" ? "page" : undefined}
+          className={`sidebar-link flex items-center gap-3 ${pathname === "/notifications" ? "active" : ""} ${isExpanded ? "justify-between" : "justify-center w-12 h-12 rounded-xl p-0 relative"}`}
         >
-          <div className="flex items-center gap-md">
+          <div className="flex items-center gap-3">
             <span
-              className="material-symbols-outlined"
+              className="material-symbols-outlined text-[20px]"
               style={{ fontVariationSettings: pathname === "/notifications" ? "'FILL' 1" : "'FILL' 0" }}
-            >
+             aria-hidden="true">
               notifications
             </span>
-            Notifikasi
+            {isExpanded && "Notifikasi"}
           </div>
           {unreadCount > 0 && (
-            <span className="bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono">
-              {unreadCount}
+            <span className={`${isExpanded ? "bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono" : "absolute top-2 right-2 w-2.5 h-2.5 bg-primary rounded-full border-2 border-white"}`}>
+              {isExpanded ? unreadCount : ""}
             </span>
           )}
         </Link>
 
         <Link
           href="/wallet"
-          className={`sidebar-link ${pathname === "/wallet" ? "active" : ""}`}
+          title={!isExpanded ? "Dompet Poin" : undefined}
+          aria-current={pathname === "/wallet" ? "page" : undefined}
+          className={`sidebar-link flex items-center gap-3 ${pathname === "/wallet" ? "active" : ""} ${!isExpanded && "justify-center w-12 h-12 rounded-xl p-0"}`}
         >
           <span
-            className="material-symbols-outlined"
+            className="material-symbols-outlined text-[20px]"
             style={{ fontVariationSettings: pathname === "/wallet" ? "'FILL' 1" : "'FILL' 0" }}
-          >
+           aria-hidden="true">
             account_balance_wallet
           </span>
-          Dompet Poin
+          {isExpanded && "Dompet Poin"}
         </Link>
 
         <Link
-          href="/profile/budi"
-          className={`sidebar-link ${pathname.includes("/profile/") ? "active" : ""}`}
+          href="/profile"
+          title={!isExpanded ? "Profil Saya" : undefined}
+          aria-current={pathname.includes("/profile") ? "page" : undefined}
+          className={`sidebar-link flex items-center gap-3 ${pathname.includes("/profile") ? "active" : ""} ${!isExpanded && "justify-center w-12 h-12 rounded-xl p-0"}`}
         >
           <span
-            className="material-symbols-outlined"
-            style={{ fontVariationSettings: pathname.includes("/profile/") ? "'FILL' 1" : "'FILL' 0" }}
-          >
+            className="material-symbols-outlined text-[20px]"
+            style={{ fontVariationSettings: pathname.includes("/profile") ? "'FILL' 1" : "'FILL' 0" }}
+           aria-hidden="true">
             person
           </span>
-          Profil Saya
+          {isExpanded && "Profil Saya"}
         </Link>
       </nav>
 
-      {/* CTA + Footer */}
-      <div className="flex flex-col gap-sm pt-md border-t border-outline-variant/50">
-        {role === "requester" && (
-          <Link
-            href="/task/new"
-            className="w-full bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-bold py-3 rounded-lg flex items-center justify-center gap-sm transition-colors shadow-sm"
-          >
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            Post Tugas Baru
-          </Link>
-        )}
-        <div className="flex flex-col gap-xs">
-          <a href="#" className="sidebar-link text-on-surface-variant">
-            <span className="material-symbols-outlined">help</span>
-            Bantuan
-          </a>
-          <button
-            onClick={handleLogout}
-            disabled={loggingOut}
-            className="sidebar-link w-full text-left text-error hover:bg-error-container/20"
-          >
-            <span className="material-symbols-outlined">logout</span>
-            {loggingOut ? "Keluar..." : "Keluar"}
-          </button>
-        </div>
+      {/* Footer */}
+      <div className={`flex flex-col gap-2 pt-4 border-t border-outline-variant/50 w-full ${!isExpanded && "items-center px-1"}`}>
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          title={!isExpanded ? "Keluar" : undefined}
+          aria-label="Keluar dari akun"
+          className={`sidebar-link flex items-center gap-3 text-error hover:bg-error-container/20 rounded-xl disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-error focus-visible:outline-none ${isExpanded ? "w-full text-left" : "justify-center w-12 h-12 p-0"}`}
+        >
+          <span className="material-symbols-outlined text-[20px]" aria-hidden="true">logout</span>
+          {isExpanded && (loggingOut ? "Keluar..." : "Keluar")}
+        </button>
       </div>
     </aside>
   );
 }
+

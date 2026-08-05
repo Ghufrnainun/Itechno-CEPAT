@@ -1,33 +1,33 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { RoleCard } from "@/features/auth/components/RoleCard";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
-import { createClient } from "@/lib/supabase/client";
+import React, { useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { RoleCard } from '@/features/auth/components/RoleCard';
+import { Input } from '@/components/ui/Input';
+import { createClient } from '@/lib/supabase/client';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [role, setRole] = useState<"worker" | "requester">("worker");
-  const [fullName, setFullName] = useState("");
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<'worker' | 'requester'>('worker');
+  const [fullName, setFullName] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError('');
     setLoading(true);
     try {
-      localStorage.setItem("cepat_role", role);
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      localStorage.setItem('cepat_role', role);
+      localStorage.setItem('cepat_user_name', fullName);
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
           password,
@@ -38,214 +38,303 @@ export default function RegisterPage() {
       const result = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(result.message || "Registrasi gagal. Coba lagi.");
+        throw new Error(result.message || 'Registrasi gagal. Coba lagi.');
       }
 
-      router.replace("/login");
+      router.replace('/onboarding');
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Registrasi gagal. Coba lagi.");
+      setError(
+        error instanceof Error ? error.message : 'Registrasi gagal. Coba lagi.',
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    setError("");
+    setError('');
     setLoading(true);
     try {
       const supabase = createClient();
       const { error: googleError } = await supabase.auth.signInWithOAuth({
-        provider: "google",
+        provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       if (googleError) throw googleError;
     } catch (err: any) {
-      setError(err.message || "Gagal mendaftar dengan Google. Pastikan OAuth Google telah dikonfigurasi di Supabase.");
+      setError(
+        err.message ||
+          'Gagal mendaftar dengan Google. Pastikan OAuth Google telah dikonfigurasi di Supabase.',
+      );
       setLoading(false);
     }
   };
 
   return (
-    <main className="w-full min-h-screen flex flex-col lg:flex-row overflow-hidden bg-layout-bg font-sans">
-      {/* Left brand panel */}
-      <section className="hidden lg:flex w-1/2 flex-col justify-between p-[80px] bg-layout-bg border-r border-outline-variant/30">
-        <div>
-          <Link href="/" className="flex items-center mb-xl" aria-label="Kembali ke beranda">
+    <main className="w-full min-h-screen flex flex-col lg:flex-row overflow-hidden bg-white font-sans">
+      {/* ───────────── LEFT: BRAND PANEL ───────────── */}
+      <section
+        className="relative hidden lg:flex w-[54%] xl:w-[55%] flex-col justify-between overflow-hidden bg-gradient-to-br from-[#0d4f48] via-[#083832] to-[#072e29]"
+        style={{
+          clipPath: 'polygon(0 0, 100% 0, 90% 100%, 0 100%)',
+        }}
+      >
+        {/* Subtle accent glow line along the slash edge */}
+        <div
+          className="absolute inset-0 z-0 pointer-events-none opacity-40"
+          style={{
+            background:
+              'radial-gradient(ellipse at 95% 50%, rgba(132, 204, 22, 0.25) 0%, transparent 60%)',
+          }}
+        />
+
+        {/* Grain texture overlay */}
+        <div
+          className="absolute inset-0 z-[1] opacity-[0.12] mix-blend-overlay pointer-events-none"
+          style={{
+            backgroundImage:
+              'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E")',
+          }}
+        />
+
+        {/* Accent glow blobs */}
+        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-primary/20 blur-[120px] z-[1]" />
+        <div className="absolute bottom-[-15%] left-[10%] w-[400px] h-[400px] rounded-full bg-[#84CC16]/10 blur-[100px] z-[1]" />
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col h-full justify-between p-12 lg:p-14 xl:p-18 pr-16 lg:pr-24 xl:pr-28">
+          {/* Top: Logo */}
+          <Link
+            href="/"
+            className="flex items-center"
+            aria-label="Kembali ke beranda"
+          >
             <Image
               src="/logo.svg"
               alt="CEPAT"
-              width={140}
-              height={40}
-              className="logo-img-lg"
+              width={120}
+              height={34}
+              className="logo-img brightness-0 invert"
               priority
             />
           </Link>
-          <h2 className="font-headline-lg text-headline-lg text-on-surface mb-md max-w-lg mt-xl">
-            Tumbuh bersama komunitas lokal.
-          </h2>
-          <p className="font-body-lg text-body-lg text-on-surface-variant max-w-md mb-xl">
-            Registrasi sebagai mahasiswa untuk menambah uang jajan, atau sebagai pemilik usaha lokal untuk mendelegasikan tugas harian.
-          </p>
-          
-          <ul className="space-y-md mt-xl">
-            <li className="flex items-start gap-md">
-              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center border border-outline-variant/50">
-                <span className="material-symbols-outlined text-primary-container text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  school
-                </span>
-              </div>
-              <div>
-                <p className="font-body-md text-body-md font-semibold text-on-surface">Peluang kerja fleksibel</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Pilih pekerjaan mikro yang sesuai dengan jadwal kuliah Anda.</p>
-              </div>
-            </li>
-            <li className="flex items-start gap-md">
-              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center border border-outline-variant/50">
-                <span className="material-symbols-outlined text-primary-container text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  storefront
-                </span>
-              </div>
-              <div>
-                <p className="font-body-md text-body-md font-semibold text-on-surface">Bantuan on-demand untuk UMKM</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Post lowongan tugas dalam hitungan detik. Mahasiswa terdekat siap membantu.</p>
-              </div>
-            </li>
-          </ul>
-        </div>
-        <div className="font-label-sm text-label-sm text-on-surface-variant">
-          © 2026 CEPAT Marketplace. Praktis. Transparan. ITechno Cup 2026.
+
+          {/* Center: Value Proposition */}
+          <div className="flex-1 flex flex-col justify-center max-w-lg -mt-8">
+            <h1 className="text-[clamp(2rem,3.2vw,3rem)] font-extrabold text-white leading-[1.1] tracking-tight mb-6">
+              Tumbuh bersama
+              <br />
+              komunitas lokal.
+            </h1>
+            <p className="text-base text-white/60 leading-relaxed mb-10 max-w-sm">
+              Registrasi sebagai mahasiswa untuk menambah penghasilan, atau
+              sebagai pemilik usaha lokal untuk mendelegasikan tugas harian.
+            </p>
+
+            {/* Feature Pills */}
+            <div className="flex flex-col gap-4">
+              {[
+                {
+                  icon: 'school',
+                  title: 'Peluang kerja fleksibel',
+                  desc: 'Pilih pekerjaan mikro sesuai jadwal kuliah.',
+                },
+                {
+                  icon: 'storefront',
+                  title: 'Bantuan on-demand UMKM',
+                  desc: 'Post tugas dalam hitungan detik.',
+                },
+              ].map((item) => (
+                <div key={item.title} className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <span
+                      className="material-symbols-outlined text-[18px] text-[#84CC16]"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                     aria-hidden="true">
+                      {item.icon}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">
+                      {item.title}
+                    </p>
+                    <p className="text-xs text-white/40">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom: Footer */}
+          <div className="flex items-center justify-between text-[11px] text-white/40 font-mono pt-3 border-t border-white/5">
+            <span>© 2026 CEPAT Marketplace</span>
+            <span className="flex items-center gap-1.5">
+              <span
+                className="material-symbols-outlined text-[14px] text-[#84CC16]"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+               aria-hidden="true">
+                public
+              </span>
+              SDG 8 — Decent{' '}
+              <span className="text-[#84CC16] font-bold tracking-wider">
+                Work
+              </span>
+            </span>
+          </div>
         </div>
       </section>
 
-      {/* Right auth panel */}
-      <section className="w-full lg:w-1/2 flex items-center justify-center p-md bg-surface-container-lowest min-h-screen overflow-y-auto">
-        <div className="w-full max-w-[460px] py-xl">
+      {/* ───────────── RIGHT: AUTH FORM ───────────── */}
+      <section className="relative w-full lg:flex-1 flex items-start lg:items-center justify-center px-6 py-4 md:p-10 lg:p-16 h-full overflow-y-auto">
+        {/* Subtle grid background */}
+        <div
+          className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px)',
+            backgroundSize: '48px 48px',
+          }}
+        />
+
+        <div className="relative w-full max-w-[420px]">
           {/* Mobile Brand */}
-          <div className="lg:hidden mb-xl text-center">
+          <div className="lg:hidden mb-3 text-center">
             <Link href="/" className="inline-block">
-              <Image src="/logo.svg" alt="CEPAT" width={120} height={32} className="logo-img mx-auto" />
+              <Image
+                src="/logo.svg"
+                alt="CEPAT"
+                width={100}
+                height={28}
+                className="logo-img mx-auto"
+              />
             </Link>
-            <p className="font-body-sm text-body-sm text-on-surface-variant mt-xs">Satu akun untuk semua.</p>
+            <p className="text-sm text-on-surface-variant mt-2">
+              Satu akun untuk semua.
+            </p>
           </div>
 
-          {/* Auth Tabs */}
-          <div className="flex border-b border-outline-variant mb-xl">
-            <Link href="/login" className="tab-btn">
-              Masuk
-            </Link>
-            <button className="tab-btn active">Daftar</button>
+          {/* Header */}
+          <div className="mb-4 lg:mb-8">
+            <h2 className="text-2xl font-extrabold text-on-surface tracking-tight mb-1">
+              Buat Akun Baru
+            </h2>
+            <p className="text-sm text-on-surface-variant">
+              Sudah punya akun?{' '}
+              <Link
+                href="/login"
+                className="text-primary font-semibold hover:underline"
+              >
+                Masuk
+              </Link>
+            </p>
           </div>
 
           {/* Form */}
-          <div className="tab-panel active">
-            <div className="mb-lg">
-              <h2 className="font-headline-md text-headline-md text-on-surface mb-xs">Buat Akun Baru</h2>
-              <p className="font-body-md text-body-md text-on-surface-variant">Daftar sekarang untuk mulai mencari atau memposting tugas.</p>
+          <form onSubmit={handleRegister} className="space-y-3 lg:space-y-5">
+            {/* Role Selection */}
+            <div>
+              <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block mb-2">
+                Pilih Peran Utama
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <RoleCard
+                  isSelected={role === 'worker'}
+                  onClick={() => setRole('worker')}
+                  title="Cari tugas"
+                  description="Ambil pekerjaan fleksibel terdekat."
+                  iconName="work"
+                />
+                <RoleCard
+                  isSelected={role === 'requester'}
+                  onClick={() => setRole('requester')}
+                  title="Post tugas"
+                  description="Cari bantuan dari mahasiswa sekitar."
+                  iconName="add_task"
+                />
+              </div>
             </div>
 
-            {error && (
-              <p role="alert" className="mb-lg rounded border border-error/30 bg-error-container/20 px-md py-sm font-body-sm text-body-sm text-error">
-                {error}
-              </p>
-            )}
-            
-            <form onSubmit={handleRegister} className="space-y-lg">
-              {/* Role Card Selection */}
-              <div className="space-y-sm">
-                <label className="font-label-sm text-label-sm text-on-surface-variant block mb-sm">
-                  Pilih peran utama Anda
-                </label>
-                <div className="grid grid-cols-2 gap-md">
-                  <RoleCard
-                    isSelected={role === "worker"}
-                    onClick={() => setRole("worker")}
-                    title="Cari tugas"
-                    description="Ambil pekerjaan fleksibel terdekat."
-                    iconName="work"
-                  />
-                  <RoleCard
-                    isSelected={role === "requester"}
-                    onClick={() => setRole("requester")}
-                    title="Post tugas"
-                    description="Cari bantuan dari mahasiswa sekitar."
-                    iconName="add_task"
-                  />
-                </div>
-              </div>
+            {/* Inputs */}
+            <Input
+              label="Nama Lengkap"
+              type="text"
+              placeholder="Budi Santoso"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+            />
+            <Input
+              label="Username"
+              type="text"
+              placeholder="budisantoso"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+            <Input
+              label="Email Universitas / Pribadi"
+              type="email"
+              placeholder="budi@student.univ.ac.id"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <Input
+              label="Password"
+              type="password"
+              placeholder="Min. 8 karakter"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
 
-              <div className="space-y-md">
-                <Input
-                  label="Nama Lengkap"
-                  type="text"
-                  placeholder="Budi Santoso"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                />
-                <Input
-                  label="Username"
-                  type="text"
-                  placeholder="budisantoso"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  autoComplete="username"
-                  required
-                />
-                <Input
-                  label="Email Universitas / Pribadi"
-                  type="email"
-                  placeholder="budi@student.univ.ac.id"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  required
-                />
-                <Input
-                  label="Password"
-                  type="password"
-                  placeholder="Min. 8 karakter"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="new-password"
-                  required
-                />
-              </div>
+            {/* Terms */}
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30 mt-0.5"
+                required
+              />
+              <span className="text-xs text-on-surface-variant leading-relaxed">
+                Saya menyetujui{' '}
+                <a
+                  href="#"
+                  className="text-primary hover:underline font-medium"
+                >
+                  Kebijakan Privasi
+                </a>{' '}
+                CEPAT.
+              </span>
+            </div>
 
-              <div className="flex items-start gap-sm cursor-pointer">
-                <input type="checkbox" className="rounded text-primary border-outline-variant focus:ring-primary-container mt-1" required />
-                <span className="font-body-sm text-body-sm text-on-surface-variant">
-                  Saya menyetujui <a href="#" className="text-primary hover:underline">Syarat & Ketentuan</a> serta <a href="#" className="text-primary hover:underline">Kebijakan Privasi</a> CEPAT.
-                </span>
-              </div>
-
-              <Button type="submit" fullWidth disabled={loading}>
-                {loading ? "Membuat Akun..." : "Daftar Akun Baru"}
-              </Button>
-            </form>
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-primary text-on-primary font-bold text-sm rounded py-3 min-h-[48px] hover:bg-primary-container transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
+            >
+              {loading ? 'Membuat Akun...' : 'Daftar Akun Baru'}
+            </button>
 
             {/* Divider */}
-            <div className="relative my-lg">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-outline-variant/40"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-surface-container-lowest px-md text-on-surface-variant font-label-sm">
-                  atau
-                </span>
-              </div>
+            <div className="relative flex items-center py-1">
+              <div className="flex-grow border-t border-outline-variant/40" />
+              <span className="mx-4 text-[11px] text-on-surface-variant/60 font-bold uppercase tracking-widest">
+                atau
+              </span>
+              <div className="flex-grow border-t border-outline-variant/40" />
             </div>
 
-            {/* Google OAuth Button */}
-            <Button
+            {/* Google */}
+            <button
               type="button"
-              variant="secondary"
-              fullWidth
               onClick={handleGoogleLogin}
               disabled={loading}
+              className="w-full flex items-center justify-center gap-3 border border-outline-variant rounded py-3 min-h-[48px] bg-white hover:bg-surface-container-low transition-colors text-sm font-bold text-on-surface cursor-pointer active:scale-[0.98] disabled:opacity-60"
             >
-              <svg className="w-5 h-5 mr-sm inline-block" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -260,12 +349,12 @@ export default function RegisterPage() {
                 />
                 <path
                   fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
               Daftar dengan Google
-            </Button>
-          </div>
+            </button>
+          </form>
         </div>
       </section>
     </main>

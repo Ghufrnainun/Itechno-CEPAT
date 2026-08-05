@@ -14,56 +14,81 @@ export function BottomNav({ role }: BottomNavProps) {
   const { unreadCount } = useNotifications();
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-lowest border-t border-outline-variant flex items-center justify-around z-40 px-sm shadow-md">
+    <nav
+      aria-label="Navigasi Bawah Mobile"
+      className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-t border-outline-variant/60 flex items-center justify-around z-50 px-2 shadow-lg"
+    >
       <Link
-        href="/feed"
-        className={`flex flex-col items-center gap-xs text-[10px] font-medium transition-colors ${pathname === "/feed" ? "text-primary" : "text-on-surface-variant"}`}
+        href="/dashboard"
+        aria-label="Dashboard Utama"
+        className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-xl text-[11px] font-medium transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+          pathname === "/dashboard"
+            ? "text-primary font-bold scale-105"
+            : "text-on-surface-variant hover:text-on-surface"
+        }`}
       >
         <span
           className="material-symbols-outlined text-[24px]"
-          style={{ fontVariationSettings: pathname === "/feed" ? "'FILL' 1" : "'FILL' 0" }}
-        >
-          dashboard
+          style={{ fontVariationSettings: pathname === "/dashboard" ? "'FILL' 1" : "'FILL' 0" }}
+         aria-hidden="true">
+          home
         </span>
-        Feed
+        Home
       </Link>
 
       {role === "requester" ? (
         <Link
-          href="/task/new"
-          className={`flex flex-col items-center gap-xs text-[10px] font-medium transition-colors ${pathname === "/task/new" ? "text-primary" : "text-on-surface-variant"}`}
+          href="/tugas"
+          aria-label="Kelola Tugas"
+          className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-xl text-[11px] font-medium transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+            pathname === "/tugas"
+              ? "text-primary font-bold scale-105"
+              : "text-on-surface-variant hover:text-on-surface"
+          }`}
         >
           <span
             className="material-symbols-outlined text-[24px]"
-            style={{ fontVariationSettings: pathname === "/task/new" ? "'FILL' 1" : "'FILL' 0" }}
+            style={{ fontVariationSettings: pathname === "/tugas" ? "'FILL' 1" : "'FILL' 0" }}
+            aria-hidden="true"
           >
-            add_box
+            assignment
           </span>
-          Post Tugas
+          Kelola
         </Link>
       ) : (
         <Link
-          href="/feed?tab=explore"
-          className={`flex flex-col items-center gap-xs text-[10px] font-medium transition-colors ${pathname.includes("explore") ? "text-primary" : "text-on-surface-variant"}`}
+          href="/feed"
+          aria-label="Feeds"
+          className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-xl text-[11px] font-medium transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+            pathname === "/feed"
+              ? "text-primary font-bold scale-105"
+              : "text-on-surface-variant hover:text-on-surface"
+          }`}
         >
           <span
             className="material-symbols-outlined text-[24px]"
-            style={{ fontVariationSettings: pathname.includes("explore") ? "'FILL' 1" : "'FILL' 0" }}
+            style={{ fontVariationSettings: pathname === "/feed" ? "'FILL' 1" : "'FILL' 0" }}
+            aria-hidden="true"
           >
-            explore
+            list_alt
           </span>
-          Cari
+          Feeds
         </Link>
       )}
 
       <Link
         href="/notifications"
-        className={`flex flex-col items-center gap-xs text-[10px] font-medium relative transition-colors ${pathname === "/notifications" ? "text-primary" : "text-on-surface-variant"}`}
+        aria-label="Notifikasi"
+        className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-xl text-[11px] font-medium relative transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+          pathname === "/notifications"
+            ? "text-primary font-bold scale-105"
+            : "text-on-surface-variant hover:text-on-surface"
+        }`}
       >
         <span
           className="material-symbols-outlined text-[24px]"
           style={{ fontVariationSettings: pathname === "/notifications" ? "'FILL' 1" : "'FILL' 0" }}
-        >
+         aria-hidden="true">
           notifications
         </span>
         Notif
@@ -75,26 +100,37 @@ export function BottomNav({ role }: BottomNavProps) {
       </Link>
 
       <Link
-        href="/wallet"
-        className={`flex flex-col items-center gap-xs text-[10px] font-medium transition-colors ${pathname === "/wallet" ? "text-primary" : "text-on-surface-variant"}`}
+        href="/chat"
+        aria-label="Chat"
+        className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-xl text-[11px] font-medium transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+          pathname === "/chat"
+            ? "text-primary font-bold scale-105"
+            : "text-on-surface-variant hover:text-on-surface"
+        }`}
       >
         <span
           className="material-symbols-outlined text-[24px]"
-          style={{ fontVariationSettings: pathname === "/wallet" ? "'FILL' 1" : "'FILL' 0" }}
+          style={{ fontVariationSettings: pathname === "/chat" ? "'FILL' 1" : "'FILL' 0" }}
+          aria-hidden="true"
         >
-          account_balance_wallet
+          chat
         </span>
-        Dompet
+        Chat
       </Link>
 
       <Link
-        href="/profile/budi"
-        className={`flex flex-col items-center gap-xs text-[10px] font-medium transition-colors ${pathname.includes("/profile/") ? "text-primary" : "text-on-surface-variant"}`}
+        href="/profile/me"
+        aria-label="Profil Saya"
+        className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-xl text-[11px] font-medium transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+          pathname.includes("/profile/")
+            ? "text-primary font-bold scale-105"
+            : "text-on-surface-variant hover:text-on-surface"
+        }`}
       >
         <span
           className="material-symbols-outlined text-[24px]"
           style={{ fontVariationSettings: pathname.includes("/profile/") ? "'FILL' 1" : "'FILL' 0" }}
-        >
+         aria-hidden="true">
           person
         </span>
         Profil

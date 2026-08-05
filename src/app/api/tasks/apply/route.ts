@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { applyTaskSchema } from '@/lib/validations/task.schema'
 import { z } from 'zod'
 
-const applySchema = z.object({
+const applyRouteSchema = applyTaskSchema.extend({
   id_tasks: z.string().uuid('ID Task tidak valid'),
 })
 
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Validate request payload
     const body = await request.json()
-    const parsed = applySchema.safeParse(body)
+    const parsed = applyRouteSchema.safeParse(body)
     
     if (!parsed.success) {
       return NextResponse.json(
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { id_tasks } = parsed.data
+    const { id_tasks, pesan } = parsed.data
 
     // 3. Retrieve user profile mapping
     const dbUser = await prisma.user.findUnique({
@@ -98,6 +99,7 @@ export async function POST(request: NextRequest) {
         id_tasks: id_tasks,
         id_worker: dbUser.id_user,
         id_status_task_applicants: pendingStatus.id_status_task_applicants,
+        pesan: pesan,
       },
       include: {
         status_applicant: true
@@ -112,6 +114,94 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('[POST /api/tasks/apply] Error:', error)
+    return NextResponse.json(
+      { success: false, message: 'Terjadi kesalahan internal server.' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !authUser) {
+      return NextResponse.json(
+        { success: false, message: 'Tidak terautentikasi.' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const parsed = applyRouteSchema.safeParse(body)
+    
+    if (!parsed.success) {
+      return NextResponse.json(
+        { success: false, message: 'Validasi gagal.', errors: parsed.error.format() },
+        { status: 400 }
+      )
+    }
+
+    const { id_tasks } = parsed.data
+
+    const dbUser = await prisma.user.findUnique({
+      where: { auth_id: authUser.id }
+    })
+
+    if (!dbUser) {
+      return NextResponse.json(
+        { success: false, message: 'Profil pengguna tidak ditemukan.' },
+        { status: 404 }
+      )
+    }
+
+    // Pastikan task masih open
+    const task = await prisma.task.findUnique({
+      where: { id_tasks },
+      include: { status_task: true }
+    })
+
+    if (!task) {
+      return NextResponse.json(
+        { success: false, message: 'Tugas tidak ditemukan.' },
+        { status: 404 }
+      )
+    }
+
+    if (task.status_task.nama_status.toLowerCase() !== 'open' && task.status_task.nama_status.toUpperCase() !== 'OPEN') {
+      return NextResponse.json(
+        { success: false, message: 'Tidak dapat membatalkan lamaran, task sudah tidak menerima pelamar.' },
+        { status: 400 }
+      )
+    }
+
+    // Hapus lamaran
+    const existingApplication = await prisma.taskApplicants.findFirst({
+      where: {
+        id_worker: dbUser.id_user,
+        id_tasks: id_tasks
+      }
+    })
+
+    if (!existingApplication) {
+      return NextResponse.json(
+        { success: false, message: 'Lamaran tidak ditemukan.' },
+        { status: 404 }
+      )
+    }
+
+    await prisma.taskApplicants.delete({
+      where: { id_task_applicants: existingApplication.id_task_applicants }
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Berhasil membatalkan lamaran.'
+    })
+
+  } catch (error) {
+    console.error('[DELETE /api/tasks/apply] Error:', error)
     return NextResponse.json(
       { success: false, message: 'Terjadi kesalahan internal server.' },
       { status: 500 }

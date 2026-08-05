@@ -75,6 +75,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Auto-login agar session cookie aktif untuk onboarding
+    if (!authData.session) {
+      await supabase.auth.signInWithPassword({ email, password })
+    }
+
     // --- 2. Ambil default role (Requester) jika tidak disertakan ---
     let roleId = id_role
     if (!roleId) {

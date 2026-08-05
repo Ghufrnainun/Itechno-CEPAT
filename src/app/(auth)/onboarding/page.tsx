@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState, Suspense } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SKILL_CATEGORIES } from "@/constants/skills";
 import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
-import { RoleCard } from "@/features/auth/components/RoleCard";
 
 const BIO_TEMPLATES = [
   "Siap bantu tugas harian, admin, dan data entry.",
@@ -15,41 +14,268 @@ const BIO_TEMPLATES = [
   "Siap les privat, tutoring, dan bantuan riset.",
 ];
 
+// ─────────────────────────────────────────────────────────────
+// STEP 1 — Nomor WA + Instansi
+// ─────────────────────────────────────────────────────────────
+function StepContact({
+  phone,
+  setPhone,
+  univ,
+  setUniv,
+  onNext,
+  error,
+}: {
+  phone: string;
+  setPhone: (v: string) => void;
+  univ: string;
+  setUniv: (v: string) => void;
+  onNext: () => void;
+  error: string;
+}) {
+  return (
+    <div className="animate-fadeIn w-full max-w-lg mx-auto">
+      <p className="text-xs font-bold text-primary/70 uppercase tracking-widest mb-3">
+        Langkah 1 dari 2
+      </p>
+      <h2 className="text-3xl sm:text-4xl font-extrabold text-on-surface tracking-tight mb-2">
+        Cara dihubungi?
+      </h2>
+      <p className="text-sm text-on-surface-variant mb-10">
+        Nomor telepon kamu untuk keperluan kontak darurat atau verifikasi. Koordinasi tugas tetap lewat chat in-app.
+      </p>
+
+      {error && (
+        <div className="mb-6 p-3.5 rounded-xl bg-error/5 border border-error/20 text-xs text-error font-medium">
+          {error}
+        </div>
+      )}
+
+      <div className="space-y-5 mb-10">
+        <div>
+          <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">
+            Nomor Telepon{" "}
+            <span className="text-error normal-case font-normal tracking-normal">*</span>
+          </label>
+          <Input
+            type="tel"
+            placeholder="Contoh: 08123456789"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">
+            Instansi / Kampus{" "}
+            <span className="text-on-surface-variant/40 normal-case font-normal tracking-normal">
+              (opsional)
+            </span>
+          </label>
+          <Input
+            type="text"
+            placeholder="Contoh: UGM / UMKM Lokal / Freelancer"
+            value={univ}
+            onChange={(e) => setUniv(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={onNext}
+        className="w-full bg-on-surface text-surface font-bold text-sm rounded-xl py-4 hover:bg-on-surface/80 transition-colors active:scale-[0.98] cursor-pointer shadow-sm"
+      >
+        Lanjut →
+      </button>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// STEP 2 — Bio + Skills
+// ─────────────────────────────────────────────────────────────
+function StepProfile({
+  bio,
+  setBio,
+  selectedSkills,
+  toggleSkill,
+  onBack,
+  onSubmit,
+  loading,
+  error,
+}: {
+  bio: string;
+  setBio: (v: string) => void;
+  selectedSkills: string[];
+  toggleSkill: (v: string) => void;
+  onBack: () => void;
+  onSubmit: () => void;
+  loading: boolean;
+  error: string;
+}) {
+  return (
+    <div className="animate-fadeIn w-full max-w-lg mx-auto">
+      <p className="text-xs font-bold text-primary/70 uppercase tracking-widest mb-3">
+        Langkah 2 dari 2
+      </p>
+      <h2 className="text-3xl sm:text-4xl font-extrabold text-on-surface tracking-tight mb-2">
+        Ceritakan tentang kamu.
+      </h2>
+      <p className="text-sm text-on-surface-variant mb-8">
+        Bio singkat dan keahlian membantu sistem merekomendasikan kamu ke tugas yang tepat.
+      </p>
+
+      {error && (
+        <div className="mb-6 p-3.5 rounded-xl bg-error/5 border border-error/20 text-xs text-error font-medium">
+          {error}
+        </div>
+      )}
+
+      <div className="space-y-6 mb-10">
+        {/* Bio */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
+              Bio singkat{" "}
+              <span className="text-error normal-case font-normal tracking-normal">*</span>
+            </label>
+            <span className="text-[11px] text-on-surface-variant/50 font-mono">
+              {bio.length}/200
+            </span>
+          </div>
+          <textarea
+            className="w-full min-h-[100px] p-3.5 text-sm rounded-xl border-2 border-outline-variant bg-white focus:outline-none focus:border-primary focus:ring-0 transition-all font-sans resize-none"
+            placeholder="Tulis singkat keahlian atau jenis bantuan yang kamu berikan..."
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            maxLength={200}
+          />
+          {/* Quick fill chips */}
+          <div className="flex flex-wrap gap-1.5 mt-2.5">
+            {BIO_TEMPLATES.map((tpl, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setBio(tpl)}
+                className="text-[11px] px-2.5 py-1 rounded-lg bg-surface-container hover:bg-primary/10 text-on-surface-variant hover:text-primary transition-colors border border-outline-variant/50 cursor-pointer"
+              >
+                {tpl.slice(0, 28)}…
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Skills */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
+              Keahlian / Minat{" "}
+              <span className="text-error normal-case font-normal tracking-normal">*</span>
+            </label>
+            <span className="text-[11px] text-primary font-bold font-mono">
+              {selectedSkills.length} terpilih
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {SKILL_CATEGORIES.map((skill) => {
+              const sel = selectedSkills.includes(skill.value);
+              return (
+                <button
+                  key={skill.value}
+                  type="button"
+                  onClick={() => toggleSkill(skill.value)}
+                  className={`p-3 rounded-xl border-2 flex flex-col items-center gap-1.5 text-center cursor-pointer transition-all duration-150 ${
+                    sel
+                      ? "border-primary bg-primary/5 text-primary shadow-sm"
+                      : "border-outline-variant/60 bg-white hover:bg-surface-container-low text-on-surface-variant hover:border-primary/30"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[22px]" aria-hidden="true">{skill.icon}</span>
+                  <span className="text-[11px] font-semibold leading-tight">
+                    {skill.label.split(" ")[0]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex-none px-5 py-4 rounded-xl border-2 border-outline-variant text-sm font-semibold text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer"
+        >
+          ←
+        </button>
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={loading}
+          className="flex-1 bg-primary text-on-primary font-bold text-sm rounded-xl py-4 hover:bg-primary/90 transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
+        >
+          {loading ? "Menyimpan..." : "Selesai & Masuk Dashboard"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// MAIN CONTENT
+// ─────────────────────────────────────────────────────────────
 function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get("redirect");
 
-  const [role, setRole] = useState<"worker" | "requester">(() => {
+  // Read role saved by register page — onboarding does NOT re-ask
+  const role = (() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("cepat_role");
       if (saved === "requester" || saved === "worker") return saved;
     }
     return "worker";
-  });
+  })();
+
+  const [step, setStep] = useState<1 | 2>(1);
   const [bio, setBio] = useState("");
   const [univ, setUniv] = useState("");
   const [phone, setPhone] = useState("");
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [selectedSkills, setSelectedSkills] = useState<string[]>(["fotografi"]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const toggleSkill = (value: string) => {
     if (selectedSkills.includes(value)) {
-      setSelectedSkills(selectedSkills.filter((s) => s !== value));
+      if (selectedSkills.length > 1) {
+        setSelectedSkills(selectedSkills.filter((s) => s !== value));
+      }
     } else {
       setSelectedSkills([...selectedSkills, value]);
     }
   };
 
-  const handleTemplateClick = (template: string) => {
-    setBio(template);
+  const goToStep2 = () => {
+    setError("");
+    if (phone.trim().length < 8) {
+      setError("Nomor WhatsApp minimal 8 digit.");
+      return;
+    }
+    setStep(2);
   };
 
-  const isFormValid = phone.trim().length >= 8 && bio.trim().length >= 5 && selectedSkills.length > 0;
-
-  const handleOnboardingSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isFormValid) return;
+  const handleSubmit = async () => {
+    setError("");
+    if (bio.trim().length < 5) {
+      setError("Bio singkat minimal 5 karakter.");
+      return;
+    }
+    if (selectedSkills.length === 0) {
+      setError("Pilih minimal 1 kategori keahlian.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -67,7 +293,6 @@ function OnboardingContent() {
 
       await response.json().catch(() => ({}));
 
-      localStorage.setItem("cepat_role", role);
       localStorage.setItem("cepat_user_bio", bio);
       localStorage.setItem("cepat_user_univ", univ);
       localStorage.setItem("cepat_user_skills", JSON.stringify(selectedSkills));
@@ -81,196 +306,67 @@ function OnboardingContent() {
     }
   };
 
+  const progressMap: Record<number, string> = { 1: "50%", 2: "100%" };
+
   return (
-    <main className="w-full min-h-screen bg-layout-bg flex items-center justify-center p-md font-sans">
-      <div className="w-full max-w-[620px] bg-white border border-outline-variant/70 rounded-2xl p-lg md:p-xl flex flex-col gap-lg shadow-md">
-        {/* Progress bar header */}
-        <div className="space-y-xs">
-          <div className="flex items-center justify-between font-label-xs text-label-xs text-on-surface-variant">
-            <span className="font-semibold text-primary">LANGKAH TERAKHIR</span>
-            <span>Profil &amp; Keahlian</span>
-          </div>
-          <div className="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
-            <div className="bg-primary h-full w-full rounded-full transition-all duration-300" />
-          </div>
-        </div>
+    <main className="min-h-screen w-full flex flex-col bg-white font-sans">
+      {/* ── TOP NAV — logo only, no auth links ── */}
+      <header className="flex items-center justify-center px-6 py-4 border-b border-outline-variant/30">
+        <Link href="/" aria-label="Beranda">
+          <Image
+            src="/logo.svg"
+            alt="CEPAT"
+            width={100}
+            height={28}
+            className="logo-img h-7 w-auto"
+            priority
+          />
+        </Link>
+      </header>
 
-        {/* Header */}
-        <div className="text-center">
-          <Image src="/logo.svg" alt="CEPAT" width={100} height={32} className="logo-img mx-auto mb-sm" priority />
-          <h1 className="font-headline-sm text-headline-sm text-on-surface font-semibold">Lengkapi Profil Anda</h1>
-          <p className="font-body-sm text-body-sm text-on-surface-variant mt-xs">
-            Hanya butuh 1 menit agar akun Anda siap menerima &amp; memposting tugas di sekitar.
-          </p>
-        </div>
-
-        <form onSubmit={handleOnboardingSubmit} className="space-y-xl">
-          {/* Section 0: Role Selection */}
-          <div className="space-y-sm">
-            <label className="font-body-sm text-body-sm font-medium text-on-surface block">
-              Pilih Peran Utama Anda di CEPAT <span className="text-error">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-md">
-              <RoleCard
-                isSelected={role === "worker"}
-                onClick={() => setRole("worker")}
-                title="Cari tugas"
-                description="Ambil pekerjaan fleksibel terdekat."
-                iconName="work"
-              />
-              <RoleCard
-                isSelected={role === "requester"}
-                onClick={() => setRole("requester")}
-                title="Post tugas"
-                description="Cari bantuan dari mahasiswa sekitar."
-                iconName="add_task"
-              />
-            </div>
-          </div>
-
-          {/* Section 1: Data Kontak & Profil */}
-          <div className="space-y-md border-t border-outline-variant/50 pt-lg">
-            {/* WhatsApp */}
-            <div>
-              <div className="flex items-center justify-between mb-xs">
-                <label className="font-body-sm text-body-sm font-medium text-on-surface">
-                  Nomor WhatsApp <span className="text-error">*</span>
-                </label>
-                <span className="font-label-xs text-label-xs px-xs py-0.5 rounded bg-error-container/20 text-error font-semibold">
-                  Wajib
-                </span>
-              </div>
-              <Input
-                type="tel"
-                placeholder="Contoh: 081234567890"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-              />
-              <p className="font-body-xs text-body-xs text-on-surface-variant mt-xs">
-                Digunakan untuk notifikasi &amp; koordinasi cepat tugas terdekat.
-              </p>
-            </div>
-
-            {/* Instansi / Univ / Usaha */}
-            <div>
-              <div className="flex items-center justify-between mb-xs">
-                <label className="font-body-sm text-body-sm font-medium text-on-surface">
-                  Instansi / Universitas / Usaha
-                </label>
-                <span className="font-label-xs text-label-xs px-xs py-0.5 rounded bg-surface-container-highest text-on-surface-variant">
-                  Opsional
-                </span>
-              </div>
-              <Input
-                type="text"
-                placeholder="Contoh: UGM / UMKM Lokal / Freelancer / Umum"
-                value={univ}
-                onChange={(e) => setUniv(e.target.value)}
-              />
-            </div>
-
-            {/* Bio Singkat */}
-            <div>
-              <div className="flex items-center justify-between mb-xs">
-                <label className="font-body-sm text-body-sm font-medium text-on-surface">
-                  Bio Singkat &amp; Pengalaman <span className="text-error">*</span>
-                </label>
-                <span className="font-label-xs text-label-xs text-on-surface-variant">
-                  {bio.length}/200
-                </span>
-              </div>
-              <textarea
-                className="input-field min-h-[85px] font-body-sm custom-scrollbar w-full p-sm rounded-lg border border-outline-variant focus:outline-none focus:border-primary"
-                placeholder="Tulis singkat keahlian atau jenis bantuan yang Anda berikan..."
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                maxLength={200}
-                required
-              />
-
-              {/* Template Bio Chips */}
-              <div className="mt-xs">
-                <p className="font-label-xs text-label-xs text-on-surface-variant mb-xs">Pilih contoh cepat:</p>
-                <div className="flex flex-wrap gap-xs">
-                  {BIO_TEMPLATES.map((tpl, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => handleTemplateClick(tpl)}
-                      className="font-label-xs text-label-xs px-sm py-1 rounded-full bg-surface-container-high hover:bg-primary/10 text-on-surface-variant hover:text-primary transition-colors border border-outline-variant/40"
-                    >
-                      + {tpl}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Section 2: Skill Selector */}
-          <div className="space-y-sm border-t border-outline-variant/50 pt-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-body-md text-body-md font-semibold text-on-surface">
-                  Kategori Keahlian / Minat <span className="text-error">*</span>
-                </h2>
-                <p className="font-body-xs text-body-xs text-on-surface-variant">
-                  Pilih minimal 1 kategori untuk mendapatkan rekomendasi tugas.
-                </p>
-              </div>
-              <span
-                className={`font-label-xs text-label-xs px-sm py-1 rounded-full font-semibold ${
-                  selectedSkills.length > 0
-                    ? "bg-primary-container/20 text-primary-container"
-                    : "bg-error-container/20 text-error"
-                }`}
-              >
-                {selectedSkills.length > 0 ? `${selectedSkills.length} Terpilih` : "Pilih Min. 1"}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-sm pt-sm">
-              {SKILL_CATEGORIES.map((skill) => {
-                const isSelected = selectedSkills.includes(skill.value);
-                return (
-                  <button
-                    key={skill.value}
-                    type="button"
-                    onClick={() => toggleSkill(skill.value)}
-                    className={`p-sm rounded-xl border flex flex-col items-center gap-xs text-center cursor-pointer transition-all duration-150 text-[12px] font-medium font-sans ${
-                      isSelected
-                        ? "bg-primary-container/10 border-primary-container text-primary-container font-semibold shadow-sm ring-1 ring-primary-container"
-                        : "bg-white border-outline-variant/60 hover:bg-surface-container-low text-on-surface-variant"
-                    }`}
-                  >
-                    <span
-                      className={`material-symbols-outlined text-[24px] ${
-                        isSelected ? "text-primary-container" : "text-on-surface-variant"
-                      }`}
-                    >
-                      {skill.icon}
-                    </span>
-                    <span>{skill.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <div className="space-y-xs pt-xs">
-            <Button type="submit" fullWidth disabled={loading || !isFormValid}>
-              {loading ? "Menyimpan Profil..." : "Selesai & Masuk Dashboard"}
-            </Button>
-            {!isFormValid && (
-              <p className="font-body-xs text-body-xs text-center text-on-surface-variant">
-                Lengkapi nomor WhatsApp, bio, dan minimal 1 kategori keahlian untuk melanjutkan.
-              </p>
-            )}
-          </div>
-        </form>
+      {/* ── PROGRESS BAR ── */}
+      <div className="w-full h-1 bg-surface-container-high">
+        <div
+          className="h-full bg-primary transition-all duration-500 ease-out"
+          style={{ width: progressMap[step] }}
+        />
       </div>
+
+      {/* ── CONTENT ── */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+        {step === 1 && (
+          <StepContact
+            phone={phone}
+            setPhone={setPhone}
+            univ={univ}
+            setUniv={setUniv}
+            onNext={goToStep2}
+            error={error}
+          />
+        )}
+        {step === 2 && (
+          <StepProfile
+            bio={bio}
+            setBio={setBio}
+            selectedSkills={selectedSkills}
+            toggleSkill={toggleSkill}
+            onBack={() => {
+              setError("");
+              setStep(1);
+            }}
+            onSubmit={handleSubmit}
+            loading={loading}
+            error={error}
+          />
+        )}
+      </div>
+
+      {/* ── FOOTER ── */}
+      <footer className="text-center py-4 border-t border-outline-variant/20">
+        <p className="text-[11px] text-on-surface-variant/40 font-mono">
+          © 2026 CEPAT Marketplace · SDG 8 — Decent Work
+        </p>
+      </footer>
     </main>
   );
 }
@@ -279,7 +375,7 @@ export default function OnboardingPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-layout-bg font-sans">
+        <div className="min-h-screen flex items-center justify-center bg-white font-sans">
           <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       }

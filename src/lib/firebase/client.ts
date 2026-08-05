@@ -17,7 +17,7 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()
  * Mengambil instance Firebase Messaging (hanya di browser / client-side)
  */
 export function getFirebaseMessaging(): Messaging | null {
-  if (typeof window === 'undefined') return null
+  if (typeof window === 'undefined' || !process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) return null
   try {
     return getMessaging(app)
   } catch (error) {

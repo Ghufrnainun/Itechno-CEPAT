@@ -76,17 +76,18 @@ export async function POST(request: NextRequest) {
       requesterId: currentUser.id_user,
     })
 
-    // Potong saldo requester (escrow)
+    // Hold escrow: total_balance tetap, held_balance naik, saldo tersedia = total - held
     await prisma.user.update({
       where: { id_user: currentUser.id_user },
-      data: { total_balance: { decrement: parsed.data.kompensasi } },
+      data: { held_balance: { increment: parsed.data.kompensasi } },
     })
     await prisma.transactions.create({
       data: {
         id_user: currentUser.id_user,
-        nominal: -parsed.data.kompensasi,
+        nominal: parsed.data.kompensasi,
         tipe_transaksi: 'KELUAR',
-        deskripsi: `Dana escrow untuk task: ${parsed.data.judul_tugas}`,
+        sub_type: 'hold',
+        deskripsi: `Escrow ditahan: ${parsed.data.judul_tugas}`,
       },
     })
 

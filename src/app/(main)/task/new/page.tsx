@@ -24,39 +24,10 @@ export default function NewTaskPage() {
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  const [searchLocation, setSearchLocation] = useState("");
-  const [searching, setSearching] = useState(false);
-  const [mapCenter, setMapCenter] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const handleLocationSelect = (selectedLat: number, selectedLng: number) => {
     setLat(selectedLat);
     setLng(selectedLng);
-  };
-
-  const handleSearchLocation = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchLocation.trim()) return;
-
-    setSearching(true);
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchLocation)}&limit=1`);
-      const data = await res.json();
-      if (data && data.length > 0) {
-        const result = data[0];
-        const newLat = parseFloat(result.lat);
-        const newLng = parseFloat(result.lon);
-        setMapCenter({ latitude: newLat, longitude: newLng });
-        setLat(newLat);
-        setLng(newLng);
-        showToast("Lokasi berhasil ditemukan!");
-      } else {
-        showToast("Lokasi tidak ditemukan. Coba kata kunci lain.");
-      }
-    } catch (e) {
-      showToast("Gagal mencari lokasi. Periksa koneksi Anda.");
-    } finally {
-      setSearching(false);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,12 +81,12 @@ export default function NewTaskPage() {
           </div>
         </div>
         <div className="flex items-center gap-sm px-md py-sm rounded-lg bg-amber-50 border border-amber-200">
-          <span className="material-symbols-outlined text-[16px] text-amber-600">lock</span>
+          <span className="material-symbols-outlined text-[16px] text-amber-600" aria-hidden="true">lock</span>
           <span className="font-label-sm text-label-sm text-amber-600 font-medium">Dana dikunci escrow saat tugas diterima</span>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto w-full p-lg md:p-xl flex flex-col gap-lg overflow-y-auto custom-scrollbar">
+      <div className="max-w-4xl mx-auto w-full p-4 md:p-8 pb-28 md:pb-8 flex flex-col gap-lg overflow-y-auto custom-scrollbar">
         <EscrowBanner />
 
         <form onSubmit={handleSubmit} className="bg-white border border-outline-variant rounded-xl p-md md:p-lg flex flex-col gap-md shadow-sm">
@@ -153,7 +124,7 @@ export default function NewTaskPage() {
                   <option value="">-- Pilih kategori skill --</option>
                   {SKILL_CATEGORIES.map((s) => (
                     <option key={s.value} value={s.value}>
-                      {s.emoji} {s.label}
+                      {s.label}
                     </option>
                   ))}
                 </select>
@@ -182,56 +153,25 @@ export default function NewTaskPage() {
             {/* Location Picker Map */}
             <div className="flex flex-col gap-xs">
               <label className="font-body-sm text-body-sm text-on-surface-variant font-medium flex items-center gap-xs">
-                <span className="material-symbols-outlined text-[16px]">location_on</span>
-                Titik Lokasi Tugas
+                <span className="material-symbols-outlined text-[16px]" aria-hidden="true">location_on</span>
+                Titik Lokasi Tugas (Klik pada Peta)
               </label>
               
-              <div className="flex items-center gap-sm mb-xs">
-                <div className="flex-grow">
-                  <Input 
-                    type="text" 
-                    placeholder="Cari lokasi spesifik (misal: UGM, Monas)" 
-                    value={searchLocation}
-                    onChange={(e) => setSearchLocation(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleSearchLocation(e);
-                      }
-                    }}
-                  />
-                </div>
-                <Button 
-                  type="button" 
-                  variant="secondary" 
-                  className="px-md mt-2 md:mt-0 whitespace-nowrap"
-                  onClick={handleSearchLocation}
-                  disabled={searching}
-                >
-                  <span className="material-symbols-outlined text-[18px]">search</span>
-                  Cari
-                </Button>
-              </div>
-              
-              <div className="font-body-sm text-on-surface-variant mb-xs">
-                Atau geser pin pada peta untuk memilih lokasi.
-              </div>
-
               <div className="flex-grow h-[260px] md:h-auto min-h-[220px] relative rounded-lg overflow-hidden border border-outline-variant">
                 <MapPickerWrapper
-                  center={mapCenter || { latitude: coords.latitude, longitude: coords.longitude }}
+                  center={{ latitude: coords.latitude, longitude: coords.longitude }}
                   onLocationSelect={handleLocationSelect}
                 />
               </div>
 
               {lat && lng ? (
                 <span className="font-label-sm text-label-sm text-primary font-mono mt-xs flex items-center gap-xs">
-                  <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
+                  <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">location_on</span>
                   Koordinat Terpilih: {lat.toFixed(6)}, {lng.toFixed(6)}
                 </span>
               ) : (
                 <span className="font-label-sm text-label-sm text-error mt-xs flex items-center gap-xs">
-                  <span className="material-symbols-outlined text-[14px]">info</span>
+                  <span className="material-symbols-outlined text-[14px]" aria-hidden="true">info</span>
                   Silakan klik titik di peta untuk menandai lokasi.
                 </span>
               )}

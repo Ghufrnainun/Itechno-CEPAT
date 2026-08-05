@@ -37,6 +37,8 @@ interface TaskDetail {
   estimasi_waktu: string | null;
   kompensasi: number;
   status: TaskStatus;
+  worker_started: boolean;
+  requester_started: boolean;
   created_at: string;
   completed_at: string | null;
   latitude: number | null;
@@ -124,6 +126,27 @@ export default function TaskDetailPage() {
     }
   };
 
+  // ── Worker: Cancel Application ─────────────────────────────────────────────
+  const handleCancelApplication = async () => {
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/tasks/${id}/apply`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast("Lamaran berhasil dibatalkan.");
+        fetchTask(); // refresh task data
+      } else {
+        showToast(data.message || "Gagal membatalkan lamaran.");
+      }
+    } catch {
+      showToast("Terjadi kesalahan jaringan.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // ── Requester: Accept Applicant ────────────────────────────────────────────
   const handleAcceptApplicant = async (applicantId: string, workerName: string) => {
     setActionLoading(true);
@@ -170,21 +193,21 @@ export default function TaskDetailPage() {
     }
   };
 
-  // ── Worker: Start Work ─────────────────────────────────────────────────────
+  // ── Dua Pihak: Confirm Start Work ────────────────────────────────────────────
   const handleStartWork = async () => {
     setActionLoading(true);
     try {
       const res = await fetch(`/api/tasks/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "in_progress" }),
+        body: JSON.stringify({ status: "confirm_start" }),
       });
       const data = await res.json();
       if (data.success) {
-        showToast("Status diperbarui: Sedang dikerjakan!");
+        showToast("Konfirmasi mulai tugas berhasil dicatat!");
         fetchTask();
       } else {
-        showToast(data.message || "Gagal memperbarui status.");
+        showToast(data.message || "Gagal mengkonfirmasi mulai tugas.");
       }
     } catch {
       showToast("Terjadi kesalahan jaringan.");
@@ -259,7 +282,7 @@ export default function TaskDetailPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-xl gap-sm min-h-[50vh]">
-        <span className="material-symbols-outlined text-primary text-[48px] animate-spin">
+        <span className="material-symbols-outlined text-primary text-[48px] animate-spin" aria-hidden="true">
           progress_activity
         </span>
         <p className="font-body-md text-body-md text-on-surface-variant">Memuat detail tugas...</p>
@@ -270,7 +293,7 @@ export default function TaskDetailPage() {
   if (!task) {
     return (
       <div className="flex flex-col items-center justify-center p-xl gap-sm min-h-[50vh]">
-        <span className="material-symbols-outlined text-outline text-[48px]">error</span>
+        <span className="material-symbols-outlined text-outline text-[48px]" aria-hidden="true">error</span>
         <h3 className="font-headline-sm text-headline-sm">Tugas Tidak Ditemukan</h3>
         <Button onClick={() => router.push("/feed")}>Kembali ke Feed</Button>
       </div>
@@ -290,7 +313,7 @@ export default function TaskDetailPage() {
           onClick={() => router.back()}
           className="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center border border-outline-variant/60 cursor-pointer"
         >
-          <span className="material-symbols-outlined">arrow_back</span>
+          <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
         </button>
         <div>
           <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
@@ -391,7 +414,7 @@ export default function TaskDetailPage() {
               </h3>
               {task.applicants.length === 0 ? (
                 <div className="py-8 text-center">
-                  <span className="material-symbols-outlined text-outline text-[40px]">people_search</span>
+                  <span className="material-symbols-outlined text-outline text-[40px]" aria-hidden="true">people_search</span>
                   <p className="font-body-sm text-on-surface-variant mt-2">Belum ada yang melamar.</p>
                 </div>
               ) : (
@@ -477,7 +500,7 @@ export default function TaskDetailPage() {
         <div className="flex flex-col gap-md">
           <div className="bg-white border border-outline-variant rounded-xl p-md flex flex-col gap-sm">
             <h3 className="font-body-md text-body-md font-semibold text-on-surface flex items-center gap-xs">
-              <span className="material-symbols-outlined text-[18px]">location_on</span>
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">location_on</span>
               Lokasi Pengerjaan
             </h3>
 
@@ -502,19 +525,39 @@ export default function TaskDetailPage() {
           {role === "worker" ? (
             <div className="flex flex-col gap-sm">
               {taskStatus === "open" && (
-                <Button
-                  onClick={() => setIsApplyModalOpen(true)}
-                  disabled={task.has_applied || actionLoading}
-                  className="w-full py-3"
-                  variant="primary"
-                >
-                  {task.has_applied ? "Sudah Dilamar" : "Lamar Pekerjaan Ini"}
-                </Button>
+                <>
+                  <Button
+                    onClick={() => setIsApplyModalOpen(true)}
+                    disabled={task.has_applied || actionLoading}
+                    className="w-full py-3"
+                    variant="primary"
+                  >
+                    {task.has_applied ? "Sudah Dilamar" : "Lamar Pekerjaan Ini"}
+                  </Button>
+                  {task.has_applied && (
+                    <Button
+                      onClick={handleCancelApplication}
+                      disabled={actionLoading}
+                      className="w-full py-2"
+                      variant="ghost"
+                    >
+                      Batalkan Lamaran
+                    </Button>
+                  )}
+                </>
               )}
               {taskStatus === "accepted" && (
-                <Button onClick={handleStartWork} className="w-full py-3" variant="lime" disabled={actionLoading}>
-                  Mulai Kerjakan
-                </Button>
+                <>
+                  {!task.worker_started ? (
+                    <Button onClick={handleStartWork} className="w-full py-3" variant="lime" disabled={actionLoading}>
+                      Konfirmasi Mulai Kerjakan
+                    </Button>
+                  ) : (
+                    <div className="p-sm text-center border border-outline-variant rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
+                      Menunggu konfirmasi mulai dari Requester...
+                    </div>
+                  )}
+                </>
               )}
               {taskStatus === "in_progress" && (
                 <div className="p-sm text-center border border-outline-variant rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
@@ -535,7 +578,20 @@ export default function TaskDetailPage() {
                   Menunggu pelamar. Pilih dari daftar pelamar di bawah.
                 </div>
               )}
-              {(taskStatus === "accepted" || taskStatus === "in_progress") && (
+              {taskStatus === "accepted" && (
+                <>
+                  {!task.requester_started ? (
+                    <Button onClick={handleStartWork} className="w-full py-3" variant="lime" disabled={actionLoading}>
+                      Konfirmasi Mulai Pekerjaan
+                    </Button>
+                  ) : (
+                    <div className="p-sm text-center border border-outline-variant rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
+                      Menunggu konfirmasi mulai dari Worker...
+                    </div>
+                  )}
+                </>
+              )}
+              {taskStatus === "in_progress" && (
                 <Button onClick={handleConfirmCompletion} className="w-full py-3" variant="primary" disabled={actionLoading}>
                   Konfirmasi Selesai & Cairkan Poin
                 </Button>
@@ -617,7 +673,7 @@ export default function TaskDetailPage() {
                   <span
                     className="material-symbols-outlined"
                     style={{ fontVariationSettings: star <= rating ? "'FILL' 1" : "'FILL' 0" }}
-                  >
+                   aria-hidden="true">
                     star
                   </span>
                 </button>

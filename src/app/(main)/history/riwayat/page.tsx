@@ -68,20 +68,20 @@ function WorkerHistoryCard({ task }: { task: WorkerTask }) {
         {/* Info row */}
         <div className="flex items-center gap-md text-on-surface-variant flex-wrap">
           <div className="flex items-center gap-xs">
-            <span className="material-symbols-outlined text-[14px] text-primary">payments</span>
+            <span className="material-symbols-outlined text-[14px] text-primary" aria-hidden="true">payments</span>
             <span className="font-label-sm text-label-sm font-bold text-primary">
               {formatCurrency(task.kompensasi)}
             </span>
           </div>
           {task.estimasi_waktu && (
             <div className="flex items-center gap-xs">
-              <span className="material-symbols-outlined text-[14px]">schedule</span>
+              <span className="material-symbols-outlined text-[14px]" aria-hidden="true">schedule</span>
               <span className="font-label-sm text-[11px]">{task.estimasi_waktu}</span>
             </div>
           )}
           {task.requester && (
             <div className="flex items-center gap-xs">
-              <span className="material-symbols-outlined text-[14px]">storefront</span>
+              <span className="material-symbols-outlined text-[14px]" aria-hidden="true">storefront</span>
               <span className="font-label-sm text-[11px]">{task.requester.nama_lengkap}</span>
             </div>
           )}
@@ -96,7 +96,7 @@ function WorkerHistoryCard({ task }: { task: WorkerTask }) {
                   key={s}
                   className="material-symbols-outlined text-[16px] text-amber-400"
                   style={{ fontVariationSettings: s <= (task.received_rating ?? 0) ? "'FILL' 1" : "'FILL' 0" }}
-                >
+                 aria-hidden="true">
                   star
                 </span>
               ))}
@@ -112,7 +112,7 @@ function WorkerHistoryCard({ task }: { task: WorkerTask }) {
         {/* Pending rating prompt */}
         {task.task_status === "completed" && task.received_rating === null && task.application_status === "accepted" && (
           <div className="flex items-center gap-xs text-primary font-label-sm text-[11px] font-semibold">
-            <span className="material-symbols-outlined text-[14px]">star</span>
+            <span className="material-symbols-outlined text-[14px]" aria-hidden="true">star</span>
             Belum ada ulasan untuk task ini
           </div>
         )}
@@ -220,7 +220,7 @@ export default function RiwayatPage() {
                     : "bg-white border border-outline-variant text-on-surface-variant hover:bg-surface-container"
                   }`}
               >
-                <span className="material-symbols-outlined text-[15px]">{f.icon}</span>
+                <span className="material-symbols-outlined text-[15px]" aria-hidden="true">{f.icon}</span>
                 {f.label}
               </button>
             ))}
@@ -229,13 +229,13 @@ export default function RiwayatPage() {
           {/* Task list */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-sm">
-              <span className="material-symbols-outlined text-primary text-[40px] animate-spin">progress_activity</span>
+              <span className="material-symbols-outlined text-primary text-[40px] animate-spin" aria-hidden="true">progress_activity</span>
               <p className="font-body-sm text-on-surface-variant">Memuat riwayat...</p>
             </div>
           ) : filteredTasks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-md text-center">
               <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center">
-                <span className="material-symbols-outlined text-[32px] text-outline">history</span>
+                <span className="material-symbols-outlined text-[32px] text-outline" aria-hidden="true">history</span>
               </div>
               <div>
                 <h3 className="font-headline-sm text-headline-sm text-on-surface">Belum Ada Riwayat</h3>
@@ -247,7 +247,7 @@ export default function RiwayatPage() {
                 href="/cari-tugas"
                 className="bg-primary text-on-primary font-label-md text-label-md font-bold py-sm px-lg rounded-lg flex items-center gap-xs transition-colors hover:bg-primary/90"
               >
-                <span className="material-symbols-outlined text-[18px]">explore</span>
+                <span className="material-symbols-outlined text-[18px]" aria-hidden="true">explore</span>
                 Cari Tugas Sekarang
               </Link>
             </div>

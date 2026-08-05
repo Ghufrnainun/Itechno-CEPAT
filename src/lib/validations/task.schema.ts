@@ -19,7 +19,7 @@ export const applyTaskSchema = z.object({
 export type ApplyTaskInput = z.infer<typeof applyTaskSchema>
 
 export const updateTaskStatusSchema = z.object({
-  status: z.enum(['in_progress', 'completed', 'cancelled']),
+  status: z.enum(['confirm_start', 'completed', 'cancelled']),
 })
 
 export type UpdateTaskStatusInput = z.infer<typeof updateTaskStatusSchema>

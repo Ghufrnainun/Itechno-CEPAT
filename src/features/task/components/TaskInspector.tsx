@@ -16,66 +16,23 @@ interface TaskInspectorProps {
 
 export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspectorProps) {
   const router = useRouter();
-  const [isChatLoading, setIsChatLoading] = useState(false);
-  const { showToast } = useToast();
-
-  const handleChatClick = async () => {
-    try {
-      setIsChatLoading(true);
-      
-      // Get current user (worker)
-      const resMe = await fetch('/api/users/me');
-      const meData = await resMe.json();
-      if (!meData.success) throw new Error("Gagal mengambil data user");
-      
-      const currentUserId = meData.data.id_user;
-      
-      // If current user is the requester, they shouldn't chat with themselves
-      if (currentUserId === task.id_requester) {
-        showToast("Ini adalah tugas Anda sendiri.");
-        return;
-      }
-      
-      // Init chat
-      const res = await fetch('/api/chat/init', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id_tasks: task.id_task || (task as any).id_tasks,
-          id_worker: currentUserId
-        })
-      });
-      
-      const data = await res.json();
-      if (data.success) {
-        router.push(`/chat?room=${data.data.id_chat_room}`);
-      } else {
-        throw new Error(data.message || "Gagal membuat obrolan");
-      }
-    } catch (error: any) {
-      console.error(error);
-      showToast(error.message);
-    } finally {
-      setIsChatLoading(false);
-    }
-  };
 
   return (
-    <aside className="w-[440px] bg-surface border-l border-outline-variant flex-shrink-0 h-full flex flex-col relative z-20 shadow-[-4px_0_24px_rgba(0,0,0,0.02)] animate-slide-in">
+    <aside className="w-full sm:w-[440px] fixed inset-y-0 right-0 sm:relative bg-surface border-l border-outline-variant flex-shrink-0 h-full flex flex-col z-50 sm:z-20 shadow-xl sm:shadow-[-4px_0_24px_rgba(0,0,0,0.02)] animate-slide-in">
       {/* Top Nav / Action Bar */}
       <div className="px-lg py-md flex items-center justify-between border-b border-outline-variant/50">
         <button 
           onClick={onClose}
           className="text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center"
         >
-          <span className="material-symbols-outlined">close</span>
+          <span className="material-symbols-outlined" aria-hidden="true">close</span>
         </button>
         <div className="flex gap-sm">
           <button className="text-on-surface-variant hover:text-primary transition-colors w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center">
-            <span className="material-symbols-outlined text-[20px]">share</span>
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">share</span>
           </button>
           <button className="text-on-surface-variant hover:text-primary transition-colors w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center">
-            <span className="material-symbols-outlined text-[20px]">bookmark_border</span>
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">bookmark_border</span>
           </button>
         </div>
       </div>
@@ -87,7 +44,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspect
           <h2 className="font-headline-lg text-headline-lg text-on-surface leading-tight mb-sm">{task.title}</h2>
           <div className="flex items-center justify-between mb-md">
             <div className="flex items-center gap-sm">
-              <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold">
+              <div className="w-10 h-10 min-w-[40px] rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold shrink-0">
                 {task.description.charAt(0)}
               </div>
               <div>
@@ -95,11 +52,11 @@ export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspect
                   <span className="font-label-md text-label-md font-semibold text-on-surface">
                     {task.description.split("•")[0]?.trim() || "Pemberi Kerja"}
                   </span>
-                  <span className="material-symbols-outlined text-[16px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                  <span className="material-symbols-outlined text-[16px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">verified</span>
                 </div>
                 <div className="flex items-center gap-xs text-outline font-body-sm text-body-sm">
                   <span className="flex items-center gap-[2px]">
-                    <span className="material-symbols-outlined text-[14px] text-tertiary-container" style={{ fontVariationSettings: "'FILL' 1" }}>star</span> 
+                    <span className="material-symbols-outlined text-[14px] text-tertiary-container" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">star</span> 
                     4.8 Rating
                   </span>
                   <span>•</span>
@@ -115,14 +72,14 @@ export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspect
 
           <div className="flex gap-md bg-surface-container-lowest border border-outline-variant rounded-lg p-sm">
             <div className="flex-1 flex flex-col items-center justify-center p-sm border-r border-outline-variant/50">
-              <span className="material-symbols-outlined text-outline mb-1">location_on</span>
+              <span className="material-symbols-outlined text-outline mb-1" aria-hidden="true">location_on</span>
               <span className="font-label-md text-label-md text-on-surface">
                 {task.distance !== undefined ? formatDistance(task.distance) : "-"}
               </span>
               <span className="font-body-sm text-body-sm text-on-surface-variant">Jarak</span>
             </div>
             <div className="flex-1 flex flex-col items-center justify-center p-sm">
-              <span className="material-symbols-outlined text-outline mb-1">schedule</span>
+              <span className="material-symbols-outlined text-outline mb-1" aria-hidden="true">schedule</span>
               <span className="font-label-md text-label-md text-on-surface">{task.duration_estimate}</span>
               <span className="font-body-sm text-body-sm text-on-surface-variant">Estimasi</span>
             </div>
@@ -131,7 +88,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspect
 
         {/* Escrow Box */}
         <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-lg p-md flex items-start gap-md mb-lg">
-          <span className="material-symbols-outlined text-[#D97706]" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
+          <span className="material-symbols-outlined text-[#D97706]" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">lock</span>
           <p className="font-body-sm text-body-sm text-[#92400E]">
             Dana <span className="font-label-md text-label-md font-bold font-mono">{formatCurrency(task.compensation)}</span> ditahan aman dan cair setelah bukti kerja disetujui.
           </p>
@@ -162,16 +119,13 @@ export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspect
       </div>
 
       {/* Bottom CTA Fixed */}
-      <div className="p-lg bg-surface border-t border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.02)] flex gap-sm">
+      <div className="p-lg pb-24 sm:pb-lg bg-surface border-t border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.02)] flex gap-sm">
         <Button 
           variant="secondary"
           className="flex-1 py-md text-[16px] flex items-center justify-center gap-xs"
-          onClick={handleChatClick}
-          disabled={isChatLoading}
+          onClick={() => router.push("/chat")}
         >
-          <span className="material-symbols-outlined text-[20px]">
-            {isChatLoading ? 'hourglass_empty' : 'chat'}
-          </span>
+          <span className="material-symbols-outlined text-[20px]" aria-hidden="true">chat</span>
           Chat
         </Button>
         <Button 
@@ -182,7 +136,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspect
         >
           {isApplied ? (
             <>
-              <span className="material-symbols-outlined text-[18px]">check_circle</span> Dilamar
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">check_circle</span> Dilamar
             </>
           ) : (
             "Ambil tugas ini"
