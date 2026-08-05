@@ -250,14 +250,14 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
             </Link>
 
             <Link
-              href="/feed"
+              href="/tugas"
               title={!isExpanded ? "Kelola Tugas" : undefined}
-              aria-current={pathname === "/feed" ? "page" : undefined}
-              className={`sidebar-link flex items-center gap-3 ${pathname === "/feed" ? "active" : ""} ${!isExpanded && "justify-center w-12 h-12 rounded-xl p-0"}`}
+              aria-current={pathname === "/tugas" ? "page" : undefined}
+              className={`sidebar-link flex items-center gap-3 ${pathname === "/tugas" ? "active" : ""} ${!isExpanded && "justify-center w-12 h-12 rounded-xl p-0"}`}
             >
               <span
                 className="material-symbols-outlined text-[20px]"
-                style={{ fontVariationSettings: pathname === "/feed" ? "'FILL' 1" : "'FILL' 0" }}
+                style={{ fontVariationSettings: pathname === "/tugas" ? "'FILL' 1" : "'FILL' 0" }}
                aria-hidden="true">
                 assignment_ind
               </span>

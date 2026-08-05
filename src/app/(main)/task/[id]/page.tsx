@@ -37,6 +37,8 @@ interface TaskDetail {
   estimasi_waktu: string | null;
   kompensasi: number;
   status: TaskStatus;
+  worker_started: boolean;
+  requester_started: boolean;
   created_at: string;
   completed_at: string | null;
   latitude: number | null;
@@ -124,6 +126,27 @@ export default function TaskDetailPage() {
     }
   };
 
+  // ── Worker: Cancel Application ─────────────────────────────────────────────
+  const handleCancelApplication = async () => {
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/tasks/${id}/apply`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast("Lamaran berhasil dibatalkan.");
+        fetchTask(); // refresh task data
+      } else {
+        showToast(data.message || "Gagal membatalkan lamaran.");
+      }
+    } catch {
+      showToast("Terjadi kesalahan jaringan.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // ── Requester: Accept Applicant ────────────────────────────────────────────
   const handleAcceptApplicant = async (applicantId: string, workerName: string) => {
     setActionLoading(true);
@@ -170,21 +193,21 @@ export default function TaskDetailPage() {
     }
   };
 
-  // ── Worker: Start Work ─────────────────────────────────────────────────────
+  // ── Dua Pihak: Confirm Start Work ────────────────────────────────────────────
   const handleStartWork = async () => {
     setActionLoading(true);
     try {
       const res = await fetch(`/api/tasks/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "in_progress" }),
+        body: JSON.stringify({ status: "confirm_start" }),
       });
       const data = await res.json();
       if (data.success) {
-        showToast("Status diperbarui: Sedang dikerjakan!");
+        showToast("Konfirmasi mulai tugas berhasil dicatat!");
         fetchTask();
       } else {
-        showToast(data.message || "Gagal memperbarui status.");
+        showToast(data.message || "Gagal mengkonfirmasi mulai tugas.");
       }
     } catch {
       showToast("Terjadi kesalahan jaringan.");
@@ -502,19 +525,39 @@ export default function TaskDetailPage() {
           {role === "worker" ? (
             <div className="flex flex-col gap-sm">
               {taskStatus === "open" && (
-                <Button
-                  onClick={() => setIsApplyModalOpen(true)}
-                  disabled={task.has_applied || actionLoading}
-                  className="w-full py-3"
-                  variant="primary"
-                >
-                  {task.has_applied ? "Sudah Dilamar" : "Lamar Pekerjaan Ini"}
-                </Button>
+                <>
+                  <Button
+                    onClick={() => setIsApplyModalOpen(true)}
+                    disabled={task.has_applied || actionLoading}
+                    className="w-full py-3"
+                    variant="primary"
+                  >
+                    {task.has_applied ? "Sudah Dilamar" : "Lamar Pekerjaan Ini"}
+                  </Button>
+                  {task.has_applied && (
+                    <Button
+                      onClick={handleCancelApplication}
+                      disabled={actionLoading}
+                      className="w-full py-2"
+                      variant="ghost"
+                    >
+                      Batalkan Lamaran
+                    </Button>
+                  )}
+                </>
               )}
               {taskStatus === "accepted" && (
-                <Button onClick={handleStartWork} className="w-full py-3" variant="lime" disabled={actionLoading}>
-                  Mulai Kerjakan
-                </Button>
+                <>
+                  {!task.worker_started ? (
+                    <Button onClick={handleStartWork} className="w-full py-3" variant="lime" disabled={actionLoading}>
+                      Konfirmasi Mulai Kerjakan
+                    </Button>
+                  ) : (
+                    <div className="p-sm text-center border border-outline-variant rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
+                      Menunggu konfirmasi mulai dari Requester...
+                    </div>
+                  )}
+                </>
               )}
               {taskStatus === "in_progress" && (
                 <div className="p-sm text-center border border-outline-variant rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
@@ -535,7 +578,20 @@ export default function TaskDetailPage() {
                   Menunggu pelamar. Pilih dari daftar pelamar di bawah.
                 </div>
               )}
-              {(taskStatus === "accepted" || taskStatus === "in_progress") && (
+              {taskStatus === "accepted" && (
+                <>
+                  {!task.requester_started ? (
+                    <Button onClick={handleStartWork} className="w-full py-3" variant="lime" disabled={actionLoading}>
+                      Konfirmasi Mulai Pekerjaan
+                    </Button>
+                  ) : (
+                    <div className="p-sm text-center border border-outline-variant rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
+                      Menunggu konfirmasi mulai dari Worker...
+                    </div>
+                  )}
+                </>
+              )}
+              {taskStatus === "in_progress" && (
                 <Button onClick={handleConfirmCompletion} className="w-full py-3" variant="primary" disabled={actionLoading}>
                   Konfirmasi Selesai & Cairkan Poin
                 </Button>

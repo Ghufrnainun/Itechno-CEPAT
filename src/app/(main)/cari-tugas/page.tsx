@@ -8,6 +8,8 @@ import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
 import { TaskCard } from "@/features/task/components/TaskCard";
 import { TaskInspector } from "@/features/task/components/TaskInspector";
 import { useToast } from "@/components/ui/Toast";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
 
 export default function CariTugasPage() {
   const { coords } = useGeolocation();
@@ -20,6 +22,12 @@ export default function CariTugasPage() {
   const [selectedTask, setSelectedTask] = useState<(Task & { distance?: number }) | null>(null);
   
   const [appliedTaskIds, setAppliedTaskIds] = useState<string[]>([]);
+
+  // Apply Modal state
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+  const [applyMessage, setApplyMessage] = useState("");
+  const [taskToApply, setTaskToApply] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     async function loadTasks() {
@@ -47,23 +55,36 @@ export default function CariTugasPage() {
     loadAppliedTaskIds();
   }, []);
 
-  const handleApply = async (taskId: string) => {
+  const handleApply = (taskId: string) => {
+    setTaskToApply(taskId);
+    setApplyMessage("");
+    setIsApplyModalOpen(true);
+  };
+
+  const handleApplySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!taskToApply) return;
+    
+    setActionLoading(true);
     try {
-      const res = await fetch('/api/tasks/apply', {
+      const res = await fetch(`/api/tasks/${taskToApply}/apply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_tasks: taskId })
+        body: JSON.stringify({ pesan: applyMessage })
       });
       const data = await res.json();
       
       if (res.ok && data.success) {
-        setAppliedTaskIds(prev => [...prev, taskId]);
+        setAppliedTaskIds(prev => [...prev, taskToApply]);
         showToast("Berhasil melamar tugas!");
+        setIsApplyModalOpen(false);
       } else {
         showToast(data.message || "Gagal melamar tugas");
       }
     } catch (e) {
       showToast("Terjadi kesalahan jaringan.");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -96,11 +117,11 @@ export default function CariTugasPage() {
         </div>
       </header>
 
-      {/* Main Container - Relative for Absolute Children */}
-      <div className="flex-1 w-full h-full relative overflow-hidden bg-surface-container-low">
+      {/* Main Container */}
+      <div className="flex-1 w-full h-full flex flex-col md:flex-row relative overflow-hidden bg-surface-container-low">
         
-        {/* Background Map Layer */}
-        <div className="absolute inset-0 z-0">
+        {/* Background Map Layer (Top on Mobile, Right on Desktop) */}
+        <div className="h-[45vh] md:h-full md:flex-1 relative z-0 order-1 md:order-2">
           <MapPickerWrapper
             center={{ latitude: coords.latitude, longitude: coords.longitude }}
             tasks={tasks}
@@ -111,14 +132,14 @@ export default function CariTugasPage() {
               if (clicked) setSelectedTask(clicked);
             }}
           />
-          <div className="absolute top-4 left-[370px] z-10 bg-white/95 border border-outline-variant shadow rounded px-md py-xs font-label-sm text-label-sm flex items-center gap-xs">
+          <div className="absolute top-4 left-4 md:left-6 z-10 bg-white/95 border border-outline-variant shadow rounded px-md py-xs font-label-sm text-label-sm flex items-center gap-xs">
             <span className="pulse-dot w-2.5 h-2.5 rounded-full bg-secondary-container inline-block"></span>
             Peta Radar Aktif
           </div>
         </div>
 
-        {/* Left Sidebar - Task List */}
-        <aside className="absolute top-0 bottom-0 left-0 w-[350px] bg-white/95 backdrop-blur-md border-r border-outline-variant shadow-lg z-10 flex flex-col animate-slide-in">
+        {/* Left Sidebar - Task List (Bottom on Mobile, Left on Desktop) */}
+        <aside className="flex-1 md:w-[350px] bg-white/95 backdrop-blur-md border-t md:border-t-0 md:border-r border-outline-variant shadow-lg z-10 flex flex-col order-2 md:order-1 animate-slide-in">
           <div className="p-md border-b border-outline-variant/50 bg-surface">
             <h3 className="font-headline-sm text-headline-sm text-on-surface flex items-center justify-between">
               Tugas Ditemukan
@@ -159,6 +180,37 @@ export default function CariTugasPage() {
         )}
 
       </div>
+
+      {/* Modal: Lamar Pekerjaan */}
+      <Modal isOpen={isApplyModalOpen} onClose={() => setIsApplyModalOpen(false)} title="Kirim Lamaran Kerja">
+        <form onSubmit={handleApplySubmit} className="flex flex-col gap-md">
+          <div className="flex flex-col gap-xs">
+            <label className="font-body-sm text-body-sm text-on-surface-variant font-medium">
+              Pesan (Opsional)
+            </label>
+            <textarea
+              value={applyMessage}
+              onChange={(e) => setApplyMessage(e.target.value)}
+              placeholder="Ceritakan mengapa Anda cocok untuk pekerjaan ini..."
+              rows={4}
+              maxLength={500}
+              className="w-full bg-surface-container border border-outline rounded p-sm text-on-surface font-body-sm text-body-sm focus:outline-none focus:border-primary resize-none"
+            />
+            <span className="text-right font-label-sm text-label-sm text-on-surface-variant">
+              {applyMessage.length}/500
+            </span>
+          </div>
+
+          <div className="flex gap-sm justify-end mt-sm">
+            <Button type="button" variant="ghost" onClick={() => setIsApplyModalOpen(false)} disabled={actionLoading}>
+              Batal
+            </Button>
+            <Button type="submit" variant="primary" disabled={actionLoading}>
+              {actionLoading ? "Mengirim..." : "Kirim Lamaran"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

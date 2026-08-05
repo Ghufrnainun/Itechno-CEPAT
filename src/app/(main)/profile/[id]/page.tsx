@@ -281,10 +281,18 @@ export default function UserProfilePage() {
               <span className="text-xs text-on-surface-variant font-medium mt-0.5">Tugas Selesai</span>
             </div>
 
-            <Button variant="primary" className="h-full py-4 px-6 rounded-xl font-bold shadow-xs hover:shadow-md hover:-translate-y-1 active:scale-95 transition-all duration-300" onClick={handleOpenEdit}>
-              <span className="material-symbols-outlined text-[20px] mr-2" aria-hidden="true">edit</span>
-              Edit Profil
-            </Button>
+            {userId === "me" && (
+              <div className="flex items-center gap-3 w-full md:w-auto md:ml-auto mt-2 md:mt-0">
+                <Button variant="secondary" className="flex-1 md:flex-none py-4 px-3 md:px-6 rounded-xl font-bold shadow-xs hover:shadow-md hover:-translate-y-1 active:scale-95 transition-all duration-300" onClick={() => router.push("/wallet")}>
+                  <span className="material-symbols-outlined text-[20px] mr-1.5 md:mr-2" aria-hidden="true">account_balance_wallet</span>
+                  Dompet Poin
+                </Button>
+                <Button variant="primary" className="flex-1 md:flex-none py-4 px-3 md:px-6 rounded-xl font-bold shadow-xs hover:shadow-md hover:-translate-y-1 active:scale-95 transition-all duration-300" onClick={handleOpenEdit}>
+                  <span className="material-symbols-outlined text-[20px] mr-1.5 md:mr-2" aria-hidden="true">edit</span>
+                  Edit Profil
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
