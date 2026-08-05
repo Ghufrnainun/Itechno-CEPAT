@@ -21,7 +21,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       {toast && (
         <div className="toast">
-          <span className="material-symbols-outlined" style={{ fontSize: "18px", fontVariationSettings: "'FILL' 1" }}>
+          <span className="material-symbols-outlined" style={{ fontSize: "18px", fontVariationSettings: "'FILL' 1" }} aria-hidden="true">
             check_circle
           </span>
           <span>{toast}</span>

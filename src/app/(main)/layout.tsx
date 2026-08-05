@@ -9,10 +9,14 @@ import { useFCM } from "@/hooks/useFCM";
 type Role = "worker" | "requester";
 
 export interface UserProfileData {
+  id_user?: string;
   nama_lengkap?: string;
   username?: string;
   email?: string;
   total_balance?: number;
+  rating_avg?: number;
+  total_completed?: number;
+  avatar_url?: string | null;
 }
 
 interface RoleContextType {
@@ -81,13 +85,16 @@ export default function MainAppLayout({
     <RoleContext.Provider value={{ role, setRole, toggleRole, user }}>
       <ToastProvider>
         <FcmBridge />
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-primary focus:text-on-primary font-bold shadow-md m-2 rounded-md">
+          Skip to main content
+        </a>
         <div className="flex h-screen w-screen overflow-hidden bg-layout-bg font-sans">
           {/* Sidebar Left */}
           <Sidebar role={role} onRoleToggle={toggleRole} user={user} />
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-            <main className="flex-grow overflow-y-auto pb-20 lg:pb-0 custom-scrollbar">
+            <main id="main-content" className="flex-grow overflow-y-auto pb-20 lg:pb-0 custom-scrollbar" tabIndex={-1}>
               {children}
             </main>
 

@@ -200,7 +200,7 @@ export default function FeedPage() {
                 </div>
                 <Link href="/task/new">
                   <Button variant="primary" className="font-bold">
-                    <span className="material-symbols-outlined text-[18px]">add</span> Post Tugas Baru
+                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">add</span> Post Tugas Baru
                   </Button>
                 </Link>
               </div>
@@ -210,7 +210,7 @@ export default function FeedPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-md pb-32">
                   {tasks.length === 0 ? (
                     <div className="col-span-1 md:col-span-2 flex flex-col items-center gap-sm py-16 text-center">
-                      <span className="material-symbols-outlined text-outline text-[48px]">search_off</span>
+                      <span className="material-symbols-outlined text-outline text-[48px]" aria-hidden="true">search_off</span>
                       <p className="font-headline-sm text-headline-sm text-on-surface font-bold">Tidak ada tugas</p>
                       <p className="font-body-sm text-body-sm text-on-surface-variant">Belum ada tugas yang sesuai dengan filter.</p>
                     </div>
@@ -242,7 +242,7 @@ export default function FeedPage() {
                   {/* Search & Filters */}
                   <div className="mt-lg">
                     <div className="relative w-full max-w-2xl">
-                      <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">search</span>
+                      <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline" aria-hidden="true">search</span>
                       <input 
                         className="w-full bg-surface border border-[#DDE7E1] rounded-lg py-sm pl-12 pr-md font-body-sm text-body-sm text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none transition-colors" 
                         placeholder="Cari tugas, kategori, atau UMKM..." 
@@ -276,7 +276,7 @@ export default function FeedPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-md pb-32">
                     {tasks.length === 0 ? (
                       <div className="col-span-1 md:col-span-2 flex flex-col items-center gap-sm py-16 text-center">
-                        <span className="material-symbols-outlined text-outline text-[48px]">
+                        <span className="material-symbols-outlined text-outline text-[48px]" aria-hidden="true">
                           search_off
                         </span>
                         <p className="font-headline-sm text-headline-sm text-on-surface font-bold">Tidak menemukan tugas</p>
@@ -302,7 +302,7 @@ export default function FeedPage() {
                 <div className="bg-white border border-outline-variant rounded-xl divide-y divide-outline-variant overflow-hidden mt-sm shadow-sm">
                   {appliedTaskIds.length === 0 ? (
                     <div className="p-xl text-center flex flex-col items-center gap-sm py-16">
-                      <span className="material-symbols-outlined text-outline text-[48px]">
+                      <span className="material-symbols-outlined text-outline text-[48px]" aria-hidden="true">
                         assignment_turned_in
                       </span>
                       <p className="font-body-md text-body-md text-on-surface-variant">

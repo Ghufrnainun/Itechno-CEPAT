@@ -116,7 +116,7 @@ export default function WalletPage() {
           </p>
         </div>
         <Button onClick={() => setIsTopUpOpen(true)} variant="primary">
-          <span className="material-symbols-outlined text-[18px]">add_circle</span> Top Up
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">add_circle</span> Top Up
         </Button>
       </header>
 
@@ -127,7 +127,7 @@ export default function WalletPage() {
           <div className="bento-card">
             <div className="flex items-center justify-between mb-sm text-on-surface-variant">
               <span className="font-label-sm text-label-sm font-medium">Saldo Tersedia</span>
-              <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>account_balance_wallet</span>
+              <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">account_balance_wallet</span>
             </div>
             <div>
               <div
@@ -137,7 +137,7 @@ export default function WalletPage() {
                 {formatCurrency(balance)}
               </div>
               <div className="font-label-sm text-[10px] text-primary mt-1 flex items-center gap-1">
-                <span className="material-symbols-outlined text-[12px]">trending_up</span> Saldo aktif
+                <span className="material-symbols-outlined text-[12px]" aria-hidden="true">trending_up</span> Saldo aktif
               </div>
             </div>
           </div>
@@ -145,7 +145,7 @@ export default function WalletPage() {
           <div className="bento-card">
             <div className="flex items-center justify-between mb-sm text-on-surface-variant">
               <span className="font-label-sm text-label-sm font-medium">Saldo Ditahan (Escrow)</span>
-              <span className="material-symbols-outlined text-[18px]">lock_clock</span>
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">lock_clock</span>
             </div>
             <div>
               <div

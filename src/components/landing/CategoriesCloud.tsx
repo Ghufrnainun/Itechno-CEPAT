@@ -42,7 +42,7 @@ export function CategoriesCloud() {
           </p>
           <a href="/login" className="inline-flex items-center gap-1.5 text-primary font-semibold hover:underline">
             Lihat semua kategori
-            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>
           </a>
         </motion.div>
 

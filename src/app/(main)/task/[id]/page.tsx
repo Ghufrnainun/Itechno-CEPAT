@@ -259,7 +259,7 @@ export default function TaskDetailPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-xl gap-sm min-h-[50vh]">
-        <span className="material-symbols-outlined text-primary text-[48px] animate-spin">
+        <span className="material-symbols-outlined text-primary text-[48px] animate-spin" aria-hidden="true">
           progress_activity
         </span>
         <p className="font-body-md text-body-md text-on-surface-variant">Memuat detail tugas...</p>
@@ -270,7 +270,7 @@ export default function TaskDetailPage() {
   if (!task) {
     return (
       <div className="flex flex-col items-center justify-center p-xl gap-sm min-h-[50vh]">
-        <span className="material-symbols-outlined text-outline text-[48px]">error</span>
+        <span className="material-symbols-outlined text-outline text-[48px]" aria-hidden="true">error</span>
         <h3 className="font-headline-sm text-headline-sm">Tugas Tidak Ditemukan</h3>
         <Button onClick={() => router.push("/feed")}>Kembali ke Feed</Button>
       </div>
@@ -290,7 +290,7 @@ export default function TaskDetailPage() {
           onClick={() => router.back()}
           className="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center border border-outline-variant/60 cursor-pointer"
         >
-          <span className="material-symbols-outlined">arrow_back</span>
+          <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
         </button>
         <div>
           <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
@@ -391,7 +391,7 @@ export default function TaskDetailPage() {
               </h3>
               {task.applicants.length === 0 ? (
                 <div className="py-8 text-center">
-                  <span className="material-symbols-outlined text-outline text-[40px]">people_search</span>
+                  <span className="material-symbols-outlined text-outline text-[40px]" aria-hidden="true">people_search</span>
                   <p className="font-body-sm text-on-surface-variant mt-2">Belum ada yang melamar.</p>
                 </div>
               ) : (
@@ -477,7 +477,7 @@ export default function TaskDetailPage() {
         <div className="flex flex-col gap-md">
           <div className="bg-white border border-outline-variant rounded-xl p-md flex flex-col gap-sm">
             <h3 className="font-body-md text-body-md font-semibold text-on-surface flex items-center gap-xs">
-              <span className="material-symbols-outlined text-[18px]">location_on</span>
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">location_on</span>
               Lokasi Pengerjaan
             </h3>
 
@@ -617,7 +617,7 @@ export default function TaskDetailPage() {
                   <span
                     className="material-symbols-outlined"
                     style={{ fontVariationSettings: star <= rating ? "'FILL' 1" : "'FILL' 0" }}
-                  >
+                   aria-hidden="true">
                     star
                   </span>
                 </button>
