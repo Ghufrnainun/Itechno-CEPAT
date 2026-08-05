@@ -12,7 +12,7 @@ const DynamicMapPicker = dynamic(
       <div className="w-full h-full min-h-[300px] flex items-center justify-center bg-surface-container-low border border-outline-variant rounded-lg animate-pulse">
         <div className="flex flex-col items-center gap-sm">
           <span className="material-symbols-outlined text-primary text-[32px] animate-spin" aria-hidden="true">
-            progress_activity
+            sync
           </span>
           <p className="font-label-sm text-label-sm text-on-surface-variant">
             Memuat Peta Radar...

@@ -292,7 +292,7 @@ export default function KelolaTaskPage() {
           {/* Task list */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-sm">
-              <span className="material-symbols-outlined text-primary text-[40px] animate-spin" aria-hidden="true">progress_activity</span>
+              <span className="material-symbols-outlined text-primary text-[40px] animate-spin" aria-hidden="true">sync</span>
               <p className="font-body-sm text-on-surface-variant">Memuat daftar task...</p>
             </div>
           ) : filteredTasks.length === 0 ? (

@@ -283,7 +283,7 @@ export default function TaskDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center p-xl gap-sm min-h-[50vh]">
         <span className="material-symbols-outlined text-primary text-[48px] animate-spin" aria-hidden="true">
-          progress_activity
+          sync
         </span>
         <p className="font-body-md text-body-md text-on-surface-variant">Memuat detail tugas...</p>
       </div>
