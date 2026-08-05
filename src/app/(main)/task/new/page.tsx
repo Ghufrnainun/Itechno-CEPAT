@@ -24,10 +24,39 @@ export default function NewTaskPage() {
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [searchLocation, setSearchLocation] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [mapCenter, setMapCenter] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const handleLocationSelect = (selectedLat: number, selectedLng: number) => {
     setLat(selectedLat);
     setLng(selectedLng);
+  };
+
+  const handleSearchLocation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchLocation.trim()) return;
+
+    setSearching(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchLocation)}&limit=1`);
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const result = data[0];
+        const newLat = parseFloat(result.lat);
+        const newLng = parseFloat(result.lon);
+        setMapCenter({ latitude: newLat, longitude: newLng });
+        setLat(newLat);
+        setLng(newLng);
+        showToast("Lokasi berhasil ditemukan!");
+      } else {
+        showToast("Lokasi tidak ditemukan. Coba kata kunci lain.");
+      }
+    } catch (e) {
+      showToast("Gagal mencari lokasi. Periksa koneksi Anda.");
+    } finally {
+      setSearching(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -154,12 +183,43 @@ export default function NewTaskPage() {
             <div className="flex flex-col gap-xs">
               <label className="font-body-sm text-body-sm text-on-surface-variant font-medium flex items-center gap-xs">
                 <span className="material-symbols-outlined text-[16px]" aria-hidden="true">location_on</span>
-                Titik Lokasi Tugas (Klik pada Peta)
+                Titik Lokasi Tugas
               </label>
               
+              <div className="flex items-center gap-sm mb-xs">
+                <div className="flex-grow">
+                  <Input 
+                    type="text" 
+                    placeholder="Cari lokasi spesifik (misal: UGM, Monas)" 
+                    value={searchLocation}
+                    onChange={(e) => setSearchLocation(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSearchLocation(e as any);
+                      }
+                    }}
+                  />
+                </div>
+                <Button 
+                  type="button" 
+                  variant="secondary" 
+                  className="px-md mt-2 md:mt-0 whitespace-nowrap"
+                  onClick={handleSearchLocation}
+                  disabled={searching}
+                >
+                  <span className="material-symbols-outlined text-[18px]">search</span>
+                  Cari
+                </Button>
+              </div>
+              
+              <div className="font-body-sm text-on-surface-variant mb-xs">
+                Atau geser pin pada peta untuk memilih lokasi.
+              </div>
+
               <div className="flex-grow h-[260px] md:h-auto min-h-[220px] relative rounded-lg overflow-hidden border border-outline-variant">
                 <MapPickerWrapper
-                  center={{ latitude: coords.latitude, longitude: coords.longitude }}
+                  center={mapCenter || { latitude: coords.latitude, longitude: coords.longitude }}
                   onLocationSelect={handleLocationSelect}
                 />
               </div>

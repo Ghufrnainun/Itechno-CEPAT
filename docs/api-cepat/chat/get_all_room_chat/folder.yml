@@ -1,0 +1,7 @@
+info:
+  name: get_all_room_chat
+  type: folder
+  seq: 1
+
+request:
+  auth: inherit

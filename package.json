@@ -20,6 +20,7 @@
     "@types/react-leaflet": "^2.8.3",
     "date-fns": "^4.4.0",
     "dotenv": "^17.4.2",
+    "emoji-picker-react": "^4.19.1",
     "firebase": "^12.16.0",
     "firebase-admin": "^14.2.0",
     "leaflet": "^1.9.4",
@@ -34,7 +35,8 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/geojson": "^7946.0.16",
+    "@types/node": "^20.19.43",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
