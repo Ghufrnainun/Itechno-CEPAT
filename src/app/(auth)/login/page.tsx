@@ -156,7 +156,7 @@ function LoginContent() {
                   <span
                     className="material-symbols-outlined text-[16px] text-[#84CC16]"
                     style={{ fontVariationSettings: "'FILL' 1" }}
-                  >
+                   aria-hidden="true">
                     {item.icon}
                   </span>
                   <span className="text-xs text-white/50 font-semibold">{item.label}</span>
@@ -170,7 +170,7 @@ function LoginContent() {
                 <span
                   className="material-symbols-outlined text-[14px] text-[#84CC16]"
                   style={{ fontVariationSettings: "'FILL' 1" }}
-                >
+                 aria-hidden="true">
                   public
                 </span>
                 SDG 8 — Decent <span className="text-[#84CC16] font-bold tracking-wider">Work</span>

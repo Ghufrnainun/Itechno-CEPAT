@@ -90,7 +90,7 @@ function TaskManagementCard({ task, onRefresh }: { task: RequesterTask; onRefres
           <div className="flex items-center gap-md text-on-surface-variant">
             {/* Kompensasi */}
             <div className="flex items-center gap-xs">
-              <span className="material-symbols-outlined text-[14px] text-primary">payments</span>
+              <span className="material-symbols-outlined text-[14px] text-primary" aria-hidden="true">payments</span>
               <span className="font-label-sm text-label-sm font-bold text-primary">
                 {formatCurrency(task.kompensasi)}
               </span>
@@ -98,13 +98,13 @@ function TaskManagementCard({ task, onRefresh }: { task: RequesterTask; onRefres
             {/* Estimasi */}
             {task.estimasi_waktu && (
               <div className="flex items-center gap-xs">
-                <span className="material-symbols-outlined text-[14px]">schedule</span>
+                <span className="material-symbols-outlined text-[14px]" aria-hidden="true">schedule</span>
                 <span className="font-label-sm text-[11px]">{task.estimasi_waktu}</span>
               </div>
             )}
             {/* Jumlah pelamar */}
             <div className="flex items-center gap-xs">
-              <span className="material-symbols-outlined text-[14px]">people</span>
+              <span className="material-symbols-outlined text-[14px]" aria-hidden="true">people</span>
               <span className="font-label-sm text-[11px]">{task.applicant_count} pelamar</span>
             </div>
           </div>
@@ -152,7 +152,7 @@ function TaskManagementCard({ task, onRefresh }: { task: RequesterTask; onRefres
               onClick={(e) => { e.preventDefault(); router.push(`/task/${task.id_tasks}`); }}
               className="font-label-sm text-[11px] text-primary font-semibold px-sm py-xs rounded bg-interaction-bg border border-outline-variant hover:bg-primary/10 transition-colors cursor-pointer flex items-center gap-xs"
             >
-              <span className="material-symbols-outlined text-[13px]">star</span>
+              <span className="material-symbols-outlined text-[13px]" aria-hidden="true">star</span>
               Berikan Rating
             </button>
           </div>
@@ -168,7 +168,7 @@ function EmptyState({ activeFilter }: { activeFilter: string | null }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-md text-center">
       <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center">
-        <span className="material-symbols-outlined text-[32px] text-outline">
+        <span className="material-symbols-outlined text-[32px] text-outline" aria-hidden="true">
           {activeFilter === "completed" ? "task_alt" : "assignment_late"}
         </span>
       </div>
@@ -189,7 +189,7 @@ function EmptyState({ activeFilter }: { activeFilter: string | null }) {
       {activeFilter !== "completed" && (
         <Link href="/task/new">
           <Button variant="primary">
-            <span className="material-symbols-outlined text-[18px]">add</span>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">add</span>
             Post Tugas Baru
           </Button>
         </Link>
@@ -246,7 +246,7 @@ export default function KelolaTaskPage() {
         </div>
         <Link href="/task/new">
           <Button variant="primary">
-            <span className="material-symbols-outlined text-[18px]">add</span>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">add</span>
             Post Tugas Baru
           </Button>
         </Link>
@@ -283,7 +283,7 @@ export default function KelolaTaskPage() {
                     : "bg-white border border-outline-variant text-on-surface-variant hover:bg-surface-container"
                   }`}
               >
-                <span className="material-symbols-outlined text-[15px]">{f.icon}</span>
+                <span className="material-symbols-outlined text-[15px]" aria-hidden="true">{f.icon}</span>
                 {f.label}
               </button>
             ))}
@@ -292,7 +292,7 @@ export default function KelolaTaskPage() {
           {/* Task list */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-sm">
-              <span className="material-symbols-outlined text-primary text-[40px] animate-spin">progress_activity</span>
+              <span className="material-symbols-outlined text-primary text-[40px] animate-spin" aria-hidden="true">progress_activity</span>
               <p className="font-body-sm text-on-surface-variant">Memuat daftar task...</p>
             </div>
           ) : filteredTasks.length === 0 ? (

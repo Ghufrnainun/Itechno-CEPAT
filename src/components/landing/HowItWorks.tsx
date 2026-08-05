@@ -72,7 +72,7 @@ export function HowItWorks() {
                 <span
                   className="material-symbols-outlined text-[18px]"
                   style={{ fontVariationSettings: "'FILL' 1" }}
-                >
+                 aria-hidden="true">
                   {t.icon}
                 </span>
                 {t.label}
@@ -135,7 +135,7 @@ export function HowItWorks() {
                   : "bg-secondary text-on-secondary hover:brightness-95"
               }`}
             >
-              <span className="material-symbols-outlined text-[16px]">{tab.ctaIcon}</span>
+              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">{tab.ctaIcon}</span>
               {tab.cta}
             </Link>
           </motion.div>

@@ -21,6 +21,11 @@ export async function GET(request: NextRequest) {
       where: { email: authUser.email },
       include: {
         role: true,
+        skills_user: {
+          include: {
+            skills_master: true,
+          },
+        },
       },
     });
 
@@ -72,7 +77,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { bio, pendidikan_terakhir, no_telpon, role, skills } = body;
+    const { nama_lengkap, bio, pendidikan_terakhir, no_telpon, alamat, role, skills, avatar_url } = body;
 
     // Find role ID if provided
     let roleId: string | undefined = undefined;
@@ -89,10 +94,13 @@ export async function PUT(request: NextRequest) {
     const updatedUser = await prisma.user.update({
       where: { email: authUser.email },
       data: {
+        ...(nama_lengkap && { nama_lengkap }),
         ...(bio && { bio }),
         ...(pendidikan_terakhir && { pendidikan_terakhir }),
         ...(no_telpon && { no_telpon }),
+        ...(alamat && { alamat }),
         ...(roleId && { id_role: roleId }),
+        ...(avatar_url && { avatar_url }),
       },
     });
 

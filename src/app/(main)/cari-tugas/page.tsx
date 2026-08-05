@@ -130,7 +130,7 @@ export default function CariTugasPage() {
           <div className="flex-1 overflow-y-auto p-sm flex flex-col gap-sm custom-scrollbar">
             {tasks.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-center px-4">
-                <span className="material-symbols-outlined text-outline text-[40px] mb-2">location_off</span>
+                <span className="material-symbols-outlined text-outline text-[40px] mb-2" aria-hidden="true">location_off</span>
                 <p className="font-body-sm text-on-surface-variant">Tidak ada tugas dalam radius {radius} km.</p>
               </div>
             ) : (

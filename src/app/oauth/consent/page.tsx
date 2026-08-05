@@ -158,7 +158,7 @@ function OAuthConsentContent() {
       <div className="min-h-screen flex items-center justify-center bg-layout-bg p-md font-sans">
         <div className="w-full max-w-md p-xl rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-lg text-center">
           <div className="w-12 h-12 mx-auto mb-md rounded-full bg-error-container/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-error text-[28px]">warning</span>
+            <span className="material-symbols-outlined text-error text-[28px]" aria-hidden="true">warning</span>
           </div>
           <h1 className="font-headline-sm text-headline-sm text-on-surface mb-xs">Otorisasi Gagal</h1>
           <p className="font-body-sm text-body-sm text-on-surface-variant mb-lg">{error}</p>
@@ -186,12 +186,12 @@ function OAuthConsentContent() {
             {clientIcon ? (
               <Image src={clientIcon} alt={clientName} width={56} height={56} className="object-cover" />
             ) : (
-              <span className="material-symbols-outlined text-primary text-[32px]">apps</span>
+              <span className="material-symbols-outlined text-primary text-[32px]" aria-hidden="true">apps</span>
             )}
           </div>
 
           <div className="flex items-center justify-center w-8 text-on-surface-variant">
-            <span className="material-symbols-outlined text-[24px]">swap_horiz</span>
+            <span className="material-symbols-outlined text-[24px]" aria-hidden="true">swap_horiz</span>
           </div>
 
           <div className="w-14 h-14 rounded-xl bg-surface-container-high border border-outline-variant/60 flex items-center justify-center">
@@ -215,7 +215,7 @@ function OAuthConsentContent() {
               className="inline-flex items-center gap-xs font-label-sm text-label-sm text-primary hover:underline mt-xs"
             >
               <span>{clientWebsite}</span>
-              <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+              <span className="material-symbols-outlined text-[14px]" aria-hidden="true">open_in_new</span>
             </a>
           )}
         </div>
@@ -225,7 +225,7 @@ function OAuthConsentContent() {
           <div className="flex items-center justify-between p-sm px-md rounded-xl bg-surface-container-high border border-outline-variant/40 mb-lg">
             <div className="flex items-center gap-sm overflow-hidden">
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-primary text-[18px]">account_circle</span>
+                <span className="material-symbols-outlined text-primary text-[18px]" aria-hidden="true">account_circle</span>
               </div>
               <div className="truncate">
                 <p className="font-label-sm text-label-sm text-on-surface-variant">Masuk sebagai</p>
@@ -257,7 +257,7 @@ function OAuthConsentContent() {
                 <span
                   className="material-symbols-outlined text-primary text-[20px] flex-shrink-0 mt-0.5"
                   style={{ fontVariationSettings: "'FILL' 1" }}
-                >
+                 aria-hidden="true">
                   check_circle
                 </span>
                 <div>
@@ -293,7 +293,7 @@ function OAuthConsentContent() {
 
         {/* Security Footer */}
         <div className="mt-lg text-center pt-md border-t border-outline-variant/30 flex items-center justify-center gap-xs">
-          <span className="material-symbols-outlined text-on-surface-variant text-[16px]">lock</span>
+          <span className="material-symbols-outlined text-on-surface-variant text-[16px]" aria-hidden="true">lock</span>
           <span className="font-label-xs text-label-xs text-on-surface-variant">
             Diotorisasi secara aman oleh CEPAT OAuth Server (OAuth 2.1)
           </span>
