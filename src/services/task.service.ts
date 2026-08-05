@@ -458,8 +458,15 @@ export const taskService = {
     if (newStatus === 'completed') {
       updateData.completed_at = new Date()
 
-      // Transfer kompensasi ke worker (update total_balance)
+      // Release escrow ke worker: kurangi total & held requester, tambah total worker
       if (acceptedWorker) {
+        await prisma.user.update({
+          where: { id_user: task.id_requester },
+          data: {
+            total_balance: { decrement: task.kompensasi },
+            held_balance: { decrement: task.kompensasi },
+          },
+        })
         await prisma.user.update({
           where: { id_user: acceptedWorker.id_worker },
           data: { total_balance: { increment: task.kompensasi }, total_completed: { increment: 1 } },
@@ -470,6 +477,7 @@ export const taskService = {
             id_user: acceptedWorker.id_worker,
             nominal: task.kompensasi,
             tipe_transaksi: 'MASUK',
+            sub_type: 'task_earning',
             deskripsi: `Kompensasi dari task: ${task.judul_tugas}`,
           },
         })
@@ -485,10 +493,10 @@ export const taskService = {
         } catch (_) { /* non-blocking */ }
       }
     } else if (newStatus === 'cancelled') {
-      // Refund kompensasi ke requester
+      // Refund escrow: held_balance turun (escrow dilepas), total_balance tetap
       await prisma.user.update({
         where: { id_user: task.id_requester },
-        data: { total_balance: { increment: task.kompensasi } },
+        data: { held_balance: { decrement: task.kompensasi } },
       })
       // Catat transaksi refund
       await prisma.transactions.create({
@@ -496,6 +504,7 @@ export const taskService = {
           id_user: task.id_requester,
           nominal: task.kompensasi,
           tipe_transaksi: 'MASUK',
+          sub_type: 'refund',
           deskripsi: `Pengembalian dana (refund) dari task dibatalkan: ${task.judul_tugas}`,
         },
       })

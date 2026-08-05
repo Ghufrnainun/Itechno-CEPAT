@@ -50,6 +50,7 @@ model User {
   rating_avg              Float            @default(0.0)
   total_completed         Int              @default(0)
   total_balance           Float            @default(0.0)
+  held_balance            Float            @default(0.0)
   username                String           @unique
   alamat                  String?
   no_telpon               String?
@@ -92,13 +93,14 @@ model Task {
 }
 
 model Transactions {
-  id_transactions String          @id @default(uuid())
+  id_transactions String              @id @default(uuid())
   id_user         String
   nominal         Float
   tipe_transaksi  TransactionType
+  sub_type        TransactionSubType
   deskripsi       String?
-  created_at      DateTime        @default(now())
-  user            User            @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+  created_at      DateTime            @default(now())
+  user            User                @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
 }
 
 model SkillsUser {
@@ -198,4 +200,16 @@ model spatial_ref_sys {
 enum TransactionType {
   MASUK
   KELUAR
+}
+
+/// Sub-tipe transaksi — sumber kebenaran jenis mutasi saldo.
+/// topup: isi saldo oleh user | task_earning: pendapatan dari task selesai
+/// task_payment: escrow hold saat task diposting | refund: pengembalian saldo
+/// hold: saldo ditahan (escrow aktif) — alias task_payment untuk clarity UI
+enum TransactionSubType {
+  topup
+  task_earning
+  task_payment
+  refund
+  hold
 }

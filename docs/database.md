@@ -94,8 +94,16 @@ Berikut adalah definisi struktur tabel secara menyeluruh, termasuk penambahan ek
 -- Mengaktifkan ekstensi pencarian geospasial (wajib untuk fitur radius/area terdekat)
 CREATE EXTENSION IF NOT EXISTS postgis;
 
--- Tipe data spesifik untuk mutasi saldo
+-- Arah mutasi saldo (dipakai bersama sub_type di bawah)
 CREATE TYPE "TransactionType" AS ENUM ('MASUK', 'KELUAR');
+
+-- Sub-tipe transaksi — sumber kebenaran jenis mutasi, bukan deskripsi teks.
+-- topup        : pengisian saldo oleh user (simulasi/mock untuk demo)
+-- task_earning : pendapatan worker setelah task selesai
+-- task_payment : pembayaran final requester ke worker saat release escrow
+-- refund       : pengembalian escrow ke requester saat task di-cancel
+-- hold         : escrow ditahan saat requester memposting task
+CREATE TYPE "TransactionSubType" AS ENUM ('topup', 'task_earning', 'task_payment', 'refund', 'hold');
 ```
 
 ### 3.2 Tabel Profil dan Entitas Utama (`User` dan `Task`)
@@ -110,15 +118,20 @@ CREATE TABLE "User" (
     "pendidikan_terakhir" TEXT,
     "rating_avg" DOUBLE PRECISION NOT NULL DEFAULT 0.0,
     "total_completed" INTEGER NOT NULL DEFAULT 0,
-    "total_balance" DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    "total_balance" DOUBLE PRECISION NOT NULL DEFAULT 0.0,  -- total saldo (termasuk yang ditahan)
+    "held_balance" DOUBLE PRECISION NOT NULL DEFAULT 0.0,   -- saldo escrow aktif (ditahan)
     "username" TEXT NOT NULL,
     "alamat" TEXT,
     "no_telpon" TEXT,
     "email" TEXT NOT NULL,
     "auth_id" UUID,
+    "fcm_token" TEXT,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id_user")
 );
+
+-- Saldo yang bisa dipakai user = total_balance - held_balance
+-- Keduanya diupdate dalam 1 prisma.$transaction untuk atomicity.
 
 -- Tabel Pekerjaan/Tugas (menyimpan lokasi titik secara presisi)
 CREATE TABLE "Task" (
@@ -231,28 +244,30 @@ CREATE TABLE role (
 
 ### 3.2 `user`
 
-```sql
-CREATE TABLE "user" (
-  id_user               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_role                UUID NOT NULL REFERENCES role(id_role),
-  nama_lengkap           TEXT NOT NULL,
-  avatar_url             TEXT,
-  bio                    TEXT,
-  pendidikan_terakhir     TEXT,
-  rating_avg             DECIMAL(3,2) DEFAULT 0.00,
-  total_completed         INTEGER DEFAULT 0,
-  total_balance           DECIMAL(12,2) DEFAULT 0,
-  username               TEXT NOT NULL UNIQUE,
-  alamat                 TEXT,
-  no_telpon               TEXT,             -- disimpan sebagai TEXT, bukan INT (leading zero, format lokal)
-  email                   TEXT NOT NULL UNIQUE,
-  password                TEXT NOT NULL,     -- hashed (Supabase Auth menangani ini jika pakai auth.users)
-  created_at              TIMESTAMPTZ DEFAULT NOW(),
-  updated_at              TIMESTAMPTZ DEFAULT NOW()
-);
-```
+> ✅ **Sudah diimplementasikan dengan Supabase Auth.** Kolom `password` tidak ada di tabel ini — autentikasi dikelola sepenuhnya oleh `auth.users`. `id_user` di-mapping ke `auth.users.id` via kolom `auth_id`. Dua kolom wallet ditambahkan pada migrasi `20260805_wallet_schema.sql`.
 
-> **Catatan implementasi:** ERD menggambar `user` sebagai tabel mandiri dengan kolom `password` sendiri. Jika tim tetap pakai **Supabase Auth** (disarankan — sesuai `techstack.md` & `deployment.md`), maka `password` cukup dikelola oleh `auth.users` dan tabel `user` di sini menjadi **extension profile** dengan `id_user` = `auth.users.id`, tanpa kolom `password` duplikat. Perlu dikonfirmasi ke tim mana yang dipakai sebelum migration final ditulis.
+```sql
+CREATE TABLE "User" (
+  id_user               TEXT PRIMARY KEY,    -- mapped ke auth.users.id (UUID sebagai TEXT)
+  id_role               TEXT NOT NULL REFERENCES "Role"(id_role),
+  nama_lengkap          TEXT NOT NULL,
+  avatar_url            TEXT,
+  bio                   TEXT,
+  pendidikan_terakhir   TEXT,
+  rating_avg            DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+  total_completed       INTEGER NOT NULL DEFAULT 0,
+  total_balance         DOUBLE PRECISION NOT NULL DEFAULT 0.0, -- total saldo (termasuk escrow)
+  held_balance          DOUBLE PRECISION NOT NULL DEFAULT 0.0, -- saldo ditahan escrow
+  username              TEXT NOT NULL UNIQUE,
+  alamat                TEXT,
+  no_telpon             TEXT,               -- TEXT, bukan INT (leading zero)
+  email                 TEXT NOT NULL UNIQUE,
+  auth_id               UUID UNIQUE,        -- FK ke auth.users.id
+  fcm_token             TEXT                -- untuk Firebase Cloud Messaging
+);
+
+-- Saldo tersedia untuk user = total_balance - held_balance
+```
 
 ### 3.3 `skills_master`
 
@@ -386,20 +401,33 @@ EXECUTE FUNCTION update_user_rating();
 
 ### 3.11 `transactions`
 
+> ✅ **Skema sudah difinalisasi** pada migrasi `20260805_wallet_schema.sql`. Kolom `sub_type` (enum `TransactionSubType`) adalah sumber kebenaran jenis transaksi — **jangan** andalkan field `deskripsi` untuk menentukan jenis mutasi saldo.
+
 ```sql
-CREATE TABLE transactions (
-  id_transactions   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_user           UUID NOT NULL REFERENCES "user"(id_user) ON DELETE CASCADE,
-  nominal           DECIMAL(12,2) NOT NULL,   -- positif = masuk, negatif = keluar
-  tipe_transaksi     TEXT NOT NULL,            -- belum difinalisasi, lihat catatan di bawah
-  deskripsi         TEXT,
+CREATE TABLE "Transactions" (
+  id_transactions   TEXT PRIMARY KEY,
+  id_user           TEXT NOT NULL REFERENCES "User"(id_user) ON DELETE CASCADE,
+  nominal           DOUBLE PRECISION NOT NULL,  -- selalu positif; arah ditentukan tipe_transaksi
+  tipe_transaksi    "TransactionType" NOT NULL,  -- MASUK | KELUAR
+  sub_type          "TransactionSubType" NOT NULL, -- sumber kebenaran jenis transaksi
+  deskripsi         TEXT,                          -- label human-readable untuk UI
   created_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_transactions_user ON transactions (id_user, created_at DESC);
+CREATE INDEX idx_transactions_user ON "Transactions" (id_user, created_at DESC);
 ```
 
-> **Belum difinalisasi**: nilai valid untuk `tipe_transaksi`. Usulan mengikuti pola sebelumnya: `'topup'`, `'earning'`, `'payment'`, `'withdrawal'` — perlu dikonfirmasi tim lalu ditambahkan `CHECK` constraint.
+**Mapping `sub_type` → `tipe_transaksi`:**
+
+| `sub_type`       | `tipe_transaksi` | Trigger                                      | Efek pada saldo requester          | Efek pada saldo worker    |
+| ---------------- | ---------------- | -------------------------------------------- | ---------------------------------- | ------------------------- |
+| `topup`          | `MASUK`          | User klik Top Up (mock)                      | `total_balance` ↑                  | —                         |
+| `hold`           | `KELUAR`         | Requester posting task                       | `held_balance` ↑ (total tetap)     | —                         |
+| `task_payment`   | `KELUAR`         | Requester confirm task selesai (release escrow) | `total_balance` ↓ + `held_balance` ↓ | —                      |
+| `task_earning`   | `MASUK`          | Worker terima kompensasi (saat task selesai) | —                                  | `total_balance` ↑         |
+| `refund`         | `MASUK`          | Requester cancel task (escrow dilepas)       | `held_balance` ↓ (total tetap)     | —                         |
+
+> **Atomicity**: Setiap operasi yang melibatkan perubahan saldo dilakukan dalam satu `prisma.$transaction([...])`. Lihat `src/services/wallet.service.ts` untuk implementasi lengkap.
 
 ### 3.12 `notifications`
 
@@ -655,12 +683,28 @@ CREATE POLICY "Only participants can view messages"
 
 - ERD ini adalah **dasar awalan resmi** tim (dari `Itechno_drawio.html`) — bisa berubah seiring development, tapi jadi acuan sampai ada revisi baru.
 - Nama tabel/kolom pakai gaya campuran (`id_tasks`, `judul_tugas`, dst) sesuai ERD asli — **jangan** diganti ke gaya `snake_case` generik (`task_id`, `title`) tanpa persetujuan tim, supaya konsisten dengan diagram.
-- `"user"` adalah reserved word di PostgreSQL — selalu quote sebagai `"user"` di SQL mentah; di Supabase client biasanya aman karena lewat query builder.
-- Hal yang **masih belum difinalisasi**, jangan diasumsikan sendiri oleh AI agent — tanyakan/tunggu keputusan tim:
-  1. Apakah `user.password` dikelola sendiri atau pakai Supabase Auth (`auth.users`) — mempengaruhi apakah tabel `user` perlu kolom `password`.
-  2. Nilai valid `transactions.tipe_transaksi` — belum ada `CHECK` constraint.
-  3. **Status fitur chat** (`chat_room`, `message`) — ERD sudah mencantumkannya tapi `features.md` masih bilang chat di luar scope MVP. Jangan implementasikan endpoint/UI chat sampai ini eksplisit dikonfirmasi tim dan `features.md` diupdate.
-  4. **ORM**: ada versi `database.md` lain (dari rekan tim) yang menyebut Prisma ORM v7 + `@prisma/adapter-pg` dan bridging `auth_id`. Ini **belum dipakai** di skema ini karena (a) konflik dengan `techstack.md` yang menetapkan `@supabase/supabase-js` + `@supabase/ssr` langsung tanpa ORM, dan (b) penamaan kolom Prisma (PascalCase model, `authId`) tidak cocok dengan ERD yang pakai snake_case (`id_user`, dst). Perlu keputusan tim: pindah ke Prisma (dan sesuaikan seluruh dokumentasi lain), atau tetap Supabase client langsung.
+- `"User"` adalah nama tabel yang di-quote (PascalCase sesuai Prisma model). Di SQL mentah selalu tulis `"User"` — bukan `user` (reserved word PostgreSQL).
 - Lokasi disimpan sebagai `GEOGRAPHY(POINT, 4326)` — parameter `(longitude, latitude)`, perhatikan urutan.
 - Gunakan `.rpc()` di Supabase client untuk geo-query, karena PostGIS function tidak bisa langsung dari query builder biasa.
 - Setiap perubahan skema didokumentasikan di `supabase/migrations/`.
+
+### Keputusan yang Sudah Difinalisasi (tidak perlu tanya lagi)
+
+| Topik | Keputusan |
+| --- | --- |
+| Auth | Supabase Auth. `password` tidak ada di tabel `User` — dikelola `auth.users`. |
+| ORM | **Prisma ORM v7** (`@prisma/adapter-pg`) dipakai untuk semua query DB. Supabase client (`@supabase/ssr`) dipakai hanya untuk Auth & Realtime. |
+| `transactions.sub_type` | Enum `TransactionSubType` (`topup`, `task_earning`, `task_payment`, `refund`, `hold`) — sudah di DB. |
+| Escrow wallet | `held_balance` eksplisit di `User`. Saldo tersedia = `total_balance - held_balance`. Diupdate atomik via `prisma.$transaction`. |
+
+### Hal yang Masih Terbuka
+
+- **Status fitur chat** (`chat_room`, `message`) — ERD sudah mencantumkannya tapi `features.md` masih menyatakan chat di luar scope MVP. Jangan implementasikan endpoint/UI chat sampai dikonfirmasi tim dan `features.md` diupdate.
+
+### Referensi Implementasi Wallet
+
+- Service layer: `src/services/wallet.service.ts`
+- API routes: `src/app/api/points/{balance,history,topup}/route.ts`
+- React hook: `src/hooks/useWallet.ts`
+- Halaman: `src/app/(main)/wallet/page.tsx`
+- Migration SQL: `supabase/migrations/20260805_wallet_schema.sql`
