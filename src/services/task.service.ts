@@ -408,6 +408,29 @@ export const taskService = {
         })
       } catch (_) { /* non-blocking */ }
 
+      // Notifikasi ke SEMUA pelamar lain yang otomatis di-reject (Bug Fix #2)
+      try {
+        const otherApplicants = await prisma.taskApplicants.findMany({
+          where: {
+            id_tasks: applicant.id_tasks,
+            id_task_applicants: { not: applicantId },
+          },
+          select: { id_worker: true },
+        })
+
+        await Promise.allSettled(
+          otherApplicants.map((other) =>
+            notificationService.createNotification({
+              userId: other.id_worker,
+              type: 'reject',
+              title: 'Lamaran Belum Terpilih 😔',
+              message: `Maaf, posisi untuk task "${applicant.task.judul_tugas}" sudah terisi. Jangan menyerah, coba task lain!`,
+              data: { task_id: applicant.id_tasks },
+            })
+          )
+        )
+      } catch (_) { /* non-blocking */ }
+
     } else {
       // Reject
       const rejectedStatusId = await getApplicantStatusId('rejected')
@@ -415,6 +438,17 @@ export const taskService = {
         where: { id_task_applicants: applicantId },
         data: { id_status_task_applicants: rejectedStatusId },
       })
+
+      // Notifikasi ke worker yang ditolak
+      try {
+        await notificationService.createNotification({
+          userId: applicant.id_worker,
+          type: 'reject',
+          title: 'Lamaran Ditolak 😔',
+          message: `Maaf, lamaranmu untuk task "${applicant.task.judul_tugas}" belum terpilih. Jangan menyerah dan coba task lain!`,
+          data: { task_id: applicant.id_tasks },
+        })
+      } catch (_) { /* non-blocking */ }
     }
 
     return { success: true }
@@ -445,6 +479,15 @@ export const taskService = {
     // Validasi transisi status
     if (newStatus === 'in_progress' && currentStatus === 'accepted' && isWorker) {
       // Worker mulai kerjakan
+      try {
+        await notificationService.createNotification({
+          userId: task.id_requester,
+          type: 'progress',
+          title: 'Task Dikerjakan 🏃‍♂️',
+          message: `${acceptedWorker?.worker.nama_lengkap ?? 'Worker'} telah mulai mengerjakan task "${task.judul_tugas}".`,
+          data: { task_id: taskId },
+        })
+      } catch (_) { /* non-blocking */ }
     } else if (newStatus === 'completed' && (currentStatus === 'accepted' || currentStatus === 'in_progress') && isRequester) {
       // Requester konfirmasi selesai
     } else if (newStatus === 'cancelled' && (currentStatus === 'open' || currentStatus === 'accepted') && isRequester) {
@@ -483,6 +526,17 @@ export const taskService = {
             data: { task_id: taskId },
           })
         } catch (_) { /* non-blocking */ }
+
+        // Notifikasi escrow release ke requester
+        try {
+          await notificationService.createNotification({
+            userId: task.id_requester,
+            type: 'escrow',
+            title: 'Dana Escrow Dicairkan 💸',
+            message: `${task.kompensasi.toLocaleString('id-ID')} poin telah dicairkan kepada ${acceptedWorker.worker.nama_lengkap} untuk task "${task.judul_tugas}".`,
+            data: { task_id: taskId },
+          })
+        } catch (_) { /* non-blocking */ }
       }
     } else if (newStatus === 'cancelled') {
       // Refund kompensasi ke requester
@@ -509,6 +563,19 @@ export const taskService = {
           data: { task_id: taskId },
         })
       } catch (_) { /* non-blocking */ }
+
+      // Notifikasi ke worker yang sudah diterima (jika ada)
+      if (acceptedWorker) {
+        try {
+          await notificationService.createNotification({
+            userId: acceptedWorker.id_worker,
+            type: 'cancel',
+            title: 'Task Dibatalkan ❌',
+            message: `Maaf, task "${task.judul_tugas}" telah dibatalkan oleh requester.`,
+            data: { task_id: taskId },
+          })
+        } catch (_) { /* non-blocking */ }
+      }
     }
 
     await prisma.task.update({

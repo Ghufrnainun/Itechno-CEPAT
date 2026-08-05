@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { registerSchema, formatZodErrors } from '@/lib/validations'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
+import { notificationService } from '@/services/notification.service'
 
 export async function POST(request: NextRequest) {
   try {
@@ -113,6 +114,17 @@ export async function POST(request: NextRequest) {
         role: { select: { nama_role: true } },
       },
     })
+
+    // --- 4. Kirim notifikasi selamat datang (fire-and-forget) ---
+    try {
+      await notificationService.createNotification({
+        userId: newUser.id_user,
+        type: 'welcome',
+        title: 'Selamat Datang di CEPAT! 👋',
+        message: `Hai ${nama_lengkap}! Akun kamu berhasil dibuat. Mulai jelajahi tugas mikro di sekitarmu atau buat tugas pertamamu sekarang!`,
+        data: { onboarding: true },
+      })
+    } catch (_) { /* non-blocking */ }
 
     return NextResponse.json(
       {

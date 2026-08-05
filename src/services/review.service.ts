@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { CreateReviewInput } from '@/lib/validations/review.schema'
+import { notificationService } from '@/services/notification.service'
 
 export interface CreateReviewParams extends CreateReviewInput {
   rater_id: string
@@ -94,6 +95,32 @@ export const reviewService = {
           rating_avg: newAvg,
         },
       })
+
+      // Cek milestone rating
+      const milestones = [4.0, 4.5, 4.9]
+      const previousAvg = await tx.reviews.aggregate({
+        where: {
+          id_ratee: reviewee_id,
+          id_reviews: { not: review.id_reviews },
+        },
+        _avg: { rating: true },
+      })
+      const prevAvg = previousAvg._avg.rating ?? 0
+
+      for (const milestone of milestones) {
+        if (newAvg >= milestone && prevAvg < milestone) {
+          try {
+            await notificationService.createNotification({
+              userId: reviewee_id,
+              type: 'milestone',
+              title: 'Rating Naik! 🏆',
+              message: `Selamat! Rating rata-rata kamu naik menjadi ${newAvg.toFixed(1)} ⭐. Terus pertahankan kualitasmu!`,
+              data: { new_rating: newAvg, milestone },
+            })
+          } catch (_) { /* non-blocking */ }
+          break
+        }
+      }
 
       return review
     })

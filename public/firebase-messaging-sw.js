@@ -2,15 +2,29 @@
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
 
-// Inisialisasi Firebase Compat SDK di Service Worker
-firebase.initializeApp({
+// Parse config dari parameter URL registrasi
+const urlParams = new URLSearchParams(location.search);
+const configParam = urlParams.get('firebaseConfig');
+
+let firebaseConfig = {
   apiKey: "placeholder",
   authDomain: "placeholder",
   projectId: "placeholder",
   storageBucket: "placeholder",
   messagingSenderId: "placeholder",
   appId: "placeholder"
-});
+};
+
+if (configParam) {
+  try {
+    firebaseConfig = JSON.parse(decodeURIComponent(configParam));
+  } catch (e) {
+    console.error("[firebase-messaging-sw.js] Failed to parse firebase config", e);
+  }
+}
+
+// Inisialisasi Firebase Compat SDK di Service Worker
+firebase.initializeApp(firebaseConfig);
 
 const messaging = firebase.messaging();
 

@@ -29,7 +29,48 @@ interface RoleContextType {
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
 function FcmBridge() {
-  useFCM();
+  const { permission, requestPermission } = useFCM();
+  const [dismissed, setDismissed] = useState(false);
+  
+  useEffect(() => {
+    if (sessionStorage.getItem('fcm_prompt_dismissed')) {
+      setDismissed(true);
+    }
+  }, []);
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    sessionStorage.setItem('fcm_prompt_dismissed', 'true');
+  };
+  
+  if (permission === 'default' && !dismissed) {
+    return (
+      <div className="fixed bottom-[80px] lg:bottom-6 left-4 right-4 lg:left-auto lg:right-6 lg:w-96 bg-surface border border-outline shadow-lg rounded-xl p-4 z-50 flex flex-col gap-3 animate-in slide-in-from-bottom-5">
+        <div>
+          <h4 className="font-bold text-on-surface flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">notifications_active</span>
+            Aktifkan Notifikasi
+          </h4>
+          <p className="text-sm text-on-surface-variant mt-1">Dapatkan info instan saat lamaranmu diterima atau ada tugas baru di sekitarmu.</p>
+        </div>
+        <div className="flex justify-end gap-3 mt-1">
+          <button 
+            onClick={handleDismiss}
+            className="text-on-surface-variant px-3 py-2 text-sm font-medium hover:text-on-surface transition-colors"
+          >
+            Nanti
+          </button>
+          <button 
+            onClick={requestPermission}
+            className="bg-primary text-on-primary px-4 py-2 rounded-full font-bold text-sm hover:bg-opacity-90 transition-all shadow-sm"
+          >
+            Izinkan
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
   return null;
 }
 
