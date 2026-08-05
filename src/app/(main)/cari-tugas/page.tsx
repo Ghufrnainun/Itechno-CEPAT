@@ -117,11 +117,11 @@ export default function CariTugasPage() {
         </div>
       </header>
 
-      {/* Main Container - Relative for Absolute Children */}
-      <div className="flex-1 w-full h-full relative overflow-hidden bg-surface-container-low">
+      {/* Main Container */}
+      <div className="flex-1 w-full h-full flex flex-col md:flex-row relative overflow-hidden bg-surface-container-low">
         
-        {/* Background Map Layer */}
-        <div className="absolute inset-0 z-0">
+        {/* Background Map Layer (Top on Mobile, Right on Desktop) */}
+        <div className="h-[45vh] md:h-full md:flex-1 relative z-0 order-1 md:order-2">
           <MapPickerWrapper
             center={{ latitude: coords.latitude, longitude: coords.longitude }}
             tasks={tasks}
@@ -132,14 +132,14 @@ export default function CariTugasPage() {
               if (clicked) setSelectedTask(clicked);
             }}
           />
-          <div className="absolute top-4 left-[370px] z-10 bg-white/95 border border-outline-variant shadow rounded px-md py-xs font-label-sm text-label-sm flex items-center gap-xs">
+          <div className="absolute top-4 left-4 md:left-6 z-10 bg-white/95 border border-outline-variant shadow rounded px-md py-xs font-label-sm text-label-sm flex items-center gap-xs">
             <span className="pulse-dot w-2.5 h-2.5 rounded-full bg-secondary-container inline-block"></span>
             Peta Radar Aktif
           </div>
         </div>
 
-        {/* Left Sidebar - Task List */}
-        <aside className="absolute top-0 bottom-0 left-0 w-[350px] bg-white/95 backdrop-blur-md border-r border-outline-variant shadow-lg z-10 flex flex-col animate-slide-in">
+        {/* Left Sidebar - Task List (Bottom on Mobile, Left on Desktop) */}
+        <aside className="flex-1 md:w-[350px] bg-white/95 backdrop-blur-md border-t md:border-t-0 md:border-r border-outline-variant shadow-lg z-10 flex flex-col order-2 md:order-1 animate-slide-in">
           <div className="p-md border-b border-outline-variant/50 bg-surface">
             <h3 className="font-headline-sm text-headline-sm text-on-surface flex items-center justify-between">
               Tugas Ditemukan

@@ -38,39 +38,39 @@ export function BottomNav({ role }: BottomNavProps) {
 
       {role === "requester" ? (
         <Link
-          href="/task/new"
-          aria-label="Post Tugas Baru"
+          href="/tugas"
+          aria-label="Kelola Tugas"
           className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-xl text-[11px] font-medium transition-all ${
-            pathname === "/task/new"
+            pathname === "/tugas"
               ? "text-primary font-bold scale-105"
               : "text-on-surface-variant hover:text-on-surface"
           }`}
         >
           <span
             className="material-symbols-outlined text-[24px]"
-            style={{ fontVariationSettings: pathname === "/task/new" ? "'FILL' 1" : "'FILL' 0" }}
+            style={{ fontVariationSettings: pathname === "/tugas" ? "'FILL' 1" : "'FILL' 0" }}
           >
-            add_box
+            assignment
           </span>
-          Post
+          Kelola
         </Link>
       ) : (
         <Link
-          href="/feed?tab=explore"
-          aria-label="Cari Tugas"
+          href="/feed"
+          aria-label="Feeds"
           className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-xl text-[11px] font-medium transition-all ${
-            pathname.includes("explore")
+            pathname === "/feed"
               ? "text-primary font-bold scale-105"
               : "text-on-surface-variant hover:text-on-surface"
           }`}
         >
           <span
             className="material-symbols-outlined text-[24px]"
-            style={{ fontVariationSettings: pathname.includes("explore") ? "'FILL' 1" : "'FILL' 0" }}
+            style={{ fontVariationSettings: pathname === "/feed" ? "'FILL' 1" : "'FILL' 0" }}
           >
-            explore
+            list_alt
           </span>
-          Cari
+          Feeds
         </Link>
       )}
 
@@ -98,21 +98,21 @@ export function BottomNav({ role }: BottomNavProps) {
       </Link>
 
       <Link
-        href="/wallet"
-        aria-label="Dompet Poin"
+        href="/chat"
+        aria-label="Chat"
         className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-xl text-[11px] font-medium transition-all ${
-          pathname === "/wallet"
+          pathname === "/chat"
             ? "text-primary font-bold scale-105"
             : "text-on-surface-variant hover:text-on-surface"
         }`}
       >
         <span
           className="material-symbols-outlined text-[24px]"
-          style={{ fontVariationSettings: pathname === "/wallet" ? "'FILL' 1" : "'FILL' 0" }}
+          style={{ fontVariationSettings: pathname === "/chat" ? "'FILL' 1" : "'FILL' 0" }}
         >
-          account_balance_wallet
+          chat
         </span>
-        Dompet
+        Chat
       </Link>
 
       <Link

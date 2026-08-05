@@ -128,13 +128,13 @@ export default function UserProfilePage() {
             <p className="font-body-sm text-body-sm text-on-surface-variant">{univ}</p>
           </div>
         </div>
-        <div className="flex items-center gap-md">
+        <div className="flex items-center gap-xs md:gap-md flex-wrap">
           <div className="flex items-center gap-xs text-amber-500 font-bold font-mono text-sm">
             <RatingStars rating={rating} size="sm" showScore={true} />
           </div>
-          <span className="font-label-sm text-label-sm text-on-surface-variant">•</span>
+          <span className="font-label-sm text-label-sm text-on-surface-variant hidden md:inline">•</span>
           <span className="font-label-sm text-label-sm text-on-surface-variant">{completedCount} tugas selesai</span>
-          <Button variant="secondary" className="py-2 ml-sm" onClick={() => router.push("/wallet")}>
+          <Button variant="secondary" className="py-2 ml-auto md:ml-sm" onClick={() => router.push("/wallet")}>
             <span className="material-symbols-outlined text-[18px]">wallet</span> Dompet
           </Button>
         </div>

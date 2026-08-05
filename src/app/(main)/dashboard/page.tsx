@@ -12,7 +12,7 @@ import { formatCurrency } from "@/lib/utils/format";
 import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
 
 export default function DashboardPage() {
-  const { role, user } = useCurrentRole();
+  const { role, user, toggleRole } = useCurrentRole();
   const { coords } = useGeolocation();
 
   const [tasks, setTasks] = useState<any[]>([]); // Lightweight tasks for map
@@ -226,12 +226,12 @@ export default function DashboardPage() {
             </div>
           </motion.div>
 
-          {/* Card 4 — Dana Ditahan / Escrow (col-span-12 lg:col-span-7) */}
+          {/* Card 4 — Dana Ditahan / Escrow (col-span-12) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.4 }}
-            className="col-span-12 lg:col-span-7 p-1 md:p-1.5 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs"
+            className="col-span-12 p-1 md:p-1.5 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs"
           >
             <div className="h-full rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -259,6 +259,73 @@ export default function DashboardPage() {
               </div>
             </div>
           </motion.div>
+        </section>
+
+        {/* ───────────── ROLE SWITCHER (MOBILE ONLY) ───────────── */}
+        <section className="lg:hidden">
+          <div className="bg-surface-container-low border border-outline-variant/60 rounded-xl p-1 flex relative shadow-xs">
+            <div
+              className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-primary rounded-lg transition-transform duration-300 ease-out shadow-sm"
+              style={{
+                transform: role === "worker" ? "translateX(0)" : "translateX(calc(100% + 8px))",
+              }}
+            />
+            <button
+              onClick={() => role !== "worker" && toggleRole()}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 text-[13px] font-bold z-10 transition-colors ${
+                role === "worker" ? "text-on-primary" : "text-on-surface hover:bg-black/5"
+              } rounded-lg`}
+            >
+              <span className="material-symbols-outlined text-[18px]">handyman</span>
+              Pekerja
+            </button>
+            <button
+              onClick={() => role !== "requester" && toggleRole()}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 text-[13px] font-bold z-10 transition-colors ${
+                role === "requester" ? "text-on-primary" : "text-on-surface hover:bg-black/5"
+              } rounded-lg`}
+            >
+              <span className="material-symbols-outlined text-[18px]">work</span>
+              Pemberi
+            </button>
+          </div>
+        </section>
+
+        {/* ───────────── QUICK LINKS (MOBILE ONLY) ───────────── */}
+        <section className="lg:hidden grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {role === "requester" ? (
+            <Link href="/task/new" className="bg-white border border-outline-variant/60 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <span className="material-symbols-outlined text-[20px]">add_box</span>
+              </div>
+              <span className="text-[11px] font-bold text-on-surface text-center leading-tight">Post Tugas</span>
+            </Link>
+          ) : (
+            <Link href="/cari-tugas" className="bg-white border border-outline-variant/60 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <span className="material-symbols-outlined text-[20px]">explore</span>
+              </div>
+              <span className="text-[11px] font-bold text-on-surface text-center leading-tight">Cari Tugas</span>
+            </Link>
+          )}
+          <Link href="/history/riwayat" className="bg-white border border-outline-variant/60 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <span className="material-symbols-outlined text-[20px]">history</span>
+            </div>
+            <span className="text-[11px] font-bold text-on-surface text-center leading-tight">Riwayat</span>
+          </Link>
+          <Link href="/wallet" className="bg-white border border-outline-variant/60 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <span className="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+            </div>
+            <span className="text-[11px] font-bold text-on-surface text-center leading-tight">Dompet</span>
+          </Link>
+          <Link href="/bantuan" className="bg-white border border-outline-variant/60 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <span className="material-symbols-outlined text-[20px]">help</span>
+            </div>
+            <span className="text-[11px] font-bold text-on-surface text-center leading-tight">Bantuan</span>
+          </Link>
         </section>
 
         {/* ───────────── FEATURED TASK + PROMOTED MAP ───────────── */}
