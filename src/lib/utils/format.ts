@@ -5,11 +5,12 @@ export function formatPoints(points: number): string {
   }).format(points) + " pts";
 }
 
-export function formatCurrency(amount: number): string {
+export function formatCurrency(amount: number | null | undefined): string {
+  const num = typeof amount === "number" && !isNaN(amount) ? amount : 0;
   return "Rp" + new Intl.NumberFormat("id-ID", {
     style: "decimal",
     minimumFractionDigits: 0,
-  }).format(amount);
+  }).format(num);
 }
 
 export function formatDistance(distanceKm: number): string {
