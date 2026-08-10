@@ -45,22 +45,22 @@ export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspect
           <div className="flex items-center justify-between mb-md">
             <div className="flex items-center gap-sm">
               <div className="w-10 h-10 min-w-[40px] rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold shrink-0">
-                {task.description.charAt(0)}
+                {((task as any).requester_name || "Pemberi Kerja").charAt(0)}
               </div>
               <div>
                 <div className="flex items-center gap-xs">
                   <span className="font-label-md text-label-md font-semibold text-on-surface">
-                    {task.description.split("•")[0]?.trim() || "Pemberi Kerja"}
+                    {(task as any).requester_name || "Pemberi Kerja"}
                   </span>
                   <span className="material-symbols-outlined text-[16px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">verified</span>
                 </div>
                 <div className="flex items-center gap-xs text-outline font-body-sm text-body-sm">
                   <span className="flex items-center gap-[2px]">
                     <span className="material-symbols-outlined text-[14px] text-tertiary-container" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">star</span> 
-                    4.8 Rating
+                    {((task as any).requester_rating ?? 4.8).toFixed(1)} Rating
                   </span>
                   <span>•</span>
-                  <span>12 Tugas Selesai</span>
+                  <span>{(task as any).requester_completed_tasks ?? 0} Tugas Selesai</span>
                 </div>
               </div>
             </div>
@@ -98,7 +98,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspect
         <div className="mb-lg">
           <h3 className="font-headline-sm text-headline-sm text-on-surface mb-xs">Deskripsi</h3>
           <p className="font-body-sm text-body-sm text-on-surface-variant whitespace-pre-wrap">
-            {task.description.split("•")[1]?.trim() || task.description}
+            {task.description}
           </p>
         </div>
 

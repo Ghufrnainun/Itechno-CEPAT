@@ -60,6 +60,8 @@ export const taskService = {
       longitude,
       requesterId,
       kategori,
+      batas_pelamar,
+      maksimal_apply,
     } = params;
 
     const openStatusId = await getStatusId('open');
@@ -90,7 +92,8 @@ export const taskService = {
       INSERT INTO "Task" (
         id_tasks, id_requester, id_status_task,
         judul_tugas, deskripsi_tugas, estimasi_waktu, kompensasi,
-        lokasi_geo, created_at, id_category
+        lokasi_geo, created_at, id_category,
+        batas_pelamar, maksimal_apply
       ) VALUES (
         gen_random_uuid(),
         ${requesterId},
@@ -101,7 +104,9 @@ export const taskService = {
         ${kompensasi},
         ST_MakePoint(${longitude}, ${latitude})::geography,
         NOW(),
-        ${categoryId}
+        ${categoryId},
+        ${batas_pelamar ?? 0},
+        ${maksimal_apply ?? 1}
       )
       RETURNING id_tasks
     `;
@@ -322,10 +327,14 @@ export const taskService = {
       id_requester: task.id_requester,
       requester: task.requester,
       requirements: task.requirements.map((r) => r.skills_master.nama_skill),
+      batas_pelamar: task.batas_pelamar,
+      maksimal_apply: task.maksimal_apply,
       applicants: task.applicants.map((a) => ({
         id_task_applicants: a.id_task_applicants,
         id_worker: a.id_worker,
         pesan: a.pesan,
+        alasan_penolakan: a.alasan_penolakan,
+        apply_count: a.apply_count,
         status: a.status_applicant.nama_status.toLowerCase(),
         applied_at: a.applied_at,
         worker: a.worker,
@@ -338,6 +347,7 @@ export const taskService = {
         rater: r.rater,
       })),
       has_applied: hasApplied,
+      my_application: hasApplied && viewerUserId ? task.applicants.find(a => a.id_worker === viewerUserId) : null,
     };
   },
 
@@ -351,6 +361,7 @@ export const taskService = {
       include: {
         status_task: true,
         requester: { select: { id_user: true, nama_lengkap: true } },
+        _count: { select: { applicants: true } }
       },
     });
     if (!task) throw new Error('Task tidak ditemukan.');
@@ -359,22 +370,62 @@ export const taskService = {
     if (task.id_requester === workerId)
       throw new Error('Anda tidak bisa melamar task milik sendiri.');
 
-    // Cek duplikasi
-    const existing = await prisma.taskApplicants.findFirst({
-      where: { id_tasks: taskId, id_worker: workerId },
-    });
-    if (existing) throw new Error('Anda sudah melamar task ini sebelumnya.');
+    // Validasi batas_pelamar: hanya hitung pelamar aktif (pending/accepted), bukan yang ditolak
+    if (task.batas_pelamar && task.batas_pelamar > 0) {
+      const rejectedStatusId = await getApplicantStatusId('rejected');
+      const activeApplicantCount = await prisma.taskApplicants.count({
+        where: {
+          id_tasks: taskId,
+          NOT: { id_status_task_applicants: rejectedStatusId }
+        }
+      });
+      if (activeApplicantCount >= task.batas_pelamar) {
+        throw new Error('Batas maksimal pelamar untuk task ini telah tercapai.');
+      }
+    }
 
     const pendingStatusId = await getApplicantStatusId('pending');
 
-    const applicant = await prisma.taskApplicants.create({
-      data: {
-        id_tasks: taskId,
-        id_worker: workerId,
-        id_status_task_applicants: pendingStatusId,
-        pesan: pesan ?? null,
-      },
+    // Cek duplikasi / status lamaran sebelumnya
+    const existing = await prisma.taskApplicants.findFirst({
+      where: { id_tasks: taskId, id_worker: workerId },
+      include: { status_applicant: true }
     });
+
+    let applicant;
+
+    if (existing) {
+      if (existing.status_applicant.nama_status.toLowerCase() !== 'rejected') {
+         throw new Error('Anda sudah memiliki lamaran aktif untuk task ini.');
+      }
+      
+      const maxApply = task.maksimal_apply ?? 1;
+      if (existing.apply_count >= maxApply) {
+         throw new Error(`Anda telah mencapai batas maksimal percobaan melamar (${maxApply} kali).`);
+      }
+
+      // Update existing application
+      applicant = await prisma.taskApplicants.update({
+        where: { id_task_applicants: existing.id_task_applicants },
+        data: {
+          id_status_task_applicants: pendingStatusId,
+          pesan: pesan ?? null,
+          alasan_penolakan: null,
+          apply_count: { increment: 1 },
+          applied_at: new Date()
+        }
+      });
+    } else {
+      // Create new application
+      applicant = await prisma.taskApplicants.create({
+        data: {
+          id_tasks: taskId,
+          id_worker: workerId,
+          id_status_task_applicants: pendingStatusId,
+          pesan: pesan ?? null,
+        },
+      });
+    }
 
     // Notifikasi ke Requester
     const workerData = await prisma.user.findUnique({
@@ -433,6 +484,7 @@ export const taskService = {
     applicantId: string,
     requesterId: string,
     action: 'accept' | 'reject',
+    options?: { alasan?: string }
   ) {
     const applicant = await prisma.taskApplicants.findUnique({
       where: { id_task_applicants: applicantId },
@@ -462,23 +514,35 @@ export const taskService = {
           data: { id_status_task_applicants: acceptedStatusId },
         });
 
-        // Reject semua applicant lain
-        await tx.taskApplicants.updateMany({
+        // Cek berapa applicant yang sudah diterima
+        const acceptedCount = await tx.taskApplicants.count({
           where: {
             id_tasks: applicant.id_tasks,
-            id_task_applicants: { not: applicantId },
-          },
-          data: { id_status_task_applicants: rejectedStatusId },
+            id_status_task_applicants: acceptedStatusId
+          }
         });
 
-        // Update task status ke 'accepted'
-        await tx.task.update({
-          where: { id_tasks: applicant.id_tasks },
-          data: {
-            id_status_task: taskAcceptedStatusId,
-            accepted_at: new Date(),
-          },
-        });
+        const batasPelamar = applicant.task.batas_pelamar && applicant.task.batas_pelamar > 0 ? applicant.task.batas_pelamar : 1;
+
+        if (acceptedCount >= batasPelamar) {
+          // Reject semua applicant lain
+          await tx.taskApplicants.updateMany({
+            where: {
+              id_tasks: applicant.id_tasks,
+              id_status_task_applicants: { not: acceptedStatusId },
+            },
+            data: { id_status_task_applicants: rejectedStatusId },
+          });
+
+          // Update task status ke 'accepted'
+          await tx.task.update({
+            where: { id_tasks: applicant.id_tasks },
+            data: {
+              id_status_task: taskAcceptedStatusId,
+              accepted_at: new Date(),
+            },
+          });
+        }
       });
 
       // Notifikasi ke worker yang diterima
@@ -521,9 +585,14 @@ export const taskService = {
     } else {
       // Reject
       const rejectedStatusId = await getApplicantStatusId('rejected');
+      const actionAlasan = (options as { alasan?: string })?.alasan; // Extract optional fourth argument if any
+      
       await prisma.taskApplicants.update({
         where: { id_task_applicants: applicantId },
-        data: { id_status_task_applicants: rejectedStatusId },
+        data: { 
+          id_status_task_applicants: rejectedStatusId,
+          alasan_penolakan: actionAlasan ?? null
+        },
       });
 
       // Notifikasi ke worker yang ditolak
@@ -532,7 +601,7 @@ export const taskService = {
           userId: applicant.id_worker,
           type: 'reject',
           title: 'Lamaran Ditolak 😔',
-          message: `Maaf, lamaranmu untuk task "${applicant.task.judul_tugas}" belum terpilih. Jangan menyerah dan coba task lain!`,
+          message: `Maaf, lamaranmu untuk task "${applicant.task.judul_tugas}" ditolak.${actionAlasan ? ` Alasan: ${actionAlasan}` : ''}`,
           data: { task_id: applicant.id_tasks },
         });
       } catch (_) {
@@ -621,6 +690,25 @@ export const taskService = {
 
       return { success: true };
     } else if (
+      newStatus === 'confirm_start' &&
+      currentStatus === 'accepted' &&
+      !isWorker && !isRequester
+    ) {
+      throw new Error('Anda tidak memiliki akses untuk mengkonfirmasi task ini.');
+    } else if (
+      newStatus === 'confirm_start' &&
+      currentStatus === 'accepted' &&
+      (isWorker || isRequester)
+    ) {
+      // Sudah pernah konfirmasi
+      if (isWorker && task.worker_started) {
+        throw new Error('ALREADY_CONFIRMED');
+      }
+      if (isRequester && task.requester_started) {
+        throw new Error('ALREADY_CONFIRMED');
+      }
+      throw new Error('Konfirmasi tidak dapat diproses saat ini.');
+    } else if (
       newStatus === 'completed' &&
       (currentStatus === 'accepted' || currentStatus === 'in_progress') &&
       isRequester
@@ -643,59 +731,69 @@ export const taskService = {
     if (newStatus === 'completed') {
       updateData.completed_at = new Date();
 
-      // Release escrow ke worker: kurangi total & held requester, tambah total worker
-      if (acceptedWorker) {
-        await prisma.$transaction([
-          // 1. Update Requester
+      // Release escrow ke SEMUA worker yang diterima
+      const acceptedWorkers = task.applicants; // sudah difilter hanya yang accepted di query awal
+      const totalPayout = task.kompensasi * acceptedWorkers.length;
+
+      if (acceptedWorkers.length > 0) {
+        // Kumpulkan semua operasi transaksi
+        const transactionOps: any[] = [
+          // 1. Kurangi saldo requester (total semua worker)
           prisma.user.update({
             where: { id_user: task.id_requester },
             data: {
-              total_balance: { decrement: task.kompensasi },
-              held_balance: { decrement: task.kompensasi },
+              total_balance: { decrement: totalPayout },
+              held_balance: { decrement: totalPayout },
             },
           }),
           // 2. Transaksi KELUAR untuk Requester
           prisma.transactions.create({
             data: {
               id_user: task.id_requester,
-              nominal: task.kompensasi,
+              nominal: totalPayout,
               tipe_transaksi: 'KELUAR',
               sub_type: 'task_payment',
-              deskripsi: `Pembayaran task: ${task.judul_tugas}`,
+              deskripsi: `Pembayaran task: ${task.judul_tugas} (${task.kompensasi.toLocaleString('id-ID')} × ${acceptedWorkers.length} worker)`,
             },
           }),
-          // 3. Update Worker
-          prisma.user.update({
-            where: { id_user: acceptedWorker.id_worker },
-            data: {
-              total_balance: { increment: task.kompensasi },
-              total_completed: { increment: 1 },
-            },
-          }),
-          // 4. Transaksi MASUK untuk Worker
-          prisma.transactions.create({
-            data: {
-              id_user: acceptedWorker.id_worker,
-              nominal: task.kompensasi,
-              tipe_transaksi: 'MASUK',
-              sub_type: 'task_earning',
-              deskripsi: `Kompensasi dari task: ${task.judul_tugas}`,
-            },
-          }),
-        ]);
+        ];
 
-        // Notifikasi ke worker
-        try {
-          await notificationService.createNotification({
-            userId: acceptedWorker.id_worker,
-            type: 'points',
-            title: 'Poin Diterima! 💰',
-            message: `Task "${task.judul_tugas}" selesai. ${task.kompensasi.toLocaleString('id-ID')} poin telah masuk ke saldo kamu.`,
-            data: { task_id: taskId },
-          });
-        } catch (_) {
-          /* non-blocking */
+        // Tambahkan update dan transaksi untuk setiap worker
+        for (const worker of acceptedWorkers) {
+          transactionOps.push(
+            prisma.user.update({
+              where: { id_user: worker.id_worker },
+              data: {
+                total_balance: { increment: task.kompensasi },
+                total_completed: { increment: 1 },
+              },
+            }),
+            prisma.transactions.create({
+              data: {
+                id_user: worker.id_worker,
+                nominal: task.kompensasi,
+                tipe_transaksi: 'MASUK',
+                sub_type: 'task_earning',
+                deskripsi: `Kompensasi dari task: ${task.judul_tugas}`,
+              },
+            }),
+          );
         }
+
+        await prisma.$transaction(transactionOps);
+
+        // Notifikasi ke setiap worker yang diterima
+        await Promise.allSettled(
+          acceptedWorkers.map((worker) =>
+            notificationService.createNotification({
+              userId: worker.id_worker,
+              type: 'points',
+              title: 'Poin Diterima! 💰',
+              message: `Task "${task.judul_tugas}" selesai. ${task.kompensasi.toLocaleString('id-ID')} poin telah masuk ke saldo kamu.`,
+              data: { task_id: taskId },
+            }).catch(() => {})
+          )
+        );
 
         // Notifikasi escrow release ke requester
         try {
@@ -703,7 +801,7 @@ export const taskService = {
             userId: task.id_requester,
             type: 'escrow',
             title: 'Dana Escrow Dicairkan 💸',
-            message: `${task.kompensasi.toLocaleString('id-ID')} poin telah dicairkan kepada ${acceptedWorker.worker.nama_lengkap} untuk task "${task.judul_tugas}".`,
+            message: `${totalPayout.toLocaleString('id-ID')} poin telah dicairkan kepada ${acceptedWorkers.length} pekerja untuk task "${task.judul_tugas}".`,
             data: { task_id: taskId },
           });
         } catch (_) {
@@ -711,16 +809,18 @@ export const taskService = {
         }
       }
     } else if (newStatus === 'cancelled') {
-      // Refund escrow: held_balance turun (escrow dilepas), total_balance tetap
+      // Refund escrow: kembalikan total yang sudah ditahan (kompensasi × batas_pelamar)
+      const jumlahWorkerDibutuhkan = task.batas_pelamar && task.batas_pelamar > 0 ? task.batas_pelamar : 1;
+      const totalRefund = task.kompensasi * jumlahWorkerDibutuhkan;
       await prisma.user.update({
         where: { id_user: task.id_requester },
-        data: { held_balance: { decrement: task.kompensasi } },
+        data: { held_balance: { decrement: totalRefund } },
       });
       // Catat transaksi refund
       await prisma.transactions.create({
         data: {
           id_user: task.id_requester,
-          nominal: task.kompensasi,
+          nominal: totalRefund,
           tipe_transaksi: 'MASUK',
           sub_type: 'refund',
           deskripsi: `Pengembalian dana (refund) dari task dibatalkan: ${task.judul_tugas}`,

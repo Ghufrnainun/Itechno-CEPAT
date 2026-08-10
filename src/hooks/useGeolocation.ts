@@ -17,10 +17,10 @@ export function useGeolocation() {
         } catch (e) {}
       }
     }
-    // Default fallback only if no cache
+    // Default fallback only if no cache (Simpang Lima, Semarang)
     return {
-      latitude: -7.774532,
-      longitude: 110.372134,
+      latitude: -6.990284,
+      longitude: 110.411332,
     };
   });
   

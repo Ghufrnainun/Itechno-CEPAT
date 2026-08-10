@@ -8,6 +8,8 @@ export const createTaskSchema = z.object({
   latitude: z.number().min(-90).max(90, 'Latitude tidak valid.'),
   longitude: z.number().min(-180).max(180, 'Longitude tidak valid.'),
   kategori: z.string().optional(), // untuk task_requirements (nama skill)
+  batas_pelamar: z.number().min(0).optional().default(0),
+  maksimal_apply: z.number().min(1).optional().default(1),
 })
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>
@@ -26,6 +28,7 @@ export type UpdateTaskStatusInput = z.infer<typeof updateTaskStatusSchema>
 
 export const updateApplicantSchema = z.object({
   action: z.enum(['accept', 'reject']),
+  alasan: z.string().max(500, 'Alasan maksimal 500 karakter.').optional(),
 })
 
 export type UpdateApplicantInput = z.infer<typeof updateApplicantSchema>

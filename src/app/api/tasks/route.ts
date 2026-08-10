@@ -63,10 +63,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Cek saldo cukup
-    if (currentUser.total_balance < parsed.data.kompensasi) {
+    // Total escrow = kompensasi × jumlah worker yang dibutuhkan
+    const jumlahWorker = parsed.data.batas_pelamar && parsed.data.batas_pelamar > 0 ? parsed.data.batas_pelamar : 1;
+    const totalEscrow = parsed.data.kompensasi * jumlahWorker;
+
+    // Cek saldo cukup untuk total escrow
+    if (currentUser.total_balance < totalEscrow) {
       return NextResponse.json(
-        { success: false, message: `Saldo tidak mencukupi. Saldo kamu: ${currentUser.total_balance.toLocaleString('id-ID')} poin.` },
+        { success: false, message: `Saldo tidak mencukupi. Dibutuhkan ${totalEscrow.toLocaleString('id-ID')} poin (${parsed.data.kompensasi.toLocaleString('id-ID')} × ${jumlahWorker} worker). Saldo kamu: ${currentUser.total_balance.toLocaleString('id-ID')} poin.` },
         { status: 400 }
       )
     }
@@ -77,18 +81,18 @@ export async function POST(request: NextRequest) {
       requesterId: currentUser.id_user,
     })
 
-    // Hold escrow: total_balance tetap, held_balance naik, saldo tersedia = total - held
+    // Hold escrow: total_balance tetap, held_balance naik sejumlah total escrow
     await prisma.user.update({
       where: { id_user: currentUser.id_user },
-      data: { held_balance: { increment: parsed.data.kompensasi } },
+      data: { held_balance: { increment: totalEscrow } },
     })
     await prisma.transactions.create({
       data: {
         id_user: currentUser.id_user,
-        nominal: parsed.data.kompensasi,
+        nominal: totalEscrow,
         tipe_transaksi: 'KELUAR',
         sub_type: 'hold',
-        deskripsi: `Escrow ditahan: ${parsed.data.judul_tugas}`,
+        deskripsi: `Escrow ditahan: ${parsed.data.judul_tugas} (${parsed.data.kompensasi.toLocaleString('id-ID')} × ${jumlahWorker} worker)`,
       },
     })
 

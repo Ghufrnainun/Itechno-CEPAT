@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/Badge";
 import { EscrowBanner } from "@/components/ui/EscrowBanner";
 import { Modal } from "@/components/ui/Modal";
 import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
+import { useGeolocation } from "@/hooks/useGeolocation";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -18,6 +19,8 @@ interface TaskApplicant {
   id_task_applicants: string;
   id_worker: string;
   pesan: string | null;
+  alasan_penolakan: string | null;
+  apply_count: number;
   status: string;
   applied_at: string;
   worker: {
@@ -37,6 +40,8 @@ interface TaskDetail {
   estimasi_waktu: string | null;
   kompensasi: number;
   status: TaskStatus;
+  batas_pelamar: number | null;
+  maksimal_apply: number | null;
   worker_started: boolean;
   requester_started: boolean;
   created_at: string;
@@ -61,6 +66,7 @@ interface TaskDetail {
     rater: { id_user: string; nama_lengkap: string; avatar_url: string | null };
   }>;
   has_applied: boolean;
+  my_application: any | null;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -69,6 +75,7 @@ export default function TaskDetailPage() {
   const router = useRouter();
   const { id } = useParams();
   const { role } = useCurrentRole();
+  const { coords } = useGeolocation();
   const { showToast } = useToast();
 
   const [task, setTask] = useState<TaskDetail | null>(null);
@@ -76,9 +83,13 @@ export default function TaskDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
   const [applyMessage, setApplyMessage] = useState("");
   const [rating, setRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
+  const [hasConfirmed, setHasConfirmed] = useState(false);
 
   // Fetch task detail dari API
   const fetchTask = useCallback(async () => {
@@ -171,17 +182,26 @@ export default function TaskDetailPage() {
   };
 
   // ── Requester: Reject Applicant ────────────────────────────────────────────
-  const handleRejectApplicant = async (applicantId: string) => {
+  const openRejectModal = (applicantId: string) => {
+    setSelectedApplicantId(applicantId);
+    setRejectReason("");
+    setIsRejectModalOpen(true);
+  };
+
+  const handleRejectApplicantSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedApplicantId) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/tasks/applicants/${applicantId}`, {
+      const res = await fetch(`/api/tasks/applicants/${selectedApplicantId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "reject" }),
+        body: JSON.stringify({ action: "reject", alasan: rejectReason }),
       });
       const data = await res.json();
       if (data.success) {
         showToast("Lamaran ditolak.");
+        setIsRejectModalOpen(false);
         fetchTask();
       } else {
         showToast(data.message || "Gagal menolak pelamar.");
@@ -205,7 +225,10 @@ export default function TaskDetailPage() {
       const data = await res.json();
       if (data.success) {
         showToast("Konfirmasi mulai tugas berhasil dicatat!");
+        setHasConfirmed(true);
         fetchTask();
+      } else if (data.message === 'ALREADY_CONFIRMED') {
+        setHasConfirmed(true);
       } else {
         showToast(data.message || "Gagal mengkonfirmasi mulai tugas.");
       }
@@ -434,7 +457,7 @@ export default function TaskDetailPage() {
                             </p>
                           </div>
                         </div>
-                        <Badge status={app.status === "accepted" ? "accepted" : app.status === "rejected" ? "cancelled" : "open"} />
+                        <Badge status={app.status === "accepted" ? "accepted" : app.status === "rejected" ? "rejected" : "open"} />
                       </div>
 
                       {app.pesan && (
@@ -446,7 +469,7 @@ export default function TaskDetailPage() {
                       {app.status === "pending" && (
                         <div className="flex justify-end gap-sm mt-xs">
                           <Button
-                            onClick={() => handleRejectApplicant(app.id_task_applicants)}
+                            onClick={() => openRejectModal(app.id_task_applicants)}
                             variant="ghost"
                             className="py-1 px-3 text-xs font-bold"
                             disabled={actionLoading}
@@ -505,8 +528,8 @@ export default function TaskDetailPage() {
             <div className="h-[200px] w-full relative">
               <MapPickerWrapper
                 center={{
-                  latitude: task.latitude ?? -7.782865,
-                  longitude: task.longitude ?? 110.367003,
+                  latitude: coords.latitude,
+                  longitude: coords.longitude,
                 }}
                 tasks={taskForMap}
               />
@@ -524,36 +547,66 @@ export default function TaskDetailPage() {
             <div className="flex flex-col gap-sm">
               {taskStatus === "open" && (
                 <>
-                  <Button
-                    onClick={() => setIsApplyModalOpen(true)}
-                    disabled={task.has_applied || actionLoading}
-                    className="w-full py-3"
-                    variant="primary"
-                  >
-                    {task.has_applied ? "Sudah Dilamar" : "Lamar Pekerjaan Ini"}
-                  </Button>
-                  {task.has_applied && (
+                  {task.my_application?.status_applicant?.nama_status?.toLowerCase() === "rejected" && (
+                    <div className="bg-error/10 border border-error/20 p-sm rounded-lg flex flex-col gap-xs mb-sm">
+                      <span className="font-label-md text-error flex items-center gap-xs">
+                        <span className="material-symbols-outlined text-[18px]">cancel</span>
+                        Anda telah ditolak
+                      </span>
+                      {task.my_application.alasan_penolakan && (
+                        <p className="font-body-sm text-on-surface-variant italic">
+                          &quot;{task.my_application.alasan_penolakan}&quot;
+                        </p>
+                      )}
+                      {task.maksimal_apply && (
+                         <p className="font-label-sm text-error/80">
+                           Sisa percobaan: {task.maksimal_apply - task.my_application.apply_count} dari {task.maksimal_apply}
+                         </p>
+                      )}
+                    </div>
+                  )}
+                  {(!task.my_application || task.my_application.status_applicant?.nama_status?.toLowerCase() === "rejected") && (
                     <Button
-                      onClick={handleCancelApplication}
-                      disabled={actionLoading}
-                      className="w-full py-2"
-                      variant="ghost"
+                      onClick={() => setIsApplyModalOpen(true)}
+                      disabled={(task.my_application && task.maksimal_apply && task.my_application.apply_count >= task.maksimal_apply) || actionLoading}
+                      className="w-full py-3"
+                      variant="primary"
                     >
-                      Batalkan Lamaran
+                      {task.my_application ? "Coba Lamar Ulang" : "Lamar Pekerjaan Ini"}
                     </Button>
+                  )}
+                  {task.has_applied && task.my_application?.status_applicant?.nama_status?.toLowerCase() !== "rejected" && (
+                    <>
+                      <Button
+                        disabled
+                        className="w-full py-3"
+                        variant="secondary"
+                      >
+                        Sudah Dilamar
+                      </Button>
+                      <Button
+                        onClick={handleCancelApplication}
+                        disabled={actionLoading}
+                        className="w-full py-2"
+                        variant="ghost"
+                      >
+                        Batalkan Lamaran
+                      </Button>
+                    </>
                   )}
                 </>
               )}
               {taskStatus === "accepted" && (
                 <>
-                  {!task.worker_started ? (
+                  {(hasConfirmed || task.worker_started) ? (
+                    <div className="p-sm text-center border border-primary/30 rounded-lg bg-primary/5 text-primary font-label-sm text-label-sm font-semibold flex items-center justify-center gap-xs">
+                      <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                      Sedang menunggu konfirmasi dari Pemberi Kerja...
+                    </div>
+                  ) : (
                     <Button onClick={handleStartWork} className="w-full py-3" variant="lime" disabled={actionLoading}>
                       Konfirmasi Mulai Kerjakan
                     </Button>
-                  ) : (
-                    <div className="p-sm text-center border border-outline-variant rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
-                      Menunggu konfirmasi mulai dari Requester...
-                    </div>
                   )}
                 </>
               )}
@@ -578,14 +631,15 @@ export default function TaskDetailPage() {
               )}
               {taskStatus === "accepted" && (
                 <>
-                  {!task.requester_started ? (
+                  {(hasConfirmed || task.requester_started) ? (
+                    <div className="p-sm text-center border border-primary/30 rounded-lg bg-primary/5 text-primary font-label-sm text-label-sm font-semibold flex items-center justify-center gap-xs">
+                      <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                      Sedang menunggu konfirmasi dari Pekerja...
+                    </div>
+                  ) : (
                     <Button onClick={handleStartWork} className="w-full py-3" variant="lime" disabled={actionLoading}>
                       Konfirmasi Mulai Pekerjaan
                     </Button>
-                  ) : (
-                    <div className="p-sm text-center border border-outline-variant rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
-                      Menunggu konfirmasi mulai dari Worker...
-                    </div>
                   )}
                 </>
               )}
@@ -648,6 +702,37 @@ export default function TaskDetailPage() {
             </button>
             <Button type="submit" disabled={actionLoading}>
               {actionLoading ? "Mengirim..." : "Kirim Lamaran"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal: Tolak Pelamar */}
+      <Modal isOpen={isRejectModalOpen} onClose={() => setIsRejectModalOpen(false)} title="Tolak Pelamar">
+        <form onSubmit={handleRejectApplicantSubmit} className="flex flex-col gap-md">
+          <div className="flex flex-col gap-xs">
+            <label className="font-body-sm text-body-sm text-on-surface-variant font-medium">
+              Alasan Penolakan (opsional)
+            </label>
+            <textarea
+              className="input-field min-h-[120px] font-body-sm custom-scrollbar"
+              placeholder="Beritahu pelamar mengapa lamarannya ditolak (misal: kurang sesuai dengan kriteria)."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              maxLength={500}
+            />
+          </div>
+
+          <div className="flex justify-end gap-sm border-t border-outline-variant/30 pt-md mt-sm">
+            <button
+              type="button"
+              onClick={() => setIsRejectModalOpen(false)}
+              className="font-label-md text-label-md font-bold px-md py-sm rounded border border-outline-variant/60 hover:bg-surface-container cursor-pointer transition-colors"
+            >
+              Batal
+            </button>
+            <Button type="submit" variant="primary" disabled={actionLoading}>
+              {actionLoading ? "Menyimpan..." : "Tolak Pelamar"}
             </Button>
           </div>
         </form>

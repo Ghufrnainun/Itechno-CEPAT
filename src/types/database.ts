@@ -1,4 +1,4 @@
-export type TaskStatus = "open" | "accepted" | "in_progress" | "completed" | "cancelled";
+export type TaskStatus = "open" | "accepted" | "in_progress" | "completed" | "cancelled" | "rejected";
 export type ApplicantStatus = "pending" | "accepted" | "rejected";
 export type TransactionType = "hold" | "release" | "refund" | "topup";
 

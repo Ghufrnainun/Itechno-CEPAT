@@ -33,7 +33,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const { id } = await params
-    const result = await taskService.updateApplicantStatus(id, currentUser.id_user, parsed.data.action)
+    const result = await taskService.updateApplicantStatus(id, currentUser.id_user, parsed.data.action, { alasan: parsed.data.alasan })
 
     const message = parsed.data.action === 'accept'
       ? 'Pelamar berhasil diterima. Task dimulai!'

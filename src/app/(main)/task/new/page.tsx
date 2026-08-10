@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { SKILL_CATEGORIES } from "@/constants/skills";
 import { useGeolocation } from "@/hooks/useGeolocation";
@@ -12,7 +12,7 @@ import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
 
 export default function NewTaskPage() {
   const router = useRouter();
-  const { coords } = useGeolocation();
+  const { coords, loading: locLoading } = useGeolocation();
   const { showToast } = useToast();
 
   // Form State
@@ -21,6 +21,8 @@ export default function NewTaskPage() {
   const [category, setCategory] = useState("");
   const [duration, setDuration] = useState("");
   const [compensation, setCompensation] = useState("");
+  const [batasPelamar, setBatasPelamar] = useState("");
+  const [maksimalApply, setMaksimalApply] = useState("");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,6 +34,8 @@ export default function NewTaskPage() {
     setLat(selectedLat);
     setLng(selectedLng);
   };
+
+
 
   const handleSearchLocation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +82,8 @@ export default function NewTaskPage() {
           kategori: category,
           estimasi_waktu: duration,
           kompensasi: parseFloat(compensation),
+          batas_pelamar: batasPelamar ? parseInt(batasPelamar) : 0,
+          maksimal_apply: maksimalApply ? parseInt(maksimalApply) : 1,
           latitude: lat,
           longitude: lng,
         }),
@@ -177,6 +183,41 @@ export default function NewTaskPage() {
                   required
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-sm">
+                <Input
+                  label="Batas Pelamar Tugas"
+                  type="number"
+                  placeholder="Contoh: 5 (Kosongkan jika tak terbatas)"
+                  value={batasPelamar}
+                  onChange={(e) => setBatasPelamar(e.target.value)}
+                />
+                <Input
+                  label="Maksimal Percobaan Apply"
+                  type="number"
+                  placeholder="Contoh: 3 (Default: 1)"
+                  value={maksimalApply}
+                  onChange={(e) => setMaksimalApply(e.target.value)}
+                />
+              </div>
+
+              {/* Peringatan total dana yang akan dikunci */}
+              {compensation && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-sm flex items-start gap-xs">
+                  <span className="material-symbols-outlined text-[16px] text-amber-600 mt-[2px] shrink-0" aria-hidden="true">warning</span>
+                  <div className="font-body-sm text-body-sm text-amber-800">
+                    <span className="font-semibold">Total Dana yang Akan Dikunci (Escrow):</span>{" "}
+                    <span className="font-mono font-bold">
+                      {(parseFloat(compensation) * (batasPelamar ? parseInt(batasPelamar) : 1)).toLocaleString('id-ID')} poin
+                    </span>
+                    {batasPelamar && parseInt(batasPelamar) > 1 && (
+                      <span className="text-amber-700">
+                        {" "}({parseFloat(compensation).toLocaleString('id-ID')} × {batasPelamar} worker)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Location Picker Map */}

@@ -85,6 +85,8 @@ model Task {
   id_category       String
   worker_started    Boolean                   @default(false)
   requester_started Boolean                   @default(false)
+  batas_pelamar     Int?                      @default(0)
+  maksimal_apply    Int?                      @default(1)
   chat_rooms        ChatRoom[]
   reviews         Reviews[]
   kategori        TaskCategory              @relation(fields: [id_category], references: [id_category])
@@ -145,6 +147,8 @@ model TaskApplicants {
   id_tasks                  String
   applied_at                DateTime             @default(now())
   pesan                     String?
+  alasan_penolakan          String?
+  apply_count               Int                  @default(1)
   status_applicant          StatusTaskApplicants @relation(fields: [id_status_task_applicants], references: [id_status_task_applicants])
   task                      Task                 @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)
   worker                    User                 @relation("WorkerApplications", fields: [id_worker], references: [id_user], onDelete: Cascade)
@@ -174,6 +178,8 @@ model ChatRoom {
   task         Task      @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)
   worker       User      @relation("WorkerChats", fields: [id_worker], references: [id_user], onDelete: Cascade)
   messages     Message[]
+  cleared_at_worker    DateTime?
+  cleared_at_requester DateTime?
 
   @@unique([id_tasks, id_worker])
 }

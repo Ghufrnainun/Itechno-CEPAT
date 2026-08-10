@@ -30,6 +30,10 @@ export function Badge({ status }: BadgeProps) {
       style += "bg-error/10 text-error border border-error/20";
       label = "Dibatalkan";
       break;
+    case "rejected":
+      style += "bg-error/10 text-error border border-error/20";
+      label = "Ditolak";
+      break;
   }
 
   return (
