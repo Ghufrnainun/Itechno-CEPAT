@@ -33,53 +33,49 @@ export default function DashboardPage() {
         setLoading(true);
       }
       try {
-        // 1. Fetch lightweight tasks for the mini-map
         const mapUrl = new URL('/api/tasks/nearby', window.location.origin);
         mapUrl.searchParams.append('lat', coords.latitude.toString());
         mapUrl.searchParams.append('lng', coords.longitude.toString());
         mapUrl.searchParams.append('radius', '5000'); // 5km
-        
-        const mapRes = await fetch(mapUrl.toString(), { cache: 'no-store' });
+
+        const feedUrl = new URL('/api/tasks/feed', window.location.origin);
+        feedUrl.searchParams.append('lat', coords.latitude.toString());
+        feedUrl.searchParams.append('lng', coords.longitude.toString());
+        feedUrl.searchParams.append('limit', '6');
+        feedUrl.searchParams.append('sort', 'distance_asc');
+
+        // Fetch data in parallel to avoid waterfall
+        const [mapRes, feedRes, escrowRes, activityRes] = await Promise.all([
+          fetch(mapUrl.toString(), { cache: 'no-store' }),
+          fetch(feedUrl.toString(), { cache: 'no-store' }),
+          fetch('/api/wallet/escrow', { cache: 'no-store' }),
+          fetch('/api/users/me/tasks?role=worker', { cache: 'no-store' })
+        ]);
+
         if (mapRes.ok) {
           const mapJson = await mapRes.json();
           setTasks(mapJson.data || []);
         }
-
-        // 2. Fetch 1 featured task with rich data from the feed API
-        const feedUrl = new URL('/api/tasks/feed', window.location.origin);
-        feedUrl.searchParams.append('lat', coords.latitude.toString());
-        feedUrl.searchParams.append('lng', coords.longitude.toString());
-        feedUrl.searchParams.append('limit', '1');
-        feedUrl.searchParams.append('sort', 'distance_asc');
-
-        const feedRes = await fetch(feedUrl.toString(), { cache: 'no-store' });
+        
         if (feedRes.ok) {
           const feedJson = await feedRes.json();
           if (feedJson.data && feedJson.data.length > 0) {
             setFeaturedTask(feedJson.data[0]);
+            setRecommendedTasks(feedJson.data.slice(1, 4));
           }
         }
 
-        const recUrl = new URL('/api/tasks/feed', window.location.origin);
-        recUrl.searchParams.append('lat', coords.latitude.toString());
-        recUrl.searchParams.append('lng', coords.longitude.toString());
-        recUrl.searchParams.append('limit', '3');
-        recUrl.searchParams.append('sort', 'newest');
-
-        const recRes = await fetch(recUrl.toString(), { cache: 'no-store' });
-        if (recRes.ok) {
-           const recJson = await recRes.json();
-           if (recJson.data) {
-             setRecommendedTasks(recJson.data);
-           }
-        }
-
-        // 3. Fetch escrow amount
-        const escrowRes = await fetch('/api/wallet/escrow', { cache: 'no-store' });
         if (escrowRes.ok) {
           const escrowJson = await escrowRes.json();
           if (escrowJson.success && escrowJson.data) {
             setEscrowAmount(escrowJson.data.escrow_amount);
+          }
+        }
+        
+        if (activityRes.ok) {
+          const activityJson = await activityRes.json();
+          if (activityJson.success && Array.isArray(activityJson.data)) {
+            setMyActiveTasks(activityJson.data);
           }
         }
       } catch (err) {
@@ -92,27 +88,6 @@ export default function DashboardPage() {
     loadData();
   }, [coords]);
 
-  // Fetch user's active task applications when switching to activity tab
-  useEffect(() => {
-    if (activeTab !== "activity" || myActiveTasks.length > 0) return;
-    async function loadMyTasks() {
-      setLoadingActivity(true);
-      try {
-        const res = await fetch('/api/users/me/tasks?role=worker', { cache: 'no-store' });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && Array.isArray(json.data)) {
-            setMyActiveTasks(json.data);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load activity:", err);
-      } finally {
-        setLoadingActivity(false);
-      }
-    }
-    loadMyTasks();
-  }, [activeTab]);
 
   const userName = user?.nama_lengkap?.split(" ")[0] || user?.username || "Pekerja";
   const nearbyCount = tasks.length;
@@ -176,31 +151,29 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
-            className="col-span-12 lg:col-span-5 p-1 md:p-1.5 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs hover:-translate-y-1 hover:shadow-md active:scale-[0.98] transition-all"
+            className="col-span-12 lg:col-span-5"
           >
-            <div className="h-full rounded-lg border border-primary/20 bg-primary/5 p-5 flex flex-col justify-between relative overflow-hidden">
-              <div className="flex items-center justify-between mb-4 text-primary font-bold">
-                <span className="text-xs font-mono uppercase tracking-wider">Saldo Poin Utama</span>
-                <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-[18px] text-primary" aria-hidden="true">account_balance_wallet</span>
-                </div>
+            <div className="h-full rounded-2xl bg-white p-6 flex flex-col justify-between shadow-sm border border-outline-variant/30 hover:border-primary/50 transition-colors">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-semibold text-on-surface-variant">Saldo Poin Utama</span>
+                <span className="material-symbols-outlined text-[20px] text-primary" aria-hidden="true">account_balance_wallet</span>
               </div>
 
               {loading ? (
-                <div className="h-12 bg-primary/10 rounded animate-pulse w-3/4 mb-4" aria-label="Memuat saldo" />
+                <div className="h-12 bg-surface-container-high rounded animate-pulse w-3/4 mb-4" aria-label="Memuat saldo" />
               ) : (
                 <div aria-live="polite">
-                  <div className="text-4xl md:text-5xl font-extrabold text-on-surface font-mono tracking-tight mb-2 flex items-center gap-2">
-                    {user?.total_balance ? formatCurrency(user.total_balance).replace('Rp', '') : '-'} <span className="text-sm font-sans font-bold text-on-surface-variant">pts</span>
+                  <div className="text-4xl md:text-5xl font-extrabold text-on-surface tracking-tight mb-2">
+                    {user?.total_balance ? formatCurrency(user.total_balance).replace('Rp', '') : '-'} <span className="text-sm font-bold text-on-surface-variant uppercase">pts</span>
                   </div>
 
                   <div className="mt-4 flex items-center justify-between">
-                    <div className="text-xs text-primary font-bold flex items-center gap-1.5 bg-white px-2.5 py-1 rounded border border-primary/10 shadow-2xs">
-                      <span className="material-symbols-outlined text-[16px]" aria-hidden="true">trending_up</span>
+                    <div className="text-sm text-primary font-bold flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[18px]" aria-hidden="true">trending_up</span>
                       Lihat riwayat
                     </div>
-                    <Link href="/wallet" className="text-xs text-primary font-semibold hover:underline flex items-center gap-0.5">
-                      Detail <span className="material-symbols-outlined text-[14px]" aria-hidden="true">chevron_right</span>
+                    <Link href="/wallet" className="text-sm text-primary font-semibold hover:underline flex items-center gap-0.5">
+                      Detail <span className="material-symbols-outlined text-[16px]" aria-hidden="true">chevron_right</span>
                     </Link>
                   </div>
                 </div>
@@ -213,11 +186,11 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            className="col-span-6 lg:col-span-3 p-1 md:p-1.5 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs hover:-translate-y-1 hover:shadow-md active:scale-[0.98] transition-all"
+            className="col-span-6 lg:col-span-3"
           >
-            <div className="h-full rounded-lg border border-outline-variant/60 bg-white p-4 md:p-5 flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-3 text-on-surface-variant font-bold">
-                <span className="text-xs font-mono uppercase tracking-wider">Rating</span>
+            <div className="h-full rounded-2xl bg-white p-6 flex flex-col justify-between shadow-sm border border-outline-variant/30 hover:border-primary/50 transition-colors">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-on-surface-variant">Rating</span>
                 <span
                   className="material-symbols-outlined text-[20px] text-amber-500"
                   style={{ fontVariationSettings: "'FILL' 1" }}
@@ -229,12 +202,11 @@ export default function DashboardPage() {
                 <div className="h-8 bg-surface-container-high rounded animate-pulse w-1/2" aria-label="Memuat rating" />
               ) : (
                 <div aria-live="polite">
-                  <div className="text-3xl font-extrabold text-on-surface font-mono tracking-tight flex items-center gap-2">
-                    {user?.rating_avg ?? 0} <span className="text-sm text-tertiary font-sans">/ 5.0</span>
+                  <div className="text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight">
+                    {user?.rating_avg ?? 0} <span className="text-base text-on-surface-variant font-semibold">/ 5</span>
                   </div>
-                  <div className="text-xs text-on-surface-variant mt-1.5 font-medium flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-secondary" />
-                    Dari {totalCompleted} task selesai
+                  <div className="text-sm text-on-surface-variant mt-2 font-medium">
+                    Dari {totalCompleted} task
                   </div>
                 </div>
               )}
@@ -246,10 +218,10 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.3 }}
-            className="col-span-6 lg:col-span-4 p-1 md:p-1.5 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs hover:-translate-y-1 hover:shadow-md active:scale-[0.98] transition-all"
+            className="col-span-6 lg:col-span-4"
           >
-            <div className="h-full rounded-lg border border-secondary-container/50 bg-secondary-fixed/30 p-4 md:p-5 flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute -right-4 -top-4 text-on-secondary-fixed opacity-10 pointer-events-none">
+            <div className="h-full rounded-lg border border-secondary-container bg-secondary-fixed p-4 md:p-5 flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute -right-4 -top-4 text-on-secondary-fixed opacity-15 pointer-events-none">
                 <span className="material-symbols-outlined text-[80px]" aria-hidden="true">task_alt</span>
               </div>
               <div className="flex items-center justify-between mb-3 text-on-secondary-fixed font-bold relative z-10">
@@ -257,11 +229,11 @@ export default function DashboardPage() {
                 <span className="material-symbols-outlined text-[20px]" aria-hidden="true">task_alt</span>
               </div>
               {loading ? (
-                <div className="h-8 bg-secondary-container rounded animate-pulse w-1/2" aria-label="Memuat task selesai" />
+                <div className="h-8 bg-surface-container-high rounded animate-pulse w-1/2" aria-label="Memuat task selesai" />
               ) : (
                 <div className="relative z-10" aria-live="polite">
                   <div className="text-3xl font-extrabold text-on-surface font-mono tracking-tight flex flex-wrap items-center gap-2">
-                    {totalCompleted} <span className="text-xs text-on-secondary-fixed/80 font-sans font-bold">tugas</span>
+                    {totalCompleted} <span className="text-xs text-on-secondary-fixed font-sans font-bold">tugas</span>
                   </div>
                 </div>
               )}
@@ -273,27 +245,27 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.4 }}
-            className="col-span-12 p-1 md:p-1.5 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs hover:-translate-y-1 hover:shadow-md active:scale-[0.98] transition-all"
+            className="col-span-12"
           >
-            <div className="h-full rounded-lg border border-tertiary-container bg-tertiary-fixed p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded bg-tertiary/10 flex items-center justify-center text-tertiary shrink-0">
-                  <span className="material-symbols-outlined text-[22px]" aria-hidden="true">lock_clock</span>
+            <div className="h-full rounded-2xl bg-surface-container-lowest p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm border border-outline-variant/30 hover:border-primary/50 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-tertiary/10 flex items-center justify-center text-tertiary shrink-0">
+                  <span className="material-symbols-outlined text-[24px]" aria-hidden="true">lock_clock</span>
                 </div>
                 <div>
-                  <div className="text-xs font-mono text-tertiary font-bold uppercase tracking-wider">
+                  <div className="text-sm font-semibold text-on-surface-variant">
                     Dana Terkunci Escrow
                   </div>
-                  <div className="text-2xl font-extrabold text-on-surface font-mono tracking-tight mt-0.5 flex flex-wrap items-center gap-2">
+                  <div className="text-2xl font-extrabold text-on-surface tracking-tight mt-1">
                     {formatCurrency(escrowAmount || 0)}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 border-tertiary-container pt-2 sm:pt-0">
-                <span className="text-xs text-on-tertiary-fixed font-medium hidden md:inline">
-                  Aman di Escrow hingga task disetujui
+              <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 border-outline-variant/30 pt-3 sm:pt-0">
+                <span className="text-sm text-on-surface-variant font-medium hidden md:inline">
+                  Aman di Escrow hingga disetujui
                 </span>
-                <Link href="/wallet" className="px-3.5 py-1.5 text-xs font-bold text-on-tertiary bg-tertiary rounded hover:bg-tertiary/90 transition-colors cursor-pointer shadow-2xs">
+                <Link href="/wallet" className="px-5 py-2 text-sm font-bold text-white bg-tertiary rounded-xl hover:bg-tertiary/90 transition-colors">
                   Lihat Status
                 </Link>
               </div>
@@ -583,9 +555,28 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-3 pt-1" id="panel-activity" role="tabpanel" aria-labelledby="tab-activity">
               {loadingActivity ? (
-                <div className="py-8 flex flex-col items-center justify-center gap-3" aria-live="polite">
-                  <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                  <span className="text-sm text-on-surface-variant font-medium">Memuat aktivitas...</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1" aria-live="polite" aria-label="Memuat aktivitas...">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="border border-outline-variant/40 rounded-lg p-4 flex flex-col gap-3 animate-pulse"
+                      style={{ animationDelay: `${i * 80}ms` }}
+                    >
+                      {/* Title + badge row */}
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1 space-y-1.5">
+                          <div className="h-3 bg-surface-container-high rounded w-[75%]" />
+                          <div className="h-3 bg-surface-container rounded w-[50%]" />
+                        </div>
+                        <div className="h-5 w-16 bg-surface-container-high rounded-full shrink-0" />
+                      </div>
+                      {/* Meta row */}
+                      <div className="flex items-center justify-between">
+                        <div className="h-2.5 bg-surface-container rounded w-[40%]" />
+                        <div className="h-2.5 bg-primary/10 rounded w-[25%]" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : myActiveTasks.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

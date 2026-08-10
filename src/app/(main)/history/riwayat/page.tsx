@@ -33,9 +33,9 @@ function WorkerHistoryCard({ task }: { task: WorkerTask }) {
   };
 
   const appStatusColor: Record<string, string> = {
-    pending: "bg-amber-50 border-amber-200",
-    accepted: "bg-green-50 border-green-200",
-    rejected: "bg-red-50 border-red-200",
+    pending: "bg-tertiary-fixed/20 border-tertiary/30",
+    accepted: "bg-secondary-container/25 border-secondary/30",
+    rejected: "bg-error-container/25 border-error/30",
   };
 
   const borderClass = appStatusColor[task.application_status] ?? "bg-white border-outline-variant";
@@ -56,10 +56,10 @@ function WorkerHistoryCard({ task }: { task: WorkerTask }) {
           </div>
           <div className="flex flex-col items-end gap-xs shrink-0">
             <Badge status={task.task_status as TaskStatus} />
-            <span className={`text-[10px] font-semibold px-xs py-0.5 rounded-full border font-label-sm
-              ${task.application_status === "accepted" ? "text-green-700 bg-green-50 border-green-200" :
-                task.application_status === "rejected" ? "text-red-700 bg-red-50 border-red-200" :
-                "text-amber-700 bg-amber-50 border-amber-200"}`}>
+            <span className={`text-xs font-semibold px-xs py-0.5 rounded-full border font-label-sm
+              ${task.application_status === "accepted" ? "text-on-secondary-container bg-secondary-container/30 border-secondary/30" :
+                task.application_status === "rejected" ? "text-on-error-container bg-error-container/40 border-error/30" :
+                "text-on-tertiary-container bg-tertiary-fixed/20 border-tertiary/30"}`}>
               Lamaran: {appStatusLabel[task.application_status] ?? task.application_status}
             </span>
           </div>
@@ -195,16 +195,16 @@ export default function RiwayatPage() {
               <div className="font-headline-md text-headline-md font-bold text-amber-600 font-mono">{totalPending}</div>
               <div className="font-label-sm text-label-sm text-on-surface-variant mt-xs">Menunggu</div>
             </div>
-            <div className="relative overflow-hidden bento-card text-center bg-primary-container">
+            <div className="relative overflow-hidden text-center bg-primary text-white shadow-sm border border-primary/20 flex flex-col justify-between min-h-[112px] p-4 rounded-xl">
               <div
-                className="font-headline-md text-headline-md font-bold text-on-primary font-mono"
+                className="font-headline-md text-headline-md font-bold text-white font-mono"
                 style={{ fontSize: totalEarned > 999999 ? "16px" : undefined }}
               >
                 {totalEarned >= 1000
                   ? `${(totalEarned / 1000).toFixed(0)}rb`
                   : totalEarned.toLocaleString("id-ID")}
               </div>
-              <div className="font-label-sm text-label-sm text-on-primary/80 mt-xs">Total Poin Earned</div>
+              <div className="font-label-sm text-label-sm text-white/80 mt-xs">Total Poin Earned</div>
             </div>
           </div>
 
