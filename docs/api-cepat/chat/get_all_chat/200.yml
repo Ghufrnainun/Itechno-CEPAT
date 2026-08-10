@@ -5,8 +5,10 @@ info:
 
 http:
   method: GET
-  url: ""
-  auth: inherit
+  url: http://localhost:3000/api/chat/a95897a2-a35e-4b9d-99b8-b418d10c2b1b
+  auth:
+    type: bearer
+    token: "{{access_token}}"
 
 settings:
   encodeUrl: true

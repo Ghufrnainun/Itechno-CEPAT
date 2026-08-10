@@ -5,8 +5,17 @@ info:
 
 http:
   method: POST
-  url: http://localhost:3000/api/chat
-  auth: inherit
+  url: http://localhost:3000/api/chat/a95897a2-a35e-4b9d-99b8-b418d10c2b1b
+  body:
+    type: json
+    data: |-
+      {
+        "teks_pesan": "Halo mas",
+        "image_url": "https://url.com/gambar.jpg"
+      }
+  auth:
+    type: bearer
+    token: "{{access_token}}"
 
 settings:
   encodeUrl: true
