@@ -165,15 +165,17 @@ model Reviews {
 }
 
 model ChatRoom {
-  id_chat_room String    @id @default(uuid())
-  id_tasks     String
-  id_requester String
-  id_worker    String
-  created_at   DateTime  @default(now())
-  requester    User      @relation("RequesterChats", fields: [id_requester], references: [id_user], onDelete: Cascade)
-  task         Task      @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)
-  worker       User      @relation("WorkerChats", fields: [id_worker], references: [id_user], onDelete: Cascade)
-  messages     Message[]
+  id_chat_room         String    @id @default(uuid())
+  id_tasks             String
+  id_requester         String
+  id_worker            String
+  created_at           DateTime  @default(now())
+  cleared_at_requester DateTime?
+  cleared_at_worker    DateTime?
+  requester            User      @relation("RequesterChats", fields: [id_requester], references: [id_user], onDelete: Cascade)
+  task                 Task      @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)
+  worker               User      @relation("WorkerChats", fields: [id_worker], references: [id_user], onDelete: Cascade)
+  messages             Message[]
 
   @@unique([id_tasks, id_worker])
 }

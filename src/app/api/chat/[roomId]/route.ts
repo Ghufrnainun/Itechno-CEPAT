@@ -32,15 +32,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Verify user is part of the chat room
     const chatRoom = await prisma.chatRoom.findUnique({
       where: { id_chat_room: roomId },
-      select: { id_requester: true, id_worker: true }
+      select: { id_requester: true, id_worker: true, cleared_at_requester: true, cleared_at_worker: true }
     })
 
     if (!chatRoom || (chatRoom.id_requester !== currentUser.id_user && chatRoom.id_worker !== currentUser.id_user)) {
        return NextResponse.json({ success: false, message: 'Akses ditolak.' }, { status: 403 })
     }
 
+    const isRequester = chatRoom.id_requester === currentUser.id_user;
+    // Note: cleared_at fields are from the newly generated Prisma Client
+    const clearedAt = isRequester ? (chatRoom as any).cleared_at_requester : (chatRoom as any).cleared_at_worker;
+
     const messages = await prisma.message.findMany({
-      where: { id_chat_room: roomId },
+      where: { 
+        id_chat_room: roomId,
+        ...(clearedAt ? { created_at: { gt: clearedAt } } : {})
+      },
       orderBy: { created_at: 'asc' },
       include: {
         sender: {

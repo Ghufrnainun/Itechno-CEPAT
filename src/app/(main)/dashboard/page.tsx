@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const { coords } = useGeolocation();
 
   const [tasks, setTasks] = useState<any[]>([]); // Lightweight tasks for map
+  const [recommendedTasks, setRecommendedTasks] = useState<any[]>([]); // Recommendations based on skills
   const [featuredTask, setFeaturedTask] = useState<any | null>(null); // Rich task for featured card
   const [escrowAmount, setEscrowAmount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,6 +60,20 @@ export default function DashboardPage() {
           }
         }
 
+        const recUrl = new URL('/api/tasks/feed', window.location.origin);
+        recUrl.searchParams.append('lat', coords.latitude.toString());
+        recUrl.searchParams.append('lng', coords.longitude.toString());
+        recUrl.searchParams.append('limit', '3');
+        recUrl.searchParams.append('sort', 'newest');
+
+        const recRes = await fetch(recUrl.toString(), { cache: 'no-store' });
+        if (recRes.ok) {
+           const recJson = await recRes.json();
+           if (recJson.data) {
+             setRecommendedTasks(recJson.data);
+           }
+        }
+
         // 3. Fetch escrow amount
         const escrowRes = await fetch('/api/wallet/escrow', { cache: 'no-store' });
         if (escrowRes.ok) {
@@ -83,7 +98,7 @@ export default function DashboardPage() {
     async function loadMyTasks() {
       setLoadingActivity(true);
       try {
-        const res = await fetch('/api/tasks/applications/me', { cache: 'no-store' });
+        const res = await fetch('/api/users/me/tasks?role=worker', { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data)) {
@@ -233,8 +248,8 @@ export default function DashboardPage() {
             transition={{ duration: 0.4, delay: 0.3 }}
             className="col-span-6 lg:col-span-4 p-1 md:p-1.5 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs hover:-translate-y-1 hover:shadow-md active:scale-[0.98] transition-all"
           >
-            <div className="h-full rounded-lg border border-secondary-container bg-secondary-fixed p-4 md:p-5 flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute -right-4 -top-4 text-on-secondary-fixed opacity-15 pointer-events-none">
+            <div className="h-full rounded-lg border border-secondary-container/50 bg-secondary-fixed/30 p-4 md:p-5 flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute -right-4 -top-4 text-on-secondary-fixed opacity-10 pointer-events-none">
                 <span className="material-symbols-outlined text-[80px]" aria-hidden="true">task_alt</span>
               </div>
               <div className="flex items-center justify-between mb-3 text-on-secondary-fixed font-bold relative z-10">
@@ -246,7 +261,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="relative z-10" aria-live="polite">
                   <div className="text-3xl font-extrabold text-on-surface font-mono tracking-tight flex flex-wrap items-center gap-2">
-                    {totalCompleted} <span className="text-xs text-on-secondary-fixed font-sans font-bold">tugas</span>
+                    {totalCompleted} <span className="text-xs text-on-secondary-fixed/80 font-sans font-bold">tugas</span>
                   </div>
                 </div>
               )}
@@ -493,7 +508,7 @@ export default function DashboardPage() {
                   activeTab === "recommendations" ? "text-primary" : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
-                Rekomendasi Tugas ({tasks.length})
+                Rekomendasi Tugas ({recommendedTasks.length})
                 {activeTab === "recommendations" && (
                   <motion.div layoutId="tabUnderline" className="absolute bottom-[-13px] left-0 right-0 h-0.5 bg-primary rounded-full" />
                 )}
@@ -509,7 +524,7 @@ export default function DashboardPage() {
                   activeTab === "activity" ? "text-primary" : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
-                Aktivitas Saya
+                Aktivitas Saya ({myActiveTasks.length})
                 {activeTab === "activity" && (
                   <motion.div layoutId="tabUnderline" className="absolute bottom-[-13px] left-0 right-0 h-0.5 bg-primary rounded-full" />
                 )}
@@ -524,7 +539,7 @@ export default function DashboardPage() {
           {/* Tab Content */}
           {activeTab === "recommendations" ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1" id="panel-recommendations" role="tabpanel" aria-labelledby="tab-recommendations">
-              {tasks.slice(0, 3).map((task) => (
+              {recommendedTasks.slice(0, 3).map((task) => (
                 <Link key={task.id_task} href={`/task/${task.id_task}`}>
                   <div className="group border border-outline-variant/60 rounded-lg p-3.5 hover:border-primary/50 hover:bg-surface-container-low transition-all cursor-pointer flex flex-col justify-between h-full space-y-3 shadow-2xs">
                     <div>
@@ -544,7 +559,7 @@ export default function DashboardPage() {
                     <div className="flex items-center justify-between text-xs text-on-surface-variant pt-3 border-t border-outline-variant/30 font-mono">
                       <span className="flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-[16px]" aria-hidden="true">storefront</span>
-                        UMKM
+                        {task.requester_name || "UMKM"}
                       </span>
                       <span className="flex items-center gap-1.5 text-primary font-bold">
                         <span className="material-symbols-outlined text-[16px]" aria-hidden="true">directions_walk</span>
@@ -555,7 +570,7 @@ export default function DashboardPage() {
                 </Link>
               ))}
 
-              {tasks.length === 0 && (
+              {recommendedTasks.length === 0 && (
                 <div className="col-span-3 py-10 flex flex-col items-center justify-center text-center gap-2">
                   <span className="material-symbols-outlined text-[40px] text-outline-variant/40" aria-hidden="true">search_off</span>
                   <p className="text-sm font-semibold text-on-surface-variant">Belum ada rekomendasi tugas saat ini.</p>
@@ -575,14 +590,14 @@ export default function DashboardPage() {
               ) : myActiveTasks.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {myActiveTasks.slice(0, 4).map((app) => {
-                    const statusName = app.status_applicant?.nama_status || "Pending";
-                    const statusColor = statusName === "Accepted" ? "bg-secondary text-on-secondary" : statusName === "Rejected" ? "bg-error text-on-error" : "bg-tertiary text-on-tertiary";
+                    const statusName = app.application_status || "Pending";
+                    const statusColor = statusName === "accepted" ? "bg-secondary text-on-secondary" : statusName === "rejected" ? "bg-error text-on-error" : "bg-tertiary text-on-tertiary";
                     return (
-                      <Link key={app.id_task_applicants} href={`/task/${app.task?.id_tasks}`}>
+                      <Link key={app.id_task_applicants} href={`/task/${app.id_tasks}`}>
                         <div className="group border border-outline-variant/60 rounded-lg p-4 hover:border-primary/50 hover:bg-surface-container-low transition-all cursor-pointer flex flex-col gap-3 shadow-2xs">
                           <div className="flex justify-between items-start gap-2">
                             <h4 className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-2 leading-snug flex-1">
-                              {app.task?.judul_tugas || "Tugas"}
+                              {app.judul_tugas || "Tugas"}
                             </h4>
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${statusColor}`}>
                               {statusName}
@@ -591,10 +606,10 @@ export default function DashboardPage() {
                           <div className="flex items-center justify-between text-xs text-on-surface-variant">
                             <span className="flex items-center gap-1.5 font-medium">
                               <span className="material-symbols-outlined text-[14px]" aria-hidden="true">person</span>
-                              {app.task?.requester?.nama_lengkap || "Pemberi Kerja"}
+                              {app.requester?.nama_lengkap || "Pemberi Kerja"}
                             </span>
                             <span className="font-mono font-bold text-primary">
-                              {app.task?.kompensasi ? formatCurrency(app.task.kompensasi) : "-"}
+                              {app.kompensasi ? formatCurrency(app.kompensasi) : "-"}
                             </span>
                           </div>
                         </div>
