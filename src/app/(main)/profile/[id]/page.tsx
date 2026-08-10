@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useCurrentRole } from "@/app/(main)/layout";
-import { SKILL_CATEGORIES } from "@/constants/skills";
 import { SdgBadge } from "@/components/ui/SdgBadge";
+import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { RatingStars } from "@/components/ui/RatingStars";
 import { Modal } from "@/components/ui/Modal";
@@ -27,6 +27,7 @@ interface ReviewData {
 }
 
 export interface UserSkill {
+  id_skill_master: string;
   nama_skill: string;
   deskripsi_pengalaman: string | null;
   certificate_url: string | null;
@@ -47,6 +48,7 @@ export default function UserProfilePage() {
   const [phone, setPhone] = useState("");
   const [alamat, setAlamat] = useState("");
   const [skills, setSkills] = useState<UserSkill[]>([]);
+  const [availableSkills, setAvailableSkills] = useState<{ id_skill_master: string; nama_skill: string }[]>([]);
 
   const [rating, setRating] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
@@ -91,11 +93,12 @@ export default function UserProfilePage() {
             if (json.data.skills_user && Array.isArray(json.data.skills_user)) {
               const apiSkills = json.data.skills_user
                 .map((su: any) => ({
+                  id_skill_master: su.id_skills_master || "",
                   nama_skill: su.skills_master?.nama_skill || "",
                   deskripsi_pengalaman: su.deskripsi_pengalaman || "",
                   certificate_url: su.certificate_url || "",
                 }))
-                .filter((s: UserSkill) => s.nama_skill);
+                .filter((s: UserSkill) => s.id_skill_master);
               if (apiSkills.length > 0) {
                 setSkills(apiSkills);
               }
@@ -125,6 +128,19 @@ export default function UserProfilePage() {
       }
     }
 
+    async function loadAvailableSkills() {
+      try {
+        const res = await fetch('/api/skills');
+        const json = await res.json();
+        if (json.success && json.data) {
+          setAvailableSkills(json.data);
+        }
+      } catch (err) {
+        console.error("Gagal mengambil master skills", err);
+      }
+    }
+
+    loadAvailableSkills();
     loadUser();
   }, []);
 
@@ -183,10 +199,19 @@ export default function UserProfilePage() {
           bio: editBio,
           pendidikan_terakhir: editUniv,
           no_telpon: editPhone,
-          alamat: editAlamat,
+          alamat: editAlamat
+        })
+      });
+
+      // Save Skills to separate endpoint
+      await fetch('/api/users/skills', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           skills: editSkills
         })
       });
+
       if (res.ok) {
         setName(editName);
         setBio(editBio);
@@ -421,16 +446,15 @@ export default function UserProfilePage() {
               {skills.length > 0 ? (
                 <div className="flex flex-col gap-3">
                   {skills.map((skillObj, idx) => {
-                    const skillInfo = SKILL_CATEGORIES.find((s) => s.value === skillObj.nama_skill);
-                    if (!skillInfo) return null;
+                    if (!skillObj.nama_skill) return null;
                     return (
                       <div
                         key={idx}
                         className="flex flex-col gap-2 p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/30"
                       >
-                        <div className="inline-flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-full text-xs font-bold text-primary w-max hover:bg-primary/15 transition-colors cursor-default">
-                          <span className="material-symbols-outlined text-[16px]" aria-hidden="true">{skillInfo.icon}</span>
-                          <span>{skillInfo.label}</span>
+                        <div className="inline-flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-full text-[13px] font-bold text-primary w-max hover:bg-primary/15 transition-colors cursor-default capitalize">
+                          <Sparkles className="w-4 h-4" strokeWidth={2} />
+                          <span>{skillObj.nama_skill}</span>
                         </div>
                         
                         {skillObj.deskripsi_pengalaman && (
@@ -512,7 +536,11 @@ export default function UserProfilePage() {
               <Button 
                 variant="secondary" 
                 className="px-2 py-1 text-xs h-auto" 
-                onClick={() => setEditSkills([...editSkills, { nama_skill: SKILL_CATEGORIES[0].value, deskripsi_pengalaman: '', certificate_url: '' }])}
+                onClick={() => {
+                  if (availableSkills.length > 0) {
+                    setEditSkills([...editSkills, { id_skill_master: availableSkills[0].id_skill_master, nama_skill: availableSkills[0].nama_skill, deskripsi_pengalaman: '', certificate_url: '' }]);
+                  }
+                }}
               >
                 <span className="material-symbols-outlined text-[14px] mr-1">add</span>
                 Tambah
@@ -533,15 +561,19 @@ export default function UserProfilePage() {
                   <div className="flex flex-col gap-1.5 pr-8">
                     <label className="text-xs font-bold text-on-surface-variant">Pilih Keahlian</label>
                     <select 
-                      value={skill.nama_skill} 
+                      value={skill.id_skill_master} 
                       onChange={(e) => {
                         const newSkills = [...editSkills];
-                        newSkills[idx].nama_skill = e.target.value;
+                        const selectedMaster = availableSkills.find(s => s.id_skill_master === e.target.value);
+                        if (selectedMaster) {
+                          newSkills[idx].id_skill_master = selectedMaster.id_skill_master;
+                          newSkills[idx].nama_skill = selectedMaster.nama_skill;
+                        }
                         setEditSkills(newSkills);
                       }} 
-                      className="p-2 border border-outline-variant rounded-md bg-surface text-sm font-medium outline-none focus:border-primary"
+                      className="p-2 border border-outline-variant rounded-md bg-surface text-sm font-medium outline-none focus:border-primary capitalize"
                     >
-                      {SKILL_CATEGORIES.map(cat => <option key={cat.value} value={cat.value}>{cat.label}</option>)}
+                      {availableSkills.map(cat => <option key={cat.id_skill_master} value={cat.id_skill_master}>{cat.nama_skill}</option>)}
                     </select>
                   </div>
                   

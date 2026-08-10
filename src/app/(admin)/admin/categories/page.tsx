@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import AdminModal from '@/components/admin/AdminModal';
@@ -28,6 +28,7 @@ import {
   Smartphone,
   GraduationCap,
   Folder,
+  Search,
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, any> = {
@@ -42,26 +43,90 @@ const ICON_MAP: Record<string, any> = {
   GraduationCap,
 };
 
-function renderCategoryIcon(iconName: string) {
-  const IconComponent = ICON_MAP[iconName] || Folder;
+function renderCategoryIcon(iconName: string | null) {
+  const IconComponent = (iconName && ICON_MAP[iconName]) || Folder;
   return <IconComponent className="w-4 h-4 text-[#0F766E]" />;
+}
+
+export interface APICategory {
+  id: string; // mapped from id_category
+  nama_kategori: string;
+  icon: string | null;
+  total_tasks: number;
+}
+
+export interface APISkill {
+  id: string; // mapped from id_skill_master
+  nama_skill: string;
+  total_users: number;
 }
 
 export default function CategorySkillsManagementPage() {
   const [activeTab, setActiveTab] = useState<'categories' | 'skills'>('categories');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Datasets
-  const [categories, setCategories] = useState<AdminCategory[]>(MOCK_ADMIN_CATEGORIES);
-  const [skills, setSkills] = useState<AdminSkill[]>(MOCK_ADMIN_SKILLS);
+  const [categories, setCategories] = useState<APICategory[]>([]);
+  const [skills, setSkills] = useState<APISkill[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const fetchSkills = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/skills', { cache: 'no-store' });
+      const json = await res.json();
+      if (json.success) {
+        setSkills(
+          json.data.map((skl: any) => ({
+            id: skl.id_skill_master,
+            nama_skill: skl.nama_skill,
+            total_users: skl._count?.skills_user || 0,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching skills:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/categories', { cache: 'no-store' });
+      const json = await res.json();
+      if (json.success) {
+        setCategories(
+          json.data.map((cat: any) => ({
+            id: cat.id_category,
+            nama_kategori: cat.nama_kategori,
+            icon: cat.icon,
+            total_tasks: cat._count?.tasks || 0,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+    fetchSkills();
+  }, []);
 
   // Modal States
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<AdminCategory | null>(null);
+  const [editingCategory, setEditingCategory] = useState<APICategory | null>(null);
   const [catName, setCatName] = useState('');
   const [catIcon, setCatIcon] = useState('Folder');
 
   const [isSkillModalOpen, setIsSkillModalOpen] = useState(false);
-  const [editingSkill, setEditingSkill] = useState<AdminSkill | null>(null);
+  const [editingSkill, setEditingSkill] = useState<APISkill | null>(null);
   const [skillName, setSkillName] = useState('');
 
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'category' | 'skill'; id: string; name: string } | null>(null);
@@ -87,29 +152,46 @@ export default function CategorySkillsManagementPage() {
     setIsCategoryModalOpen(true);
   };
 
-  const handleOpenEditCategory = (cat: AdminCategory) => {
+  const handleOpenEditCategory = (cat: APICategory) => {
     setEditingCategory(cat);
     setCatName(cat.nama_kategori);
     setCatIcon(cat.icon || 'Folder');
     setIsCategoryModalOpen(true);
   };
 
-  const handleSaveCategory = () => {
+  const handleSaveCategory = async () => {
     if (!catName.trim()) return;
 
-    if (editingCategory) {
-      setCategories(categories.map((c) => (c.id === editingCategory.id ? { ...c, nama_kategori: catName, icon: catIcon } : c)));
-    } else {
-      const newCat: AdminCategory = {
-        id: `cat-${Date.now()}`,
-        nama_kategori: catName,
-        icon: catIcon || 'Folder',
-        total_tasks: 0,
-        created_at: new Date().toISOString().split('T')[0],
-      };
-      setCategories([newCat, ...categories]);
+    try {
+      if (editingCategory) {
+        const res = await fetch(`/api/categories/${editingCategory.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nama_kategori: catName, icon: catIcon }),
+        });
+        const data = await res.json();
+        if (!data.success) {
+          setErrorMessage(data.message);
+          return;
+        }
+      } else {
+        const res = await fetch('/api/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nama_kategori: catName, icon: catIcon }),
+        });
+        const data = await res.json();
+        if (!data.success) {
+          setErrorMessage(data.message);
+          return;
+        }
+      }
+      setIsCategoryModalOpen(false);
+      fetchCategories();
+    } catch (error) {
+      console.error('Error saving category:', error);
+      setErrorMessage('Terjadi kesalahan saat menyimpan kategori.');
     }
-    setIsCategoryModalOpen(false);
   };
 
   // Skill Handlers
@@ -119,43 +201,87 @@ export default function CategorySkillsManagementPage() {
     setIsSkillModalOpen(true);
   };
 
-  const handleOpenEditSkill = (skl: AdminSkill) => {
+  const handleOpenEditSkill = (skl: APISkill) => {
     setEditingSkill(skl);
     setSkillName(skl.nama_skill);
     setIsSkillModalOpen(true);
   };
 
-  const handleSaveSkill = () => {
+  const handleSaveSkill = async () => {
     if (!skillName.trim()) return;
 
-    if (editingSkill) {
-      setSkills(skills.map((s) => (s.id === editingSkill.id ? { ...s, nama_skill: skillName } : s)));
-    } else {
-      const newSkill: AdminSkill = {
-        id: `skl-${Date.now()}`,
-        nama_skill: skillName,
-        total_users: 0,
-        created_at: new Date().toISOString().split('T')[0],
-      };
-      setSkills([newSkill, ...skills]);
+    try {
+      if (editingSkill) {
+        const res = await fetch(`/api/skills/${editingSkill.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nama_skill: skillName }),
+        });
+        const data = await res.json();
+        if (!data.success) {
+          setErrorMessage(data.message);
+          return;
+        }
+      } else {
+        const res = await fetch('/api/skills', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nama_skill: skillName }),
+        });
+        const data = await res.json();
+        if (!data.success) {
+          setErrorMessage(data.message);
+          return;
+        }
+      }
+      setIsSkillModalOpen(false);
+      fetchSkills();
+    } catch (error) {
+      console.error('Error saving skill:', error);
+      setErrorMessage('Terjadi kesalahan saat menyimpan skill.');
     }
-    setIsSkillModalOpen(false);
   };
 
   // Delete Handler
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
 
     if (deleteTarget.type === 'category') {
-      setCategories(categories.filter((c) => c.id !== deleteTarget.id));
+      try {
+        const res = await fetch(`/api/categories/${deleteTarget.id}`, {
+          method: 'DELETE',
+        });
+        const data = await res.json();
+        if (!data.success) {
+          setErrorMessage(data.message);
+        } else {
+          fetchCategories();
+        }
+      } catch (error) {
+        console.error('Error deleting category:', error);
+        setErrorMessage('Terjadi kesalahan saat menghapus kategori.');
+      }
     } else {
-      setSkills(skills.filter((s) => s.id !== deleteTarget.id));
+      try {
+        const res = await fetch(`/api/skills/${deleteTarget.id}`, {
+          method: 'DELETE',
+        });
+        const data = await res.json();
+        if (!data.success) {
+          setErrorMessage(data.message);
+        } else {
+          fetchSkills();
+        }
+      } catch (error) {
+        console.error('Error deleting skill:', error);
+        setErrorMessage('Terjadi kesalahan saat menghapus skill.');
+      }
     }
     setDeleteTarget(null);
   };
 
   // Category Columns
-  const categoryColumns: Column<AdminCategory>[] = [
+  const categoryColumns: Column<APICategory>[] = [
     {
       header: 'Category Icon & Name',
       cell: (cat) => (
@@ -175,11 +301,7 @@ export default function CategorySkillsManagementPage() {
         </span>
       ),
     },
-    {
-      header: 'Created Date',
-      accessorKey: 'created_at',
-      cell: (cat) => <span className="font-mono text-xs text-[#64748B]">{cat.created_at}</span>,
-    },
+
     {
       header: 'Actions',
       cell: (cat) => (
@@ -210,7 +332,7 @@ export default function CategorySkillsManagementPage() {
   ];
 
   // Skill Columns
-  const skillColumns: Column<AdminSkill>[] = [
+  const skillColumns: Column<APISkill>[] = [
     {
       header: 'Skill Name',
       cell: (skl) => (
@@ -228,11 +350,7 @@ export default function CategorySkillsManagementPage() {
         </span>
       ),
     },
-    {
-      header: 'Created Date',
-      accessorKey: 'created_at',
-      cell: (skl) => <span className="font-mono text-xs text-[#64748B]">{skl.created_at}</span>,
-    },
+
     {
       header: 'Actions',
       cell: (skl) => (
@@ -296,6 +414,17 @@ export default function CategorySkillsManagementPage() {
             </button>
           </div>
 
+          <div className="flex-1 max-w-sm w-full relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
+            <input
+              type="text"
+              placeholder="Cari kategori atau skill..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs text-[#0C1F16] placeholder-[#94A3B8] outline-none focus:border-[#0F766E] focus:bg-white transition-all"
+            />
+          </div>
+
           {/* Add Button */}
           {activeTab === 'categories' ? (
             <button
@@ -318,9 +447,29 @@ export default function CategorySkillsManagementPage() {
 
         {/* Data Tables */}
         {activeTab === 'categories' ? (
-          <DataTable columns={categoryColumns} data={categories} pageSize={10} />
+          loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="w-8 h-8 border-4 border-[#0F766E] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : (
+            <DataTable 
+              columns={categoryColumns} 
+              data={categories.filter(c => c.nama_kategori.toLowerCase().includes(searchQuery.toLowerCase()))} 
+              pageSize={10} 
+            />
+          )
         ) : (
-          <DataTable columns={skillColumns} data={skills} pageSize={10} />
+          loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="w-8 h-8 border-4 border-[#0F766E] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : (
+            <DataTable 
+              columns={skillColumns} 
+              data={skills.filter(s => s.nama_skill.toLowerCase().includes(searchQuery.toLowerCase()))} 
+              pageSize={10} 
+            />
+          )
         )}
 
         {/* Category Add/Edit Modal */}
@@ -395,6 +544,27 @@ export default function CategorySkillsManagementPage() {
                 Tindakan ini tidak dapat dibatalkan. Seluruh data task atau profil user yang menggunakan item ini akan kehilangan referensi tag terkait.
               </p>
             </div>
+          </div>
+        </AdminModal>
+
+        {/* Error Notification Modal */}
+        <AdminModal
+          isOpen={!!errorMessage}
+          onClose={() => setErrorMessage(null)}
+          title="Pemberitahuan"
+        >
+          <div className="flex flex-col items-center justify-center p-4 text-center">
+            <div className="w-14 h-14 rounded-full bg-rose-100 flex items-center justify-center mb-5 ring-4 ring-rose-50">
+              <AlertCircle className="w-7 h-7 text-rose-600" />
+            </div>
+            <h4 className="font-bold text-[#0C1F16] text-base mb-2">Tindakan Ditolak</h4>
+            <p className="text-sm text-[#64748B] mb-6 leading-relaxed max-w-sm">{errorMessage}</p>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="w-full py-2.5 bg-[#0C1F16] hover:bg-[#1E293B] text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
+            >
+              Saya Mengerti
+            </button>
           </div>
         </AdminModal>
       </main>

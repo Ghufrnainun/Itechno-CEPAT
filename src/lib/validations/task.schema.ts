@@ -7,7 +7,8 @@ export const createTaskSchema = z.object({
   kompensasi: z.number().positive('Kompensasi harus lebih dari 0.'),
   latitude: z.number().min(-90).max(90, 'Latitude tidak valid.'),
   longitude: z.number().min(-180).max(180, 'Longitude tidak valid.'),
-  kategori: z.string().optional(), // untuk task_requirements (nama skill)
+  id_category: z.string().min(1, 'Kategori tugas wajib dipilih.'),
+  skill_requirements: z.array(z.string()).optional(),
 })
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>

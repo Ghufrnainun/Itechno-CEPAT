@@ -5,14 +5,10 @@ info:
 
 http:
   method: POST
-  url: http://localhost:3000/api/auth/login
+  url: http://localhost:3000/api/categories
   body:
     type: json
-    data: |-
-      {
-           "email": "testuser2@example.com",
-           "password": "PasswordKuat123!"
-         }
+    data: ""
   auth: inherit
 
 settings:

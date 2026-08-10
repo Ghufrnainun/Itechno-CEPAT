@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { SKILL_CATEGORIES } from "@/constants/skills";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useToast } from "@/components/ui/Toast";
 import { Input } from "@/components/ui/Input";
@@ -18,7 +17,8 @@ export default function NewTaskPage() {
   // Form State
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [duration, setDuration] = useState("");
   const [compensation, setCompensation] = useState("");
   const [lat, setLat] = useState<number | null>(null);
@@ -27,6 +27,31 @@ export default function NewTaskPage() {
   const [searchLocation, setSearchLocation] = useState("");
   const [searching, setSearching] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  const [categories, setCategories] = useState<{ id_category: string; nama_kategori: string }[]>([]);
+  const [skills, setSkills] = useState<{ id_skill_master: string; nama_skill: string }[]>([]);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [catRes, skillRes] = await Promise.all([
+          fetch("/api/categories").then(r => r.json()),
+          fetch("/api/skills").then(r => r.json())
+        ]);
+        if (catRes.success) setCategories(catRes.data);
+        if (skillRes.success) setSkills(skillRes.data);
+      } catch (error) {
+        console.error("Gagal memuat kategori dan keahlian:", error);
+      }
+    }
+    loadData();
+  }, []);
+
+  const toggleSkill = (id: string) => {
+    setSelectedSkills(prev => 
+      prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
+    );
+  };
 
   const handleLocationSelect = (selectedLat: number, selectedLng: number) => {
     setLat(selectedLat);
@@ -69,18 +94,24 @@ export default function NewTaskPage() {
 
     setLoading(true);
     try {
+      const payload: any = {
+        judul_tugas: title,
+        deskripsi_tugas: description,
+        id_category: categoryId,
+        estimasi_waktu: duration,
+        kompensasi: parseFloat(compensation),
+        latitude: lat,
+        longitude: lng,
+      };
+
+      if (selectedSkills.length > 0) {
+        payload.skill_requirements = selectedSkills;
+      }
+
       const res = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          judul_tugas: title,
-          deskripsi_tugas: description,
-          kategori: category,
-          estimasi_waktu: duration,
-          kompensasi: parseFloat(compensation),
-          latitude: lat,
-          longitude: lng,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -143,20 +174,46 @@ export default function NewTaskPage() {
               </div>
 
               <div className="flex flex-col gap-xs">
-                <label className="font-body-sm text-body-sm text-on-surface-variant font-medium">Kategori Skill</label>
+                <label className="font-body-sm text-body-sm text-on-surface-variant font-medium">Kategori</label>
                 <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
                   className="input-field text-body-sm font-sans"
                   required
                 >
-                  <option value="">-- Pilih kategori skill --</option>
-                  {SKILL_CATEGORIES.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
+                  <option value="">-- Pilih Kategori --</option>
+                  {categories.map((c) => (
+                    <option key={c.id_category} value={c.id_category}>
+                      {c.nama_kategori}
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="flex flex-col gap-xs">
+                <label className="font-body-sm text-body-sm text-on-surface-variant font-medium">Skill (Opsional)</label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {skills.map((s) => {
+                    const isSelected = selectedSkills.includes(s.id_skill_master);
+                    return (
+                      <button
+                        key={s.id_skill_master}
+                        type="button"
+                        onClick={() => toggleSkill(s.id_skill_master)}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors cursor-pointer ${
+                          isSelected 
+                            ? 'bg-primary text-on-primary border-primary hover:bg-primary/90' 
+                            : 'bg-surface text-on-surface-variant border-outline-variant hover:bg-surface-container-low hover:border-primary/50'
+                        }`}
+                      >
+                        {s.nama_skill}
+                      </button>
+                    );
+                  })}
+                  {skills.length === 0 && (
+                    <span className="text-sm text-on-surface-variant italic">Belum ada skill yang tersedia...</span>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-sm">

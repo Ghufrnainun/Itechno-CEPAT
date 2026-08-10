@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
         },
         messages: {
           orderBy: { created_at: 'desc' },
-          take: 1, // only fetch the latest message for preview
+          take: 100, // fetch enough to compute unread and get the latest non-cleared message
         }
       },
       orderBy: {
@@ -57,14 +57,43 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    // Process each room to compute unread counts and filter cleared messages
+    const processedRooms = chatRooms.reduce((acc, room) => {
+      const isRequester = room.id_requester === currentUser.id_user;
+      const clearedAt = isRequester ? room.cleared_at_requester : room.cleared_at_worker;
+
+      // Filter messages that are newer than cleared_at
+      const validMessages = room.messages.filter(msg => {
+        if (!clearedAt) return true;
+        return msg.created_at > clearedAt;
+      });
+
+      // If the room was cleared and there are no valid messages since then, hide it entirely
+      if (clearedAt && validMessages.length === 0) {
+        return acc;
+      }
+
+      // Calculate unread count (messages from OTHER user that are unread)
+      const unreadCount = validMessages.filter(msg => 
+        msg.id_sender !== currentUser.id_user && msg.is_read === false
+      ).length;
+
+      acc.push({
+        ...room,
+        messages: validMessages.slice(0, 1), // Only keep the latest valid message for preview
+        unreadCount
+      });
+      return acc;
+    }, [] as any[]);
+
     // Sort by the latest message's created_at, or room's created_at if no messages
-    chatRooms.sort((a, b) => {
+    processedRooms.sort((a, b) => {
       const aTime = a.messages[0]?.created_at.getTime() || a.created_at.getTime();
       const bTime = b.messages[0]?.created_at.getTime() || b.created_at.getTime();
       return bTime - aTime;
     });
 
-    return NextResponse.json({ success: true, data: chatRooms })
+    return NextResponse.json({ success: true, data: processedRooms })
   } catch (error: any) {
     console.error('[GET /api/chat] Error:', error)
     return NextResponse.json(

@@ -16,6 +16,22 @@ function ChatContent() {
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const supabase = createClient();
 
+  const fetchRooms = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch('/api/chat');
+      const data = await res.json();
+      
+      if (data.success) {
+        setRooms(data.data);
+      }
+    } catch (error) {
+      console.error("Gagal meload daftar chat", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     async function loadInitialData() {
       try {
@@ -35,8 +51,6 @@ function ChatContent() {
                setCurrentUserId(user.id);
             } else {
                // Need API to get real userId, fallback to checking worker
-               const { data: userData } = await supabase.auth.getUser();
-               // Wait, user.id is auth id, not the id_user from prisma
                const resMe = await fetch('/api/users/me').catch(() => null);
                if (resMe && resMe.ok) {
                  const resMeData = await resMe.json();
@@ -98,6 +112,7 @@ function ChatContent() {
             currentUserId={currentUserId}
             onSelectRoom={setSelectedRoomId}
             isLoading={isLoading}
+            onActionComplete={fetchRooms}
           />
         </div>
 
@@ -123,7 +138,13 @@ function ChatContent() {
                 title: selectedRoomInfo.task.judul_tugas,
                 otherUserName: selectedRoomInfo.requester.id_user === currentUserId 
                   ? selectedRoomInfo.worker.nama_lengkap 
-                  : selectedRoomInfo.requester.nama_lengkap
+                  : selectedRoomInfo.requester.nama_lengkap,
+                otherUserId: selectedRoomInfo.requester.id_user === currentUserId 
+                  ? selectedRoomInfo.worker.id_user 
+                  : selectedRoomInfo.requester.id_user,
+                otherUserAvatarUrl: selectedRoomInfo.requester.id_user === currentUserId 
+                  ? selectedRoomInfo.worker.avatar_url 
+                  : selectedRoomInfo.requester.avatar_url
               }}
             />
           ) : (

@@ -16,6 +16,39 @@ interface TaskInspectorProps {
 
 export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspectorProps) {
   const router = useRouter();
+  const { showToast } = useToast();
+  const [isStartingChat, setIsStartingChat] = useState(false);
+
+  const handleInitChat = async () => {
+    try {
+      setIsStartingChat(true);
+      // Get current user (worker)
+      const resMe = await fetch('/api/users/me');
+      const dataMe = await resMe.json();
+      if (!dataMe.success) throw new Error("Gagal mendapatkan data user");
+      
+      const resInit = await fetch('/api/chat/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_tasks: task.id_task,
+          id_worker: dataMe.data.id_user
+        })
+      });
+      
+      const dataInit = await resInit.json();
+      if (dataInit.success) {
+        router.push(`/chat?room=${dataInit.data.id_chat_room}`);
+      } else {
+        throw new Error(dataInit.message || "Gagal membuat obrolan");
+      }
+    } catch (e: any) {
+      console.error(e);
+      showToast(e.message || "Gagal memulai chat.");
+    } finally {
+      setIsStartingChat(false);
+    }
+  };
 
   return (
     <aside className="w-full sm:w-[440px] fixed inset-y-0 right-0 sm:relative bg-surface border-l border-outline-variant flex-shrink-0 h-full flex flex-col z-50 sm:z-20 shadow-xl sm:shadow-[-4px_0_24px_rgba(0,0,0,0.02)] animate-slide-in">
@@ -123,10 +156,15 @@ export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspect
         <Button 
           variant="secondary"
           className="flex-1 py-md text-[16px] flex items-center justify-center gap-xs"
-          onClick={() => router.push("/chat")}
+          onClick={handleInitChat}
+          disabled={isStartingChat}
         >
-          <span className="material-symbols-outlined text-[20px]" aria-hidden="true">chat</span>
-          Chat
+          {isStartingChat ? (
+             <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+          ) : (
+             <span className="material-symbols-outlined text-[20px]" aria-hidden="true">chat</span>
+          )}
+          {isStartingChat ? "Memproses..." : "Chat"}
         </Button>
         <Button 
           variant={isApplied ? "ghost" : "primary"}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { ChatInput } from './ChatInput';
 
@@ -23,6 +24,8 @@ interface ChatRoomProps {
   roomInfo: {
     title: string;
     otherUserName: string;
+    otherUserId: string;
+    otherUserAvatarUrl?: string | null;
   };
 }
 
@@ -31,6 +34,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomPr
   const [isLoading, setIsLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedFile, setDraggedFile] = useState<File | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
@@ -202,24 +206,41 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomPr
         >
           <span className="material-symbols-outlined text-[24px]">arrow_back</span>
         </button>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center border border-outline-variant/30 shrink-0 overflow-hidden">
-          <span className="material-symbols-outlined text-on-surface-variant">person</span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-body-md text-body-md font-semibold text-on-surface truncate">{roomInfo.otherUserName}</h3>
-          <span className="font-label-sm text-label-sm text-primary flex items-center gap-xs">
-            <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
-            Online
-          </span>
-        </div>
-        <div className="flex gap-sm text-on-surface-variant shrink-0">
-          <button className="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors cursor-pointer">
-            <span className="material-symbols-outlined" aria-hidden="true">call</span>
-          </button>
-          <button className="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors cursor-pointer">
+        <Link href={`/profile/${roomInfo.otherUserId}`} className="flex items-center gap-md hover:bg-surface-container/30 px-2 py-1 rounded-lg transition-colors min-w-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center border border-outline-variant/30 shrink-0 overflow-hidden relative">
+            {roomInfo.otherUserAvatarUrl ? (
+              <img src={roomInfo.otherUserAvatarUrl} alt={roomInfo.otherUserName} className="w-full h-full object-cover" />
+            ) : (
+              <span className="material-symbols-outlined text-on-surface-variant">person</span>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-body-md text-body-md font-semibold text-on-surface truncate hover:text-primary transition-colors">{roomInfo.otherUserName}</h3>
+            <span className="font-label-sm text-label-sm text-primary flex items-center gap-xs">
+              <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
+              Online
+            </span>
+          </div>
+        </Link>
+        
+        <div className="flex-1"></div>
+        <div className="flex gap-sm text-on-surface-variant shrink-0 relative">
+          <button 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors cursor-pointer"
+          >
             <span className="material-symbols-outlined" aria-hidden="true">more_vert</span>
           </button>
+          
+          {isMenuOpen && (
+            <div className="absolute right-0 top-12 w-48 bg-white border border-outline-variant/60 rounded-lg shadow-lg py-1 z-50">
+              <button className="w-full text-left px-4 py-2 hover:bg-surface-container text-on-surface font-body-sm transition-colors" onClick={() => setIsMenuOpen(false)}>Search chat</button>
+              <button className="w-full text-left px-4 py-2 hover:bg-surface-container text-on-surface font-body-sm transition-colors" onClick={() => setIsMenuOpen(false)}>Select chat</button>
+              <button className="w-full text-left px-4 py-2 hover:bg-surface-container text-on-surface font-body-sm transition-colors" onClick={() => setIsMenuOpen(false)}>Clear chat</button>
+              <button className="w-full text-left px-4 py-2 hover:bg-surface-container text-error font-body-sm transition-colors" onClick={() => setIsMenuOpen(false)}>Delete chat</button>
+            </div>
+          )}
         </div>
       </div>
 
