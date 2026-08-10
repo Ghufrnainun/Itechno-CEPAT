@@ -45,7 +45,7 @@ function FcmBridge() {
   
   if (permission === 'default' && !dismissed) {
     return (
-      <div className="fixed bottom-[80px] lg:bottom-6 left-4 right-4 lg:left-auto lg:right-6 lg:w-96 bg-surface border border-outline shadow-lg rounded-xl p-4 z-50 flex flex-col gap-3 animate-in slide-in-from-bottom-5">
+      <div className="fixed bottom-[80px] lg:bottom-6 left-4 right-4 lg:left-6 lg:right-auto lg:w-96 bg-surface border border-outline shadow-lg rounded-xl p-4 z-30 flex flex-col gap-3 animate-in slide-in-from-bottom-5">
         <div>
           <h4 className="font-bold text-on-surface flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">notifications_active</span>
