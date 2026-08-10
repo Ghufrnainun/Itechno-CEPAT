@@ -31,7 +31,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied }: TaskInspect
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id_tasks: task.id_task || task.id_tasks,
+          id_tasks: task.id_task,
           id_worker: dataMe.data.id_user
         })
       });
