@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useCurrentRole } from "@/app/(main)/layout";
 import { SKILL_CATEGORIES } from "@/constants/skills";
 import { SdgBadge } from "@/components/ui/SdgBadge";
 import { Button } from "@/components/ui/Button";
@@ -25,10 +26,18 @@ interface ReviewData {
   };
 }
 
+export interface UserSkill {
+  nama_skill: string;
+  deskripsi_pengalaman: string | null;
+  certificate_url: string | null;
+}
+
 export default function UserProfilePage() {
   const router = useRouter();
   const params = useParams();
+  const { user } = useCurrentRole();
   const userId = (params?.id as string) || "budi";
+  const isCurrentUser = userId === "me" || (user?.id_user && userId === user.id_user);
 
   // Local storage profile values or defaults
   const [name, setName] = useState("Pengguna CEPAT");
@@ -37,7 +46,8 @@ export default function UserProfilePage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [alamat, setAlamat] = useState("");
-  const [skills, setSkills] = useState<string[]>([]);
+  const [skills, setSkills] = useState<UserSkill[]>([]);
+
   const [rating, setRating] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -50,8 +60,10 @@ export default function UserProfilePage() {
   const [editBio, setEditBio] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editAlamat, setEditAlamat] = useState("");
+  const [editSkills, setEditSkills] = useState<UserSkill[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
 
   // Reviews from API
   const [reviews, setReviews] = useState<ReviewData[]>([]);
@@ -77,7 +89,13 @@ export default function UserProfilePage() {
             
             // Handle skills
             if (json.data.skills_user && Array.isArray(json.data.skills_user)) {
-              const apiSkills = json.data.skills_user.map((su: any) => su.skills_master?.nama_skill).filter(Boolean);
+              const apiSkills = json.data.skills_user
+                .map((su: any) => ({
+                  nama_skill: su.skills_master?.nama_skill || "",
+                  deskripsi_pengalaman: su.deskripsi_pengalaman || "",
+                  certificate_url: su.certificate_url || "",
+                }))
+                .filter((s: UserSkill) => s.nama_skill);
               if (apiSkills.length > 0) {
                 setSkills(apiSkills);
               }
@@ -150,6 +168,7 @@ export default function UserProfilePage() {
     setEditBio(bio);
     setEditPhone(phone);
     setEditAlamat(alamat);
+    setEditSkills([...skills]);
     setIsEditOpen(true);
   };
 
@@ -164,7 +183,8 @@ export default function UserProfilePage() {
           bio: editBio,
           pendidikan_terakhir: editUniv,
           no_telpon: editPhone,
-          alamat: editAlamat
+          alamat: editAlamat,
+          skills: editSkills
         })
       });
       if (res.ok) {
@@ -173,6 +193,7 @@ export default function UserProfilePage() {
         setUniv(editUniv);
         setPhone(editPhone);
         setAlamat(editAlamat);
+        setSkills(editSkills);
         setIsEditOpen(false);
       }
     } catch (err) {
@@ -220,16 +241,16 @@ export default function UserProfilePage() {
 
       {/* Profile Info Section (Overlapping Banner) */}
       <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 relative -mt-16 md:-mt-20">
-        <div className="bg-white rounded-2xl shadow-sm border border-outline-variant/60 p-6 md:p-8 flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">
+        <div className="bg-white rounded-2xl shadow-sm border border-outline-variant/60 p-5 md:p-8 flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">
           <div className="flex flex-col md:flex-row md:items-end gap-5">
             {/* Avatar */}
-            <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white bg-primary text-on-primary flex items-center justify-center font-bold text-4xl md:text-5xl shadow-md shrink-0 overflow-hidden relative group hover:scale-105 transition-transform duration-300 ${userId === 'me' ? 'cursor-pointer' : ''}`}>
+            <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white bg-primary text-on-primary flex items-center justify-center font-bold text-4xl md:text-5xl shadow-md shrink-0 overflow-hidden relative group hover:scale-105 transition-transform duration-300 ${isCurrentUser ? 'cursor-pointer' : ''}`}>
               {avatarUrl ? (
                 <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
               ) : (
                 name.substring(0, 2).toUpperCase()
               )}
-              {userId === 'me' && (
+              {isCurrentUser && (
                 <>
                   <input 
                     type="file" 
@@ -267,7 +288,7 @@ export default function UserProfilePage() {
           </div>
 
           {/* Stats & Actions */}
-          <div className="flex flex-wrap items-center gap-4 md:mb-1">
+          <div className="flex flex-wrap items-center justify-start gap-3 md:gap-4 md:mb-1 w-full md:w-auto">
             <div className="flex flex-col items-center p-3 bg-surface-container-low rounded-xl min-w-[100px] border border-outline-variant/50 relative hover:-translate-y-1 hover:shadow-md transition-all duration-300">
               <span className="text-xl font-bold text-on-surface flex items-center gap-1">
                 {rating} 
@@ -281,7 +302,7 @@ export default function UserProfilePage() {
               <span className="text-xs text-on-surface-variant font-medium mt-0.5">Tugas Selesai</span>
             </div>
 
-            {userId === "me" && (
+            {isCurrentUser && (
               <div className="flex items-center gap-3 w-full md:w-auto md:ml-auto mt-2 md:mt-0">
                 <Button variant="secondary" className="flex-1 md:flex-none py-4 px-3 md:px-6 rounded-xl font-bold shadow-xs hover:shadow-md hover:-translate-y-1 active:scale-95 transition-all duration-300" onClick={() => router.push("/wallet")}>
                   <span className="material-symbols-outlined text-[20px] mr-1.5 md:mr-2" aria-hidden="true">account_balance_wallet</span>
@@ -398,17 +419,37 @@ export default function UserProfilePage() {
               </h3>
               
               {skills.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {skills.map((skillVal) => {
-                    const skillInfo = SKILL_CATEGORIES.find((s) => s.value === skillVal);
+                <div className="flex flex-col gap-3">
+                  {skills.map((skillObj, idx) => {
+                    const skillInfo = SKILL_CATEGORIES.find((s) => s.value === skillObj.nama_skill);
                     if (!skillInfo) return null;
                     return (
                       <div
-                        key={skillVal}
-                        className="inline-flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-full text-xs font-bold text-primary hover:scale-105 hover:bg-primary/15 transition-all cursor-default"
+                        key={idx}
+                        className="flex flex-col gap-2 p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/30"
                       >
-                        <span className="material-symbols-outlined text-[16px]" aria-hidden="true">{skillInfo.icon}</span>
-                        <span>{skillInfo.label}</span>
+                        <div className="inline-flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-full text-xs font-bold text-primary w-max hover:bg-primary/15 transition-colors cursor-default">
+                          <span className="material-symbols-outlined text-[16px]" aria-hidden="true">{skillInfo.icon}</span>
+                          <span>{skillInfo.label}</span>
+                        </div>
+                        
+                        {skillObj.deskripsi_pengalaman && (
+                          <p className="text-sm text-on-surface-variant leading-relaxed mt-1">
+                            {skillObj.deskripsi_pengalaman}
+                          </p>
+                        )}
+                        
+                        {skillObj.certificate_url && (
+                          <a
+                            href={skillObj.certificate_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-bold text-primary flex items-center gap-1 hover:underline mt-1 w-max bg-primary/5 px-2 py-1 rounded-md"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">link</span>
+                            Lihat Sertifikat
+                          </a>
+                        )}
                       </div>
                     );
                   })}
@@ -442,7 +483,7 @@ export default function UserProfilePage() {
       </div>
 
       <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit Profil">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-bold text-on-surface">Nama Lengkap</label>
             <input type="text" value={editName} onChange={e => setEditName(e.target.value)} className="p-2 border border-outline-variant rounded-md bg-surface text-on-surface outline-none focus:border-primary" />
@@ -463,12 +504,95 @@ export default function UserProfilePage() {
             <label className="text-sm font-bold text-on-surface">Alamat</label>
             <input type="text" value={editAlamat} onChange={e => setEditAlamat(e.target.value)} className="p-2 border border-outline-variant rounded-md bg-surface text-on-surface outline-none focus:border-primary" />
           </div>
-          <div className="flex justify-end gap-3 mt-2">
-            <Button variant="outline" onClick={() => setIsEditOpen(false)}>Batal</Button>
-            <Button variant="primary" onClick={handleSaveEdit} disabled={isSaving}>
-              {isSaving ? "Menyimpan..." : "Simpan"}
-            </Button>
+
+          {/* Skill Edit Section */}
+          <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-outline-variant">
+            <div className="flex justify-between items-center">
+              <label className="text-sm font-bold text-on-surface">Keahlian & Sertifikat</label>
+              <Button 
+                variant="secondary" 
+                className="px-2 py-1 text-xs h-auto" 
+                onClick={() => setEditSkills([...editSkills, { nama_skill: SKILL_CATEGORIES[0].value, deskripsi_pengalaman: '', certificate_url: '' }])}
+              >
+                <span className="material-symbols-outlined text-[14px] mr-1">add</span>
+                Tambah
+              </Button>
+            </div>
+            
+            <div className="flex flex-col gap-3">
+              {editSkills.map((skill, idx) => (
+                <div key={idx} className="flex flex-col gap-3 p-4 border border-outline-variant rounded-xl bg-surface-container-lowest relative group transition-colors hover:border-primary/50">
+                  <button 
+                    onClick={() => setEditSkills(editSkills.filter((_, i) => i !== idx))} 
+                    className="absolute top-3 right-3 text-on-surface-variant hover:text-red-500 transition-colors w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50"
+                    title="Hapus Keahlian"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                  </button>
+                  
+                  <div className="flex flex-col gap-1.5 pr-8">
+                    <label className="text-xs font-bold text-on-surface-variant">Pilih Keahlian</label>
+                    <select 
+                      value={skill.nama_skill} 
+                      onChange={(e) => {
+                        const newSkills = [...editSkills];
+                        newSkills[idx].nama_skill = e.target.value;
+                        setEditSkills(newSkills);
+                      }} 
+                      className="p-2 border border-outline-variant rounded-md bg-surface text-sm font-medium outline-none focus:border-primary"
+                    >
+                      {SKILL_CATEGORIES.map(cat => <option key={cat.value} value={cat.value}>{cat.label}</option>)}
+                    </select>
+                  </div>
+                  
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant">Deskripsi (Opsional)</label>
+                    <textarea 
+                      value={skill.deskripsi_pengalaman || ''} 
+                      onChange={(e) => {
+                        const newSkills = [...editSkills];
+                        newSkills[idx].deskripsi_pengalaman = e.target.value;
+                        setEditSkills(newSkills);
+                      }} 
+                      className="p-2 border border-outline-variant rounded-md bg-surface text-sm min-h-[70px] outline-none focus:border-primary resize-y" 
+                      placeholder="Ceritakan pengalaman atau proyek yang pernah kamu kerjakan terkait skill ini..." 
+                    />
+                  </div>
+                  
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">link</span>
+                      Tautan Sertifikat / Portofolio (Opsional)
+                    </label>
+                    <input 
+                      type="url" 
+                      value={skill.certificate_url || ''} 
+                      onChange={(e) => {
+                        const newSkills = [...editSkills];
+                        newSkills[idx].certificate_url = e.target.value;
+                        setEditSkills(newSkills);
+                      }} 
+                      className="p-2 border border-outline-variant rounded-md bg-surface text-sm outline-none focus:border-primary" 
+                      placeholder="https://..." 
+                    />
+                  </div>
+                </div>
+              ))}
+              
+              {editSkills.length === 0 && (
+                <div className="text-center p-4 bg-surface-container-lowest border border-outline-variant/30 border-dashed rounded-xl">
+                  <p className="text-sm text-on-surface-variant">Belum ada keahlian ditambahkan.</p>
+                </div>
+              )}
+            </div>
           </div>
+        </div>
+
+        <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-outline-variant">
+          <Button variant="outline" onClick={() => setIsEditOpen(false)}>Batal</Button>
+          <Button variant="primary" onClick={handleSaveEdit} disabled={isSaving}>
+            {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+          </Button>
         </div>
       </Modal>
     </div>

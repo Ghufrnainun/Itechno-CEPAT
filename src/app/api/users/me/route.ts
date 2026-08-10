@@ -106,8 +106,21 @@ export async function PUT(request: NextRequest) {
     });
 
     // Save skills if provided
-    if (Array.isArray(skills) && skills.length > 0) {
-      for (const skillName of skills) {
+    if (Array.isArray(skills)) {
+      // Clear existing skills to handle updates and removals
+      await prisma.skillsUser.deleteMany({
+        where: { id_user: updatedUser.id_user },
+      });
+
+      for (const skillData of skills) {
+        const isObject = typeof skillData === "object" && skillData !== null;
+        const skillName = isObject ? skillData.nama_skill : skillData;
+        
+        if (!skillName) continue;
+
+        const deskripsi_pengalaman = isObject ? skillData.deskripsi_pengalaman : null;
+        const certificate_url = isObject ? skillData.certificate_url : null;
+
         let skillMaster = await prisma.skillsMaster.findUnique({
           where: { nama_skill: skillName },
         });
@@ -118,21 +131,14 @@ export async function PUT(request: NextRequest) {
           });
         }
 
-        const existingSkillUser = await prisma.skillsUser.findFirst({
-          where: {
+        await prisma.skillsUser.create({
+          data: {
             id_user: updatedUser.id_user,
             id_skills_master: skillMaster.id_skill_master,
+            deskripsi_pengalaman,
+            certificate_url,
           },
         });
-
-        if (!existingSkillUser) {
-          await prisma.skillsUser.create({
-            data: {
-              id_user: updatedUser.id_user,
-              id_skills_master: skillMaster.id_skill_master,
-            },
-          });
-        }
       }
     }
 

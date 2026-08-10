@@ -99,6 +99,7 @@ function StepProfile({
   setBio,
   selectedSkills,
   toggleSkill,
+  updateSkillDetail,
   onBack,
   onSubmit,
   loading,
@@ -106,8 +107,9 @@ function StepProfile({
 }: {
   bio: string;
   setBio: (v: string) => void;
-  selectedSkills: string[];
+  selectedSkills: { nama_skill: string; deskripsi_pengalaman: string; certificate_url: string }[];
   toggleSkill: (v: string) => void;
+  updateSkillDetail: (skillValue: string, field: 'deskripsi_pengalaman' | 'certificate_url', val: string) => void;
   onBack: () => void;
   onSubmit: () => void;
   loading: boolean;
@@ -176,9 +178,9 @@ function StepProfile({
               {selectedSkills.length} terpilih
             </span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
             {SKILL_CATEGORIES.map((skill) => {
-              const sel = selectedSkills.includes(skill.value);
+              const sel = selectedSkills.some(s => s.nama_skill === skill.value);
               return (
                 <button
                   key={skill.value}
@@ -198,6 +200,40 @@ function StepProfile({
               );
             })}
           </div>
+
+          {selectedSkills.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mt-2">
+                Detail Keahlian{" "}
+                <span className="text-on-surface-variant/40 normal-case font-normal tracking-normal">
+                  (opsional)
+                </span>
+              </label>
+              {selectedSkills.map((skill) => {
+                const skillInfo = SKILL_CATEGORIES.find(s => s.value === skill.nama_skill);
+                return (
+                  <div key={skill.nama_skill} className="p-3 border border-outline-variant rounded-xl bg-surface-container-lowest flex flex-col gap-2">
+                    <p className="text-xs font-bold text-primary flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[16px]">{skillInfo?.icon}</span>
+                      {skillInfo?.label}
+                    </p>
+                    <textarea
+                      className="w-full p-2.5 text-[13px] rounded-lg border border-outline-variant bg-white focus:outline-none focus:border-primary transition-all resize-none min-h-[60px]"
+                      placeholder="Ceritakan pengalamanmu..."
+                      value={skill.deskripsi_pengalaman}
+                      onChange={(e) => updateSkillDetail(skill.nama_skill, 'deskripsi_pengalaman', e.target.value)}
+                    />
+                    <Input
+                      type="url"
+                      placeholder="Link Sertifikat / Portofolio"
+                      value={skill.certificate_url}
+                      onChange={(e) => updateSkillDetail(skill.nama_skill, 'certificate_url', e.target.value)}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -243,18 +279,25 @@ function OnboardingContent() {
   const [bio, setBio] = useState("");
   const [univ, setUniv] = useState("");
   const [phone, setPhone] = useState("");
-  const [selectedSkills, setSelectedSkills] = useState<string[]>(["fotografi"]);
+  const [selectedSkills, setSelectedSkills] = useState<{ nama_skill: string; deskripsi_pengalaman: string; certificate_url: string }[]>([
+    { nama_skill: "fotografi", deskripsi_pengalaman: "", certificate_url: "" }
+  ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const toggleSkill = (value: string) => {
-    if (selectedSkills.includes(value)) {
+    const exists = selectedSkills.find(s => s.nama_skill === value);
+    if (exists) {
       if (selectedSkills.length > 1) {
-        setSelectedSkills(selectedSkills.filter((s) => s !== value));
+        setSelectedSkills(selectedSkills.filter((s) => s.nama_skill !== value));
       }
     } else {
-      setSelectedSkills([...selectedSkills, value]);
+      setSelectedSkills([...selectedSkills, { nama_skill: value, deskripsi_pengalaman: "", certificate_url: "" }]);
     }
+  };
+
+  const updateSkillDetail = (skillValue: string, field: 'deskripsi_pengalaman' | 'certificate_url', val: string) => {
+    setSelectedSkills(prev => prev.map(s => s.nama_skill === skillValue ? { ...s, [field]: val } : s));
   };
 
   const goToStep2 = () => {
@@ -350,6 +393,7 @@ function OnboardingContent() {
             setBio={setBio}
             selectedSkills={selectedSkills}
             toggleSkill={toggleSkill}
+            updateSkillDetail={updateSkillDetail}
             onBack={() => {
               setError("");
               setStep(1);

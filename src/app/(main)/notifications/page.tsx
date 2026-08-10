@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useNotifications, NotificationItem } from "@/hooks/useNotifications";
 import { useToast } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
@@ -8,6 +9,7 @@ import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const { showToast } = useToast();
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead } = useNotifications();
   const [filterTab, setFilterTab] = useState<"all" | "unread" | "read">("all");
@@ -20,13 +22,21 @@ export default function NotificationsPage() {
   const getIcon = (type: string) => {
     switch (type) {
       case "points":
+      case "escrow":
+      case "topup":
         return <span className="material-symbols-outlined text-secondary text-[24px]" aria-hidden="true">account_balance_wallet</span>;
       case "accept":
         return <span className="material-symbols-outlined text-primary text-[24px]" aria-hidden="true">check_circle</span>;
+      case "reject":
+      case "cancel":
+        return <span className="material-symbols-outlined text-error text-[24px]" aria-hidden="true">cancel</span>;
       case "apply":
         return <span className="material-symbols-outlined text-amber-500 text-[24px]" aria-hidden="true">assignment_ind</span>;
       case "review":
+      case "milestone":
         return <span className="material-symbols-outlined text-amber-400 text-[24px]" aria-hidden="true">star</span>;
+      case "chat":
+        return <span className="material-symbols-outlined text-primary text-[24px]" aria-hidden="true">chat</span>;
       default:
         return <span className="material-symbols-outlined text-outline text-[24px]" aria-hidden="true">info</span>;
     }
@@ -37,6 +47,80 @@ export default function NotificationsPage() {
       return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: idLocale });
     } catch {
       return dateStr;
+    }
+  };
+
+  const getNotificationLink = (notif: NotificationItem): string | null => {
+    const data = notif.data || {};
+
+    // 1. Direct URL/link/href in payload
+    if (typeof data.url === "string" && data.url) return data.url;
+    if (typeof data.link === "string" && data.link) return data.link;
+    if (typeof data.href === "string" && data.href) return data.href;
+
+    // 2. Task ID in payload
+    const taskId = data.task_id || data.taskId || data.id_tasks || data.id_task;
+    if (taskId && typeof taskId === "string") {
+      return `/task/${taskId}`;
+    }
+
+    // 3. Fallback based on notification type
+    switch (notif.type) {
+      case "apply":
+      case "accept":
+      case "reject":
+      case "cancel":
+      case "progress":
+        return taskId ? `/task/${taskId}` : "/history/riwayat";
+      case "points":
+      case "escrow":
+      case "topup":
+        return taskId ? `/task/${taskId}` : "/wallet";
+      case "review":
+      case "milestone":
+        return taskId ? `/task/${taskId}` : "/profile/me";
+      case "chat":
+        return "/chat";
+      case "welcome":
+        return "/feed";
+      default: {
+        const titleLower = (notif.title || "").toLowerCase();
+        const msgLower = (notif.message || "").toLowerCase();
+        if (
+          titleLower.includes("saldo") ||
+          titleLower.includes("poin") ||
+          titleLower.includes("escrow") ||
+          msgLower.includes("escrow") ||
+          msgLower.includes("poin")
+        ) {
+          return "/wallet";
+        }
+        if (
+          titleLower.includes("ulasan") ||
+          titleLower.includes("rating") ||
+          titleLower.includes("profil")
+        ) {
+          return "/profile/me";
+        }
+        if (
+          titleLower.includes("tugas") ||
+          titleLower.includes("task") ||
+          titleLower.includes("lamaran")
+        ) {
+          return "/feed";
+        }
+        return "/feed";
+      }
+    }
+  };
+
+  const handleNotificationClick = async (notif: NotificationItem) => {
+    if (!notif.isRead) {
+      await markAsRead(notif.id);
+    }
+    const targetLink = getNotificationLink(notif);
+    if (targetLink) {
+      router.push(targetLink);
     }
   };
 
@@ -115,12 +199,12 @@ export default function NotificationsPage() {
             filteredNotifications.map((notif: NotificationItem) => (
               <div
                 key={notif.id}
-                className={`p-md flex items-start gap-md transition-all cursor-pointer hover:bg-surface-container-low/40 ${
+                className={`group p-md flex items-start gap-md transition-all cursor-pointer hover:bg-surface-container-low/60 ${
                   notif.isRead
                     ? "bg-white"
-                    : "bg-surface-container-low border-l-4 border-l-primary-container"
+                    : "bg-surface-container-low/40 border-l-4 border-l-primary"
                 }`}
-                onClick={() => !notif.isRead && markAsRead(notif.id)}
+                onClick={() => handleNotificationClick(notif)}
               >
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
                   notif.type === "points" ? "bg-secondary-container/20" :
@@ -134,7 +218,7 @@ export default function NotificationsPage() {
 
                 <div className="flex-grow flex flex-col gap-xs overflow-hidden">
                   <div className="flex justify-between items-start gap-md">
-                    <h3 className={`font-body-md text-body-md ${notif.isRead ? "font-semibold text-on-surface-variant" : "font-bold text-on-surface"}`}>
+                    <h3 className={`font-body-md text-body-md group-hover:text-primary transition-colors ${notif.isRead ? "font-semibold text-on-surface-variant" : "font-bold text-on-surface"}`}>
                       {notif.title}
                     </h3>
                     <div className="flex items-center gap-xs shrink-0">
@@ -146,9 +230,13 @@ export default function NotificationsPage() {
                       </span>
                     </div>
                   </div>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">
+                  <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
                     {notif.message}
                   </p>
+                </div>
+
+                <div className="hidden sm:flex items-center text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all self-center shrink-0">
+                  <span className="material-symbols-outlined text-[20px]" aria-hidden="true">chevron_right</span>
                 </div>
               </div>
             ))
@@ -158,3 +246,4 @@ export default function NotificationsPage() {
     </div>
   );
 }
+

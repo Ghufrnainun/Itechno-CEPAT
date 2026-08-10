@@ -76,32 +76,16 @@ export default function RegisterPage() {
     <main className="w-full min-h-screen flex flex-col lg:flex-row overflow-hidden bg-white font-sans">
       {/* ───────────── LEFT: BRAND PANEL ───────────── */}
       <section
-        className="relative hidden lg:flex w-[54%] xl:w-[55%] flex-col justify-between overflow-hidden bg-gradient-to-br from-[#0d4f48] via-[#083832] to-[#072e29]"
-        style={{
-          clipPath: 'polygon(0 0, 100% 0, 90% 100%, 0 100%)',
-        }}
+        className="relative hidden lg:flex w-[50%] xl:w-[45%] flex-col justify-between overflow-hidden bg-[#072e29]"
       >
-        {/* Subtle accent glow line along the slash edge */}
-        <div
-          className="absolute inset-0 z-0 pointer-events-none opacity-40"
-          style={{
-            background:
-              'radial-gradient(ellipse at 95% 50%, rgba(132, 204, 22, 0.25) 0%, transparent 60%)',
-          }}
-        />
-
         {/* Grain texture overlay */}
         <div
-          className="absolute inset-0 z-[1] opacity-[0.12] mix-blend-overlay pointer-events-none"
+          className="absolute inset-0 z-[1] opacity-[0.15] mix-blend-overlay pointer-events-none"
           style={{
             backgroundImage:
               'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E")',
           }}
         />
-
-        {/* Accent glow blobs */}
-        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-primary/20 blur-[120px] z-[1]" />
-        <div className="absolute bottom-[-15%] left-[10%] w-[400px] h-[400px] rounded-full bg-[#84CC16]/10 blur-[100px] z-[1]" />
 
         {/* Content */}
         <div className="relative z-10 flex flex-col h-full justify-between p-12 lg:p-14 xl:p-18 pr-16 lg:pr-24 xl:pr-28">
