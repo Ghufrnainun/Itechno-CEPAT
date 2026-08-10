@@ -177,3 +177,50 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     )
   }
 }
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ roomId: string }> }) {
+  try {
+    const resolvedParams = await params;
+    const roomId = resolvedParams.roomId;
+    const supabase = await createClient()
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+    if (authError || !authUser) {
+      return NextResponse.json({ success: false, message: 'Tidak terautentikasi.' }, { status: 401 })
+    }
+
+    const currentUser = await prisma.user.findUnique({
+      where: { email: authUser.email! },
+      select: { id_user: true }
+    })
+    
+    if (!currentUser) {
+      return NextResponse.json({ success: false, message: 'Pengguna tidak ditemukan.' }, { status: 404 })
+    }
+
+    const body = await request.json()
+    const { messageIds } = body
+
+    if (!messageIds || !Array.isArray(messageIds) || messageIds.length === 0) {
+      return NextResponse.json({ success: false, message: 'messageIds tidak valid.' }, { status: 400 })
+    }
+
+    const result = await prisma.message.deleteMany({
+      where: {
+        id_chat_room: roomId,
+        id_message: { in: messageIds },
+        // To be safe, only allow deleting own messages, or just allow any message in the room
+        // if we assume "Delete chat" can delete any message. Let's restrict to own messages.
+        // Wait, if I am the requester and I delete the chat, I might want to delete their message too.
+        // Let's just allow deleting any message in the room that belongs to this room.
+      }
+    })
+
+    return NextResponse.json({ success: true, deleted_count: result.count })
+  } catch (error: any) {
+    console.error(`[DELETE /api/chat/[roomId]] Error:`, error)
+    return NextResponse.json(
+      { success: false, message: 'Terjadi kesalahan.', error: error.message },
+      { status: 500 }
+    )
+  }
+}
