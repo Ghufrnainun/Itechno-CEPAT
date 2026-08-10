@@ -67,6 +67,7 @@ model User {
   tasks_posted            Task[]           @relation("RequesterTasks")
   task_applications       TaskApplicants[] @relation("WorkerApplications")
   transactions            Transactions[]
+  payment_transactions    PaymentTransaction[]
   role                    Role             @relation(fields: [id_role], references: [id_role])
 }
 
@@ -188,6 +189,28 @@ model Message {
   created_at   DateTime @default(now())
   chat_room    ChatRoom @relation(fields: [id_chat_room], references: [id_chat_room], onDelete: Cascade)
   sender       User     @relation("UserMessages", fields: [id_sender], references: [id_user], onDelete: Cascade)
+}
+
+model PaymentTransaction {
+  id                String        @id @default(uuid())
+  id_user           String
+  order_id          String        @unique
+  amount            Float
+  snap_token        String?
+  redirect_url      String?
+  payment_type      String?
+  status            PaymentStatus @default(PENDING)
+  midtrans_response Json?
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+  user              User          @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  EXPIRED
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.

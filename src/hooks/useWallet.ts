@@ -33,14 +33,44 @@ export interface WalletPagination {
   total_pages: number;
 }
 
+export type PaymentStatus = "PENDING" | "SUCCESS" | "FAILED" | "EXPIRED";
+
+export interface PendingPayment {
+  order_id: string;
+  amount: number;
+  status: PaymentStatus;
+  snap_token: string | null;
+  created_at: string;
+}
+
+// ─── Snap.js Global Type ─────────────────────────────────────────────────────
+
+declare global {
+  interface Window {
+    snap?: {
+      pay: (
+        token: string,
+        options: {
+          onSuccess?: (result: Record<string, unknown>) => void;
+          onPending?: (result: Record<string, unknown>) => void;
+          onError?: (result: Record<string, unknown>) => void;
+          onClose?: () => void;
+        }
+      ) => void;
+    };
+  }
+}
+
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
 export function useWallet() {
   const [balance, setBalance] = useState<WalletBalance | null>(null);
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [pagination, setPagination] = useState<WalletPagination | null>(null);
+  const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // ── Fetch balance ────────────────────────────────────────────────────────
@@ -93,10 +123,10 @@ export function useWallet() {
     init();
   }, [fetchBalance, fetchHistory]);
 
-  // ── Top Up ───────────────────────────────────────────────────────────────
+  // ── Simulasi Top Up (instant — untuk demo cepat) ─────────────────────────
 
   /**
-   * Kirim request top-up ke server.
+   * Kirim request top-up simulasi ke server (instant, tanpa Midtrans).
    * @returns error message string jika gagal, undefined jika sukses.
    */
   const topUp = useCallback(
@@ -132,6 +162,114 @@ export function useWallet() {
     [fetchHistory]
   );
 
+  // ── Midtrans Payment (Snap popup) ────────────────────────────────────────
+
+  /**
+   * Buat transaksi Midtrans dan buka Snap popup.
+   * @returns error message string jika gagal, undefined jika berhasil dibuka.
+   */
+  const createPayment = useCallback(
+    async (
+      amount: number,
+      callbacks?: {
+        onSuccess?: () => void;
+        onPending?: () => void;
+        onError?: () => void;
+        onClose?: () => void;
+      }
+    ): Promise<string | undefined> => {
+      if (amount < 1000) return "Nominal minimal Rp1.000.";
+
+      setIsPaymentLoading(true);
+      try {
+        // 1. Create Snap transaction via backend
+        const res = await fetch("/api/payment/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          return data.message || "Gagal membuat transaksi.";
+        }
+
+        const { snap_token, order_id } = data.data;
+
+        // 2. Open Snap popup
+        if (!window.snap) {
+          // Snap.js belum loaded — fallback redirect
+          if (data.data.redirect_url) {
+            window.location.href = data.data.redirect_url;
+            return undefined;
+          }
+          return "Snap.js belum dimuat. Refresh halaman dan coba lagi.";
+        }
+
+        window.snap.pay(snap_token, {
+          onSuccess: async () => {
+            await checkPaymentStatus(order_id);
+            callbacks?.onSuccess?.();
+          },
+          onPending: async () => {
+            await checkPaymentStatus(order_id);
+            callbacks?.onPending?.();
+          },
+          onError: () => {
+            callbacks?.onError?.();
+          },
+          onClose: async () => {
+            await checkPaymentStatus(order_id);
+            callbacks?.onClose?.();
+          },
+        });
+
+        return undefined;
+      } catch {
+        return "Terjadi kesalahan. Silakan coba lagi.";
+      } finally {
+        setIsPaymentLoading(false);
+      }
+    },
+    [fetchBalance, fetchHistory] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  // ── Manual Payment Status Check ──────────────────────────────────────────
+
+  /**
+   * Cek status pembayaran langsung dari Midtrans API (fallback untuk localhost).
+   * Melakukan retry hingga 3x (jeda 1s) jika status masih PENDING.
+   */
+  const checkPaymentStatus = useCallback(
+    async (orderId: string, retries = 3): Promise<PaymentStatus | undefined> => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const res = await fetch(`/api/payment/status/${orderId}`);
+          const data = await res.json();
+
+          if (data.success && data.data) {
+            const status = data.data.status as PaymentStatus;
+            if (status === "SUCCESS") {
+              await fetchBalance();
+              await fetchHistory();
+              return status;
+            }
+          }
+        } catch (err) {
+          console.error("Error checking payment status:", err);
+        }
+        if (i < retries - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+      await fetchBalance();
+      await fetchHistory();
+      return undefined;
+    },
+    [fetchBalance, fetchHistory]
+  );
+
   // ── Refresh all ──────────────────────────────────────────────────────────
 
   const refresh = useCallback(async () => {
@@ -143,10 +281,14 @@ export function useWallet() {
     balance,
     transactions,
     pagination,
+    pendingPayments,
     isLoading,
     isTopUpLoading,
+    isPaymentLoading,
     error,
     topUp,
+    createPayment,
+    checkPaymentStatus,
     refresh,
   };
 }
