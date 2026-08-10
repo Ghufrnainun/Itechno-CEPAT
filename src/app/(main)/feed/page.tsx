@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/utils/format";
 import { useToast } from "@/components/ui/Toast";
 
+import { Modal } from "@/components/ui/Modal";
+
 export default function FeedPage() {
   const router = useRouter();
   const { role } = useCurrentRole();
@@ -29,6 +31,12 @@ export default function FeedPage() {
   const [selectedTask, setSelectedTask] = useState<(Task & { distance?: number }) | null>(null);
   
   const [appliedTaskIds, setAppliedTaskIds] = useState<string[]>([]);
+  const [appliedAppsMap, setAppliedAppsMap] = useState<Record<string, { status: string }>>({});
+
+  // Apply Modal state
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+  const [applyMessage, setApplyMessage] = useState("");
+  const [applyLoading, setApplyLoading] = useState(false);
 
   useEffect(() => {
     setActiveTab(role === "requester" ? "mytasks" : "feed");
@@ -51,26 +59,43 @@ export default function FeedPage() {
     loadCategories();
   }, []);
 
+  // Polling secukupnya untuk status lamaran worker (setiap 12 detik)
   useEffect(() => {
+    if (role !== "worker") return;
+
+    let isMounted = true;
+
     async function loadAppliedTaskIds() {
-      if (role !== "worker") return;
       try {
         const res = await fetch('/api/tasks/applications/me');
         const data = await res.json();
-        if (data.success) {
-          setAppliedTaskIds(data.data.map((app: any) => app.id_tasks));
+        if (data.success && isMounted) {
+          const ids: string[] = [];
+          const map: Record<string, { status: string }> = {};
+          data.data.forEach((app: any) => {
+            ids.push(app.id_tasks);
+            map[app.id_tasks] = { status: app.status };
+          });
+          setAppliedTaskIds(ids);
+          setAppliedAppsMap(map);
         }
       } catch (e) {
         console.error("Gagal load applied task ids", e);
       }
     }
+
     loadAppliedTaskIds();
+    const interval = setInterval(loadAppliedTaskIds, 12000); // Polling ringan tiap 12 detik
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [role]);
 
   useEffect(() => {
     async function loadTasks() {
       if (role === "requester") {
-        // Jika requester nyasar ke /feed, arahkan ke /tugas
         router.push("/tugas");
         return;
       }
@@ -87,7 +112,6 @@ export default function FeedPage() {
            categoryId = sortBy;
         }
 
-        // Fetch all tasks without radius limit, but pass coords for distance calculation
         let list = await getFeedTasks(
            coords.latitude, 
            coords.longitude, 
@@ -99,7 +123,6 @@ export default function FeedPage() {
 
         setTasks(list);
       } else {
-        // Load Lamaran Saya
         try {
           const res = await fetch('/api/users/me/tasks?role=worker');
           const data = await res.json();
@@ -125,30 +148,51 @@ export default function FeedPage() {
     loadTasks();
   }, [coords, sortBy, searchQuery, role, activeTab, router, locLoading]);
 
-  const handleApply = async (taskId: string) => {
+  // Open Apply Modal
+  const openApplyModal = () => {
+    if (!selectedTask) return;
+    setApplyMessage("");
+    setIsApplyModalOpen(true);
+  };
+
+  // Submit Apply dengan Pesan
+  const handleApplySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTask) return;
+    setApplyLoading(true);
+
     try {
       const res = await fetch('/api/tasks/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_tasks: taskId })
+        body: JSON.stringify({
+          id_tasks: selectedTask.id_task,
+          pesan: applyMessage.trim() || undefined,
+        })
       });
       const data = await res.json();
       
       if (res.ok && data.success) {
-        setAppliedTaskIds(prev => [...prev, taskId]);
-        showToast("Berhasil melamar tugas!");
+        setAppliedTaskIds(prev => [...prev, selectedTask.id_task]);
+        setAppliedAppsMap(prev => ({
+          ...prev,
+          [selectedTask.id_task]: { status: 'pending' }
+        }));
+        setIsApplyModalOpen(false);
+        setApplyMessage("");
+        showToast("Berhasil melamar tugas! Menunggu persetujuan pemberi kerja.");
       } else {
         showToast(data.message || "Gagal melamar tugas");
       }
     } catch (e) {
       showToast("Terjadi kesalahan jaringan.");
+    } finally {
+      setApplyLoading(false);
     }
   };
 
   return (
     <div className="flex flex-col h-full bg-layout-bg font-sans">
-
-
       {/* Main Container - Split Layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side: Feed List */}
@@ -286,11 +330,53 @@ export default function FeedPage() {
           <TaskInspector 
             task={selectedTask} 
             onClose={() => setSelectedTask(null)} 
-            onApply={() => handleApply(selectedTask.id_task)}
+            onApply={openApplyModal}
             isApplied={appliedTaskIds.includes(selectedTask.id_task)}
+            applicationStatus={appliedAppsMap[selectedTask.id_task]?.status}
           />
         )}
       </div>
+
+      {/* Modal Popup Pengiriman Pesan Lamaran */}
+      <Modal isOpen={isApplyModalOpen} onClose={() => setIsApplyModalOpen(false)} title="Lamar Tugas Pekerjaan">
+        <form onSubmit={handleApplySubmit} className="flex flex-col gap-md">
+          {selectedTask && (
+            <div className="p-sm bg-surface-container-low border border-outline-variant/60 rounded-lg flex flex-col gap-xs">
+              <span className="font-body-md text-body-md font-bold text-on-surface">{selectedTask.title}</span>
+              <span className="font-label-sm text-label-sm font-bold text-primary font-mono">
+                {formatCurrency(selectedTask.compensation)} / worker
+              </span>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-xs">
+            <label className="font-body-sm text-body-sm text-on-surface-variant font-medium">
+              Pesan untuk Pemberi Kerja (Opsional)
+            </label>
+            <textarea
+              className="input-field min-h-[100px] font-body-sm custom-scrollbar"
+              placeholder="Perkenalkan pengalaman Anda atau beri pesan singkat kepada pemberi kerja..."
+              value={applyMessage}
+              onChange={(e) => setApplyMessage(e.target.value)}
+              maxLength={500}
+            />
+          </div>
+
+          <div className="flex justify-end gap-sm border-t border-outline-variant/30 pt-md mt-sm">
+            <button
+              type="button"
+              onClick={() => setIsApplyModalOpen(false)}
+              className="font-label-md text-label-md font-bold px-md py-sm rounded border border-outline-variant/60 hover:bg-surface-container cursor-pointer transition-colors"
+              disabled={applyLoading}
+            >
+              Batal
+            </button>
+            <Button type="submit" variant="primary" disabled={applyLoading}>
+              {applyLoading ? "Mengirim..." : "Kirim Lamaran"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

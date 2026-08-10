@@ -45,16 +45,17 @@ export const reviewService = {
       throw new Error('Anda tidak dapat memberikan ulasan untuk diri sendiri.')
     }
 
-    // 4. Cek apakah sudah pernah beri review untuk task ini
+    // 4. Cek apakah sudah pernah beri review untuk kombinasi (task, rater, ratee) yang sama
     const existingReview = await prisma.reviews.findFirst({
       where: {
         id_tasks: task_id,
         id_rater: rater_id,
+        id_ratee: reviewee_id, // per-pasang: requester bisa rate setiap worker, worker rate requester
       },
     })
 
     if (existingReview) {
-      throw new Error('Anda sudah memberikan ulasan untuk task ini.')
+      throw new Error('Anda sudah memberikan ulasan untuk pengguna ini pada task ini.')
     }
 
     // 5. Simpan review & update rating_avg reviewee secara atomic (transaction)

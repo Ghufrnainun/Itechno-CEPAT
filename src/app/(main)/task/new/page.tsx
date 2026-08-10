@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/Toast";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { EscrowBanner } from "@/components/ui/EscrowBanner";
+import { formatCurrency } from "@/lib/utils/format";
 import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
 
 export default function NewTaskPage() {
@@ -21,6 +22,8 @@ export default function NewTaskPage() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [duration, setDuration] = useState("");
   const [compensation, setCompensation] = useState("");
+  const [maxApplicants, setMaxApplicants] = useState("1");
+  const [maxApplyAttempts, setMaxApplyAttempts] = useState("3");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -77,7 +80,7 @@ export default function NewTaskPage() {
       } else {
         showToast("Lokasi tidak ditemukan. Coba kata kunci lain.");
       }
-    } catch (e) {
+    } catch {
       showToast("Gagal mencari lokasi. Periksa koneksi Anda.");
     } finally {
       setSearching(false);
@@ -97,14 +100,16 @@ export default function NewTaskPage() {
       const payload: any = {
         judul_tugas: title,
         deskripsi_tugas: description,
-        id_category: categoryId,
-        estimasi_waktu: duration,
+        id_category: categoryId || undefined,
+        estimasi_waktu: duration.toLowerCase().includes("jam") ? duration : `${parseFloat(duration) || 1} Jam`,
         kompensasi: parseFloat(compensation),
+        max_applicants: parseInt(maxApplicants, 10) || 1,
+        max_apply_attempts: parseInt(maxApplyAttempts, 10) || 3,
         latitude: lat,
         longitude: lng,
       };
 
-      if (selectedSkills.length > 0) {
+      if (selectedSkills && selectedSkills.length > 0) {
         payload.skill_requirements = selectedSkills;
       }
 
@@ -218,21 +223,57 @@ export default function NewTaskPage() {
 
               <div className="grid grid-cols-2 gap-sm">
                 <Input
-                  label="Estimasi Durasi"
-                  type="text"
-                  placeholder="Contoh: 2 jam"
+                  label="Estimasi Durasi (Jam)"
+                  type="number"
+                  placeholder="Contoh: 2"
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
+                  min={1}
                   required
                 />
                 <Input
-                  label="Kompensasi (Poin)"
+                  label="Kompensasi per Worker (Poin)"
                   type="number"
                   placeholder="Contoh: 75000"
                   value={compensation}
                   onChange={(e) => setCompensation(e.target.value)}
+                  min={1000}
                   required
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-sm">
+                <Input
+                  label="Batas Maksimal Pelamar / Worker"
+                  type="number"
+                  placeholder="Contoh: 3"
+                  value={maxApplicants}
+                  onChange={(e) => setMaxApplicants(e.target.value)}
+                  min={1}
+                  required
+                />
+                <Input
+                  label="Batas Percobaan Apply (per Worker)"
+                  type="number"
+                  placeholder="Contoh: 3"
+                  value={maxApplyAttempts}
+                  onChange={(e) => setMaxApplyAttempts(e.target.value)}
+                  min={1}
+                  required
+                />
+              </div>
+
+              {/* Ringkasan Escrow Real-time */}
+              <div className="bg-surface-container-low border border-outline-variant/60 rounded-lg p-sm flex flex-col gap-xs font-label-sm">
+                <span className="text-on-surface-variant font-medium">Ringkasan Penguncian Escrow:</span>
+                <div className="flex items-center justify-between text-body-sm">
+                  <span className="text-on-surface-variant font-mono">
+                    {parseInt(maxApplicants, 10) || 1} Worker × {formatCurrency(parseFloat(compensation) || 0)}
+                  </span>
+                  <span className="font-bold text-primary font-mono text-[15px]">
+                    Total: {formatCurrency((parseFloat(compensation) || 0) * (parseInt(maxApplicants, 10) || 1))}
+                  </span>
+                </div>
               </div>
             </div>
 
