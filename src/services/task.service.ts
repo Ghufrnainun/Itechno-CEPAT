@@ -59,31 +59,11 @@ export const taskService = {
       latitude,
       longitude,
       requesterId,
-      kategori,
+      id_category,
+      skill_requirements,
     } = params;
 
     const openStatusId = await getStatusId('open');
-
-    // Cari kategori yang sesuai — atau gunakan default (kategori pertama)
-    let categoryId: string;
-    if (kategori) {
-      const cat = await prisma.taskCategory.findFirst({
-        where: { nama_kategori: { contains: kategori, mode: 'insensitive' } },
-      });
-      if (cat) {
-        categoryId = cat.id_category;
-      } else {
-        const defaultCat = await prisma.taskCategory.findFirst();
-        if (!defaultCat)
-          throw new Error('Tidak ada kategori task yang tersedia di database.');
-        categoryId = defaultCat.id_category;
-      }
-    } else {
-      const defaultCat = await prisma.taskCategory.findFirst();
-      if (!defaultCat)
-        throw new Error('Tidak ada kategori task yang tersedia di database.');
-      categoryId = defaultCat.id_category;
-    }
 
     // Insert task dengan raw SQL agar bisa pakai ST_MakePoint untuk PostGIS
     const result = await prisma.$queryRaw<{ id_tasks: string }[]>`
@@ -101,7 +81,7 @@ export const taskService = {
         ${kompensasi},
         ST_MakePoint(${longitude}, ${latitude})::geography,
         NOW(),
-        ${categoryId}
+        ${id_category}
       )
       RETURNING id_tasks
     `;
@@ -109,19 +89,14 @@ export const taskService = {
     const taskId = result[0]?.id_tasks;
     if (!taskId) throw new Error('Gagal membuat task.');
 
-    // Jika ada kategori, link ke skill master juga
-    if (kategori) {
+    // Jika ada skill requirements, link ke skill master
+    if (skill_requirements && skill_requirements.length > 0) {
       try {
-        const skill = await prisma.skillsMaster.findFirst({
-          where: { nama_skill: { contains: kategori, mode: 'insensitive' } },
+        await prisma.taskRequirements.createMany({
+          data: skill_requirements.map(id => ({ id_tasks: taskId, id_skill_master: id })),
         });
-        if (skill) {
-          await prisma.taskRequirements.create({
-            data: { id_tasks: taskId, id_skill_master: skill.id_skill_master },
-          });
-        }
-      } catch (_) {
-        // Non-blocking: skip jika skill tidak ditemukan
+      } catch (error) {
+        console.error('Error creating task requirements', error);
       }
     }
 

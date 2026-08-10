@@ -3,23 +3,23 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET() {
   try {
-    const categories = await prisma.taskCategory.findMany({
+    const skills = await prisma.skillsMaster.findMany({
       orderBy: {
-        nama_kategori: 'asc'
+        nama_skill: 'asc'
       },
       include: {
         _count: {
-          select: { tasks: true }
+          select: { skills_user: true }
         }
       }
     })
 
     return NextResponse.json({
       success: true,
-      data: categories
+      data: skills
     })
   } catch (error) {
-    console.error('[GET /api/categories] Error:', error)
+    console.error('[GET /api/skills] Error:', error)
     return NextResponse.json(
       { success: false, message: 'Terjadi kesalahan internal server.' },
       { status: 500 }
@@ -30,42 +30,41 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { nama_kategori, icon } = body
+    const { nama_skill } = body
 
-    if (!nama_kategori) {
+    if (!nama_skill) {
       return NextResponse.json(
-        { success: false, message: 'Nama kategori wajib diisi.' },
+        { success: false, message: 'Nama skill wajib diisi.' },
         { status: 400 }
       )
     }
 
-    // Check if category already exists
-    const existing = await prisma.taskCategory.findUnique({
-      where: { nama_kategori }
+    // Check if skill already exists
+    const existing = await prisma.skillsMaster.findUnique({
+      where: { nama_skill }
     })
 
     if (existing) {
       return NextResponse.json(
-        { success: false, message: 'Kategori dengan nama tersebut sudah ada.' },
+        { success: false, message: 'Skill dengan nama tersebut sudah ada.' },
         { status: 400 }
       )
     }
 
-    const newCategory = await prisma.taskCategory.create({
+    const newSkill = await prisma.skillsMaster.create({
       data: {
-        nama_kategori,
-        icon: icon || null
+        nama_skill
       }
     })
 
     return NextResponse.json({
       success: true,
-      message: 'Kategori berhasil ditambahkan.',
-      data: newCategory
+      message: 'Skill berhasil ditambahkan.',
+      data: newSkill
     })
 
   } catch (error) {
-    console.error('[POST /api/categories] Error:', error)
+    console.error('[POST /api/skills] Error:', error)
     return NextResponse.json(
       { success: false, message: 'Terjadi kesalahan internal server.' },
       { status: 500 }

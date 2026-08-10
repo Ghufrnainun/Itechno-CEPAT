@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { SKILL_CATEGORIES } from "@/constants/skills";
 import { Input } from "@/components/ui/Input";
+import { Sparkles } from "lucide-react";
 
 const BIO_TEMPLATES = [
   "Siap bantu tugas harian, admin, dan data entry.",
@@ -97,6 +97,7 @@ function StepContact({
 function StepProfile({
   bio,
   setBio,
+  availableSkills,
   selectedSkills,
   toggleSkill,
   updateSkillDetail,
@@ -107,9 +108,10 @@ function StepProfile({
 }: {
   bio: string;
   setBio: (v: string) => void;
-  selectedSkills: { nama_skill: string; deskripsi_pengalaman: string; certificate_url: string }[];
-  toggleSkill: (v: string) => void;
-  updateSkillDetail: (skillValue: string, field: 'deskripsi_pengalaman' | 'certificate_url', val: string) => void;
+  availableSkills: { id_skill_master: string; nama_skill: string }[];
+  selectedSkills: { id_skill_master: string; nama_skill: string; deskripsi_pengalaman: string; certificate_url: string }[];
+  toggleSkill: (skill: { id_skill_master: string; nama_skill: string }) => void;
+  updateSkillDetail: (skillId: string, field: 'deskripsi_pengalaman' | 'certificate_url', val: string) => void;
   onBack: () => void;
   onSubmit: () => void;
   loading: boolean;
@@ -179,22 +181,22 @@ function StepProfile({
             </span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-            {SKILL_CATEGORIES.map((skill) => {
-              const sel = selectedSkills.some(s => s.nama_skill === skill.value);
+            {availableSkills.map((skill) => {
+              const sel = selectedSkills.some(s => s.id_skill_master === skill.id_skill_master);
               return (
                 <button
-                  key={skill.value}
+                  key={skill.id_skill_master}
                   type="button"
-                  onClick={() => toggleSkill(skill.value)}
+                  onClick={() => toggleSkill(skill)}
                   className={`p-3 rounded-xl border-2 flex flex-col items-center gap-1.5 text-center cursor-pointer transition-all duration-150 ${
                     sel
                       ? "border-primary bg-primary/5 text-primary shadow-sm"
                       : "border-outline-variant/60 bg-white hover:bg-surface-container-low text-on-surface-variant hover:border-primary/30"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[22px]" aria-hidden="true">{skill.icon}</span>
-                  <span className="text-[11px] font-semibold leading-tight">
-                    {skill.label.split(" ")[0]}
+                  <Sparkles className="w-6 h-6 mb-1 text-primary/80" strokeWidth={1.5} />
+                  <span className="text-[12px] font-bold leading-tight capitalize tracking-wide font-sans text-on-surface-variant">
+                    {skill.nama_skill}
                   </span>
                 </button>
               );
@@ -210,24 +212,23 @@ function StepProfile({
                 </span>
               </label>
               {selectedSkills.map((skill) => {
-                const skillInfo = SKILL_CATEGORIES.find(s => s.value === skill.nama_skill);
                 return (
-                  <div key={skill.nama_skill} className="p-3 border border-outline-variant rounded-xl bg-surface-container-lowest flex flex-col gap-2">
-                    <p className="text-xs font-bold text-primary flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-[16px]">{skillInfo?.icon}</span>
-                      {skillInfo?.label}
+                  <div key={skill.id_skill_master} className="p-3 border border-outline-variant rounded-xl bg-surface-container-lowest flex flex-col gap-2">
+                    <p className="text-sm font-bold text-primary flex items-center gap-2 capitalize font-sans tracking-wide">
+                      <Sparkles className="w-4 h-4 text-primary" strokeWidth={2} />
+                      {skill.nama_skill}
                     </p>
                     <textarea
                       className="w-full p-2.5 text-[13px] rounded-lg border border-outline-variant bg-white focus:outline-none focus:border-primary transition-all resize-none min-h-[60px]"
                       placeholder="Ceritakan pengalamanmu..."
                       value={skill.deskripsi_pengalaman}
-                      onChange={(e) => updateSkillDetail(skill.nama_skill, 'deskripsi_pengalaman', e.target.value)}
+                      onChange={(e) => updateSkillDetail(skill.id_skill_master, 'deskripsi_pengalaman', e.target.value)}
                     />
                     <Input
                       type="url"
                       placeholder="Link Sertifikat / Portofolio"
                       value={skill.certificate_url}
-                      onChange={(e) => updateSkillDetail(skill.nama_skill, 'certificate_url', e.target.value)}
+                      onChange={(e) => updateSkillDetail(skill.id_skill_master, 'certificate_url', e.target.value)}
                     />
                   </div>
                 );
@@ -279,25 +280,39 @@ function OnboardingContent() {
   const [bio, setBio] = useState("");
   const [univ, setUniv] = useState("");
   const [phone, setPhone] = useState("");
-  const [selectedSkills, setSelectedSkills] = useState<{ nama_skill: string; deskripsi_pengalaman: string; certificate_url: string }[]>([
-    { nama_skill: "fotografi", deskripsi_pengalaman: "", certificate_url: "" }
-  ]);
+  const [availableSkills, setAvailableSkills] = useState<{ id_skill_master: string; nama_skill: string }[]>([]);
+  const [selectedSkills, setSelectedSkills] = useState<{ id_skill_master: string; nama_skill: string; deskripsi_pengalaman: string; certificate_url: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const toggleSkill = (value: string) => {
-    const exists = selectedSkills.find(s => s.nama_skill === value);
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        const res = await fetch('/api/skills');
+        const json = await res.json();
+        if (json.success && json.data) {
+          setAvailableSkills(json.data);
+        }
+      } catch (err) {
+        console.error("Gagal mengambil master skills", err);
+      }
+    };
+    fetchSkills();
+  }, []);
+
+  const toggleSkill = (skill: { id_skill_master: string; nama_skill: string }) => {
+    const exists = selectedSkills.find(s => s.id_skill_master === skill.id_skill_master);
     if (exists) {
       if (selectedSkills.length > 1) {
-        setSelectedSkills(selectedSkills.filter((s) => s.nama_skill !== value));
+        setSelectedSkills(selectedSkills.filter((s) => s.id_skill_master !== skill.id_skill_master));
       }
     } else {
-      setSelectedSkills([...selectedSkills, { nama_skill: value, deskripsi_pengalaman: "", certificate_url: "" }]);
+      setSelectedSkills([...selectedSkills, { id_skill_master: skill.id_skill_master, nama_skill: skill.nama_skill, deskripsi_pengalaman: "", certificate_url: "" }]);
     }
   };
 
-  const updateSkillDetail = (skillValue: string, field: 'deskripsi_pengalaman' | 'certificate_url', val: string) => {
-    setSelectedSkills(prev => prev.map(s => s.nama_skill === skillValue ? { ...s, [field]: val } : s));
+  const updateSkillDetail = (skillId: string, field: 'deskripsi_pengalaman' | 'certificate_url', val: string) => {
+    setSelectedSkills(prev => prev.map(s => s.id_skill_master === skillId ? { ...s, [field]: val } : s));
   };
 
   const goToStep2 = () => {
@@ -329,12 +344,20 @@ function OnboardingContent() {
           bio,
           pendidikan_terakhir: univ,
           no_telpon: phone,
-          skills: selectedSkills,
           role,
         }),
       });
 
       await response.json().catch(() => ({}));
+
+      // POST to the new skill endpoint
+      await fetch("/api/users/skills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          skills: selectedSkills
+        }),
+      });
 
       localStorage.setItem("cepat_user_bio", bio);
       localStorage.setItem("cepat_user_univ", univ);
@@ -391,6 +414,7 @@ function OnboardingContent() {
           <StepProfile
             bio={bio}
             setBio={setBio}
+            availableSkills={availableSkills}
             selectedSkills={selectedSkills}
             toggleSkill={toggleSkill}
             updateSkillDetail={updateSkillDetail}

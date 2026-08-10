@@ -71,7 +71,7 @@ export default function AdminDashboardPage() {
           />
           <KPICard
             title="Total Revenue"
-            value={`${totalRevenue.toLocaleString()} PTS`}
+            value={`${totalRevenue.toLocaleString('id-ID')} PTS`}
             change="+18.5%"
             isPositive={true}
             icon={<Coins className="w-4 h-4" />}
