@@ -767,6 +767,201 @@ Semua error mengikuti format standar:
 }
 ```
 
+  "amount": 100
+}
+```
+
+---
+
+## 8. Geo RPC
+
+### POST `/api/geo/nearby-tasks`
+
+Query task terdekat menggunakan PostGIS. Ini wrapper untuk Supabase RPC.
+
+**Request Body:**
+```json
+{
+  "lat": -6.9823,
+  "lng": 110.4093,
+  "radius_m": 2000,
+  "category": "fotografi",
+  "limit": 20
+}
+```
+
+> Secara internal, endpoint ini memanggil Supabase `.rpc('get_nearby_tasks', {...})`.
+
+---
+
+## 9. Error Response Format
+
+Semua error mengikuti format standar:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Compensation exceeds your available points",
+    "details": {
+      "field": "compensation",
+      "current_balance": 30,
+      "requested": 50
+    }
+  }
+}
+```
+
+### HTTP Status Codes
+
+| Code | Penggunaan                        |
+| ---- | --------------------------------- |
+| 200  | Success (GET, PATCH)              |
+| 201  | Created (POST)                    |
+| 400  | Bad request / validation error    |
+| 401  | Unauthorized (no/invalid token)   |
+| 403  | Forbidden (not allowed)           |
+| 404  | Resource not found                |
+| 409  | Conflict (duplicate apply, dll)   |
+| 500  | Internal server error             |
+
+### Error Codes
+
+| Code                  | Deskripsi                               |
+| --------------------- | --------------------------------------- |
+| `VALIDATION_ERROR`    | Input tidak valid                       |
+| `AUTH_REQUIRED`       | Token tidak ada / expired               |
+| `FORBIDDEN`           | Tidak punya akses                       |
+| `NOT_FOUND`           | Resource tidak ditemukan                 |
+| `INSUFFICIENT_POINTS` | Saldo poin tidak cukup                  |
+| `INVALID_STATUS`      | Transisi status tidak valid             |
+| `DUPLICATE_ACTION`    | Aksi sudah pernah dilakukan             |
+| `SELF_ACTION`         | Tidak bisa apply ke task sendiri        |
+
+---
+
+## 10. Chat (Real-time Messaging)
+
+### GET `/api/chat`
+
+🔒 **Authenticated** — Ambil daftar ruang obrolan (*chat rooms*) yang melibatkan pengguna saat ini (baik sebagai pembuat tugas maupun pekerja).
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id_chat_room": "uuid",
+      "created_at": "2023-01-01T00:00:00Z",
+      "task": {
+        "judul_tugas": "Nama Tugas"
+      },
+      "requester": {
+        "id_user": "uuid",
+        "nama_lengkap": "Nama Requester",
+        "avatar_url": "url_foto"
+      },
+      "worker": {
+        "id_user": "uuid",
+        "nama_lengkap": "Nama Pekerja",
+        "avatar_url": "url_foto"
+      },
+      "messages": [
+        {
+          "id_message": "uuid",
+          "teks_pesan": "Isi pesan terakhir",
+          "image_url": null,
+          "created_at": "2023-01-01T00:00:00Z"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### POST `/api/chat/init`
+
+🔒 **Authenticated** — Membuat ruang obrolan baru atau mendapatkan ruangan obrolan yang sudah ada untuk sebuah tugas antara pembuat tugas dan pekerja.
+
+**Request Body:**
+```json
+{
+  "id_tasks": "uuid",
+  "id_worker": "uuid"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "id_chat_room": "uuid"
+  }
+}
+```
+
+### GET `/api/chat/[roomId]`
+
+🔒 **Authenticated** — Mengambil seluruh isi pesan di dalam satu ruang obrolan secara urut dari yang paling lama.
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id_message": "uuid",
+      "id_sender": "uuid",
+      "teks_pesan": "Halo mas",
+      "image_url": null,
+      "is_read": true,
+      "created_at": "2023-01-01T00:00:00Z",
+      "sender": {
+        "id_user": "uuid",
+        "nama_lengkap": "Nama Pengirim",
+        "avatar_url": "url_foto"
+      }
+    }
+  ]
+}
+```
+
+### POST `/api/chat/[roomId]`
+
+🔒 **Authenticated** — Mengirim pesan teks atau gambar ke dalam ruang obrolan tertentu.
+
+**Request Body:** (Zod Validated, minimal satu dari teks atau gambar harus ada)
+```json
+{
+  "teks_pesan": "Halo mas",
+  "image_url": "https://url.com/gambar.jpg"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "id_message": "uuid",
+    "id_chat_room": "uuid",
+    "id_sender": "uuid",
+    "teks_pesan": "Halo mas",
+    "image_url": "https://url.com/gambar.jpg",
+    "is_read": false,
+    "created_at": "2023-01-01T00:00:00Z",
+    "sender": {
+      "id_user": "uuid",
+      "nama_lengkap": "Nama Pengirim",
+      "avatar_url": "url_foto"
+    }
+  }
+}
+```
+
 ### PUT `/api/chat/[roomId]`
 
 🔒 **Authenticated** — Menandai semua pesan yang dikirim oleh **lawan bicara** di ruang obrolan ini sebagai telah dibaca (`is_read: true`). Ini digunakan untuk memicu centang 2 biru secara *real-time*.
@@ -781,7 +976,64 @@ Semua error mengikuti format standar:
 
 ---
 
-## 11. Catatan untuk AI Agent
+## 11. Admin & User Moderation APIs
+
+### GET `/api/admin/users`
+
+🔒 **Admin Auth** — Mengambil daftar seluruh pengguna terdaftar dengan pagination, filter role, dan pencarian.
+
+**Query Parameters:**
+- `search` (optional): Kata kunci nama, email, atau username
+- `role` (optional): Filter role (`All`, `Worker`, `Requester`, `Admin`)
+- `page` (default: 1)
+- `limit` (default: 10)
+
+---
+
+### POST `/api/admin/users/[userId]/suspend`
+
+🔒 **Admin Auth** — Menangguhkan akun pengguna (Permanent / Temporary).
+
+**Request Body:**
+```json
+{
+  "type": "TEMPORARY",
+  "reason": "Pelanggaran pedoman komunitas",
+  "duration_hours": 168,
+  "duration_days": 7
+}
+```
+
+---
+
+### POST `/api/admin/users/[userId]/unsuspend`
+
+🔒 **Admin Auth** — Mencabut status penangguhan pengguna dan mengaktifkan kembali akun.
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Status penangguhan untuk Nama User berhasil dicabut. User sudah aktif kembali."
+}
+```
+
+---
+
+### POST `/api/admin/users/[userId]/warning`
+
+🔒 **Admin Auth** — Mengirimkan pesan peringatan resmi ke notifikasi inbox pengguna.
+
+**Request Body:**
+```json
+{
+  "message": "Harap lengkapi informasi profil Anda dengan data yang valid."
+}
+```
+
+---
+
+## 12. Catatan untuk AI Agent
 
 - Semua API route ada di `src/app/api/` menggunakan Next.js App Router conventions (`route.ts` file).
 - Auth check: gunakan `createServerClient` dari `@supabase/ssr` lalu `supabase.auth.getUser()`.
