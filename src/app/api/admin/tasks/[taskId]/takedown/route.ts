@@ -57,6 +57,8 @@ export async function POST(
       )
     }
 
+    let actualRefund = 0
+
     // Jalankan dalam satu transaksi
     await prisma.$transaction(async (tx) => {
       // 1. Update status task → CANCELLED
@@ -67,12 +69,13 @@ export async function POST(
 
       // 2. Jika ada held_balance (escrow), refund ke requester
       const escrowAmount = task.kompensasi * task.max_applicants
-      if (escrowAmount > 0 && task.requester.held_balance >= escrowAmount) {
+      actualRefund = Math.min(task.requester.held_balance, escrowAmount)
+
+      if (actualRefund > 0) {
         await tx.user.update({
           where: { id_user: task.id_requester },
           data: {
-            held_balance: { decrement: escrowAmount },
-            total_balance: { increment: escrowAmount },
+            held_balance: { decrement: actualRefund },
           },
         })
 
@@ -80,7 +83,7 @@ export async function POST(
         await tx.transactions.create({
           data: {
             id_user: task.id_requester,
-            nominal: escrowAmount,
+            nominal: actualRefund,
             tipe_transaksi: 'MASUK',
             sub_type: 'refund',
             deskripsi: `Refund escrow dari task yang di-takedown admin: "${task.judul_tugas}"`,
@@ -89,20 +92,28 @@ export async function POST(
       }
 
       // 3. Notifikasi ke requester
+      const notificationMsg = actualRefund > 0
+        ? `Task "${task.judul_tugas}" telah dihapus oleh admin platform. Escrow sebesar ${actualRefund.toLocaleString('id-ID')} poin telah dikembalikan ke saldo Anda.`
+        : `Task "${task.judul_tugas}" telah dihapus oleh admin platform.`
+
       await tx.notifications.create({
         data: {
           user_id: task.id_requester,
           type: 'system',
           title: 'Task Anda Dihapus oleh Admin ⚠️',
-          message: `Task "${task.judul_tugas}" telah dihapus oleh admin platform. Escrow telah dikembalikan ke saldo Anda.`,
+          message: notificationMsg,
           data: { task_id: taskId },
         },
       })
     })
 
+    const responseMsg = actualRefund > 0
+      ? `Task "${task.judul_tugas}" berhasil di-takedown dan escrow ${actualRefund.toLocaleString('id-ID')} poin dikembalikan ke requester.`
+      : `Task "${task.judul_tugas}" berhasil di-takedown.`
+
     return NextResponse.json({
       success: true,
-      message: `Task "${task.judul_tugas}" berhasil di-takedown dan escrow dikembalikan ke requester.`,
+      message: responseMsg,
     })
   } catch (error) {
     console.error('[POST /api/admin/tasks/[taskId]/takedown] Error:', error)

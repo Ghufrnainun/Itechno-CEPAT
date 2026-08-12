@@ -39,20 +39,17 @@ export async function POST(
       )
     }
 
-    // Generate password reset link via Supabase Admin API
+    // Kirim email reset password via Supabase Auth
+    const origin = request.nextUrl.origin
     const supabaseAdmin = createAdminClient()
-    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'recovery',
-      email: user.email,
-      options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('.supabase.co', '')}/auth/callback`,
-      },
+    const { error } = await supabaseAdmin.auth.resetPasswordForEmail(user.email, {
+      redirectTo: `${origin}/auth/callback?next=/profile`,
     })
 
     if (error) {
-      console.error('[reset-password] Supabase generateLink error:', error)
+      console.error('[reset-password] Supabase resetPasswordForEmail error:', error)
       return NextResponse.json(
-        { success: false, message: 'Gagal membuat link reset password.' },
+        { success: false, message: 'Gagal mengirimkan email reset password.' },
         { status: 500 }
       )
     }

@@ -94,8 +94,51 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const protectedPrefixes = ['/dashboard', '/feed', '/cari-tugas', '/chat', '/notifications', '/wallet', '/task', '/profile']
+  const protectedPrefixes = ['/dashboard', '/feed', '/cari-tugas', '/chat', '/notifications', '/wallet', '/task', '/profile', '/tugas', '/history']
   const isProtectedRoute = protectedPrefixes.some((prefix) => request.nextUrl.pathname.startsWith(prefix))
+
+  if (user) {
+    try {
+      const dbUser = await prisma.user.findFirst({
+        where: { OR: [{ auth_id: user.id }, { email: user.email! }] },
+        select: { id_user: true, is_banned: true, ban_type: true, ban_reason: true, banned_until: true },
+      })
+
+      if (dbUser?.is_banned) {
+        const now = new Date()
+        if (
+          dbUser.ban_type === 'TEMPORARY' &&
+          dbUser.banned_until &&
+          now > dbUser.banned_until
+        ) {
+          // Auto unban expired temporary ban
+          await prisma.user.update({
+            where: { id_user: dbUser.id_user },
+            data: {
+              is_banned: false,
+              ban_type: null,
+              ban_reason: null,
+              banned_at: null,
+              banned_until: null,
+            },
+          })
+        } else if (isProtectedRoute) {
+          await supabase.auth.signOut()
+          const type = dbUser.ban_type ?? 'PERMANENT'
+          const reason = encodeURIComponent(dbUser.ban_reason ?? 'Akun Anda ditangguhkan oleh admin.')
+          const until = dbUser.banned_until ? encodeURIComponent(dbUser.banned_until.toISOString()) : ''
+          const loginUrl = new URL('/login', request.url)
+          loginUrl.searchParams.set('banned', 'true')
+          loginUrl.searchParams.set('type', type)
+          loginUrl.searchParams.set('reason', decodeURIComponent(reason))
+          loginUrl.searchParams.set('until', until ? decodeURIComponent(until) : '')
+          return NextResponse.redirect(loginUrl)
+        }
+      }
+    } catch (e) {
+      console.error('[Proxy] Ban check error:', e)
+    }
+  }
 
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone()

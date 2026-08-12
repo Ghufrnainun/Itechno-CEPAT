@@ -85,13 +85,15 @@ export async function POST(
       if (acceptedWorker) {
         const kompensasi = task.kompensasi
 
-        // Kurangi held_balance requester
-        if (task.requester.held_balance >= kompensasi) {
-          await tx.user.update({
-            where: { id_user: task.id_requester },
-            data: { held_balance: { decrement: kompensasi } },
-          })
-        }
+        // Kurangi total_balance & held_balance requester
+        const heldDeduct = Math.min(task.requester.held_balance, kompensasi)
+        await tx.user.update({
+          where: { id_user: task.id_requester },
+          data: {
+            total_balance: { decrement: kompensasi },
+            held_balance: { decrement: heldDeduct },
+          },
+        })
 
         // Tambah balance worker
         await tx.user.update({
@@ -124,21 +126,21 @@ export async function POST(
           },
         })
       } else {
-        // Tidak ada worker — refund escrow ke requester
+        // Tidak ada worker — refund held escrow ke requester
         const escrowAmount = task.kompensasi * task.max_applicants
-        if (escrowAmount > 0 && task.requester.held_balance >= escrowAmount) {
+        const actualRefund = Math.min(task.requester.held_balance, escrowAmount)
+        if (actualRefund > 0) {
           await tx.user.update({
             where: { id_user: task.id_requester },
             data: {
-              held_balance: { decrement: escrowAmount },
-              total_balance: { increment: escrowAmount },
+              held_balance: { decrement: actualRefund },
             },
           })
 
           await tx.transactions.create({
             data: {
               id_user: task.id_requester,
-              nominal: escrowAmount,
+              nominal: actualRefund,
               tipe_transaksi: 'MASUK',
               sub_type: 'refund',
               deskripsi: `Refund escrow dari task tanpa worker (force-complete admin): "${task.judul_tugas}"`,

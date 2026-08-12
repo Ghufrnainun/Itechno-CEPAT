@@ -10,24 +10,11 @@ export async function GET(request: Request) {
   const errorCode = searchParams.get('error_code')
   const errorDesc = searchParams.get('error_description')
 
-  // Tangkap jika user yang mencoba OAuth sedang di-ban
+  // Tangkap jika user yang mencoba OAuth sedang di-ban (sebelum exchange code)
   if (errorCode === 'user_banned' || errorDesc?.toLowerCase().includes('banned')) {
-    const bannedUser = await prisma.user.findFirst({
-      where: { is_banned: true },
-      orderBy: { banned_at: 'desc' },
-      select: {
-        ban_type: true,
-        ban_reason: true,
-        banned_until: true,
-      },
-    })
-
-    const type = bannedUser?.ban_type ?? 'PERMANENT'
-    const reason = encodeURIComponent(bannedUser?.ban_reason ?? 'Akun Anda ditangguhkan oleh admin.')
-    const until = bannedUser?.banned_until ? encodeURIComponent(bannedUser.banned_until.toISOString()) : ''
-
+    const reason = encodeURIComponent('Akun Anda ditangguhkan oleh admin.')
     return NextResponse.redirect(
-      `${origin}/login?banned=true&type=${type}&reason=${reason}&until=${until}`
+      `${origin}/login?banned=true&type=PERMANENT&reason=${reason}`
     )
   }
 

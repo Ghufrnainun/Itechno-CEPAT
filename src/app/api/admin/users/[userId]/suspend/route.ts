@@ -17,7 +17,11 @@ export async function POST(
     const body = await request.json()
 
     const banType = (body.type || 'PERMANENT') as 'TEMPORARY' | 'PERMANENT'
-    const durationHours = typeof body.duration_hours === 'number' ? body.duration_hours : 24
+    const durationHours = typeof body.duration_hours === 'number'
+      ? body.duration_hours
+      : typeof body.duration_days === 'number'
+      ? body.duration_days * 24
+      : 24
     const reason = typeof body.reason === 'string' ? body.reason.trim() : ''
 
     if (!reason) {
@@ -89,16 +93,16 @@ export async function POST(
       },
     })
 
-    // 2. Update Supabase Auth ban
-    const supabaseAdmin = createAdminClient()
-    const { error: banError } = await supabaseAdmin.auth.admin.updateUserById(
-      user.auth_id,
-      { ban_duration: supabaseBanDuration }
-    )
-
-    if (banError) {
-      console.error('[suspend] Supabase ban error:', banError)
-      // Tetap teruskan karena status di Prisma sudah ter-update
+    // 2. Pastikan Supabase Auth tidak memblokir OAuth exchange sebelum app callback membaca detail ban
+    if (user.auth_id) {
+      try {
+        const supabaseAdmin = createAdminClient()
+        await supabaseAdmin.auth.admin.updateUserById(user.auth_id, {
+          ban_duration: 'none',
+        })
+      } catch (e) {
+        console.error('[suspend] Supabase ban update error:', e)
+      }
     }
 
     const banTypeLabel = banType === 'TEMPORARY' ? `Temporary Ban (${durationHours} jam)` : 'Permanent Ban'

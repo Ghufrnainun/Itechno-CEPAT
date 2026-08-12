@@ -99,6 +99,16 @@ export default function MainAppLayout({
     async function fetchUser() {
       try {
         const res = await fetch("/api/users/me");
+        if (res.status === 403) {
+          const json = await res.json().catch(() => ({}));
+          if (json.is_banned && json.ban_details) {
+            const type = json.ban_details.type || 'PERMANENT';
+            const reason = encodeURIComponent(json.ban_details.reason || 'Akun Anda ditangguhkan oleh admin.');
+            const until = json.ban_details.banned_until ? encodeURIComponent(json.ban_details.banned_until) : '';
+            window.location.href = `/login?banned=true&type=${type}&reason=${reason}&until=${until}`;
+            return;
+          }
+        }
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data) {

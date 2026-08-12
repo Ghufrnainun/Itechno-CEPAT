@@ -9,9 +9,9 @@ export async function GET(request: NextRequest) {
     const auth = await verifyAdminToken(request)
     if (!auth.valid) return unauthorizedResponse()
 
-    // Cari status "completed"
+    // Cari status "completed" (case-insensitive)
     const completedStatus = await prisma.statusTask.findFirst({
-      where: { nama_status: 'completed' },
+      where: { nama_status: { equals: 'completed', mode: 'insensitive' } },
     })
 
     // Buat range 7 hari terakhir

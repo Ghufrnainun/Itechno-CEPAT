@@ -15,6 +15,15 @@ interface BanDetails {
   banned_until?: string | null;
 }
 
+function safeDecode(val: string | null): string | null {
+  if (!val) return null
+  try {
+    return decodeURIComponent(val)
+  } catch {
+    return val
+  }
+}
+
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -34,8 +43,8 @@ function LoginContent() {
     if (isBannedParam === "true") {
       setBanDetails({
         type: (banTypeParam as 'TEMPORARY' | 'PERMANENT') || 'PERMANENT',
-        reason: banReasonParam ? decodeURIComponent(banReasonParam) : 'Akun Anda ditangguhkan oleh admin.',
-        banned_until: banUntilParam ? decodeURIComponent(banUntilParam) : null,
+        reason: safeDecode(banReasonParam) ?? 'Akun Anda ditangguhkan oleh admin.',
+        banned_until: safeDecode(banUntilParam),
       });
     }
   }, [isBannedParam, banTypeParam, banReasonParam, banUntilParam]);
