@@ -1,48 +1,177 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import AdminDrawer from '@/components/admin/AdminDrawer';
 import AdminSelect, { SelectOption } from '@/components/admin/AdminSelect';
-import { MOCK_ADMIN_USERS, AdminUser } from '@/lib/admin/mock-data';
-import { Search, Star, Ban, RotateCcw, Mail, Phone, MapPin } from 'lucide-react';
+import { Search, Star, Ban, RotateCcw, Mail, Phone, MapPin, CheckCircle, AlertCircle } from 'lucide-react';
+
+interface AdminUser {
+  id: string;
+  nama_lengkap: string;
+  username: string;
+  email: string;
+  avatar_url?: string;
+  no_telpon?: string;
+  alamat?: string;
+  bio?: string;
+  rating_avg: number;
+  total_completed: number;
+  total_balance: number;
+  held_balance: number;
+  auth_id?: string;
+  role: string;
+  skills: string[];
+  total_tasks_posted: number;
+  total_applications: number;
+}
+
+interface Toast {
+  type: 'success' | 'error';
+  message: string;
+}
+
+function ToastNotif({ toast, onClose }: { toast: Toast; onClose: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 4000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  return (
+    <div
+      className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-lg text-xs font-medium font-sans transition-all animate-in slide-in-from-bottom-4 ${
+        toast.type === 'success'
+          ? 'bg-[#E6F4F1] border-[#0F766E]/30 text-[#0F766E]'
+          : 'bg-rose-50 border-rose-200 text-rose-700'
+      }`}
+    >
+      {toast.type === 'success' ? (
+        <CheckCircle className="w-4 h-4 shrink-0" />
+      ) : (
+        <AlertCircle className="w-4 h-4 shrink-0" />
+      )}
+      <span>{toast.message}</span>
+    </div>
+  );
+}
 
 export default function UserManagementPage() {
-  const [users, setUsers] = useState<AdminUser[]>(MOCK_ADMIN_USERS);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
 
   const roleOptions: SelectOption[] = [
     { value: 'All', label: 'All Roles' },
     { value: 'Worker', label: 'Worker Only' },
     { value: 'Requester', label: 'Requester Only' },
-    { value: 'Dual-Role', label: 'Dual-Role' },
     { value: 'Admin', label: 'Admin Only' },
   ];
 
-  const filteredUsers = users.filter((u) => {
-    const matchesSearch =
-      u.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.username.toLowerCase().includes(searchTerm.toLowerCase());
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        search: searchTerm,
+        role: roleFilter,
+        page: String(page),
+        limit: '10',
+      });
+      const res = await fetch(`/api/admin/users?${params}`);
+      const json = await res.json();
+      if (json.success) {
+        setUsers(json.data);
+        setTotalPages(json.meta.totalPages);
+        setTotal(json.meta.total);
+      }
+    } catch (err) {
+      console.error('Fetch users error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchTerm, roleFilter, page]);
 
-    const matchesRole = roleFilter === 'All' || u.role === roleFilter;
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      setPage(1);
+      fetchUsers();
+    }, 300);
+    return () => clearTimeout(debounce);
+  }, [searchTerm, roleFilter]);
 
-    return matchesSearch && matchesRole;
-  });
+  useEffect(() => {
+    fetchUsers();
+  }, [page]);
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message });
+  };
+
+  const handleSuspend = async (user: AdminUser) => {
+    if (!confirm(`Yakin ingin men-suspend ${user.nama_lengkap}? User tidak bisa login.`)) return;
+    setActionLoading('suspend-' + user.id);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/suspend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'suspend' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('success', data.message);
+        setSelectedUser(null);
+      } else {
+        showToast('error', data.message);
+      }
+    } catch {
+      showToast('error', 'Gagal menghubungi server.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleResetPassword = async (user: AdminUser) => {
+    setActionLoading('reset-' + user.id);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/reset-password`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('success', `Link reset password dikirim ke ${user.email}`);
+      } else {
+        showToast('error', data.message);
+      }
+    } catch {
+      showToast('error', 'Gagal menghubungi server.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const columns: Column<AdminUser>[] = [
     {
       header: 'User Info',
       cell: (user) => (
         <div className="flex items-center gap-3">
-          <img
-            src={user.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-            alt={user.nama_lengkap}
-            className="w-8 h-8 rounded-full object-cover border border-[#E2E8F0]"
-          />
+          {user.avatar_url ? (
+            <img
+              src={user.avatar_url}
+              alt={user.nama_lengkap}
+              className="w-8 h-8 rounded-full object-cover border border-[#E2E8F0]"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-[#0F766E] text-white text-xs font-bold flex items-center justify-center shrink-0">
+              {user.nama_lengkap.charAt(0).toUpperCase()}
+            </div>
+          )}
           <div>
             <div className="font-bold text-[#0C1F16] font-sans">{user.nama_lengkap}</div>
             <div className="text-[11px] font-mono text-[#64748B]">@{user.username}</div>
@@ -52,20 +181,19 @@ export default function UserManagementPage() {
     },
     {
       header: 'Email',
-      accessorKey: 'email',
       cell: (user) => <span className="text-xs font-mono text-[#0C1F16]">{user.email}</span>,
     },
     {
       header: 'Role',
       cell: (user) => {
-        let badgeStyle = 'bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0]';
-        if (user.role === 'Worker') badgeStyle = 'bg-[#E6F4F1] text-[#0F766E] border border-[#0F766E]/20';
-        if (user.role === 'Requester') badgeStyle = 'bg-sky-50 text-sky-700 border border-sky-200';
-        if (user.role === 'Dual-Role') badgeStyle = 'bg-amber-50 text-amber-700 border border-amber-200';
-        if (user.role === 'Admin') badgeStyle = 'bg-rose-50 text-rose-700 border border-rose-200';
-
+        const styles: Record<string, string> = {
+          Worker: 'bg-[#E6F4F1] text-[#0F766E] border border-[#0F766E]/20',
+          Requester: 'bg-sky-50 text-sky-700 border border-sky-200',
+          Admin: 'bg-rose-50 text-rose-700 border border-rose-200',
+        };
+        const style = styles[user.role] ?? 'bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0]';
         return (
-          <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${badgeStyle}`}>
+          <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${style}`}>
             {user.role}
           </span>
         );
@@ -89,9 +217,12 @@ export default function UserManagementPage() {
       ),
     },
     {
-      header: 'Joined Date',
-      accessorKey: 'joined_at',
-      cell: (user) => <span className="text-xs font-mono text-[#64748B]">{user.joined_at}</span>,
+      header: 'Balance',
+      cell: (user) => (
+        <span className="text-xs font-extrabold text-[#0F766E] font-mono">
+          {user.total_balance.toLocaleString('id-ID')} PTS
+        </span>
+      ),
     },
   ];
 
@@ -114,24 +245,54 @@ export default function UserManagementPage() {
             />
           </div>
 
-          {/* Polished Custom Role Dropdown */}
-          <div className="w-full sm:w-48">
-            <AdminSelect
-              options={roleOptions}
-              value={roleFilter}
-              onChange={setRoleFilter}
-            />
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="w-full sm:w-48">
+              <AdminSelect options={roleOptions} value={roleFilter} onChange={setRoleFilter} />
+            </div>
+            <span className="text-xs text-[#64748B] font-mono shrink-0">
+              {total} users
+            </span>
           </div>
         </div>
 
         {/* Data Table */}
-        <DataTable
-          columns={columns}
-          data={filteredUsers}
-          onRowClick={(user) => setSelectedUser(user)}
-          pageSize={5}
-          emptyMessage="Tidak ada user yang sesuai dengan pencarian"
-        />
+        {loading ? (
+          <div className="bg-white border border-[#E2E8F0] rounded-xl p-8 flex justify-center">
+            <div className="w-8 h-8 border-4 border-[#0F766E] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <>
+            <DataTable
+              columns={columns}
+              data={users}
+              onRowClick={(user) => setSelectedUser(user)}
+              pageSize={10}
+              emptyMessage="Tidak ada user yang sesuai dengan pencarian"
+            />
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1.5 text-xs font-bold rounded-lg border border-[#E2E8F0] bg-white text-[#0C1F16] hover:bg-[#F8FAFC] disabled:opacity-40 transition-colors"
+                >
+                  ← Prev
+                </button>
+                <span className="text-xs font-mono text-[#64748B]">
+                  {page} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-3 py-1.5 text-xs font-bold rounded-lg border border-[#E2E8F0] bg-white text-[#0C1F16] hover:bg-[#F8FAFC] disabled:opacity-40 transition-colors"
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+          </>
+        )}
 
         {/* Slide-over User Detail Drawer */}
         <AdminDrawer
@@ -144,11 +305,17 @@ export default function UserManagementPage() {
             <div className="space-y-6 text-xs font-sans">
               {/* Header Card */}
               <div className="flex items-center gap-4 p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
-                <img
-                  src={selectedUser.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-                  alt={selectedUser.nama_lengkap}
-                  className="w-12 h-12 rounded-full object-cover border border-[#E2E8F0]"
-                />
+                {selectedUser.avatar_url ? (
+                  <img
+                    src={selectedUser.avatar_url}
+                    alt={selectedUser.nama_lengkap}
+                    className="w-12 h-12 rounded-full object-cover border border-[#E2E8F0]"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-[#0F766E] text-white text-lg font-bold flex items-center justify-center shrink-0">
+                    {selectedUser.nama_lengkap.charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <div>
                   <h4 className="font-headline font-bold text-sm text-[#0C1F16]">
                     {selectedUser.nama_lengkap}
@@ -163,7 +330,7 @@ export default function UserManagementPage() {
                 </div>
               </div>
 
-              {/* Bio & Information */}
+              {/* Contact & Location */}
               <div className="space-y-3">
                 <h5 className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
                   Kontak & Lokasi
@@ -184,7 +351,7 @@ export default function UserManagementPage() {
                 </div>
               </div>
 
-              {/* Bio snippet */}
+              {/* Bio */}
               {selectedUser.bio && (
                 <div className="space-y-1.5">
                   <h5 className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#64748B]">Bio</h5>
@@ -201,7 +368,7 @@ export default function UserManagementPage() {
                     Total Poin
                   </span>
                   <p className="font-mono text-base font-extrabold text-[#0F766E]">
-                    {selectedUser.total_balance} PTS
+                    {selectedUser.total_balance.toLocaleString('id-ID')} PTS
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
@@ -209,7 +376,23 @@ export default function UserManagementPage() {
                     Escrow Ditahan
                   </span>
                   <p className="font-mono text-base font-extrabold text-amber-800">
-                    {selectedUser.held_balance} PTS
+                    {selectedUser.held_balance.toLocaleString('id-ID')} PTS
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0]">
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
+                    Task Selesai
+                  </span>
+                  <p className="font-mono text-base font-extrabold text-[#0C1F16]">
+                    {selectedUser.total_completed}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0]">
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
+                    Task Diposting
+                  </span>
+                  <p className="font-mono text-base font-extrabold text-[#0C1F16]">
+                    {selectedUser.total_tasks_posted}
                   </p>
                 </div>
               </div>
@@ -240,25 +423,43 @@ export default function UserManagementPage() {
                 </h5>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => alert(`Link reset password dikirim ke ${selectedUser.email}`)}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-[#F8FAFC] hover:bg-[#E2E8F0] text-[#0C1F16] transition-colors border border-[#E2E8F0]"
+                    onClick={() => handleResetPassword(selectedUser)}
+                    disabled={actionLoading === 'reset-' + selectedUser.id || selectedUser.role === 'Admin'}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-[#F8FAFC] hover:bg-[#E2E8F0] text-[#0C1F16] transition-colors border border-[#E2E8F0] disabled:opacity-40"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 text-[#64748B]" />
+                    {actionLoading === 'reset-' + selectedUser.id ? (
+                      <span className="w-3 h-3 border-2 border-[#64748B] border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <RotateCcw className="w-3.5 h-3.5 text-[#64748B]" />
+                    )}
                     Reset Password
                   </button>
                   <button
-                    onClick={() => alert(`User ${selectedUser.nama_lengkap} di-suspend.`)}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-colors"
+                    onClick={() => handleSuspend(selectedUser)}
+                    disabled={actionLoading === 'suspend-' + selectedUser.id || selectedUser.role === 'Admin'}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-colors disabled:opacity-40"
                   >
-                    <Ban className="w-3.5 h-3.5" />
+                    {actionLoading === 'suspend-' + selectedUser.id ? (
+                      <span className="w-3 h-3 border-2 border-rose-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Ban className="w-3.5 h-3.5" />
+                    )}
                     Suspend User
                   </button>
                 </div>
+                {selectedUser.role === 'Admin' && (
+                  <p className="text-[10px] text-[#94A3B8] text-center">
+                    Aksi moderasi tidak tersedia untuk akun Admin.
+                  </p>
+                )}
               </div>
             </div>
           )}
         </AdminDrawer>
       </main>
+
+      {/* Toast Notification */}
+      {toast && <ToastNotif toast={toast} onClose={() => setToast(null)} />}
     </div>
   );
 }
