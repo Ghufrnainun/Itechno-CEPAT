@@ -125,15 +125,16 @@ export async function proxy(request: NextRequest) {
         } else if (isProtectedRoute) {
           await supabase.auth.signOut()
           const type = dbUser.ban_type ?? 'PERMANENT'
-          const reason = encodeURIComponent(dbUser.ban_reason ?? 'Akun Anda ditangguhkan oleh admin.')
-          const until = dbUser.banned_until ? encodeURIComponent(dbUser.banned_until.toISOString()) : ''
           const loginUrl = new URL('/login', request.url)
           loginUrl.searchParams.set('banned', 'true')
           loginUrl.searchParams.set('type', type)
-          loginUrl.searchParams.set('reason', decodeURIComponent(reason))
-          loginUrl.searchParams.set('until', until ? decodeURIComponent(until) : '')
-          return NextResponse.redirect(loginUrl)
-        }
+          loginUrl.searchParams.set('reason', dbUser.ban_reason ?? 'Akun Anda ditangguhkan oleh admin.')
+          if (dbUser.banned_until) loginUrl.searchParams.set('until', dbUser.banned_until.toISOString())
+
+          const redirectResponse = NextResponse.redirect(loginUrl)
+          const setCookie = supabaseResponse.headers.get('set-cookie')
+          if (setCookie) redirectResponse.headers.set('set-cookie', setCookie)
+          return redirectResponse
       }
     } catch (e) {
       console.error('[Proxy] Ban check error:', e)
