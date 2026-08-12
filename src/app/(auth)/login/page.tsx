@@ -6,20 +6,44 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { createClient } from "@/lib/supabase/client";
+import { ShieldAlert, AlertTriangle } from "lucide-react";
+
+interface BanDetails {
+  type: 'TEMPORARY' | 'PERMANENT';
+  reason: string;
+  banned_at?: string | null;
+  banned_until?: string | null;
+}
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get("redirect");
+  const isBannedParam = searchParams.get("banned");
+  const banTypeParam = searchParams.get("type");
+  const banReasonParam = searchParams.get("reason");
+  const banUntilParam = searchParams.get("until");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [banDetails, setBanDetails] = useState<BanDetails | null>(null);
+
+  React.useEffect(() => {
+    if (isBannedParam === "true") {
+      setBanDetails({
+        type: (banTypeParam as 'TEMPORARY' | 'PERMANENT') || 'PERMANENT',
+        reason: banReasonParam ? decodeURIComponent(banReasonParam) : 'Akun Anda ditangguhkan oleh admin.',
+        banned_until: banUntilParam ? decodeURIComponent(banUntilParam) : null,
+      });
+    }
+  }, [isBannedParam, banTypeParam, banReasonParam, banUntilParam]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setBanDetails(null);
     setLoading(true);
     try {
       const response = await fetch("/api/auth/login", {
@@ -28,6 +52,12 @@ function LoginContent() {
         body: JSON.stringify({ email, password }),
       });
       const result = await response.json().catch(() => ({}));
+
+      if (result.is_banned && result.ban_details) {
+        setError("");
+        setBanDetails(result.ban_details);
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(result.message || "Email atau password tidak cocok. Silakan periksa kembali.");
@@ -50,6 +80,7 @@ function LoginContent() {
 
   const handleGoogleLogin = async () => {
     setError("");
+    setBanDetails(null);
     setLoading(true);
     try {
       const supabase = createClient();
@@ -60,141 +91,134 @@ function LoginContent() {
           redirectTo: `${window.location.origin}/auth/callback${callbackNext}`,
         },
       });
-      if (googleError) throw googleError;
-    } catch (err: any) {
-      setError(err.message || "Gagal masuk dengan Google. Pastikan OAuth Google telah dikonfigurasi di Supabase.");
+
+      if (googleError) {
+        throw googleError;
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Login dengan Google gagal.");
       setLoading(false);
     }
   };
 
-  const registerHref = redirectParam
-    ? `/register?redirect=${encodeURIComponent(redirectParam)}`
-    : "/register";
-
   return (
-    <main className="w-full min-h-screen flex flex-col lg:flex-row overflow-hidden bg-white font-sans">
-      {/* ───────────── LEFT: BRAND PANEL ───────────── */}
-      <section
-        className="relative hidden lg:flex w-[50%] xl:w-[45%] flex-col justify-between overflow-hidden bg-[#072e29]"
-      >
-        {/* Grain texture overlay */}
-        <div
-          className="absolute inset-0 z-[1] opacity-[0.15] mix-blend-overlay pointer-events-none"
-          style={{
-            backgroundImage:
-              'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E")',
-          }}
-        />
+    <main className="min-h-screen bg-layout-bg font-sans flex flex-col md:flex-row relative">
+      {/* Ban Details Popup Modal */}
+      {banDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-outline-variant/30 space-y-5 relative">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-full bg-rose-100 text-rose-600 shrink-0">
+                <ShieldAlert className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-headline font-bold text-lg text-on-surface">Akun Anda Ditangguhkan</h3>
+                <p className="text-xs text-on-surface-variant">Akses ke platform CEPAT dibatasi oleh Admin</p>
+              </div>
+            </div>
 
-        {/* Content */}
-        <div className="relative z-10 flex flex-col h-full justify-between p-12 lg:p-14 xl:p-18 pr-16 lg:pr-24 xl:pr-28">
-          {/* Top: Logo */}
-          <Link href="/" className="flex items-center" aria-label="Kembali ke beranda">
-            <Image
-              src="/logo.svg"
-              alt="CEPAT"
-              width={120}
-              height={34}
-              className="logo-img brightness-0 invert"
-              priority
-            />
-          </Link>
+            <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/40 space-y-3 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-on-surface-variant">Jenis Penangguhan:</span>
+                <span className={`px-2.5 py-0.5 rounded font-mono font-bold uppercase text-[10px] ${
+                  banDetails.type === 'TEMPORARY' 
+                    ? 'bg-amber-100 text-amber-800 border border-amber-300' 
+                    : 'bg-rose-100 text-rose-800 border border-rose-300'
+                }`}>
+                  {banDetails.type === 'TEMPORARY' ? 'Temporary Ban' : 'Permanent Ban'}
+                </span>
+              </div>
 
-          {/* Center: Value Proposition */}
-          <div className="flex-1 flex flex-col justify-center max-w-lg -mt-8">
-            <h1 className="text-[clamp(2rem,3.2vw,3rem)] font-extrabold text-white leading-[1.1] tracking-tight mb-6">
-              Mulai dari tugas
-              <br />
-              kecil di sekitarmu.
-            </h1>
-            <p className="text-base text-white/60 leading-relaxed mb-10 max-w-sm">
-              Cari penghasilan fleksibel atau post bantuan cepat untuk UMKM dan kegiatan kampus — langsung dari daerah terdekat.
+              {banDetails.type === 'TEMPORARY' && banDetails.banned_until && (
+                <div className="flex items-center justify-between border-t border-outline-variant/20 pt-2">
+                  <span className="font-semibold text-on-surface-variant">Batas Penangguhan:</span>
+                  <span className="font-mono text-on-surface font-bold">
+                    {new Date(banDetails.banned_until).toLocaleString('id-ID', {
+                      day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                    })} WIB
+                  </span>
+                </div>
+              )}
+
+              <div className="space-y-1 border-t border-outline-variant/20 pt-2">
+                <span className="font-semibold text-on-surface-variant block">Alasan Moderasi Admin:</span>
+                <p className="p-3 bg-white rounded-lg border border-outline-variant/30 italic text-on-surface leading-relaxed">
+                  "{banDetails.reason}"
+                </p>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-on-surface-variant/70 text-center">
+              Jika Anda merasa ini adalah kekeliruan, silakan hubungi <span className="font-semibold text-primary">admin@itechno.id</span>
             </p>
 
-            {/* Trust Stats */}
-            <div className="grid grid-cols-3 gap-6 pt-6 border-t border-white/10 max-w-sm">
-              <div>
-                <p className="text-2xl font-extrabold text-white font-mono tracking-tight">500+</p>
-                <p className="text-[11px] text-white/40 uppercase tracking-wider font-semibold mt-0.5">Mahasiswa</p>
-              </div>
-              <div>
-                <p className="text-2xl font-extrabold text-white font-mono tracking-tight">1.2k</p>
-                <p className="text-[11px] text-white/40 uppercase tracking-wider font-semibold mt-0.5">Tugas Selesai</p>
-              </div>
-              <div>
-                <p className="text-2xl font-extrabold text-[#84CC16] font-mono tracking-tight">&lt;5m</p>
-                <p className="text-[11px] text-white/40 uppercase tracking-wider font-semibold mt-0.5">Respons</p>
-              </div>
-            </div>
+            <button
+              onClick={() => setBanDetails(null)}
+              className="w-full py-2.5 bg-on-surface hover:bg-on-surface/90 text-white font-bold text-xs rounded-xl transition-all shadow-md active:scale-[0.98]"
+            >
+              Saya Mengerti
+            </button>
           </div>
+        </div>
+      )}
 
-          {/* Bottom: Footer */}
-          <div className="flex flex-col gap-4">
-            {/* Trust Badges */}
-            <div className="flex items-center gap-6">
-              {[
-                { icon: "verified_user", label: "Escrow Aman" },
-                { icon: "star", label: "Rating 2-Arah" },
-                { icon: "radar", label: "Radius GPS" },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center gap-1.5">
-                  <span
-                    className="material-symbols-outlined text-[16px] text-[#84CC16]"
-                    style={{ fontVariationSettings: "'FILL' 1" }}
-                   aria-hidden="true">
-                    {item.icon}
-                  </span>
-                  <span className="text-xs text-white/50 font-semibold">{item.label}</span>
-                </div>
-              ))}
-            </div>
+      {/* Left Section: Hero / Branding */}
+      <section className="hidden md:flex flex-1 bg-surface-container-lowest p-8 lg:p-12 flex-col justify-between border-r border-outline-variant/30">
+        <div>
+          <Link href="/" className="inline-flex items-center gap-3">
+            <Image
+              src="/logo.svg"
+              alt="CEPAT Logo"
+              width={40}
+              height={40}
+              className="rounded-xl object-contain"
+            />
+            <span className="font-headline font-black text-2xl tracking-tight text-on-surface">
+              CEPAT
+            </span>
+          </Link>
+        </div>
 
-            <div className="flex items-center justify-between text-[11px] text-white/40 font-mono pt-3 border-t border-white/5">
-              <span>© 2026 CEPAT Marketplace</span>
-              <span className="flex items-center gap-1.5">
-                <span
-                  className="material-symbols-outlined text-[14px] text-[#84CC16]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                 aria-hidden="true">
-                  public
-                </span>
-                SDG 8 — Decent <span className="text-[#84CC16] font-bold tracking-wider">Work</span>
-              </span>
-            </div>
-          </div>
+        <div className="space-y-4 max-w-lg">
+          <h2 className="font-headline text-3xl font-extrabold text-on-surface leading-tight">
+            Cari Pekerjaan Entry-Level di Sekitarmu
+          </h2>
+          <p className="text-on-surface-variant text-sm leading-relaxed">
+            Platform micro-task terkemuka untuk mahasiswa dan pekerja lepasan. Temukan berbagai tugas fleksibel dari UMKM dan pengguna di area lokalmu.
+          </p>
+        </div>
+
+        <div className="text-xs text-on-surface-variant/60">
+          © {new Date().getFullYear()} CEPAT Platform. Hak cipta dilindungi undang-undang.
         </div>
       </section>
 
-      {/* ───────────── RIGHT: AUTH FORM ───────────── */}
-      <section className="relative w-full lg:flex-1 flex items-center justify-center p-6 md:p-10 lg:p-16 min-h-screen">
-        {/* Subtle grid background */}
-        <div
-          className="absolute inset-0 opacity-[0.03] pointer-events-none"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-          }}
-        />
-
-        <div className="relative w-full max-w-[420px]">
-          {/* Mobile Brand */}
-          <div className="lg:hidden mb-10 text-center">
-            <Link href="/" className="inline-block">
-              <Image src="/logo.svg" alt="CEPAT" width={100} height={28} className="logo-img mx-auto" />
+      {/* Right Section: Login Form */}
+      <section className="flex-1 flex items-center justify-center p-6 md:p-12 bg-white">
+        <div className="w-full max-w-md space-y-6">
+          <div className="md:hidden mb-4">
+            <Link href="/" className="inline-flex items-center gap-3">
+              <Image
+                src="/logo.svg"
+                alt="CEPAT Logo"
+                width={36}
+                height={36}
+                className="rounded-xl object-contain"
+              />
+              <span className="font-headline font-black text-xl tracking-tight text-on-surface">
+                CEPAT
+              </span>
             </Link>
-            <p className="text-sm text-on-surface-variant mt-2">Satu akun untuk semua.</p>
           </div>
 
-          {/* Header */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-extrabold text-on-surface tracking-tight mb-1">
-              Masuk ke CEPAT
-            </h2>
+          <div className="space-y-1">
+            <h1 className="font-headline font-bold text-2xl text-on-surface">
+              Selamat Datang Kembali
+            </h1>
             <p className="text-sm text-on-surface-variant">
               Belum punya akun?{" "}
-              <Link href={registerHref} className="text-primary font-semibold hover:underline">
-                Daftar gratis
+              <Link href="/register" className="text-primary font-bold hover:underline">
+                Daftar sekarang
               </Link>
             </p>
           </div>
@@ -207,7 +231,6 @@ function LoginContent() {
 
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-5">
-            {/* Inputs */}
             <Input
               label="Email / Username"
               type="text"
@@ -225,7 +248,6 @@ function LoginContent() {
               required
             />
 
-            {/* Remember + Forgot */}
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -239,7 +261,6 @@ function LoginContent() {
               </a>
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
@@ -248,7 +269,6 @@ function LoginContent() {
               {loading ? "Memproses..." : "Masuk ke Dashboard"}
             </button>
 
-            {/* Divider */}
             <div className="relative flex items-center py-1">
               <div className="flex-grow border-t border-outline-variant/40" />
               <span className="mx-4 text-[11px] text-on-surface-variant/60 font-bold uppercase tracking-widest">
@@ -257,7 +277,6 @@ function LoginContent() {
               <div className="flex-grow border-t border-outline-variant/40" />
             </div>
 
-            {/* Google */}
             <button
               type="button"
               onClick={handleGoogleLogin}

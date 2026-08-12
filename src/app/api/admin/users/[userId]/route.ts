@@ -54,6 +54,11 @@ export async function GET(
         total_balance: user.total_balance,
         held_balance: user.held_balance,
         auth_id: user.auth_id,
+        is_banned: user.is_banned,
+        ban_type: user.ban_type,
+        ban_reason: user.ban_reason,
+        banned_at: user.banned_at ? user.banned_at.toISOString() : null,
+        banned_until: user.banned_until ? user.banned_until.toISOString() : null,
         role: user.role.nama_role,
         skills: user.skills_user.map((s) => ({
           id: s.id_skills_user,

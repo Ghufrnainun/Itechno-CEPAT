@@ -50,6 +50,11 @@ export async function GET(request: NextRequest) {
           total_balance: true,
           held_balance: true,
           auth_id: true,
+          is_banned: true,
+          ban_type: true,
+          ban_reason: true,
+          banned_at: true,
+          banned_until: true,
           role: { select: { nama_role: true } },
           skills_user: {
             select: {
@@ -82,6 +87,11 @@ export async function GET(request: NextRequest) {
       total_balance: u.total_balance,
       held_balance: u.held_balance,
       auth_id: u.auth_id,
+      is_banned: u.is_banned,
+      ban_type: u.ban_type,
+      ban_reason: u.ban_reason,
+      banned_at: u.banned_at ? u.banned_at.toISOString() : null,
+      banned_until: u.banned_until ? u.banned_until.toISOString() : null,
       role: u.role.nama_role,
       skills: u.skills_user.map((s) => s.skills_master.nama_skill),
       total_tasks_posted: u._count.tasks_posted,

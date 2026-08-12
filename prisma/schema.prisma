@@ -57,6 +57,11 @@ model User {
   email                   String           @unique
   auth_id                 String?          @unique @db.Uuid
   fcm_token               String?
+  is_banned               Boolean          @default(false)
+  ban_type                String?
+  ban_reason              String?
+  banned_at               DateTime?
+  banned_until            DateTime?
   chat_rooms_as_requester ChatRoom[]       @relation("RequesterChats")
   chat_rooms_as_worker    ChatRoom[]       @relation("WorkerChats")
   messages_sent           Message[]        @relation("UserMessages")

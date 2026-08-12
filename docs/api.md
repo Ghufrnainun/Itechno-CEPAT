@@ -781,7 +781,63 @@ Semua error mengikuti format standar:
 
 ---
 
-## 11. Catatan untuk AI Agent
+## 11. Admin & User Moderation APIs
+
+### GET `/api/admin/users`
+
+🔒 **Admin Auth** — Mengambil daftar seluruh pengguna terdaftar dengan pagination, filter role, dan pencarian.
+
+**Query Parameters:**
+- `search` (optional): Kata kunci nama, email, atau username
+- `role` (optional): Filter role (`All`, `Worker`, `Requester`, `Admin`)
+- `page` (default: 1)
+- `limit` (default: 10)
+
+---
+
+### POST `/api/admin/users/[userId]/suspend`
+
+🔒 **Admin Auth** — Menangguhkan akun pengguna (Permanent / Temporary).
+
+**Request Body:**
+```json
+{
+  "type": "TEMPORARY",
+  "reason": "Pelanggaran pedoman komunitas",
+  "duration_days": 7
+}
+```
+
+---
+
+### POST `/api/admin/users/[userId]/unsuspend`
+
+🔒 **Admin Auth** — Mencabut status penangguhan pengguna dan mengaktifkan kembali akun.
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Status penangguhan untuk Nama User berhasil dicabut. User sudah aktif kembali."
+}
+```
+
+---
+
+### POST `/api/admin/users/[userId]/warning`
+
+🔒 **Admin Auth** — Mengirimkan pesan peringatan resmi ke notifikasi inbox pengguna.
+
+**Request Body:**
+```json
+{
+  "message": "Harap lengkapi informasi profil Anda dengan data yang valid."
+}
+```
+
+---
+
+## 12. Catatan untuk AI Agent
 
 - Semua API route ada di `src/app/api/` menggunakan Next.js App Router conventions (`route.ts` file).
 - Auth check: gunakan `createServerClient` dari `@supabase/ssr` lalu `supabase.auth.getUser()`.

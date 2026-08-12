@@ -64,9 +64,14 @@ src/
 - **Aktivitas Terbaru**: Feed transaksi micro-task terkini.
 
 ### 3.3 👥 Manajemen Pengguna (`/admin/users`)
-- **Tabel Pengguna**: Menampilkan Avatar, Nama, Username, Email, Role (`Worker`, `Requester`, `Dual-Role`, `Admin`), Rating, Jumlah Task Selesai, dan Tanggal Bergabung.
+- **Tabel Pengguna**: Menampilkan Avatar, Nama, Username, Email, Role (`Worker`, `Requester`, `Dual-Role`, `Admin`), Rating, Jumlah Task Selesai, Status Penangguhan (`Aktif` vs `Banned`), dan Tanggal Bergabung.
 - **Pencarian & Filter**: Cari cepat berdasarkan nama/email/username dan filter per role.
-- **Slide-over Drawer Detail**: Klik baris tabel untuk membuka profil lengkap pengguna, saldo poin, escrow yang ditahan, skill terverifikasi, serta aksi cepat (Reset Password, Suspend User).
+- **Slide-over Drawer Detail & Aksi Moderasi**:
+  - Klik baris tabel untuk membuka profil lengkap pengguna, saldo poin, escrow ditahan, skill terverifikasi.
+  - **Suspend User Modal**: Penangguhan Permanent atau Temporary (opsi durasi hari) dengan alasan ban. Terintegrasi penuh dengan Supabase Auth Admin.
+  - **Unsuspend User**: Mencabut status penangguhan akun dan mengaktifkan kembali akses login user.
+  - **Kirim Peringatan (Warning)**: Mengirim notifikasi surat peringatan resmi dari Admin langsung ke inbox user.
+  - **Reset Password**: Mengirim email reset password via Supabase Auth.
 
 ### 3.4 📋 Manajemen Pekerjaan / Task (`/admin/tasks`)
 - **Tabel Pekerjaan**: Menampilkan Judul, Pembuat (Requester), Kategori Skill, Status Badge, Kompensasi (Poin), dan Jumlah Applicant.
