@@ -79,6 +79,15 @@ export default function TaskManagementPage() {
     task: AdminTask;
   } | null>(null);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchFromUrl = new URLSearchParams(window.location.search).get('search');
+      if (searchFromUrl) {
+        setSearchTerm(searchFromUrl);
+      }
+    }
+  }, []);
+
   const fetchTasks = useCallback(async () => {
     setLoading(true);
     try {

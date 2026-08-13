@@ -75,6 +75,7 @@ model User {
   transactions            Transactions[]
   payment_transactions    PaymentTransaction[]
   admin_sessions          AdminSession[]
+  user_reports            UserReport[]
   role                    Role             @relation(fields: [id_role], references: [id_role])
 }
 
@@ -263,3 +264,16 @@ enum TransactionSubType {
   refund
   hold
 }
+
+model UserReport {
+  id_report   String   @id @default(uuid())
+  user_id     String
+  kategori    String
+  subjek      String
+  deskripsi   String
+  status      String   @default("pending")
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  user        User     @relation(fields: [user_id], references: [id_user], onDelete: Cascade)
+}
+

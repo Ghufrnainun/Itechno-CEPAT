@@ -137,8 +137,15 @@ Kategori yang bisa dipilih saat posting task:
 - 📱 Social Media Management
 - 📊 Riset & Survei
 - 🎓 Tutoring / Les Privat
-- 🧹 Kebersihan & Penataan
-- 🛒 Belanja / Titip Beli
+### 3.8 🚩 Fitur Laporan User & Moderasi Admin
+
+| Fitur                     | Deskripsi                                                      | Prioritas |
+| ------------------------- | -------------------------------------------------------------- | --------- |
+| Laporkan Masalah          | Tombol "Laporkan Masalah" di sidebar user biasa + `ReportModal` dialog | P0 |
+| Admin Reports Page        | Konsol aduan `/admin/reports` (KPI Cards, Table, Status filter `pending`, `reviewed`, `resolved`, `rejected`) | P0 |
+| Notifikasi FCM Admin      | Push notification real-time via Firebase FCM & Red Bell badge pada Admin Topbar | P0 |
+| Notifikasi Klik Direct    | Klik notifikasi laporan di topbar langsung navigasi ke `/admin/reports?id=<reportId>` | P0 |
+| Global Search Bar Admin   | Search bar topbar admin (`Ctrl + K`) real-time untuk menu, user, task, dan kategori | P0 |
 
 ---
 

@@ -75,6 +75,15 @@ export default function UserManagementPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchFromUrl = new URLSearchParams(window.location.search).get('search');
+      if (searchFromUrl) {
+        setSearchTerm(searchFromUrl);
+      }
+    }
+  }, []);
+
   // Modals state
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
@@ -120,17 +129,18 @@ export default function UserManagementPage() {
         setTotal(json.meta.total);
 
         // Update selectedUser if currently open in drawer
-        if (selectedUser) {
-          const updated = json.data.find((u: AdminUser) => u.id === selectedUser.id);
-          if (updated) setSelectedUser(updated);
-        }
+        setSelectedUser((prev) => {
+          if (!prev) return null;
+          const updated = json.data.find((u: AdminUser) => u.id === prev.id);
+          return updated || prev;
+        });
       }
     } catch (err) {
       console.error('Fetch users error:', err);
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, roleFilter, page, selectedUser]);
+  }, [searchTerm, roleFilter, page]);
 
   useEffect(() => {
     const debounce = setTimeout(() => {

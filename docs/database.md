@@ -75,9 +75,11 @@
 | `status_task_applicants` | Master status lamaran                                  |
 | `reviews`                | Rating & review antar user setelah task selesai        |
 | `transactions`           | Log transaksi saldo user                               |
-| `notifications`          | Notifikasi in-app                                      |
-| `chat_room`              | Ruang chat antara requester & worker per task (BARU)   |
-| `message`                | Pesan dalam suatu chat_room (BARU)                     |
+| `notifications`          | Notifikasi in-app (terpisah antara user & admin types) |
+| `chat_room`              | Ruang chat antara requester & worker per task          |
+| `message`                | Pesan dalam suatu chat_room                            |
+| `AdminSession`           | Sesi autentikasi admin console                         |
+| `UserReport`             | Laporan aduan & masalah dari pengguna ke admin         |
 
 ---
 
@@ -591,6 +593,28 @@ CREATE TABLE message (
 );
 
 CREATE INDEX idx_message_room ON message (id_room_chat, created_at DESC);
+```
+
+### 3.15 `UserReport`
+
+Tabel untuk menyimpan laporan aduan dan kendala yang dikirimkan oleh pengguna biasa kepada Admin.
+
+```sql
+CREATE TABLE "public"."UserReport" (
+    "id_report" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "kategori" TEXT NOT NULL,
+    "subjek" TEXT NOT NULL,
+    "deskripsi" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'pending', -- pending, reviewed, resolved, rejected
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UserReport_pkey" PRIMARY KEY ("id_report")
+);
+
+ALTER TABLE "public"."UserReport" ADD CONSTRAINT "UserReport_user_id_fkey" 
+FOREIGN KEY ("user_id") REFERENCES "public"."User"("id_user") ON DELETE CASCADE ON UPDATE CASCADE;
 ```
 
 > **Perubahan scope**: `features.md` §5 sebelumnya eksplisit menyatakan chat **tidak** dikerjakan di MVP penyisihan (dianggap kompleks & tidak kritis). ERD terbaru ini menambahkan `chat_room` + `message`, yang berarti keputusan itu perlu ditinjau ulang oleh tim. Jangan implementasikan fitur chat di kode sebelum `features.md` diupdate untuk mencerminkan keputusan final — kalau tetap masuk MVP, itu artinya fase baru perlu ditambahkan ke `features.md` dan `roadmap.md`/`strategy.md` (alokasi waktu W-nya belum ada).

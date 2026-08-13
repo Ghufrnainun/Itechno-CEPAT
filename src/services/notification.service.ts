@@ -72,9 +72,18 @@ export const notificationService = {
   async getUserNotifications(userId: string, unreadOnly = false, page = 1, limit = 20) {
     const skip = (page - 1) * limit
 
+    const adminTypes = ['user_report', 'report', 'dispute', 'admin', 'admin_alert']
+
     const whereCondition = {
       user_id: userId,
+      type: { notIn: adminTypes },
       ...(unreadOnly ? { is_read: false } : {}),
+    }
+
+    const unreadWhereCondition = {
+      user_id: userId,
+      type: { notIn: adminTypes },
+      is_read: false,
     }
 
     const [notifications, total, unreadCount] = await Promise.all([
@@ -86,10 +95,7 @@ export const notificationService = {
       }),
       prisma.notifications.count({ where: whereCondition }),
       prisma.notifications.count({
-        where: {
-          user_id: userId,
-          is_read: false,
-        },
+        where: unreadWhereCondition,
       }),
     ])
 
