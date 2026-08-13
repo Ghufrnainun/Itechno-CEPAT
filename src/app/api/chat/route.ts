@@ -68,11 +68,6 @@ export async function GET(request: NextRequest) {
         return msg.created_at > clearedAt;
       });
 
-      // If the room was cleared and there are no valid messages since then, hide it entirely
-      if (clearedAt && validMessages.length === 0) {
-        return acc;
-      }
-
       // Calculate unread count (messages from OTHER user that are unread)
       const unreadCount = validMessages.filter(msg => 
         msg.id_sender !== currentUser.id_user && msg.is_read === false

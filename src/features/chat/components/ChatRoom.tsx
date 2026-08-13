@@ -27,9 +27,10 @@ interface ChatRoomProps {
     otherUserId: string;
     otherUserAvatarUrl?: string | null;
   };
+  onMessageAdded?: () => void;
 }
 
-export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomProps) {
+export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdded }: ChatRoomProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
@@ -135,7 +136,11 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomPr
               teks_pesan: newMessageRaw.teks_pesan,
               image_url: newMessageRaw.image_url,
               is_read: newMessageRaw.is_read || false,
-              created_at: newMessageRaw.created_at,
+              // Supabase Realtime often sends timestamp without timezone (missing Z or +) 
+              // which causes browsers to parse it as local time instead of UTC.
+              created_at: (!newMessageRaw.created_at.includes('Z') && !newMessageRaw.created_at.includes('+'))
+                ? newMessageRaw.created_at.replace(' ', 'T') + 'Z'
+                : newMessageRaw.created_at,
               sender: {
                 id_user: newMessageRaw.id_sender,
                 nama_lengkap: newMessageRaw.id_sender === currentUserId ? "Anda" : roomInfo.otherUserName,
@@ -151,6 +156,8 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomPr
           if (newMessageRaw.id_sender !== currentUserId) {
             fetch(`/api/chat/${roomId}`, { method: 'PUT' }).catch(console.error);
           }
+          
+          if (onMessageAdded) onMessageAdded();
         }
       )
       .on(
@@ -197,6 +204,8 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomPr
           return [...prev, data.data];
         });
         setTimeout(scrollToBottom, 100);
+        
+        if (onMessageAdded) onMessageAdded();
       }
     } catch (e) {
       console.error(e);

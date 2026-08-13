@@ -146,10 +146,25 @@ function ChatContent() {
                   ? selectedRoomInfo.worker.avatar_url 
                   : selectedRoomInfo.requester.avatar_url
               }}
+              onMessageAdded={fetchRooms}
             />
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center">
+          ) : isLoading ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center gap-md p-xl">
               <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-center gap-md p-xl">
+               <span className="material-symbols-outlined text-[64px] text-error" aria-hidden="true">error</span>
+               <h2 className="font-headline-sm text-headline-sm text-on-surface">Obrolan tidak ditemukan</h2>
+               <p className="font-body-sm text-body-sm text-on-surface-variant max-w-sm">
+                 Ruang obrolan ini mungkin sudah dihapus atau Anda tidak memiliki akses.
+               </p>
+               <button 
+                 onClick={() => setSelectedRoomId(null)} 
+                 className="mt-4 px-6 py-2 bg-primary text-white rounded-full font-label-md hover:bg-primary/90 transition-colors"
+               >
+                 Kembali ke Daftar Obrolan
+               </button>
             </div>
           )}
         </div>
