@@ -6,6 +6,17 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
+import {
+  AlertTriangle,
+  AppWindow,
+  ArrowRightLeft,
+  ExternalLink,
+  UserCircle,
+  CheckCircle2,
+  Lock,
+  Loader2,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ClientInfo {
   name?: string;
@@ -41,62 +52,56 @@ function OAuthConsentContent() {
       return;
     }
 
-    async function initConsent() {
+    async function init() {
       try {
         const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
 
-        // 1. Cek sesi user saat ini
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-
-        if (userError || !userData?.user) {
-          // Redirect ke halaman login jika belum terautentikasi
+        if (!user) {
           const currentUrl = window.location.pathname + window.location.search;
-          router.replace(`/login?redirect=${encodeURIComponent(currentUrl)}`);
+          router.push(`/login?redirect=${encodeURIComponent(currentUrl)}`);
           return;
         }
 
-        setUserEmail(userData.user.email ?? "User");
+        setUserEmail(user.email ?? null);
 
-        // 2. Ambil rincian permintaan otorisasi OAuth dari Supabase
-        const { data, error: detailsError } = await (supabase.auth as any).oauth.getAuthorizationDetails(
-          authorizationId
-        );
+        const res = await fetch(`/api/oauth/consent?authorization_id=${encodeURIComponent(authorizationId ?? "")}`);
+        const data = await res.json();
 
-        if (detailsError) {
-          throw new Error(
-            detailsError.message || "Gagal mengambil rincian otorisasi OAuth. Sesi mungkin telah kadaluarsa."
-          );
+        if (!res.ok || !data.success) {
+          setError(data.message || "Gagal memuat informasi otorisasi OAuth.");
+        } else {
+          setDetails(data.data);
         }
-
-        setDetails(data);
       } catch (err: any) {
-        setError(err.message || "Terjadi kesalahan saat memproses permintaan otorisasi.");
+        setError("Terjadi kesalahan sistem saat memproses permintaan otorisasi.");
       } finally {
         setLoading(false);
       }
     }
 
-    initConsent();
+    init();
   }, [authorizationId, router]);
 
   const handleApprove = async () => {
     if (!authorizationId) return;
     setActionLoading("approve");
-    setError(null);
-
     try {
-      const supabase = createClient();
-      const { data, error } = await (supabase.auth as any).oauth.approveAuthorization(authorizationId);
+      const res = await fetch("/api/oauth/consent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ authorization_id: authorizationId, decision: "approve" }),
+      });
+      const data = await res.json();
 
-      if (error) throw error;
-
-      if (data?.redirect_url) {
-        window.location.href = data.redirect_url;
+      if (res.ok && data.success && data.data?.redirect_uri) {
+        window.location.href = data.data.redirect_uri;
       } else {
-        throw new Error("Redirect URL tidak diterima dari server.");
+        setError(data.message || "Pemberian izin gagal diproses.");
+        setActionLoading(null);
       }
-    } catch (err: any) {
-      setError(err.message || "Gagal menyetujui otorisasi.");
+    } catch {
+      setError("Gagal menghubungi server OAuth.");
       setActionLoading(null);
     }
   };
@@ -104,66 +109,65 @@ function OAuthConsentContent() {
   const handleDeny = async () => {
     if (!authorizationId) return;
     setActionLoading("deny");
-    setError(null);
-
     try {
-      const supabase = createClient();
-      const { data, error } = await (supabase.auth as any).oauth.denyAuthorization(authorizationId);
+      const res = await fetch("/api/oauth/consent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ authorization_id: authorizationId, decision: "deny" }),
+      });
+      const data = await res.json();
 
-      if (error) throw error;
-
-      if (data?.redirect_url) {
-        window.location.href = data.redirect_url;
+      if (res.ok && data.success && data.data?.redirect_uri) {
+        window.location.href = data.data.redirect_uri;
       } else {
-        throw new Error("Redirect URL tidak diterima dari server.");
+        router.push("/");
       }
-    } catch (err: any) {
-      setError(err.message || "Gagal menolak otorisasi.");
-      setActionLoading(null);
+    } catch {
+      router.push("/");
     }
   };
-
-  // Helper parsing scopes
-  const rawScopes = details?.scope;
-  const scopesList = Array.isArray(rawScopes)
-    ? rawScopes
-    : typeof rawScopes === "string"
-    ? rawScopes.split(" ").filter(Boolean)
-    : ["openid", "profile", "email"];
 
   const getScopeDescription = (scope: string) => {
-    switch (scope.toLowerCase()) {
-      case "openid":
-        return "Mengonfirmasi identitas unik akun CEPAT Anda";
+    switch (scope) {
       case "profile":
-        return "Mengakses informasi profil publik (Nama, Foto Profil, Role)";
+        return "Melihat informasi profil publik Anda (nama, username, reputasi rating, avatar).";
       case "email":
-        return "Melihat alamat email terverifikasi Anda";
+        return "Melihat alamat email yang terdaftar di akun Anda.";
+      case "phone":
+        return "Melihat nomor kontak yang terhubung dengan akun Anda.";
+      case "tasks:read":
+        return "Membaca data riwayat dan status tugas yang Anda ikuti atau posting.";
+      case "tasks:write":
+        return "Membuat, melamar, atau mengubah status pengerjaan tugas atas nama Anda.";
       default:
-        return `Izin khusus: ${scope}`;
+        return `Mengakses cakupan izin '${scope}'.`;
     }
   };
+
+  const scopesList = Array.isArray(details?.scope)
+    ? details?.scope
+    : (details?.scope || "profile email").split(" ").filter(Boolean);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-layout-bg p-md">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-md" />
-        <p className="font-body-md text-on-surface-variant">Memuat rincian otorisasi OAuth...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-surface p-4 font-sans">
+        <Loader2 className="w-8 h-8 text-primary animate-spin mb-3" />
+        <p className="font-body-sm text-xs text-on-surface-variant">Memuat rincian otorisasi OAuth...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-layout-bg p-md font-sans">
-        <div className="w-full max-w-md p-xl rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-lg text-center">
-          <div className="w-12 h-12 mx-auto mb-md rounded-full bg-error-container/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-error text-[28px]" aria-hidden="true">warning</span>
+      <div className="min-h-screen flex items-center justify-center bg-surface p-4 font-sans">
+        <div className="w-full max-w-md p-6 rounded-2xl bg-surface-container-lowest border border-card-border shadow-md text-center">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-error-container/30 text-error flex items-center justify-center">
+            <AlertTriangle className="w-6 h-6" />
           </div>
-          <h1 className="font-headline-sm text-headline-sm text-on-surface mb-xs">Otorisasi Gagal</h1>
-          <p className="font-body-sm text-body-sm text-on-surface-variant mb-lg">{error}</p>
+          <h1 className="font-headline text-lg font-bold text-on-surface mb-1">Otorisasi Gagal</h1>
+          <p className="font-body-sm text-xs text-on-surface-variant mb-4 leading-relaxed">{error}</p>
           <Link href="/">
-            <Button variant="secondary" fullWidth>
+            <Button variant="secondary" fullWidth size="sm">
               Kembali ke Beranda
             </Button>
           </Link>
@@ -177,34 +181,34 @@ function OAuthConsentContent() {
   const clientWebsite = details?.client?.website_uri;
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-layout-bg p-md font-sans">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-surface p-4 font-sans">
       {/* Container Box */}
-      <div className="w-full max-w-[480px] p-lg sm:p-xl rounded-2xl bg-surface-container-lowest border border-outline-variant/60 shadow-xl">
+      <div className="w-full max-w-[460px] p-6 sm:p-8 rounded-2xl bg-surface-container-lowest border border-card-border shadow-md">
         {/* Header Branding Connection */}
-        <div className="flex items-center justify-center gap-md mb-xl pt-xs">
-          <div className="w-14 h-14 rounded-xl bg-surface-container-high border border-outline-variant/60 flex items-center justify-center overflow-hidden relative">
+        <div className="flex items-center justify-center gap-4 mb-6 pt-1">
+          <div className="w-12 h-12 rounded-xl bg-surface-container border border-card-border flex items-center justify-center overflow-hidden relative shadow-xs">
             {clientIcon ? (
-              <Image src={clientIcon} alt={clientName} width={56} height={56} className="object-cover" />
+              <Image src={clientIcon} alt={clientName} width={48} height={48} className="object-cover" />
             ) : (
-              <span className="material-symbols-outlined text-primary text-[32px]" aria-hidden="true">apps</span>
+              <AppWindow className="w-6 h-6 text-primary" />
             )}
           </div>
 
-          <div className="flex items-center justify-center w-8 text-on-surface-variant">
-            <span className="material-symbols-outlined text-[24px]" aria-hidden="true">swap_horiz</span>
+          <div className="flex items-center justify-center text-on-surface-variant">
+            <ArrowRightLeft className="w-4 h-4" />
           </div>
 
-          <div className="w-14 h-14 rounded-xl bg-surface-container-high border border-outline-variant/60 flex items-center justify-center">
-            <Image src="/logo.svg" alt="CEPAT" width={44} height={36} className="object-contain" />
+          <div className="w-12 h-12 rounded-xl bg-surface-container border border-card-border flex items-center justify-center shadow-xs">
+            <Image src="/logo.svg" alt="CEPAT" width={38} height={32} className="object-contain" />
           </div>
         </div>
 
         {/* Title & Client info */}
-        <div className="text-center mb-lg">
-          <h1 className="font-headline-sm text-headline-sm text-on-surface font-semibold mb-xs">
+        <div className="text-center mb-5">
+          <h1 className="font-headline text-lg font-bold text-on-surface mb-1">
             Hubungkan ke {clientName}
           </h1>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
+          <p className="font-body-sm text-xs text-on-surface-variant">
             Aplikasi ini meminta izin untuk mengakses akun CEPAT Anda.
           </p>
           {clientWebsite && (
@@ -212,31 +216,31 @@ function OAuthConsentContent() {
               href={clientWebsite}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-xs font-label-sm text-label-sm text-primary hover:underline mt-xs"
+              className="inline-flex items-center gap-1 text-xs text-primary font-bold hover:underline mt-1 font-mono"
             >
               <span>{clientWebsite}</span>
-              <span className="material-symbols-outlined text-[14px]" aria-hidden="true">open_in_new</span>
+              <ExternalLink className="w-3 h-3" />
             </a>
           )}
         </div>
 
         {/* User Badge */}
         {userEmail && (
-          <div className="flex items-center justify-between p-sm px-md rounded-xl bg-surface-container-high border border-outline-variant/40 mb-lg">
-            <div className="flex items-center gap-sm overflow-hidden">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-primary text-[18px]" aria-hidden="true">account_circle</span>
+          <div className="flex items-center justify-between p-3 rounded-xl bg-surface-container-low border border-card-border mb-5">
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                <UserCircle className="w-4 h-4" />
               </div>
               <div className="truncate">
-                <p className="font-label-sm text-label-sm text-on-surface-variant">Masuk sebagai</p>
-                <p className="font-body-sm text-body-sm font-semibold text-on-surface truncate">{userEmail}</p>
+                <p className="text-[10px] font-semibold text-on-surface-variant font-mono uppercase">Masuk sebagai</p>
+                <p className="text-xs font-bold text-on-surface truncate font-sans">{userEmail}</p>
               </div>
             </div>
             <Link
               href={`/login?redirect=${encodeURIComponent(
                 typeof window !== "undefined" ? window.location.pathname + window.location.search : ""
               )}`}
-              className="font-label-sm text-label-sm text-primary hover:underline flex-shrink-0 ml-xs"
+              className="text-xs font-bold text-primary hover:underline flex-shrink-0 ml-2"
             >
               Ganti
             </Link>
@@ -244,25 +248,20 @@ function OAuthConsentContent() {
         )}
 
         {/* Permissions / Scopes list */}
-        <div className="mb-xl">
-          <h2 className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant mb-sm">
+        <div className="mb-6">
+          <h2 className="text-[11px] font-mono font-bold uppercase tracking-wider text-on-surface-variant mb-2.5">
             Izin yang Diminta:
           </h2>
-          <ul className="space-y-sm">
+          <ul className="space-y-2">
             {scopesList.map((scope, idx) => (
               <li
                 key={idx}
-                className="flex items-start gap-md p-sm rounded-lg bg-surface-container-lowest border border-outline-variant/30"
+                className="flex items-start gap-2.5 p-3 rounded-lg bg-surface-container-low border border-card-border"
               >
-                <span
-                  className="material-symbols-outlined text-primary text-[20px] flex-shrink-0 mt-0.5"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                 aria-hidden="true">
-                  check_circle
-                </span>
+                <CheckCircle2 className="w-4 h-4 text-primary fill-primary/20 shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-body-sm text-body-sm font-medium text-on-surface">{scope}</p>
-                  <p className="font-body-xs text-body-xs text-on-surface-variant">{getScopeDescription(scope)}</p>
+                  <p className="font-headline text-xs font-bold text-on-surface">{scope}</p>
+                  <p className="font-body-sm text-[11px] text-on-surface-variant leading-relaxed">{getScopeDescription(scope)}</p>
                 </div>
               </li>
             ))}
@@ -270,11 +269,12 @@ function OAuthConsentContent() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center gap-md">
+        <div className="flex flex-col sm:flex-row items-center gap-2.5">
           <Button
             type="button"
             variant="secondary"
             fullWidth
+            size="md"
             onClick={handleDeny}
             disabled={actionLoading !== null}
           >
@@ -284,6 +284,7 @@ function OAuthConsentContent() {
           <Button
             type="button"
             fullWidth
+            size="md"
             onClick={handleApprove}
             disabled={actionLoading !== null}
           >
@@ -292,9 +293,9 @@ function OAuthConsentContent() {
         </div>
 
         {/* Security Footer */}
-        <div className="mt-lg text-center pt-md border-t border-outline-variant/30 flex items-center justify-center gap-xs">
-          <span className="material-symbols-outlined text-on-surface-variant text-[16px]" aria-hidden="true">lock</span>
-          <span className="font-label-xs text-label-xs text-on-surface-variant">
+        <div className="mt-5 text-center pt-3 border-t border-card-border flex items-center justify-center gap-1.5 text-on-surface-variant">
+          <Lock className="w-3 h-3" />
+          <span className="font-mono text-[10px]">
             Diotorisasi secara aman oleh CEPAT OAuth Server (OAuth 2.1)
           </span>
         </div>
@@ -307,9 +308,9 @@ export default function OAuthConsentPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex flex-col items-center justify-center bg-layout-bg p-md">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-md" />
-          <p className="font-body-md text-on-surface-variant">Memuat halaman otorisasi...</p>
+        <div className="min-h-screen flex flex-col items-center justify-center bg-surface p-4">
+          <Loader2 className="w-8 h-8 text-primary animate-spin mb-3" />
+          <p className="font-sans text-xs text-on-surface-variant">Menyiapkan halaman otorisasi...</p>
         </div>
       }
     >

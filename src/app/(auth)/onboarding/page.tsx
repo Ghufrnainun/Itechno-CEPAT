@@ -148,7 +148,7 @@ function StepProfile({
             </span>
           </div>
           <textarea
-            className="w-full min-h-[100px] p-3.5 text-sm rounded-xl border-2 border-outline-variant bg-white focus:outline-none focus:border-primary focus:ring-0 transition-all font-sans resize-none"
+            className="w-full min-h-[100px] p-3.5 text-base sm:text-sm rounded-xl border border-card-border bg-surface-container-lowest text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-sans resize-none placeholder:text-on-surface-variant/50"
             placeholder="Tulis singkat keahlian atau jenis bantuan yang kamu berikan..."
             value={bio}
             onChange={(e) => setBio(e.target.value)}
@@ -161,7 +161,7 @@ function StepProfile({
                 key={i}
                 type="button"
                 onClick={() => setBio(tpl)}
-                className="text-[11px] px-2.5 py-1 rounded-lg bg-surface-container hover:bg-primary/10 text-on-surface-variant hover:text-primary transition-colors border border-outline-variant/50 cursor-pointer"
+                className="text-[11px] px-2.5 py-1.5 rounded-lg bg-surface-container-low hover:bg-primary/10 text-on-surface-variant hover:text-primary transition-colors border border-card-border cursor-pointer font-medium"
               >
                 {tpl.slice(0, 28)}…
               </button>
@@ -188,14 +188,14 @@ function StepProfile({
                   key={skill.id_skill_master}
                   type="button"
                   onClick={() => toggleSkill(skill)}
-                  className={`p-3 rounded-xl border-2 flex flex-col items-center gap-1.5 text-center cursor-pointer transition-all duration-150 ${
+                  className={`p-3 rounded-xl border-2 flex flex-col items-center gap-1.5 text-center cursor-pointer transition-all duration-150 min-h-[48px] ${
                     sel
-                      ? "border-primary bg-primary/5 text-primary shadow-sm"
-                      : "border-outline-variant/60 bg-white hover:bg-surface-container-low text-on-surface-variant hover:border-primary/30"
+                      ? "border-primary bg-primary/10 text-primary shadow-xs"
+                      : "border-card-border bg-surface-container-lowest hover:bg-surface-container-low text-on-surface-variant hover:border-primary/30"
                   }`}
                 >
-                  <Sparkles className="w-6 h-6 mb-1 text-primary/80" strokeWidth={1.5} />
-                  <span className="text-[12px] font-bold leading-tight capitalize tracking-wide font-sans text-on-surface-variant">
+                  <Sparkles className="w-5 h-5 mb-0.5 text-primary" strokeWidth={1.5} />
+                  <span className="text-xs font-bold leading-tight capitalize tracking-wide font-sans text-on-surface">
                     {skill.nama_skill}
                   </span>
                 </button>
@@ -213,13 +213,13 @@ function StepProfile({
               </label>
               {selectedSkills.map((skill) => {
                 return (
-                  <div key={skill.id_skill_master} className="p-3 border border-outline-variant rounded-xl bg-surface-container-lowest flex flex-col gap-2">
-                    <p className="text-sm font-bold text-primary flex items-center gap-2 capitalize font-sans tracking-wide">
+                  <div key={skill.id_skill_master} className="p-3.5 border border-card-border rounded-xl bg-surface-container-lowest flex flex-col gap-2.5 shadow-xs">
+                    <p className="text-xs font-bold text-primary flex items-center gap-2 capitalize font-sans tracking-wide">
                       <Sparkles className="w-4 h-4 text-primary" strokeWidth={2} />
                       {skill.nama_skill}
                     </p>
                     <textarea
-                      className="w-full p-2.5 text-[13px] rounded-lg border border-outline-variant bg-white focus:outline-none focus:border-primary transition-all resize-none min-h-[60px]"
+                      className="w-full p-2.5 text-base sm:text-xs rounded-lg border border-card-border bg-surface-container-low text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none min-h-[60px] placeholder:text-on-surface-variant/50"
                       placeholder="Ceritakan pengalamanmu..."
                       value={skill.deskripsi_pengalaman}
                       onChange={(e) => updateSkillDetail(skill.id_skill_master, 'deskripsi_pengalaman', e.target.value)}
@@ -242,7 +242,7 @@ function StepProfile({
         <button
           type="button"
           onClick={onBack}
-          className="flex-none px-5 py-4 rounded-xl border-2 border-outline-variant text-sm font-semibold text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer"
+          className="flex-none px-5 py-3.5 min-h-[48px] rounded-xl border border-card-border text-sm font-bold text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer"
         >
           ←
         </button>
@@ -250,7 +250,7 @@ function StepProfile({
           type="button"
           onClick={onSubmit}
           disabled={loading}
-          className="flex-1 bg-primary text-on-primary font-bold text-sm rounded-xl py-4 hover:bg-primary/90 transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
+          className="flex-1 bg-primary text-on-primary font-bold text-sm rounded-xl py-3.5 min-h-[48px] hover:bg-primary-container transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs"
         >
           {loading ? "Menyimpan..." : "Selesai & Masuk Dashboard"}
         </button>

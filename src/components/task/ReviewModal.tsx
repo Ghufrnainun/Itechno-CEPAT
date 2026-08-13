@@ -70,24 +70,24 @@ export function ReviewModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Beri Rating & Ulasan">
       <form onSubmit={handleSubmit} className="flex flex-col gap-md">
-        <div className="bg-surface-container-low p-sm rounded-lg border border-outline-variant/60">
-          <p className="font-label-sm text-on-surface-variant font-medium">Tugas:</p>
-          <p className="font-body-md text-on-surface font-bold truncate">{taskTitle}</p>
-          <p className="font-label-sm text-on-surface-variant mt-xs">
+        <div className="bg-surface-container-low p-3 rounded-xl border border-card-border">
+          <p className="text-xs text-on-surface-variant font-medium">Tugas:</p>
+          <p className="font-headline text-sm text-on-surface font-bold truncate">{taskTitle}</p>
+          <p className="text-xs text-on-surface-variant mt-1">
             Memberikan rating untuk: <span className="font-bold text-primary">{revieweeName}</span>
           </p>
         </div>
 
         {/* Rating Input */}
-        <div className="flex flex-col items-center justify-center gap-xs py-sm">
-          <p className="font-body-sm text-on-surface font-semibold">Bagaimana kualitas hasil pengerjaannya?</p>
+        <div className="flex flex-col items-center justify-center gap-2 py-2">
+          <p className="text-xs text-on-surface font-semibold">Bagaimana kualitas hasil pengerjaannya?</p>
           <RatingStars
             rating={rating}
             interactive={true}
             size="lg"
             onChange={(val) => setRating(val)}
           />
-          <span className="font-mono text-sm font-bold text-amber-600 mt-xs">
+          <span className="font-mono text-xs font-bold text-amber-600 mt-1">
             {rating === 5 ? "Sangat Memuaskan! 🔥" :
              rating === 4 ? "Bagus & Rapi 👍" :
              rating === 3 ? "Cukup Baik 👌" :
@@ -97,8 +97,8 @@ export function ReviewModal({
         </div>
 
         {/* Comment Input */}
-        <div className="flex flex-col gap-xs">
-          <label htmlFor="review-comment" className="font-label-md font-bold text-on-surface">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="review-comment" className="text-xs font-bold text-on-surface">
             Ulasan Singkat (Opsional)
           </label>
           <textarea
@@ -108,19 +108,19 @@ export function ReviewModal({
             placeholder="Tulis kesan, kecepatan pengerjaan, atau saran..."
             rows={3}
             maxLength={500}
-            className="w-full p-sm rounded-lg border border-outline-variant focus:outline-none focus:border-primary text-body-sm resize-none"
+            className="w-full p-3 rounded-xl border border-card-border bg-surface-container-low text-on-surface focus:bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-base sm:text-xs resize-none min-h-[85px]"
           />
-          <span className="text-right text-xs text-on-surface-variant font-mono">
+          <span className="text-right text-[11px] text-on-surface-variant font-mono">
             {comment.length}/500
           </span>
         </div>
 
         {/* Buttons */}
-        <div className="flex justify-end gap-sm pt-xs border-t border-outline-variant/60">
-          <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
+        <div className="flex justify-end gap-2 pt-3 border-t border-card-border">
+          <Button type="button" variant="secondary" size="sm" onClick={onClose} disabled={isSubmitting}>
             Batal
           </Button>
-          <Button type="submit" variant="primary" disabled={isSubmitting}>
+          <Button type="submit" variant="primary" size="sm" disabled={isSubmitting}>
             {isSubmitting ? "Menyimpan..." : "Kirim Ulasan"}
           </Button>
         </div>

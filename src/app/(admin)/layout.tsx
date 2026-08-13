@@ -28,9 +28,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
     // Verifikasi session admin
     fetch('/api/admin/auth/me', { cache: 'no-store' })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) return { success: false };
+        return res.json().catch(() => ({ success: false }));
+      })
       .then((data) => {
-        if (data.success) {
+        if (data.success && data.data) {
           setAdmin(data.data);
         } else {
           router.replace('/admin/login');
@@ -52,10 +55,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   // Loading state saat cek session
   if (checking) {
     return (
-      <div className="min-h-screen bg-[#F7FAF8] flex items-center justify-center">
+      <div className="min-h-screen bg-surface flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-[#0F766E] border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-[#64748B] font-sans">Memeriksa sesi admin...</p>
+          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-on-surface-variant font-sans">Memeriksa sesi admin...</p>
         </div>
       </div>
     );
@@ -67,7 +70,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7FAF8] text-[#0C1F16] font-sans flex antialiased">
+    <div className="min-h-screen bg-surface text-on-surface font-sans flex antialiased">
       {/* Sidebar Navigation */}
       <AdminSidebar adminUser={admin} />
 

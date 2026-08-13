@@ -1,12 +1,17 @@
 import React from "react";
+import { ShieldCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export function EscrowBanner() {
+export function EscrowBanner({ className }: { className?: string }) {
   return (
-    <div className="escrow-bg rounded-lg border border-[#FCD34D] p-sm flex items-center gap-sm shrink-0">
-      <span className="material-symbols-outlined escrow-text text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">
-        verified_user
-      </span>
-      <p className="font-label-sm text-label-sm escrow-text">
+    <div
+      className={cn(
+        "bg-tertiary-container/30 rounded-lg border border-tertiary/20 p-2.5 flex items-center gap-2 shrink-0",
+        className
+      )}
+    >
+      <ShieldCheck className="w-4.5 h-4.5 text-tertiary shrink-0" />
+      <p className="font-label-sm text-xs font-semibold text-tertiary">
         Dana ditahan di Escrow • Aman &amp; Terpercaya
       </p>
     </div>

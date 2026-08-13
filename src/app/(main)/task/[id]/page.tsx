@@ -10,7 +10,25 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { EscrowBanner } from "@/components/ui/EscrowBanner";
 import { Modal } from "@/components/ui/Modal";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { Skeleton } from "@/components/ui/Skeleton";
 import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
+import {
+  AlertCircle,
+  ArrowLeft,
+  PlayCircle,
+  Users,
+  MessageSquare,
+  Store,
+  Star,
+  Wrench,
+  MapPin,
+  XCircle,
+  CheckCircle2,
+  Clock,
+  Loader2,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -101,8 +119,13 @@ export default function TaskDetailPage() {
   const fetchTask = useCallback(async () => {
     try {
       const res = await fetch(`/api/tasks/${id}`);
-      const data = await res.json();
-      if (data.success) {
+      if (!res.ok) {
+        showToast("Task tidak ditemukan.");
+        setTask(null);
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      if (data.success && data.data) {
         setTask(data.data);
       } else {
         showToast(data.message || "Task tidak ditemukan.");
@@ -128,8 +151,8 @@ export default function TaskDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pesan: applyMessage }),
       });
-      const data = await res.json();
-      if (data.success) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
         setIsApplyModalOpen(false);
         setApplyMessage("");
         showToast("Berhasil melamar pekerjaan! Menunggu persetujuan pemberi kerja.");
@@ -151,8 +174,8 @@ export default function TaskDetailPage() {
       const res = await fetch(`/api/tasks/${id}/apply`, {
         method: "DELETE",
       });
-      const data = await res.json();
-      if (data.success) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
         showToast("Lamaran berhasil dibatalkan.");
         fetchTask(); // refresh task data
       } else {
@@ -174,8 +197,8 @@ export default function TaskDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "accept" }),
       });
-      const data = await res.json();
-      if (data.success) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
         showToast(`${workerName} diterima! Task dimulai.`);
         fetchTask();
       } else {
@@ -208,8 +231,8 @@ export default function TaskDetailPage() {
           alasan_penolakan: rejectReason.trim() || undefined,
         }),
       });
-      const data = await res.json();
-      if (data.success) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
         showToast("Lamaran ditolak.");
         setIsRejectModalOpen(false);
         setSelectedApplicantToReject(null);
@@ -234,8 +257,8 @@ export default function TaskDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "start" }),
       });
-      const data = await res.json();
-      if (data.success) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
         showToast("Tugas berhasil dimulai dengan worker yang telah diterima!");
         fetchTask();
       } else {
@@ -257,8 +280,8 @@ export default function TaskDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "confirm_start" }),
       });
-      const data = await res.json();
-      if (data.success) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
         showToast("Konfirmasi mulai tugas berhasil dicatat!");
         fetchTask();
       } else {
@@ -280,8 +303,8 @@ export default function TaskDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "completed" }),
       });
-      const data = await res.json();
-      if (data.success) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
         showToast("Task selesai! Poin telah ditransfer ke Worker.");
         fetchTask();
         setIsRatingModalOpen(true);
@@ -346,8 +369,8 @@ export default function TaskDetailPage() {
           comment: reviewComment || undefined,
         }),
       });
-      const data = await res.json();
-      if (data.success) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
         showToast(`Ulasan berhasil disimpan!`);
         fetchTask();
         setReviewComment("");
@@ -375,19 +398,38 @@ export default function TaskDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center p-xl gap-sm min-h-[50vh]">
-        <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-        <p className="font-body-md text-body-md text-on-surface-variant">Memuat detail tugas...</p>
+      <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 font-sans flex flex-col gap-6 bg-surface">
+        <div className="flex items-center gap-3">
+          <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-4 w-28 rounded" />
+            <Skeleton className="h-8 w-2/3 rounded-lg" />
+          </div>
+        </div>
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 space-y-4">
+            <Skeleton className="h-64 w-full rounded-2xl" />
+            <Skeleton className="h-40 w-full rounded-2xl" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-56 w-full rounded-2xl" />
+            <Skeleton className="h-32 w-full rounded-2xl" />
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!task) {
     return (
-      <div className="flex flex-col items-center justify-center p-xl gap-sm min-h-[50vh]">
-        <span className="material-symbols-outlined text-outline text-[48px]" aria-hidden="true">error</span>
-        <h3 className="font-headline-sm text-headline-sm">Tugas Tidak Ditemukan</h3>
-        <Button onClick={() => router.push("/feed")}>Kembali ke Feed</Button>
+      <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 font-sans min-h-[60vh] flex items-center justify-center">
+        <ErrorState
+          title="Tugas Tidak Ditemukan"
+          message="Tugas ini mungkin telah diselesaikan, dibatalkan, atau URL yang Anda tuju salah."
+          actionText="Kembali ke Feed Tugas"
+          onRetry={() => router.push("/feed")}
+        />
       </div>
     );
   }
@@ -398,20 +440,20 @@ export default function TaskDetailPage() {
     : [];
 
   return (
-    <div className="max-w-4xl mx-auto p-lg md:p-xl font-sans flex flex-col gap-lg">
+    <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 font-sans flex flex-col gap-6 bg-surface">
       {/* Header */}
-      <div className="flex items-center gap-sm">
+      <div className="flex items-center gap-3">
         <button
           onClick={() => router.back()}
-          className="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center border border-outline-variant/60 cursor-pointer"
+          className="w-10 h-10 rounded-xl hover:bg-surface-container-low flex items-center justify-center border border-card-border cursor-pointer transition-colors duration-150 text-on-surface-variant hover:text-on-surface"
         >
-          <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+          <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+          <span className="font-mono text-xs text-on-surface-variant uppercase tracking-wider font-semibold">
             Detail Pekerjaan
           </span>
-          <h1 className="font-headline-md text-headline-md text-on-surface">{task.judul_tugas}</h1>
+          <h1 className="font-headline text-2xl text-on-surface font-extrabold tracking-tight">{task.judul_tugas}</h1>
         </div>
       </div>
 
@@ -525,19 +567,19 @@ export default function TaskDetailPage() {
 
               {/* Opsi Mulai Tugas Sekarang dengan Worker yang Sudah Diterima */}
               {task.applicants.filter(a => a.status === "accepted").length > 0 && (
-                <div className="bg-lime-50 border border-lime-200 rounded-xl p-md flex flex-col gap-xs my-xs">
-                  <div className="flex items-center gap-xs text-lime-900 font-bold text-body-sm">
-                    <span className="material-symbols-outlined text-[18px]">play_circle</span>
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex flex-col gap-1.5 my-1">
+                  <div className="flex items-center gap-2 text-primary font-bold text-xs">
+                    <PlayCircle className="w-4 h-4" />
                     Mulai Tugas Sekarang dengan Worker Terpilih?
                   </div>
-                  <p className="font-body-sm text-[12px] text-lime-800">
+                  <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
                     Anda telah menerima {task.applicants.filter(a => a.status === "accepted").length} worker. Anda bisa mulai sekarang tanpa perlu menunggu slot ({task.max_applicants}) penuh. Pelamar pending lainnya akan otomatis di-reject.
                   </p>
                   <Button
                     onClick={handleManualStartTask}
                     disabled={actionLoading}
-                    variant="lime"
-                    className="w-full py-2 mt-xs text-xs font-bold"
+                    variant="primary"
+                    className="w-full py-2 mt-1 text-xs font-bold"
                   >
                     Mulai Tugas Sekarang ({task.applicants.filter(a => a.status === "accepted").length} Worker)
                   </Button>
@@ -545,26 +587,26 @@ export default function TaskDetailPage() {
               )}
 
               {task.applicants.length === 0 ? (
-                <div className="py-8 text-center">
-                  <span className="material-symbols-outlined text-outline text-[40px]" aria-hidden="true">people_search</span>
-                  <p className="font-body-sm text-on-surface-variant mt-2">Belum ada yang melamar.</p>
+                <div className="py-8 text-center flex flex-col items-center justify-center gap-2">
+                  <Users className="w-8 h-8 text-outline-variant/60" />
+                  <p className="font-body-sm text-xs text-on-surface-variant">Belum ada yang melamar.</p>
                 </div>
               ) : (
-                <div className="flex flex-col divide-y divide-outline-variant/60">
+                <div className="flex flex-col divide-y divide-card-border/60">
                   {task.applicants.map((app) => (
-                    <div key={app.id_task_applicants} className="py-md flex flex-col gap-sm">
+                    <div key={app.id_task_applicants} className="py-3.5 flex flex-col gap-2.5">
                       <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-md">
-                          <div className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold font-mono">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-xs font-mono">
                             {app.worker.nama_lengkap.charAt(0)}
                           </div>
                           <div>
-                            <h4 className="font-body-md text-body-md font-semibold text-on-surface">
+                            <h4 className="font-headline text-xs font-bold text-on-surface">
                               {app.worker.nama_lengkap}
                             </h4>
-                            <p className="font-label-sm text-label-sm text-on-surface-variant">
+                            <p className="font-sans text-[11px] text-on-surface-variant">
                               {app.worker.pendidikan_terakhir ?? "Mahasiswa"} •{" "}
-                              <span className="text-amber-500 font-bold">★ {app.worker.rating_avg.toFixed(1)}</span>
+                              <span className="text-amber-500 font-bold font-mono tabular-nums">★ {app.worker.rating_avg.toFixed(1)}</span>
                             </p>
                           </div>
                         </div>
@@ -572,20 +614,20 @@ export default function TaskDetailPage() {
                       </div>
 
                       {app.pesan && (
-                        <p className="font-body-sm text-body-sm text-on-surface-variant bg-surface-container-low p-sm rounded border border-outline-variant/50 italic">
+                        <p className="font-body-sm text-xs text-on-surface-variant bg-surface-container-low p-2.5 rounded-lg border border-card-border/50 italic leading-relaxed">
                           &quot;{app.pesan}&quot;
                         </p>
                       )}
 
                       {app.status === "pending" && (
-                        <div className="flex justify-between items-center gap-sm mt-xs">
+                        <div className="flex justify-between items-center gap-2 mt-1">
                           {/* Tombol Chat Sejajar di Pojok Kiri */}
                           <button
                             type="button"
                             onClick={() => router.push(`/chat?userId=${app.id_worker}`)}
-                            className="flex items-center gap-xs font-label-sm text-xs font-bold px-3 py-1.5 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 cursor-pointer transition-colors"
+                            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border border-primary/30 text-primary hover:bg-primary/10 cursor-pointer transition-colors duration-150"
                           >
-                            <span className="material-symbols-outlined text-[16px]">chat</span>
+                            <MessageSquare className="w-3.5 h-3.5" />
                             Chat
                           </button>
 
@@ -618,58 +660,57 @@ export default function TaskDetailPage() {
 
           {/* Reviews (jika task completed) */}
           {taskStatus === "completed" && task.reviews.length > 0 && (
-            <div className="flex flex-col gap-md bg-white border border-outline-variant rounded-xl p-md md:p-lg">
-              <div className="flex items-center justify-between border-b border-outline-variant/50 pb-sm">
-                <h3 className="font-body-md text-body-md font-extrabold text-on-surface">Ulasan & Rating Transaksi</h3>
-                <span className="font-label-sm text-[11px] text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full font-mono font-semibold">
+            <div className="flex flex-col gap-4 bg-surface-container-lowest border border-card-border rounded-xl p-4 md:p-6 shadow-xs">
+              <div className="flex items-center justify-between border-b border-card-border pb-3">
+                <h3 className="font-headline text-sm font-bold text-on-surface">Ulasan &amp; Rating Transaksi</h3>
+                <span className="font-mono text-xs text-on-surface-variant bg-surface-container px-2.5 py-0.5 rounded-full font-semibold tabular-nums">
                   {task.reviews.length} Ulasan
                 </span>
               </div>
 
-              {/* Group 1: Ulasan dari Requester (Pemberi Kerja) */}
-              <div className="flex flex-col gap-sm">
-                <div className="flex items-center gap-xs text-primary font-label-sm text-xs font-bold uppercase tracking-wider bg-primary/10 px-sm py-1 rounded-md">
-                  <span className="material-symbols-outlined text-[16px]">storefront</span>
+              {/* Group 1: Ulasan dari Requester */}
+              <div className="flex flex-col gap-2.5">
+                <div className="flex items-center gap-1.5 text-primary font-mono text-xs font-bold uppercase tracking-wider bg-primary/10 px-3 py-1.5 rounded-lg">
+                  <Store className="w-4 h-4" />
                   Ulasan dari Requester (Pemberi Tugas)
                 </div>
                 {task.reviews.filter((r) => r.rater.id_user === task.id_requester).length === 0 ? (
-                  <p className="font-body-sm text-[12px] text-on-surface-variant italic pl-sm py-1">
+                  <p className="font-body-sm text-xs text-on-surface-variant italic pl-2 py-1">
                     Belum ada ulasan dari Requester.
                   </p>
                 ) : (
                   task.reviews
                     .filter((r) => r.rater.id_user === task.id_requester)
                     .map((r) => (
-                      <div key={r.id_reviews} className="p-sm bg-surface-container-lowest border border-outline-variant/60 rounded-lg flex flex-col gap-xs">
+                      <div key={r.id_reviews} className="p-3.5 bg-surface-container-low border border-card-border/60 rounded-lg flex flex-col gap-1.5">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-sm">
-                            <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs shrink-0 font-mono">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs font-mono">
                               {r.rater.nama_lengkap.charAt(0)}
                             </div>
                             <div>
-                              <span className="font-label-sm text-label-sm font-bold text-on-surface">{r.rater.nama_lengkap}</span>
+                              <span className="font-headline text-xs font-bold text-on-surface">{r.rater.nama_lengkap}</span>
                               {r.ratee && (
-                                <span className="font-label-sm text-[11px] text-on-surface-variant block">
+                                <span className="font-sans text-[11px] text-on-surface-variant block">
                                   Memberikan rating untuk: <span className="font-semibold text-primary">{r.ratee.nama_lengkap}</span>
                                 </span>
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-[2px]">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <span
-                                key={star}
-                                className="material-symbols-outlined text-[16px] text-amber-500"
-                                style={{ fontVariationSettings: star <= r.rating ? "'FILL' 1" : "'FILL' 0" }}
-                                aria-hidden="true"
-                              >
-                                star
-                              </span>
+                          <div className="flex items-center gap-0.5">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Star
+                                key={s}
+                                className={cn(
+                                  "w-3.5 h-3.5",
+                                  s <= r.rating ? "text-amber-400 fill-amber-400" : "text-outline-variant"
+                                )}
+                              />
                             ))}
                           </div>
                         </div>
                         {r.comment && (
-                          <p className="font-body-sm text-[12px] text-on-surface-variant italic bg-white p-xs rounded border border-outline-variant/30 mt-xs">
+                          <p className="font-body-sm text-xs text-on-surface-variant italic bg-surface-container-lowest p-2 rounded-md border border-card-border/40 mt-1">
                             &ldquo;{r.comment}&rdquo;
                           </p>
                         )}
@@ -678,50 +719,49 @@ export default function TaskDetailPage() {
                 )}
               </div>
 
-              {/* Group 2: Ulasan dari Worker (Pengerja) */}
-              <div className="flex flex-col gap-sm pt-xs border-t border-outline-variant/40">
-                <div className="flex items-center gap-xs text-secondary font-label-sm text-xs font-bold uppercase tracking-wider bg-secondary/10 px-sm py-1 rounded-md">
-                  <span className="material-symbols-outlined text-[16px]">engineering</span>
+              {/* Group 2: Ulasan dari Worker */}
+              <div className="flex flex-col gap-2.5 pt-2 border-t border-card-border">
+                <div className="flex items-center gap-1.5 text-secondary font-mono text-xs font-bold uppercase tracking-wider bg-secondary-container/40 px-3 py-1.5 rounded-lg">
+                  <Wrench className="w-4 h-4" />
                   Ulasan dari Worker (Pengerja)
                 </div>
                 {task.reviews.filter((r) => r.rater.id_user !== task.id_requester).length === 0 ? (
-                  <p className="font-body-sm text-[12px] text-on-surface-variant italic pl-sm py-1">
+                  <p className="font-body-sm text-xs text-on-surface-variant italic pl-2 py-1">
                     Belum ada ulasan dari Worker.
                   </p>
                 ) : (
                   task.reviews
                     .filter((r) => r.rater.id_user !== task.id_requester)
                     .map((r) => (
-                      <div key={r.id_reviews} className="p-sm bg-surface-container-lowest border border-outline-variant/60 rounded-lg flex flex-col gap-xs">
+                      <div key={r.id_reviews} className="p-3.5 bg-surface-container-low border border-card-border/60 rounded-lg flex flex-col gap-1.5">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-sm">
-                            <div className="w-8 h-8 rounded-full bg-secondary text-on-secondary flex items-center justify-center font-bold text-xs shrink-0 font-mono">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-full bg-secondary text-on-secondary flex items-center justify-center font-bold text-xs font-mono">
                               {r.rater.nama_lengkap.charAt(0)}
                             </div>
                             <div>
-                              <span className="font-label-sm text-label-sm font-bold text-on-surface">{r.rater.nama_lengkap}</span>
+                              <span className="font-headline text-xs font-bold text-on-surface">{r.rater.nama_lengkap}</span>
                               {r.ratee && (
-                                <span className="font-label-sm text-[11px] text-on-surface-variant block">
+                                <span className="font-sans text-[11px] text-on-surface-variant block">
                                   Memberikan rating untuk: <span className="font-semibold text-secondary">{r.ratee.nama_lengkap}</span>
                                 </span>
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-[2px]">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <span
-                                key={star}
-                                className="material-symbols-outlined text-[16px] text-amber-500"
-                                style={{ fontVariationSettings: star <= r.rating ? "'FILL' 1" : "'FILL' 0" }}
-                                aria-hidden="true"
-                              >
-                                star
-                              </span>
+                          <div className="flex items-center gap-0.5">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Star
+                                key={s}
+                                className={cn(
+                                  "w-3.5 h-3.5",
+                                  s <= r.rating ? "text-amber-400 fill-amber-400" : "text-outline-variant"
+                                )}
+                              />
                             ))}
                           </div>
                         </div>
                         {r.comment && (
-                          <p className="font-body-sm text-[12px] text-on-surface-variant italic bg-white p-xs rounded border border-outline-variant/30 mt-xs">
+                          <p className="font-body-sm text-xs text-on-surface-variant italic bg-surface-container-lowest p-2 rounded-md border border-card-border/40 mt-1">
                             &ldquo;{r.comment}&rdquo;
                           </p>
                         )}
@@ -734,14 +774,14 @@ export default function TaskDetailPage() {
         </div>
 
         {/* Location Map Right */}
-        <div className="flex flex-col gap-md">
-          <div className="bg-white border border-outline-variant rounded-xl p-md flex flex-col gap-sm">
-            <h3 className="font-body-md text-body-md font-semibold text-on-surface flex items-center gap-xs">
-              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">location_on</span>
+        <div className="flex flex-col gap-4">
+          <div className="bg-surface-container-lowest border border-card-border rounded-xl p-4 md:p-5 flex flex-col gap-3 shadow-xs">
+            <h3 className="font-headline text-sm font-bold text-on-surface flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-primary" />
               Lokasi Pengerjaan
             </h3>
 
-            <div className="h-[200px] w-full relative">
+            <div className="h-[200px] w-full relative rounded-lg overflow-hidden border border-card-border">
               <MapPickerWrapper
                 center={{
                   latitude: task.latitude ?? -7.782865,
@@ -752,7 +792,7 @@ export default function TaskDetailPage() {
             </div>
 
             {task.latitude && task.longitude && (
-              <span className="font-label-sm text-label-sm text-on-surface-variant text-center font-mono">
+              <span className="font-mono text-[11px] text-on-surface-variant text-center tabular-nums">
                 Koordinat: {task.latitude.toFixed(6)}, {task.longitude.toFixed(6)}
               </span>
             )}
@@ -763,17 +803,17 @@ export default function TaskDetailPage() {
             <div className="flex flex-col gap-sm">
               {/* Pesan status jika worker telah ditolak */}
               {task.viewer_application?.status === "rejected" && (
-                <div className="bg-error/10 border border-error/20 rounded-xl p-md flex flex-col gap-xs">
-                  <div className="flex items-center gap-xs text-error font-bold text-body-sm">
-                    <span className="material-symbols-outlined text-[18px]">cancel</span>
+                <div className="bg-error-container/30 border border-error/25 rounded-xl p-4 flex flex-col gap-1.5">
+                  <div className="flex items-center gap-1.5 text-error font-bold text-xs">
+                    <XCircle className="w-4 h-4 shrink-0" />
                     Anda telah ditolak untuk pekerjaan ini.
                   </div>
                   {task.viewer_application.alasan_penolakan && (
-                    <p className="font-body-sm text-on-surface-variant italic">
+                    <p className="font-body-sm text-xs text-on-surface-variant italic">
                       &ldquo;Alasan: {task.viewer_application.alasan_penolakan}&rdquo;
                     </p>
                   )}
-                  <span className="font-label-sm text-[11px] text-on-surface-variant font-medium">
+                  <span className="font-sans text-[11px] text-on-surface-variant font-medium font-mono tabular-nums">
                     Percobaan apply: {task.viewer_application.apply_count} dari {task.max_apply_attempts} maksimal.
                   </span>
                 </div>
@@ -792,7 +832,7 @@ export default function TaskDetailPage() {
                         Lamar Kembali (Percobaan {task.viewer_application.apply_count + 1}/{task.max_apply_attempts})
                       </Button>
                     ) : (
-                      <div className="p-sm text-center border border-error/30 rounded bg-error/10 text-error font-label-sm text-label-sm font-semibold">
+                      <div className="p-3 text-center border border-error/25 rounded-lg bg-error-container/30 text-error font-sans text-xs font-semibold">
                         Batas Maksimal Percobaan Apply Telah Tercapai ({task.viewer_application.apply_count}/{task.max_apply_attempts})
                       </div>
                     )
@@ -826,59 +866,59 @@ export default function TaskDetailPage() {
                 const myEntry = acceptedWorkers.find(a => a.id_task_applicants === task.viewer_application?.id_task_applicants);
                 const iHaveConfirmed = myEntry?.worker_confirmed ?? false;
                 return (
-                  <div className="flex flex-col gap-sm p-md bg-surface-container-lowest border border-outline-variant/60 rounded-xl">
+                  <div className="flex flex-col gap-3 p-4 bg-surface-container-lowest border border-card-border rounded-xl shadow-xs">
                     {/* List Worker Terdaftar */}
-                    <div className="flex flex-col gap-xs bg-surface-container-low p-xs rounded border border-outline-variant/40">
-                      <span className="font-label-sm text-[11px] font-bold text-on-surface">
+                    <div className="flex flex-col gap-1 bg-surface-container-low p-2.5 rounded-lg border border-card-border/60">
+                      <span className="font-sans text-[11px] font-bold text-on-surface">
                         Worker Terdaftar dalam Task Ini ({acceptedWorkers.length}):
                       </span>
-                      <div className="flex flex-wrap gap-xs">
+                      <div className="flex flex-wrap gap-1">
                         {acceptedWorkers.map((a) => (
-                          <span key={a.id_task_applicants} className="px-2 py-0.5 rounded bg-white border border-outline-variant/60 font-body-sm text-[11px] font-semibold text-on-surface">
+                          <span key={a.id_task_applicants} className="px-2 py-0.5 rounded bg-surface-container-lowest border border-card-border font-sans text-[11px] font-semibold text-on-surface">
                             👷 {a.worker.nama_lengkap}
                           </span>
                         ))}
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-xs border-b border-outline-variant/40 pb-sm">
-                      <span className="font-label-sm text-xs font-bold text-on-surface uppercase tracking-wider">
+                    <div className="flex flex-col gap-2 border-b border-card-border pb-3">
+                      <span className="font-mono text-xs font-bold text-on-surface uppercase tracking-wider">
                         Status Konfirmasi Mulai (Tahap 2):
                       </span>
                       {/* Requester status */}
-                      <div className="flex items-center justify-between font-body-sm text-xs">
-                        <span className="flex items-center gap-xs">
-                          <span className="material-symbols-outlined text-[16px] text-primary">storefront</span>
+                      <div className="flex items-center justify-between font-sans text-xs">
+                        <span className="flex items-center gap-1.5">
+                          <Store className="w-3.5 h-3.5 text-primary" />
                           Requester:
                         </span>
-                        <span className={`font-semibold ${task.requester_started ? "text-secondary font-bold" : "text-amber-600"}`}>
+                        <span className={cn("font-semibold", task.requester_started ? "text-secondary font-bold" : "text-amber-600")}>
                           {task.requester_started ? "Sudah Konfirmasi ✅" : "Belum Konfirmasi ⏳"}
                         </span>
                       </div>
                       {/* Per-worker status */}
                       {acceptedWorkers.map((a) => (
-                        <div key={a.id_task_applicants} className="flex items-center justify-between font-body-sm text-xs">
-                          <span className="flex items-center gap-xs">
-                            <span className="material-symbols-outlined text-[16px] text-secondary">engineering</span>
+                        <div key={a.id_task_applicants} className="flex items-center justify-between font-sans text-xs">
+                          <span className="flex items-center gap-1.5">
+                            <Wrench className="w-3.5 h-3.5 text-secondary" />
                             {a.worker.nama_lengkap}:
                           </span>
-                          <span className={`font-semibold ${a.worker_confirmed ? "text-secondary font-bold" : "text-amber-600"}`}>
+                          <span className={cn("font-semibold", a.worker_confirmed ? "text-secondary font-bold" : "text-amber-600")}>
                             {a.worker_confirmed ? "Sudah Konfirmasi ✅" : "Belum Konfirmasi ⏳"}
                           </span>
                         </div>
                       ))}
                     </div>
 
-                    <p className="font-body-sm text-[11px] text-on-surface-variant italic">
+                    <p className="font-body-sm text-xs text-on-surface-variant italic">
                       Tugas akan otomatis lanjut ke tahap <span className="font-bold text-primary">Dikerjakan (Step 3)</span> setelah semua pihak yang bersangkutan memberikan konfirmasi mulai.
                     </p>
 
                     {!iHaveConfirmed ? (
-                      <Button onClick={handleStartWork} className="w-full py-3 mt-xs" variant="lime" disabled={actionLoading}>
+                      <Button onClick={handleStartWork} className="w-full py-3" variant="primary" disabled={actionLoading}>
                         Konfirmasi Mulai Kerjakan
                       </Button>
                     ) : (
-                      <div className="p-sm text-center border border-outline-variant rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
+                      <div className="p-3 text-center border border-card-border rounded-lg bg-surface-container-low text-primary font-sans text-xs font-semibold">
                         Anda sudah konfirmasi. Menunggu konfirmasi dari pihak lain...
                       </div>
                     )}
@@ -887,13 +927,13 @@ export default function TaskDetailPage() {
               })()}
 
               {taskStatus === "in_progress" && (
-                <div className="p-sm text-center border border-outline-variant rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
+                <div className="p-3 text-center border border-card-border rounded-lg bg-surface-container-low text-primary font-sans text-xs font-semibold">
                   Tugas Sedang Dikerjakan. Menunggu Konfirmasi Selesai dari Requester.
                 </div>
               )}
               {taskStatus === "completed" && (
                 hasWorkerRatedRequester() ? (
-                  <div className="p-sm text-center border border-outline-variant rounded bg-surface-container text-secondary font-label-sm text-label-sm font-semibold">
+                  <div className="p-3 text-center border border-card-border rounded-lg bg-surface-container-low text-secondary font-sans text-xs font-semibold">
                     ✅ Anda sudah memberikan ulasan untuk task ini.
                   </div>
                 ) : (
@@ -905,67 +945,67 @@ export default function TaskDetailPage() {
             </div>
           ) : (
             // Requester Actions
-            <div className="flex flex-col gap-sm">
+            <div className="flex flex-col gap-3">
               {taskStatus === "open" && (
-                <div className="p-sm text-center border border-outline-variant rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
+                <div className="p-3 text-center border border-card-border rounded-lg bg-surface-container-low text-primary font-sans text-xs font-semibold">
                   Menunggu pelamar. Pilih dari daftar pelamar di bawah.
                 </div>
               )}
               {taskStatus === "accepted" && (() => {
                 const acceptedWorkers = task.applicants.filter(a => a.status === "accepted");
                 return (
-                  <div className="flex flex-col gap-sm p-md bg-surface-container-lowest border border-outline-variant/60 rounded-xl">
+                  <div className="flex flex-col gap-3 p-4 bg-surface-container-lowest border border-card-border rounded-xl shadow-xs">
                     {/* List Worker Terdaftar */}
-                    <div className="flex flex-col gap-xs bg-surface-container-low p-xs rounded border border-outline-variant/40">
-                      <span className="font-label-sm text-[11px] font-bold text-on-surface">
+                    <div className="flex flex-col gap-1 bg-surface-container-low p-2.5 rounded-lg border border-card-border/60">
+                      <span className="font-sans text-[11px] font-bold text-on-surface">
                         Worker Terdaftar dalam Task Ini ({acceptedWorkers.length}):
                       </span>
-                      <div className="flex flex-wrap gap-xs">
+                      <div className="flex flex-wrap gap-1">
                         {acceptedWorkers.map((a) => (
-                          <span key={a.id_task_applicants} className="px-2 py-0.5 rounded bg-white border border-outline-variant/60 font-body-sm text-[11px] font-semibold text-on-surface">
+                          <span key={a.id_task_applicants} className="px-2 py-0.5 rounded bg-surface-container-lowest border border-card-border font-sans text-[11px] font-semibold text-on-surface">
                             👷 {a.worker.nama_lengkap}
                           </span>
                         ))}
                       </div>
                     </div>
-                    <div className="flex flex-col gap-xs border-b border-outline-variant/40 pb-sm">
-                      <span className="font-label-sm text-xs font-bold text-on-surface uppercase tracking-wider">
+                    <div className="flex flex-col gap-2 border-b border-card-border pb-3">
+                      <span className="font-mono text-xs font-bold text-on-surface uppercase tracking-wider">
                         Status Konfirmasi Mulai (Tahap 2):
                       </span>
                       {/* Requester */}
-                      <div className="flex items-center justify-between font-body-sm text-xs">
-                        <span className="flex items-center gap-xs">
-                          <span className="material-symbols-outlined text-[16px] text-primary">storefront</span>
+                      <div className="flex items-center justify-between font-sans text-xs">
+                        <span className="flex items-center gap-1.5">
+                          <Store className="w-3.5 h-3.5 text-primary" />
                           Requester (Anda):
                         </span>
-                        <span className={`font-semibold ${task.requester_started ? "text-secondary font-bold" : "text-amber-600"}`}>
+                        <span className={cn("font-semibold", task.requester_started ? "text-secondary font-bold" : "text-amber-600")}>
                           {task.requester_started ? "Sudah Konfirmasi ✅" : "Belum Konfirmasi ⏳"}
                         </span>
                       </div>
                       {/* Per-worker status */}
                       {acceptedWorkers.map((a) => (
-                        <div key={a.id_task_applicants} className="flex items-center justify-between font-body-sm text-xs">
-                          <span className="flex items-center gap-xs">
-                            <span className="material-symbols-outlined text-[16px] text-secondary">engineering</span>
+                        <div key={a.id_task_applicants} className="flex items-center justify-between font-sans text-xs">
+                          <span className="flex items-center gap-1.5">
+                            <Wrench className="w-3.5 h-3.5 text-secondary" />
                             {a.worker.nama_lengkap}:
                           </span>
-                          <span className={`font-semibold ${a.worker_confirmed ? "text-secondary font-bold" : "text-amber-600"}`}>
+                          <span className={cn("font-semibold", a.worker_confirmed ? "text-secondary font-bold" : "text-amber-600")}>
                             {a.worker_confirmed ? "Sudah Konfirmasi ✅" : "Belum Konfirmasi ⏳"}
                           </span>
                         </div>
                       ))}
                     </div>
 
-                    <p className="font-body-sm text-[11px] text-on-surface-variant italic">
+                    <p className="font-body-sm text-xs text-on-surface-variant italic">
                       Tugas akan otomatis lanjut ke tahap <span className="font-bold text-primary">Dikerjakan (Step 3)</span> setelah semua pihak yang bersangkutan memberikan konfirmasi mulai.
                     </p>
 
                     {!task.requester_started ? (
-                      <Button onClick={handleStartWork} className="w-full py-3 mt-xs" variant="lime" disabled={actionLoading}>
+                      <Button onClick={handleStartWork} className="w-full py-3" variant="primary" disabled={actionLoading}>
                         Konfirmasi Mulai Pekerjaan
                       </Button>
                     ) : (
-                      <div className="p-sm text-center border border-outline-variant rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
+                      <div className="p-3 text-center border border-card-border rounded-lg bg-surface-container-low text-primary font-sans text-xs font-semibold">
                         Anda sudah konfirmasi. Menunggu konfirmasi dari Worker...
                       </div>
                     )}
@@ -984,7 +1024,7 @@ export default function TaskDetailPage() {
                     Beri Rating Worker ({unratedWorkers.length} belum dirating)
                   </Button>
                 ) : (
-                  <div className="p-sm text-center border border-outline-variant rounded bg-surface-container text-secondary font-label-sm text-label-sm font-semibold">
+                  <div className="p-3 text-center border border-card-border rounded-lg bg-surface-container-low text-secondary font-sans text-xs font-semibold">
                     ✅ Semua worker sudah dirating.
                   </div>
                 );
@@ -1015,13 +1055,13 @@ export default function TaskDetailPage() {
 
       {/* Modal: Lamar Pekerjaan */}
       <Modal isOpen={isApplyModalOpen} onClose={() => setIsApplyModalOpen(false)} title="Kirim Lamaran Kerja">
-        <form onSubmit={handleApplySubmit} className="flex flex-col gap-md">
-          <div className="flex flex-col gap-xs">
-            <label className="font-body-sm text-body-sm text-on-surface-variant font-medium">
+        <form onSubmit={handleApplySubmit} className="flex flex-col gap-4 font-sans text-xs">
+          <div className="flex flex-col gap-1.5">
+            <label className="font-semibold text-on-surface">
               Pesan Singkat untuk Pemberi Kerja (opsional)
             </label>
             <textarea
-              className="input-field min-h-[120px] font-body-sm custom-scrollbar"
+              className="w-full bg-surface-container-low border border-card-border rounded-xl p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[100px] custom-scrollbar"
               placeholder="Ceritakan keahlianmu dan mengapa kamu cocok untuk tugas ini."
               value={applyMessage}
               onChange={(e) => setApplyMessage(e.target.value)}
@@ -1029,15 +1069,16 @@ export default function TaskDetailPage() {
             />
           </div>
 
-          <div className="flex justify-end gap-sm border-t border-outline-variant/30 pt-md mt-sm">
-            <button
+          <div className="flex justify-end gap-2 border-t border-card-border pt-3 mt-1">
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={() => setIsApplyModalOpen(false)}
-              className="font-label-md text-label-md font-bold px-md py-sm rounded border border-outline-variant/60 hover:bg-surface-container cursor-pointer transition-colors"
             >
               Batal
-            </button>
-            <Button type="submit" disabled={actionLoading}>
+            </Button>
+            <Button type="submit" size="sm" disabled={actionLoading}>
               {actionLoading ? "Mengirim..." : "Kirim Lamaran"}
             </Button>
           </div>
@@ -1054,40 +1095,40 @@ export default function TaskDetailPage() {
             : "Berikan Ulasan Rating"
         }
       >
-        <form onSubmit={handleRatingSubmit} className="flex flex-col gap-md">
-          <div className="flex flex-col items-center gap-sm">
-            <span className="font-body-sm text-body-sm text-on-surface-variant font-medium">
+        <form onSubmit={handleRatingSubmit} className="flex flex-col gap-4 font-sans text-xs">
+          <div className="flex flex-col items-center gap-2">
+            <span className="font-semibold text-on-surface text-center">
               {role === "requester" && currentRatingTarget
                 ? `Berapa bintang untuk ${currentRatingTarget.worker.nama_lengkap}?`
                 : role === "worker" && task
                 ? `Berapa bintang untuk ${task.requester.nama_lengkap}?`
                 : "Berapa bintang yang Anda berikan?"}
             </span>
-            <div className="flex gap-sm">
+            <div className="flex gap-2 py-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   type="button"
                   key={star}
                   onClick={() => setRating(star)}
-                  className="cursor-pointer text-[32px] text-amber-400 focus:outline-none"
+                  className="cursor-pointer p-1 transition-transform active:scale-95 focus:outline-none"
                 >
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontVariationSettings: star <= rating ? "'FILL' 1" : "'FILL' 0" }}
-                   aria-hidden="true">
-                    star
-                  </span>
+                  <Star
+                    className={cn(
+                      "w-8 h-8",
+                      star <= rating ? "text-amber-400 fill-amber-400" : "text-outline-variant"
+                    )}
+                  />
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="flex flex-col gap-xs">
-            <label className="font-body-sm text-body-sm text-on-surface-variant font-medium">
+          <div className="flex flex-col gap-1.5">
+            <label className="font-semibold text-on-surface">
               Komentar / Masukan (opsional)
             </label>
             <textarea
-              className="input-field min-h-[100px] font-body-sm custom-scrollbar"
+              className="w-full bg-surface-container-low border border-card-border rounded-xl p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[90px] custom-scrollbar"
               placeholder="Berikan komentar singkat mengenai hasil kerja / komunikasi..."
               value={reviewComment}
               onChange={(e) => setReviewComment(e.target.value)}
@@ -1095,8 +1136,8 @@ export default function TaskDetailPage() {
             />
           </div>
 
-          <div className="flex justify-end gap-sm border-t border-outline-variant/30 pt-md mt-sm">
-            <Button type="submit" fullWidth>
+          <div className="flex justify-end gap-2 border-t border-card-border pt-3 mt-1">
+            <Button type="submit" fullWidth size="md">
               Kirim Ulasan
             </Button>
           </div>
@@ -1105,13 +1146,13 @@ export default function TaskDetailPage() {
 
       {/* Modal: Tolak Pelamar (Opsional dengan Alasan Penolakan) */}
       <Modal isOpen={isRejectModalOpen} onClose={() => setIsRejectModalOpen(false)} title="Tolak Pelamar Kerja">
-        <form onSubmit={handleRejectSubmit} className="flex flex-col gap-md">
-          <div className="flex flex-col gap-xs">
-            <label className="font-body-sm text-body-sm text-on-surface-variant font-medium">
+        <form onSubmit={handleRejectSubmit} className="flex flex-col gap-4 font-sans text-xs">
+          <div className="flex flex-col gap-1.5">
+            <label className="font-semibold text-on-surface">
               Alasan Penolakan (Opsional)
             </label>
             <textarea
-              className="input-field min-h-[100px] font-body-sm custom-scrollbar"
+              className="w-full bg-surface-container-low border border-card-border rounded-xl p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[100px] custom-scrollbar"
               placeholder="Berikan catatan / alasan penolakan (misal: kualifikasi belum sesuai, lokasi terlalu jauh, dll)..."
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
@@ -1119,15 +1160,22 @@ export default function TaskDetailPage() {
             />
           </div>
 
-          <div className="flex justify-end gap-sm border-t border-outline-variant/30 pt-md mt-sm">
-            <button
+          <div className="flex justify-end gap-2 border-t border-card-border pt-3 mt-1">
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={() => setIsRejectModalOpen(false)}
-              className="font-label-md text-label-md font-bold px-md py-sm rounded border border-outline-variant/60 hover:bg-surface-container cursor-pointer transition-colors"
             >
               Batal
-            </button>
-            <Button type="submit" variant="ghost" className="bg-error/10 text-error hover:bg-error/20" disabled={actionLoading}>
+            </Button>
+            <Button
+              type="submit"
+              variant="secondary"
+              size="sm"
+              className="bg-error-container/30 text-error hover:bg-error-container/50 border border-error/20"
+              disabled={actionLoading}
+            >
               {actionLoading ? "Memproses..." : "Konfirmasi Tolak Pelamar"}
             </Button>
           </div>

@@ -7,6 +7,7 @@ import AdminDrawer from '@/components/admin/AdminDrawer';
 import AdminModal from '@/components/admin/AdminModal';
 import AdminSelect, { SelectOption } from '@/components/admin/AdminSelect';
 import { Search, Star, Ban, RotateCcw, Mail, Phone, MapPin, CheckCircle, AlertCircle, AlertTriangle, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 interface AdminUser {
   id: string;
@@ -48,8 +49,8 @@ function ToastNotif({ toast, onClose }: { toast: Toast; onClose: () => void }) {
     <div
       className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-lg text-xs font-medium font-sans transition-all animate-in slide-in-from-bottom-4 ${
         toast.type === 'success'
-          ? 'bg-[#E6F4F1] border-[#0F766E]/30 text-[#0F766E]'
-          : 'bg-rose-50 border-rose-200 text-rose-700'
+          ? 'bg-primary/10 border-primary/30 text-primary'
+          : 'bg-error-container/40 border-error/30 text-error'
       }`}
     >
       {toast.type === 'success' ? (
@@ -80,7 +81,7 @@ export default function UserManagementPage() {
 
   const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
   const [banType, setBanType] = useState<'TEMPORARY' | 'PERMANENT'>('TEMPORARY');
-  const [banDurationPreset, setBanDurationPreset] = useState('24'); // jam
+  const [banDurationPreset, setBanDurationPreset] = useState('24');
   const [customBanHours, setCustomBanHours] = useState('24');
   const [banReason, setBanReason] = useState('');
 
@@ -112,11 +113,15 @@ export default function UserManagementPage() {
         limit: '10',
       });
       const res = await fetch(`/api/admin/users?${params}`);
-      const json = await res.json();
-      if (json.success) {
+      if (!res.ok) {
+        setUsers([]);
+        return;
+      }
+      const json = await res.json().catch(() => ({}));
+      if (json.success && Array.isArray(json.data)) {
         setUsers(json.data);
-        setTotalPages(json.meta.totalPages);
-        setTotal(json.meta.total);
+        setTotalPages(json.meta?.totalPages || 1);
+        setTotal(json.meta?.total || 0);
 
         // Update selectedUser if currently open in drawer
         if (selectedUser) {
@@ -157,13 +162,13 @@ export default function UserManagementPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: warningMessage }),
       });
-      const data = await res.json();
-      if (data.success) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
         showToast('success', data.message);
         setIsWarningModalOpen(false);
         setWarningMessage('');
       } else {
-        showToast('error', data.message);
+        showToast('error', data.message || 'Gagal mengirim peringatan.');
       }
     } catch {
       showToast('error', 'Gagal menghubungi server.');
@@ -194,14 +199,14 @@ export default function UserManagementPage() {
           reason: banReason,
         }),
       });
-      const data = await res.json();
-      if (data.success) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
         showToast('success', data.message);
         setIsSuspendModalOpen(false);
         setBanReason('');
         fetchUsers();
       } else {
-        showToast('error', data.message);
+        showToast('error', data.message || 'Gagal menangguhkan akun.');
       }
     } catch {
       showToast('error', 'Gagal menghubungi server.');
@@ -218,13 +223,13 @@ export default function UserManagementPage() {
       const res = await fetch(`/api/admin/users/${selectedUser.id}/unsuspend`, {
         method: 'POST',
       });
-      const data = await res.json();
-      if (data.success) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
         showToast('success', data.message);
         setIsUnsuspendModalOpen(false);
         fetchUsers();
       } else {
-        showToast('error', data.message);
+        showToast('error', data.message || 'Gagal mencabut penangguhan.');
       }
     } catch {
       showToast('error', 'Gagal menghubungi server.');
@@ -240,11 +245,11 @@ export default function UserManagementPage() {
       const res = await fetch(`/api/admin/users/${user.id}/reset-password`, {
         method: 'POST',
       });
-      const data = await res.json();
-      if (data.success) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
         showToast('success', `Link reset password dikirim ke ${user.email}`);
       } else {
-        showToast('error', data.message);
+        showToast('error', data.message || 'Gagal mereset password.');
       }
     } catch {
       showToast('error', 'Gagal menghubungi server.');
@@ -262,46 +267,46 @@ export default function UserManagementPage() {
             <img
               src={user.avatar_url}
               alt={user.nama_lengkap}
-              className="w-8 h-8 rounded-full object-cover border border-[#E2E8F0]"
+              className="w-8 h-8 rounded-full object-cover border border-card-border"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-[#0F766E] text-white text-xs font-bold flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center shrink-0">
               {user.nama_lengkap.charAt(0).toUpperCase()}
             </div>
           )}
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-[#0C1F16] font-sans">{user.nama_lengkap}</span>
+              <span className="font-bold text-on-surface font-headline text-sm">{user.nama_lengkap}</span>
               {user.is_banned && (
-                <span className={`px-1.5 py-0.2 text-[9px] font-mono font-bold rounded uppercase ${
+                <span className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded-full uppercase ${
                   user.ban_type === 'TEMPORARY'
                     ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                    : 'bg-rose-100 text-rose-800 border border-rose-300'
+                    : 'bg-error-container text-error border border-error/30'
                 }`}>
                   {user.ban_type === 'TEMPORARY' ? 'Banned (Temp)' : 'Banned (Perm)'}
                 </span>
               )}
             </div>
-            <div className="text-[11px] font-mono text-[#64748B]">@{user.username}</div>
+            <div className="text-[11px] font-mono text-on-surface-variant">@{user.username}</div>
           </div>
         </div>
       ),
     },
     {
       header: 'Email',
-      cell: (user) => <span className="text-xs font-mono text-[#0C1F16]">{user.email}</span>,
+      cell: (user) => <span className="text-xs font-mono text-on-surface">{user.email}</span>,
     },
     {
       header: 'Role',
       cell: (user) => {
         const styles: Record<string, string> = {
-          Worker: 'bg-[#E6F4F1] text-[#0F766E] border border-[#0F766E]/20',
+          Worker: 'bg-primary/10 text-primary border border-primary/20',
           Requester: 'bg-sky-50 text-sky-700 border border-sky-200',
-          Admin: 'bg-rose-50 text-rose-700 border border-rose-200',
+          Admin: 'bg-error-container/40 text-error border border-error/25',
         };
-        const style = styles[user.role] ?? 'bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0]';
+        const style = styles[user.role] ?? 'bg-surface-container text-on-surface-variant border border-card-border';
         return (
-          <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${style}`}>
+          <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider ${style}`}>
             {user.role}
           </span>
         );
@@ -310,16 +315,16 @@ export default function UserManagementPage() {
     {
       header: 'Rating',
       cell: (user) => (
-        <div className="flex items-center gap-1 text-xs font-bold text-[#0C1F16] font-sans">
+        <div className="flex items-center gap-1 text-xs font-bold text-on-surface font-sans">
           <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-          <span>{user.rating_avg.toFixed(1)}</span>
+          <span className="tabular-nums font-mono">{user.rating_avg.toFixed(1)}</span>
         </div>
       ),
     },
     {
       header: 'Completed',
       cell: (user) => (
-        <span className="text-xs font-medium text-[#0C1F16] font-sans">
+        <span className="text-xs font-medium text-on-surface font-sans tabular-nums">
           {user.total_completed} Tasks
         </span>
       ),
@@ -327,7 +332,7 @@ export default function UserManagementPage() {
     {
       header: 'Balance',
       cell: (user) => (
-        <span className="text-xs font-extrabold text-[#0F766E] font-mono">
+        <span className="text-xs font-extrabold text-primary font-mono tabular-nums">
           {user.total_balance.toLocaleString('id-ID')} PTS
         </span>
       ),
@@ -335,21 +340,21 @@ export default function UserManagementPage() {
   ];
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 font-sans">
+    <div className="flex-1 flex flex-col min-w-0 font-sans bg-surface">
       <AdminTopbar title="User Management" />
 
       <main className="flex-1 p-6 space-y-6 max-w-7xl w-full mx-auto">
         {/* Filter Controls Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#E2E8F0] shadow-2xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-surface-container-lowest p-4 rounded-xl border border-card-border shadow-xs">
           {/* Search Box */}
           <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
             <input
               type="text"
               placeholder="Cari user (nama, email, username)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs font-sans bg-[#F8FAFC] text-[#0C1F16] placeholder-[#94A3B8] rounded-lg border border-[#E2E8F0] focus:border-[#0F766E] focus:bg-white outline-none transition-all"
+              className="w-full pl-9 pr-3.5 py-2.5 min-h-[44px] text-base sm:text-xs font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 rounded-xl border border-card-border focus:border-primary focus:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-all shadow-xs"
             />
           </div>
 
@@ -357,7 +362,7 @@ export default function UserManagementPage() {
             <div className="w-full sm:w-48">
               <AdminSelect options={roleOptions} value={roleFilter} onChange={setRoleFilter} />
             </div>
-            <span className="text-xs text-[#64748B] font-mono shrink-0">
+            <span className="text-xs text-on-surface-variant font-mono shrink-0 tabular-nums">
               {total} users
             </span>
           </div>
@@ -365,8 +370,8 @@ export default function UserManagementPage() {
 
         {/* Data Table */}
         {loading ? (
-          <div className="bg-white border border-[#E2E8F0] rounded-xl p-8 flex justify-center">
-            <div className="w-8 h-8 border-4 border-[#0F766E] border-t-transparent rounded-full animate-spin" />
+          <div className="bg-surface-container-lowest border border-card-border rounded-xl p-8 flex justify-center shadow-xs">
+            <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <>
@@ -377,28 +382,6 @@ export default function UserManagementPage() {
               pageSize={10}
               emptyMessage="Tidak ada user yang sesuai dengan pencarian"
             />
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="px-3 py-1.5 text-xs font-bold rounded-lg border border-[#E2E8F0] bg-white text-[#0C1F16] hover:bg-[#F8FAFC] disabled:opacity-40 transition-colors cursor-pointer"
-                >
-                  ← Prev
-                </button>
-                <span className="text-xs font-mono text-[#64748B]">
-                  {page} / {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="px-3 py-1.5 text-xs font-bold rounded-lg border border-[#E2E8F0] bg-white text-[#0C1F16] hover:bg-[#F8FAFC] disabled:opacity-40 transition-colors cursor-pointer"
-                >
-                  Next →
-                </button>
-              </div>
-            )}
           </>
         )}
 
@@ -413,10 +396,10 @@ export default function UserManagementPage() {
             <div className="space-y-6 text-xs font-sans">
               {/* Ban Banner if user is banned */}
               {selectedUser.is_banned && (
-                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 space-y-2">
+                <div className="p-3.5 rounded-xl bg-error-container/40 border border-error/25 text-error space-y-2">
                   <div className="flex items-center justify-between font-bold">
                     <span className="flex items-center gap-1.5">
-                      <ShieldAlert className="w-4 h-4 text-rose-600" />
+                      <ShieldAlert className="w-4 h-4" />
                       Status: {selectedUser.ban_type === 'TEMPORARY' ? 'Temporary Ban' : 'Permanent Ban'}
                     </span>
                     {selectedUser.ban_type === 'TEMPORARY' && selectedUser.banned_until && (
@@ -425,55 +408,55 @@ export default function UserManagementPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] bg-white p-2 rounded border border-rose-200 italic">
+                  <p className="text-[11px] bg-surface-container-lowest p-2 rounded-lg border border-error/20 italic">
                     Alasan: "{selectedUser.ban_reason}"
                   </p>
                 </div>
               )}
 
               {/* Header Card */}
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-surface-container-low border border-card-border">
                 {selectedUser.avatar_url ? (
                   <img
                     src={selectedUser.avatar_url}
                     alt={selectedUser.nama_lengkap}
-                    className="w-12 h-12 rounded-full object-cover border border-[#E2E8F0]"
+                    className="w-12 h-12 rounded-full object-cover border border-card-border"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-[#0F766E] text-white text-lg font-bold flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-primary text-on-primary text-lg font-bold flex items-center justify-center shrink-0">
                     {selectedUser.nama_lengkap.charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div>
-                  <h4 className="font-headline font-bold text-sm text-[#0C1F16]">
+                  <h4 className="font-headline font-bold text-sm text-on-surface">
                     {selectedUser.nama_lengkap}
                   </h4>
-                  <p className="font-mono text-[11px] text-[#64748B]">
+                  <p className="font-mono text-[11px] text-on-surface-variant">
                     @{selectedUser.username} • {selectedUser.role}
                   </p>
                   <div className="flex items-center gap-1 mt-1 text-xs font-bold text-amber-600">
                     <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                    <span>{selectedUser.rating_avg.toFixed(1)} / 5.0 Rating</span>
+                    <span className="font-mono tabular-nums">{selectedUser.rating_avg.toFixed(1)} / 5.0 Rating</span>
                   </div>
                 </div>
               </div>
 
               {/* Contact & Location */}
               <div className="space-y-3">
-                <h5 className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
-                  Kontak & Lokasi
+                <h5 className="font-mono text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+                  Kontak &amp; Lokasi
                 </h5>
                 <div className="space-y-2 text-xs">
-                  <div className="flex items-center gap-2.5 text-[#0C1F16]">
-                    <Mail className="w-3.5 h-3.5 text-[#64748B] shrink-0" />
+                  <div className="flex items-center gap-2.5 text-on-surface">
+                    <Mail className="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
                     <span className="font-mono">{selectedUser.email}</span>
                   </div>
-                  <div className="flex items-center gap-2.5 text-[#0C1F16]">
-                    <Phone className="w-3.5 h-3.5 text-[#64748B] shrink-0" />
+                  <div className="flex items-center gap-2.5 text-on-surface">
+                    <Phone className="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
                     <span>{selectedUser.no_telpon || 'Belum diisi'}</span>
                   </div>
-                  <div className="flex items-start gap-2.5 text-[#0C1F16]">
-                    <MapPin className="w-3.5 h-3.5 text-[#64748B] shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2.5 text-on-surface">
+                    <MapPin className="w-3.5 h-3.5 text-on-surface-variant shrink-0 mt-0.5" />
                     <span>{selectedUser.alamat || 'Alamat belum disimpan'}</span>
                   </div>
                 </div>
@@ -482,8 +465,8 @@ export default function UserManagementPage() {
               {/* Bio */}
               {selectedUser.bio && (
                 <div className="space-y-1.5">
-                  <h5 className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#64748B]">Bio</h5>
-                  <p className="text-xs text-[#0C1F16] bg-[#F8FAFC] p-3 rounded-lg border border-[#E2E8F0] italic leading-relaxed">
+                  <h5 className="font-mono text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Bio</h5>
+                  <p className="text-xs text-on-surface bg-surface-container-low p-3.5 rounded-lg border border-card-border italic leading-relaxed">
                     "{selectedUser.bio}"
                   </p>
                 </div>
@@ -491,78 +474,82 @@ export default function UserManagementPage() {
 
               {/* Balances & Stats */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-lg bg-[#E6F4F1] border border-[#0F766E]/20">
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#0F766E]">
+                <div className="p-3.5 rounded-lg bg-primary/10 border border-primary/20">
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
                     Total Poin
                   </span>
-                  <p className="font-mono text-base font-extrabold text-[#0F766E]">
+                  <p className="font-mono text-base font-extrabold text-primary tabular-nums mt-0.5">
                     {selectedUser.total_balance.toLocaleString('id-ID')} PTS
                   </p>
                 </div>
-                <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                <div className="p-3.5 rounded-lg bg-tertiary-container/40 border border-tertiary/25">
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-tertiary">
                     Escrow Ditahan
                   </span>
-                  <p className="font-mono text-base font-extrabold text-amber-800">
+                  <p className="font-mono text-base font-extrabold text-tertiary tabular-nums mt-0.5">
                     {selectedUser.held_balance.toLocaleString('id-ID')} PTS
                   </p>
                 </div>
               </div>
 
               {/* Quick Admin Governance Actions */}
-              <div className="pt-4 border-t border-[#E2E8F0] space-y-3">
-                <h5 className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
+              <div className="pt-4 border-t border-card-border space-y-3">
+                <h5 className="font-mono text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
                   Aksi Moderasi Admin
                 </h5>
 
                 {selectedUser.role === 'Admin' ? (
-                  <p className="text-[10px] text-[#94A3B8] text-center">
+                  <p className="text-[10px] text-on-surface-variant text-center">
                     Aksi moderasi tidak tersedia untuk akun Admin.
                   </p>
                 ) : (
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       {/* Tombol Warning */}
-                      <button
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        fullWidth
                         onClick={() => setIsWarningModalOpen(true)}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition-colors cursor-pointer"
+                        icon={<AlertTriangle className="w-3.5 h-3.5 text-tertiary" />}
                       >
-                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
                         Kirim Peringatan
-                      </button>
+                      </Button>
 
                       {/* Tombol Reset Password */}
-                      <button
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        fullWidth
                         onClick={() => handleResetPassword(selectedUser)}
                         disabled={actionLoading === 'reset-' + selectedUser.id}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-[#F8FAFC] hover:bg-[#E2E8F0] text-[#0C1F16] transition-colors border border-[#E2E8F0] disabled:opacity-40 cursor-pointer"
+                        icon={actionLoading === 'reset-' + selectedUser.id ? undefined : <RotateCcw className="w-3.5 h-3.5" />}
                       >
-                        {actionLoading === 'reset-' + selectedUser.id ? (
-                          <span className="w-3 h-3 border-2 border-[#64748B] border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <RotateCcw className="w-3.5 h-3.5 text-[#64748B]" />
-                        )}
-                        Reset Password
-                      </button>
+                        {actionLoading === 'reset-' + selectedUser.id ? 'Memproses...' : 'Reset Password'}
+                      </Button>
                     </div>
 
                     {/* Tombol Suspend atau Unban */}
                     {selectedUser.is_banned ? (
-                      <button
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        fullWidth
                         onClick={() => setIsUnsuspendModalOpen(true)}
-                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-[#E6F4F1] hover:bg-[#BDE3DC] text-[#0F766E] border border-[#0F766E]/30 transition-colors cursor-pointer shadow-2xs"
+                        icon={<CheckCircle2 className="w-4 h-4" />}
                       >
-                        <CheckCircle2 className="w-4 h-4" />
                         Cabut Penangguhan (Unban User)
-                      </button>
+                      </Button>
                     ) : (
-                      <button
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        fullWidth
                         onClick={() => setIsSuspendModalOpen(true)}
-                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-colors cursor-pointer"
+                        icon={<Ban className="w-3.5 h-3.5" />}
                       >
-                        <Ban className="w-3.5 h-3.5" />
                         Penangguhan Akun (Suspend/Ban)
-                      </button>
+                      </Button>
                     )}
                   </div>
                 )}
@@ -571,7 +558,7 @@ export default function UserManagementPage() {
           )}
         </AdminDrawer>
 
-        {/* Modal 1: Kirim Peringatan (Warning) */}
+        {/* Modal 1: Kirim Pesan Peringatan (Warning) */}
         <AdminModal
           isOpen={isWarningModalOpen}
           onClose={() => setIsWarningModalOpen(false)}
@@ -581,23 +568,23 @@ export default function UserManagementPage() {
           confirmVariant="primary"
         >
           <div className="space-y-4 text-xs font-sans">
-            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 flex items-start gap-2.5">
-              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <span>
-                Pesan ini akan langsung dikirimkan ke kotak <strong>Notifikasi User</strong> sebagai peringatan dari platform CEPAT. Akun user tidak akan di-suspend.
+            <div className="p-3.5 rounded-lg bg-tertiary-container/30 border border-tertiary/25 text-tertiary flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span className="leading-relaxed">
+                Pesan ini akan langsung dikirimkan ke kotak <strong>Notifikasi User</strong> sebagai peringatan resmi dari platform CEPAT.
               </span>
             </div>
 
             <div>
-              <label className="block font-bold text-[#0C1F16] mb-1.5">
-                Isi Pesan Peringatan Admin <span className="text-rose-500">*</span>
+              <label className="block font-bold text-on-surface mb-1.5">
+                Isi Pesan Peringatan Admin <span className="text-error">*</span>
               </label>
               <textarea
                 rows={3}
                 value={warningMessage}
                 onChange={(e) => setWarningMessage(e.target.value)}
                 placeholder="misal: Harap perhatikan norma kesopanan saat berkomunikasi dengan pengguna lain..."
-                className="w-full p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs text-[#0C1F16] placeholder-[#94A3B8] outline-none focus:border-[#0F766E] focus:bg-white transition-all"
+                className="w-full p-3 bg-surface-container-low border border-card-border rounded-xl text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-all"
               />
             </div>
           </div>
@@ -615,34 +602,34 @@ export default function UserManagementPage() {
           <div className="space-y-4 text-xs font-sans">
             {/* Pilihan Jenis Ban */}
             <div>
-              <label className="block font-bold text-[#0C1F16] mb-2">
+              <label className="block font-bold text-on-surface mb-2">
                 Kategori Penangguhan
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setBanType('TEMPORARY')}
-                  className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
+                  className={`p-3.5 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
                     banType === 'TEMPORARY'
-                      ? 'border-amber-400 bg-amber-50/60 ring-2 ring-amber-400/20'
-                      : 'border-[#E2E8F0] bg-[#F8FAFC] hover:bg-[#F1F5F9]'
+                      ? 'border-tertiary bg-tertiary-container/30 ring-2 ring-tertiary/20'
+                      : 'border-card-border bg-surface-container-low hover:bg-surface-container'
                   }`}
                 >
-                  <span className="font-bold text-[#0C1F16]">Temporary Ban</span>
-                  <span className="text-[10px] text-[#64748B]">Batas waktu tertentu (jam/hari)</span>
+                  <span className="font-bold text-on-surface">Temporary Ban</span>
+                  <span className="text-[10px] text-on-surface-variant">Batas waktu tertentu (jam/hari)</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setBanType('PERMANENT')}
-                  className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
+                  className={`p-3.5 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
                     banType === 'PERMANENT'
-                      ? 'border-rose-400 bg-rose-50/60 ring-2 ring-rose-400/20'
-                      : 'border-[#E2E8F0] bg-[#F8FAFC] hover:bg-[#F1F5F9]'
+                      ? 'border-error bg-error-container/40 ring-2 ring-error/20'
+                      : 'border-card-border bg-surface-container-low hover:bg-surface-container'
                   }`}
                 >
-                  <span className="font-bold text-rose-700">Permanent Ban</span>
-                  <span className="text-[10px] text-[#64748B]">Tanpa batasan waktu</span>
+                  <span className="font-bold text-error">Permanent Ban</span>
+                  <span className="text-[10px] text-on-surface-variant">Tanpa batasan waktu</span>
                 </button>
               </div>
             </div>
@@ -659,7 +646,7 @@ export default function UserManagementPage() {
 
                 {banDurationPreset === 'custom' && (
                   <div className="mt-2">
-                    <label className="block text-[11px] font-bold text-[#64748B] mb-1">
+                    <label className="block text-[11px] font-bold text-on-surface-variant mb-1 font-mono">
                       Jumlah Jam
                     </label>
                     <input
@@ -667,7 +654,7 @@ export default function UserManagementPage() {
                       min={1}
                       value={customBanHours}
                       onChange={(e) => setCustomBanHours(e.target.value)}
-                      className="w-full px-3 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs text-[#0C1F16] outline-none focus:border-[#0F766E]"
+                      className="w-full min-h-[44px] px-3.5 py-2.5 bg-surface-container-low border border-card-border rounded-xl text-base sm:text-xs text-on-surface focus:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
                     />
                   </div>
                 )}
@@ -676,17 +663,17 @@ export default function UserManagementPage() {
 
             {/* Input Alasan Ban */}
             <div>
-              <label className="block font-bold text-[#0C1F16] mb-1.5">
-                Alasan Penangguhan Akun <span className="text-rose-500">*</span>
+              <label className="block font-bold text-on-surface mb-1.5">
+                Alasan Penangguhan Akun <span className="text-error">*</span>
               </label>
               <textarea
                 rows={3}
                 value={banReason}
                 onChange={(e) => setBanReason(e.target.value)}
                 placeholder="Alasan ini akan ditampilkan di popup modal saat user mencoba login..."
-                className="w-full p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs text-[#0C1F16] placeholder-[#94A3B8] outline-none focus:border-rose-500 focus:bg-white transition-all"
+                className="w-full p-3 bg-surface-container-low border border-card-border rounded-xl text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-error focus:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error/25 transition-all"
               />
-              <p className="text-[10px] text-[#64748B] mt-1">
+              <p className="text-[10px] text-on-surface-variant mt-1">
                 Catatan: Alasan ini tidak masuk ke notifikasi user, melainkan muncul saat user login.
               </p>
             </div>
@@ -702,11 +689,11 @@ export default function UserManagementPage() {
           confirmLabel={actionLoading === 'unsuspend' ? 'Memproses...' : 'Ya, Cabut Ban User'}
           confirmVariant="primary"
         >
-          <div className="flex items-start gap-3 p-3.5 bg-[#E6F4F1] rounded-xl border border-[#0F766E]/20 text-xs text-[#0C4A45] font-sans">
-            <CheckCircle2 className="w-5 h-5 shrink-0 text-[#0F766E] mt-0.5" />
+          <div className="flex items-start gap-3 p-3.5 bg-primary/10 rounded-xl border border-primary/25 text-xs text-primary font-sans">
+            <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
             <div>
               <p className="font-bold">Apakah kamu yakin ingin mengaktifkan kembali akun "{selectedUser?.nama_lengkap}"?</p>
-              <p className="mt-1 text-[11px] opacity-90">
+              <p className="mt-1 text-[11px] opacity-90 leading-relaxed">
                 Akses login user akan dibuka kembali dan batasan akun akan dicabut di seluruh platform.
               </p>
             </div>

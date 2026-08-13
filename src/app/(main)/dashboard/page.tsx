@@ -2,33 +2,59 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { useCurrentRole } from "@/app/(main)/layout";
-import { getNearbyTasks } from "@/lib/supabase/queries/tasks";
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { Task } from "@/types/database";
 import { Button } from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/motion/tabs";
 import { formatCurrency } from "@/lib/utils/format";
 import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
+import {
+  Wallet,
+  TrendingUp,
+  ChevronRight,
+  Star,
+  CheckCircle2,
+  Lock,
+  Briefcase,
+  PlusSquare,
+  Compass,
+  History,
+  HelpCircle,
+  Flame,
+  MapPin,
+  ShieldCheck,
+  Maximize2,
+  Store,
+  Footprints,
+  SearchX,
+  Clock,
+  User,
+  Plus,
+  Search,
+  ArrowRight,
+  Sparkles,
+  Award,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
   const { role, user, toggleRole } = useCurrentRole();
   const { coords } = useGeolocation();
 
-  const [tasks, setTasks] = useState<any[]>([]); // Lightweight tasks for map
-  const [recommendedTasks, setRecommendedTasks] = useState<any[]>([]); // Recommendations based on skills
-  const [featuredTask, setFeaturedTask] = useState<any | null>(null); // Rich task for featured card
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [recommendedTasks, setRecommendedTasks] = useState<any[]>([]);
+  const [featuredTask, setFeaturedTask] = useState<any | null>(null);
   const [escrowAmount, setEscrowAmount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"activity" | "recommendations">("recommendations");
+  const [activeTab, setActiveTab] = useState<"recommendations" | "activity">("recommendations");
   const [myActiveTasks, setMyActiveTasks] = useState<any[]>([]);
   const [loadingActivity, setLoadingActivity] = useState(false);
   const hasLoadedOnce = useRef(false);
 
   useEffect(() => {
     async function loadData() {
-      // Only show full loading skeleton on first load.
-      // Subsequent geo-updates silently refresh in the background.
       if (!hasLoadedOnce.current) {
         setLoading(true);
       }
@@ -36,7 +62,7 @@ export default function DashboardPage() {
         const mapUrl = new URL('/api/tasks/nearby', window.location.origin);
         mapUrl.searchParams.append('lat', coords.latitude.toString());
         mapUrl.searchParams.append('lng', coords.longitude.toString());
-        mapUrl.searchParams.append('radius', '5000'); // 5km
+        mapUrl.searchParams.append('radius', '5000');
 
         const feedUrl = new URL('/api/tasks/feed', window.location.origin);
         feedUrl.searchParams.append('lat', coords.latitude.toString());
@@ -44,21 +70,20 @@ export default function DashboardPage() {
         feedUrl.searchParams.append('limit', '6');
         feedUrl.searchParams.append('sort', 'distance_asc');
 
-        // Fetch data in parallel to avoid waterfall
         const [mapRes, feedRes, escrowRes, activityRes] = await Promise.all([
           fetch(mapUrl.toString(), { cache: 'no-store' }),
           fetch(feedUrl.toString(), { cache: 'no-store' }),
           fetch('/api/wallet/escrow', { cache: 'no-store' }),
-          fetch('/api/users/me/tasks?role=worker', { cache: 'no-store' })
+          fetch('/api/users/me/tasks?role=worker', { cache: 'no-store' }),
         ]);
 
         if (mapRes.ok) {
-          const mapJson = await mapRes.json();
+          const mapJson = await mapRes.json().catch(() => ({}));
           setTasks(mapJson.data || []);
         }
-        
+
         if (feedRes.ok) {
-          const feedJson = await feedRes.json();
+          const feedJson = await feedRes.json().catch(() => ({}));
           if (feedJson.data && feedJson.data.length > 0) {
             setFeaturedTask(feedJson.data[0]);
             setRecommendedTasks(feedJson.data.slice(1, 4));
@@ -66,14 +91,14 @@ export default function DashboardPage() {
         }
 
         if (escrowRes.ok) {
-          const escrowJson = await escrowRes.json();
+          const escrowJson = await escrowRes.json().catch(() => ({}));
           if (escrowJson.success && escrowJson.data) {
             setEscrowAmount(escrowJson.data.escrow_amount);
           }
         }
-        
+
         if (activityRes.ok) {
-          const activityJson = await activityRes.json();
+          const activityJson = await activityRes.json().catch(() => ({}));
           if (activityJson.success && Array.isArray(activityJson.data)) {
             setMyActiveTasks(activityJson.data);
           }
@@ -87,7 +112,6 @@ export default function DashboardPage() {
     }
     loadData();
   }, [coords]);
-
 
   const userName = user?.nama_lengkap?.split(" ")[0] || user?.username || "Pekerja";
   const nearbyCount = tasks.length;
@@ -103,37 +127,47 @@ export default function DashboardPage() {
   const totalCompleted = user?.total_completed ?? 0;
 
   return (
-    <div className="flex flex-col h-full bg-layout-bg font-sans transition-colors duration-300">
-      {/* Clean White Header */}
-      <header className="page-header bg-surface-container-lowest border-b border-outline-variant/30 px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="flex flex-col h-full bg-surface font-sans min-h-screen">
+      {/* ───────────── ELEVATED HEADER ───────────── */}
+      <header className="page-header bg-surface-container-lowest border-b border-card-border px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-headline font-extrabold text-2xl text-on-surface tracking-tight">
-            {getGreeting()}, {userName} 👋
+          <div className="flex items-center gap-2 mb-1">
+            <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-mono font-bold uppercase tracking-wider border border-primary/20 flex items-center gap-1">
+              <Sparkles className="w-3 h-3" />
+              {getGreeting()}
+            </span>
+            <span className="text-on-surface-variant text-xs">•</span>
+            <span className="text-xs font-semibold text-on-surface-variant font-mono">
+              Area Kampus Semarang
+            </span>
+          </div>
+
+          <h1 className="font-headline font-extrabold text-2xl sm:text-3xl text-on-surface tracking-tight">
+            Halo, {userName} 👋
           </h1>
-          <p className="font-body-sm text-sm text-on-surface-variant mt-0.5">
+          <p className="font-body-sm text-xs sm:text-sm text-on-surface-variant mt-0.5">
             {role === "worker" ? (
               <>
-                Ada <span className="font-bold text-primary">{nearbyCount} tugas dekat kampus</span> yang bisa kamu ambil hari ini.
+                Tersedia <span className="font-bold text-primary font-mono tabular-nums">{nearbyCount} peluang tugas mikro</span> siap dikerjakan hari ini.
               </>
             ) : (
               <>
-                Kamu dalam mode <span className="font-bold text-primary">Pemberi Kerja</span>. Post bantuan cepat untuk UMKM atau kegiatanmu.
+                Mode <span className="font-bold text-primary">Pemberi Kerja</span> aktif. Buat tugas baru dan delegasikan dengan aman.
               </>
             )}
           </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           {role === "requester" ? (
-            <Link href="/task/new">
-              <Button variant="primary" size="md" className="font-bold">
-                <span className="material-symbols-outlined text-[18px]" aria-hidden="true">add</span>
+            <Link href="/task/new" className="w-full sm:w-auto">
+              <Button variant="primary" size="md" icon={<Plus className="w-4 h-4" />} className="w-full sm:w-auto min-h-[44px] text-xs font-bold">
                 Post Tugas Baru
               </Button>
             </Link>
           ) : (
-            <Link href="/feed">
-              <Button variant="primary" size="md" className="font-bold">
-                <span className="material-symbols-outlined text-[18px]" aria-hidden="true">search</span>
+            <Link href="/feed" className="w-full sm:w-auto">
+              <Button variant="primary" size="md" icon={<Search className="w-4 h-4" />} className="w-full sm:w-auto min-h-[44px] text-xs font-bold">
                 Cari Tugas Terdekat
               </Button>
             </Link>
@@ -141,132 +175,159 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Scrollable Main Content */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 lg:p-8 flex flex-col gap-6">
+      {/* ───────────── SCROLLABLE MAIN CONTENT ───────────── */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6 pb-28 lg:pb-12">
 
         {/* ───────────── ASYMMETRIC BENTO STATS GRID (12 Columns) ───────────── */}
-        <section className="grid grid-cols-12 gap-4 md:gap-5">
-          {/* Card 1 — Saldo Poin (Featured, Tall: col-span-12 lg:col-span-5) */}
+        <section className="grid grid-cols-12 gap-3.5 sm:gap-4 md:gap-5">
+          {/* Card 1 — Saldo Poin Utama (Double Bezel: col-span-12 lg:col-span-5) */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
+            transition={{ duration: 0.35, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
             className="col-span-12 lg:col-span-5"
           >
-            <div className="h-full rounded-2xl bg-white p-6 flex flex-col justify-between shadow-sm border border-outline-variant/30 hover:border-primary/50 transition-colors">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-semibold text-on-surface-variant">Saldo Poin Utama</span>
-                <span className="material-symbols-outlined text-[20px] text-primary" aria-hidden="true">account_balance_wallet</span>
-              </div>
-
-              {loading ? (
-                <div className="h-12 bg-surface-container-high rounded animate-pulse w-3/4 mb-4" aria-label="Memuat saldo" />
-              ) : (
-                <div aria-live="polite">
-                  <div className="text-4xl md:text-5xl font-extrabold text-on-surface tracking-tight mb-2">
-                    {user?.total_balance ? formatCurrency(user.total_balance).replace('Rp', '') : '-'} <span className="text-sm font-bold text-on-surface-variant uppercase">pts</span>
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="text-sm text-primary font-bold flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-[18px]" aria-hidden="true">trending_up</span>
-                      Lihat riwayat
+            <div className="p-1 sm:p-1.5 rounded-2xl bg-surface-container-low border border-card-border shadow-xs h-full">
+              <div className="h-full rounded-xl bg-surface-container-lowest p-5 sm:p-6 flex flex-col justify-between border border-card-border shadow-xs hover:border-primary/40 transition-all duration-150">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold uppercase tracking-wider font-mono text-on-surface-variant">
+                      Saldo Poin Utama
+                    </span>
+                    <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
+                      <Wallet className="w-4 h-4" />
                     </div>
-                    <Link href="/wallet" className="text-sm text-primary font-semibold hover:underline flex items-center gap-0.5">
-                      Detail <span className="material-symbols-outlined text-[16px]" aria-hidden="true">chevron_right</span>
-                    </Link>
                   </div>
+
+                  {loading ? (
+                    <div className="space-y-2 mb-4">
+                      <Skeleton className="h-10 w-2/3 rounded-lg" />
+                    </div>
+                  ) : (
+                    <div aria-live="polite">
+                      <div className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-on-surface tracking-tight font-mono tabular-nums">
+                        {user?.total_balance ? formatCurrency(user.total_balance).replace('Rp', '') : '0'}{" "}
+                        <span className="text-sm font-bold text-on-surface-variant font-sans uppercase">pts</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+
+                <div className="mt-4 flex items-center justify-between pt-3 border-t border-card-border">
+                  <span className="text-xs text-primary font-bold flex items-center gap-1.5">
+                    <TrendingUp className="w-4 h-4" />
+                    Siap dicairkan / dipakai
+                  </span>
+                  <Link href="/wallet" className="text-xs text-primary font-bold hover:underline flex items-center gap-1 font-mono">
+                    Dompet <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
             </div>
           </motion.div>
 
-          {/* Card 2 — Rating (col-span-6 lg:col-span-3) */}
+          {/* Card 2 — Rating Reputasi (col-span-6 lg:col-span-3) */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
+            transition={{ duration: 0.35, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             className="col-span-6 lg:col-span-3"
           >
-            <div className="h-full rounded-2xl bg-white p-6 flex flex-col justify-between shadow-sm border border-outline-variant/30 hover:border-primary/50 transition-colors">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-semibold text-on-surface-variant">Rating</span>
-                <span
-                  className="material-symbols-outlined text-[20px] text-amber-500"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                 aria-hidden="true">
-                  star
-                </span>
-              </div>
-              {loading ? (
-                <div className="h-8 bg-surface-container-high rounded animate-pulse w-1/2" aria-label="Memuat rating" />
-              ) : (
-                <div aria-live="polite">
-                  <div className="text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight">
-                    {user?.rating_avg ?? 0} <span className="text-base text-on-surface-variant font-semibold">/ 5</span>
-                  </div>
-                  <div className="text-sm text-on-surface-variant mt-2 font-medium">
-                    Dari {totalCompleted} task
+            <div className="p-1 sm:p-1.5 rounded-2xl bg-surface-container-low border border-card-border shadow-xs h-full">
+              <div className="h-full rounded-xl bg-surface-container-lowest p-5 flex flex-col justify-between border border-card-border shadow-xs hover:border-primary/40 transition-all duration-150">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider font-mono text-on-surface-variant">
+                    Rating
+                  </span>
+                  <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600">
+                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                   </div>
                 </div>
-              )}
+
+                {loading ? (
+                  <Skeleton className="h-8 w-1/2 rounded-lg" />
+                ) : (
+                  <div aria-live="polite">
+                    <div className="text-2xl sm:text-3xl font-extrabold text-on-surface tracking-tight font-mono tabular-nums">
+                      {totalCompleted > 0 && user?.rating_avg ? user.rating_avg.toFixed(1) : "-"}{" "}
+                      <span className="text-xs text-on-surface-variant font-sans font-semibold">/ 5.0</span>
+                    </div>
+                    <div className="text-[11px] text-on-surface-variant mt-1.5 font-medium">
+                      {totalCompleted > 0 ? (
+                        <>Dari <span className="font-mono font-bold tabular-nums text-on-surface">{totalCompleted}</span> task selesai</>
+                      ) : (
+                        "Belum ada ulasan tugas"
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
 
-          {/* Card 3 — Task Selesai (col-span-6 lg:col-span-4) */}
+          {/* Card 3 — Total Tugas Selesai (col-span-6 lg:col-span-4) */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
+            transition={{ duration: 0.35, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
             className="col-span-6 lg:col-span-4"
           >
-            <div className="h-full rounded-lg border border-secondary-container bg-secondary-fixed p-4 md:p-5 flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute -right-4 -top-4 text-on-secondary-fixed opacity-15 pointer-events-none">
-                <span className="material-symbols-outlined text-[80px]" aria-hidden="true">task_alt</span>
-              </div>
-              <div className="flex items-center justify-between mb-3 text-on-secondary-fixed font-bold relative z-10">
-                <span className="text-xs font-mono uppercase tracking-wider">Task Selesai</span>
-                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">task_alt</span>
-              </div>
-              {loading ? (
-                <div className="h-8 bg-surface-container-high rounded animate-pulse w-1/2" aria-label="Memuat task selesai" />
-              ) : (
-                <div className="relative z-10" aria-live="polite">
-                  <div className="text-3xl font-extrabold text-on-surface font-mono tracking-tight flex flex-wrap items-center gap-2">
-                    {totalCompleted} <span className="text-xs text-on-secondary-fixed font-sans font-bold">tugas</span>
-                  </div>
+            <div className="p-1 sm:p-1.5 rounded-2xl bg-surface-container-low border border-card-border shadow-xs h-full">
+              <div className="h-full rounded-xl bg-secondary-container/40 border border-secondary/25 p-5 flex flex-col justify-between shadow-xs">
+                <div className="flex items-center justify-between mb-2 text-secondary font-bold">
+                  <span className="text-[11px] font-mono uppercase tracking-wider font-bold">
+                    Pekerjaan Sukses
+                  </span>
+                  <CheckCircle2 className="w-4.5 h-4.5 text-secondary" />
                 </div>
-              )}
+
+                {loading ? (
+                  <Skeleton className="h-8 w-1/2 rounded-lg" />
+                ) : (
+                  <div aria-live="polite">
+                    <div className="text-2xl sm:text-3xl font-extrabold text-on-surface font-mono tracking-tight tabular-nums flex items-baseline gap-1.5">
+                      {totalCompleted > 0 ? totalCompleted : "0"}{" "}
+                      <span className="text-xs text-secondary font-sans font-bold">tugas</span>
+                    </div>
+                    <div className="text-[11px] text-on-surface-variant mt-1.5 font-medium">
+                      {totalCompleted > 0 ? "Tingkat keberhasilan 100%" : "Belum ada riwayat tugas"}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
 
-          {/* Card 4 — Dana Ditahan / Escrow (col-span-12) */}
+          {/* Card 4 — Dana Terkunci Escrow (col-span-12) */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.4 }}
+            transition={{ duration: 0.35, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="col-span-12"
           >
-            <div className="h-full rounded-2xl bg-surface-container-lowest p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm border border-outline-variant/30 hover:border-primary/50 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-tertiary/10 flex items-center justify-center text-tertiary shrink-0">
-                  <span className="material-symbols-outlined text-[24px]" aria-hidden="true">lock_clock</span>
+            <div className="rounded-2xl bg-surface-container-lowest p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs border border-card-border hover:border-primary/40 transition-colors duration-150">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-tertiary-container/50 border border-tertiary/20 flex items-center justify-center text-tertiary shrink-0">
+                  <Lock className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-on-surface-variant">
-                    Dana Terkunci Escrow
+                  <div className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider font-mono">
+                    Saldo Terkunci di Escrow
                   </div>
-                  <div className="text-2xl font-extrabold text-on-surface tracking-tight mt-1">
+                  <div className="text-xl sm:text-2xl font-extrabold text-on-surface tracking-tight mt-0.5 font-mono tabular-nums">
                     {formatCurrency(escrowAmount || 0)}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 border-outline-variant/30 pt-3 sm:pt-0">
-                <span className="text-sm text-on-surface-variant font-medium hidden md:inline">
-                  Aman di Escrow hingga disetujui
+
+              <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 border-card-border pt-3 sm:pt-0">
+                <span className="text-xs text-on-surface-variant font-medium hidden md:inline">
+                  Otomatis dirilis begitu tugas terverifikasi selesai
                 </span>
-                <Link href="/wallet" className="px-5 py-2 text-sm font-bold text-white bg-tertiary rounded-xl hover:bg-tertiary/90 transition-colors">
-                  Lihat Status
+                <Link href="/wallet">
+                  <Button variant="secondary" size="sm" className="min-h-[38px] text-xs font-bold">
+                    Rincian Escrow
+                  </Button>
                 </Link>
               </div>
             </div>
@@ -275,368 +336,345 @@ export default function DashboardPage() {
 
         {/* ───────────── ROLE SWITCHER (MOBILE ONLY) ───────────── */}
         <section className="lg:hidden">
-          <div className="bg-surface-container-low border border-outline-variant/60 rounded-xl p-1 flex relative shadow-xs">
+          <div className="bg-surface-container-low border border-card-border rounded-xl p-1 flex relative shadow-xs">
             <div
-              className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-primary rounded-lg transition-transform duration-300 ease-out shadow-sm"
+              className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-primary rounded-lg transition-transform duration-200 ease-out shadow-xs"
               style={{
                 transform: role === "worker" ? "translateX(0)" : "translateX(calc(100% + 8px))",
               }}
             />
             <button
               onClick={() => role !== "worker" && toggleRole()}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 text-[13px] font-bold z-10 transition-colors ${
-                role === "worker" ? "text-on-primary" : "text-on-surface hover:bg-black/5"
-              } rounded-lg`}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold z-10 transition-colors duration-150 rounded-lg cursor-pointer min-h-[44px]",
+                role === "worker" ? "text-on-primary" : "text-on-surface"
+              )}
             >
-              <span className="material-symbols-outlined text-[18px]">handyman</span>
-              Pekerja
+              <Briefcase className="w-4 h-4" />
+              Mode Pekerja
             </button>
             <button
               onClick={() => role !== "requester" && toggleRole()}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 text-[13px] font-bold z-10 transition-colors ${
-                role === "requester" ? "text-on-primary" : "text-on-surface hover:bg-black/5"
-              } rounded-lg`}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold z-10 transition-colors duration-150 rounded-lg cursor-pointer min-h-[44px]",
+                role === "requester" ? "text-on-primary" : "text-on-surface"
+              )}
             >
-              <span className="material-symbols-outlined text-[18px]">work</span>
-              Pemberi
+              <PlusSquare className="w-4 h-4" />
+              Mode Pemberi Tugas
             </button>
           </div>
         </section>
 
-        {/* ───────────── QUICK LINKS (MOBILE ONLY) ───────────── */}
-        <section className="lg:hidden grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {/* ───────────── QUICK ACCESS GRID (MOBILE ONLY) ───────────── */}
+        <section className="lg:hidden grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {role === "requester" ? (
-            <Link href="/task/new" className="bg-white border border-outline-variant/60 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                <span className="material-symbols-outlined text-[20px]">add_box</span>
+            <Link href="/task/new" className="bg-surface-container-lowest border border-card-border rounded-xl p-3.5 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors duration-150 min-h-[48px]">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                <PlusSquare className="w-4.5 h-4.5" />
               </div>
-              <span className="text-[11px] font-bold text-on-surface text-center leading-tight">Post Tugas</span>
+              <span className="text-xs font-bold text-on-surface text-center">Post Tugas</span>
             </Link>
           ) : (
-            <Link href="/cari-tugas" className="bg-white border border-outline-variant/60 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                <span className="material-symbols-outlined text-[20px]">explore</span>
+            <Link href="/cari-tugas" className="bg-surface-container-lowest border border-card-border rounded-xl p-3.5 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors duration-150 min-h-[48px]">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                <Compass className="w-4.5 h-4.5" />
               </div>
-              <span className="text-[11px] font-bold text-on-surface text-center leading-tight">Cari Tugas</span>
+              <span className="text-xs font-bold text-on-surface text-center">Radar Map</span>
             </Link>
           )}
-          <Link href="/history/riwayat" className="bg-white border border-outline-variant/60 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined text-[20px]">history</span>
+          <Link href="/history/riwayat" className="bg-surface-container-lowest border border-card-border rounded-xl p-3.5 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors duration-150 min-h-[48px]">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <History className="w-4.5 h-4.5" />
             </div>
-            <span className="text-[11px] font-bold text-on-surface text-center leading-tight">Riwayat</span>
+            <span className="text-xs font-bold text-on-surface text-center">Riwayat</span>
           </Link>
-          <Link href="/wallet" className="bg-white border border-outline-variant/60 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+          <Link href="/wallet" className="bg-surface-container-lowest border border-card-border rounded-xl p-3.5 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors duration-150 min-h-[48px]">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <Wallet className="w-4.5 h-4.5" />
             </div>
-            <span className="text-[11px] font-bold text-on-surface text-center leading-tight">Dompet</span>
+            <span className="text-xs font-bold text-on-surface text-center">Dompet</span>
           </Link>
-          <Link href="/bantuan" className="bg-white border border-outline-variant/60 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined text-[20px]">help</span>
+          <Link href="/bantuan" className="bg-surface-container-lowest border border-card-border rounded-xl p-3.5 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors duration-150 min-h-[48px]">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <HelpCircle className="w-4.5 h-4.5" />
             </div>
-            <span className="text-[11px] font-bold text-on-surface text-center leading-tight">Bantuan</span>
+            <span className="text-xs font-bold text-on-surface text-center">Bantuan</span>
           </Link>
         </section>
 
-        {/* ───────────── FEATURED TASK + PROMOTED MAP ───────────── */}
+        {/* ───────────── FEATURED OPPORTUNITY + MINI RADAR MAP ───────────── */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="grid grid-cols-1 xl:grid-cols-5 gap-4 md:gap-6"
+          transition={{ duration: 0.35, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="grid grid-cols-1 xl:grid-cols-5 gap-4 md:gap-5"
         >
           {/* Featured Task Card (col-span 3) */}
-          <section className="xl:col-span-3 p-1.5 md:p-2 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs flex flex-col">
-            <div className="h-full rounded-lg border border-white/60 bg-white flex flex-col overflow-hidden shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_2px_8px_rgba(0,0,0,0.02)]">
-              <div className="px-5 py-4 border-b border-outline-variant/60 bg-surface-container-lowest flex justify-between items-center shrink-0">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-tertiary text-[18px]" aria-hidden="true">local_fire_department</span>
-                  <h2 className="text-sm font-bold text-on-surface">Peluang Utama Sekitar</h2>
-                </div>
-                <span className="bg-tertiary-fixed text-on-tertiary-fixed border border-tertiary-container text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 uppercase tracking-wider">
-                  HOT TASK
-                </span>
+          <section className="xl:col-span-3 rounded-2xl bg-surface-container-lowest border border-card-border shadow-xs flex flex-col overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-card-border bg-surface-container-low flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-2">
+                <Flame className="w-4 h-4 text-tertiary" />
+                <h2 className="text-xs font-bold text-on-surface font-headline uppercase tracking-wider">
+                  Peluang Terdekat Unggulan
+                </h2>
               </div>
+              <span className="bg-tertiary-container/50 text-tertiary border border-tertiary/20 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 uppercase tracking-wider font-mono">
+                HOT TASK
+              </span>
+            </div>
 
-              {loading ? (
-                <div className="p-6 flex flex-col sm:flex-row gap-6 items-center" aria-label="Memuat tugas">
-                  <div className="w-full sm:w-2/5 h-36 bg-surface-container-high rounded-lg animate-pulse" />
-                  <div className="flex-1 space-y-3 w-full">
-                    <div className="h-6 bg-surface-container-high rounded animate-pulse w-3/4" />
-                    <div className="h-4 bg-surface-container-high rounded animate-pulse w-1/2" />
-                    <div className="h-12 bg-surface-container-high rounded animate-pulse w-full" />
-                  </div>
-                </div>
-              ) : featuredTask ? (
-                <div className="flex-1 p-5 md:p-6 flex flex-col sm:flex-row gap-5" aria-live="polite">
-                  {/* Task Image removed as requested */}
-
-                  {/* Task Details */}
-                  <div className="flex-1 flex flex-col justify-between gap-3">
-                    <div>
-                      <div className="flex justify-between items-start mb-1.5 gap-2">
-                        <h3 className="text-lg font-extrabold text-on-surface leading-snug">
-                          {featuredTask.title}
-                        </h3>
-                        <div className="text-base font-bold text-primary font-mono shrink-0 bg-primary/5 px-2.5 py-1 rounded border border-primary/10">
-                          {formatCurrency(featuredTask.compensation)}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 text-on-surface-variant text-xs font-semibold mb-2">
-                        <span className="material-symbols-outlined text-[15px] text-primary" aria-hidden="true">location_on</span>
-                        <span className="text-primary font-mono">
-                          {featuredTask.distance ? `${featuredTask.distance.toFixed(1)} km dari posisi` : "~"}
-                        </span>
-                      </div>
-                      <p className="text-xs text-on-surface-variant leading-relaxed line-clamp-2">
-                        {featuredTask.description}
-                      </p>
-                    </div>
-
-                    <div className="pt-3 flex items-center justify-between border-t border-outline-variant/40 mt-1">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase text-on-surface-variant font-bold">
-                        <span className="material-symbols-outlined text-[16px] text-tertiary" aria-hidden="true">shield</span>
-                        Escrow Protected
-                      </span>
-                      <Link href={`/task/${featuredTask.id_task}`}>
-                        <Button variant="primary" size="sm" className="font-bold px-4">
-                          Lihat Detail
-                        </Button>
-                      </Link>
+            {loading ? (
+              <div className="p-6 flex flex-col gap-3" aria-label="Memuat tugas">
+                <Skeleton className="h-6 w-3/4 rounded-md" />
+                <Skeleton className="h-4 w-1/2 rounded" />
+                <Skeleton className="h-12 w-full rounded-xl" />
+              </div>
+            ) : featuredTask ? (
+              <div className="flex-1 p-5 sm:p-6 flex flex-col justify-between gap-4" aria-live="polite">
+                <div>
+                  <div className="flex justify-between items-start mb-2 gap-3">
+                    <h3 className="text-base sm:text-lg font-extrabold text-on-surface font-headline leading-snug">
+                      {featuredTask.title}
+                    </h3>
+                    <div className="text-sm sm:text-base font-bold text-primary font-mono shrink-0 bg-primary/10 px-3 py-1 rounded-lg border border-primary/20 tabular-nums">
+                      {formatCurrency(featuredTask.compensation)}
                     </div>
                   </div>
+
+                  <div className="flex items-center gap-2 text-on-surface-variant text-xs font-semibold mb-2.5">
+                    <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="text-primary font-mono tabular-nums">
+                      {featuredTask.distance ? `${featuredTask.distance.toFixed(1)} km dari posisimu` : "Area Kampus"}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-on-surface-variant leading-relaxed line-clamp-2">
+                    {featuredTask.description}
+                  </p>
                 </div>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-3">
-                  <span className="material-symbols-outlined text-[48px] text-outline-variant/40" aria-hidden="true">location_off</span>
-                  <p className="text-sm text-on-surface-variant font-medium">Tidak ada tugas terdekat di radius 2km.</p>
-                  <Link href="/feed">
-                    <Button variant="secondary" size="sm">Jelajahi Semua Area</Button>
+
+                <div className="pt-3.5 flex items-center justify-between border-t border-card-border mt-1">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase text-tertiary font-bold">
+                    <ShieldCheck className="w-4 h-4" />
+                    Escrow Protected
+                  </span>
+                  <Link href={`/task/${featuredTask.id_task}`}>
+                    <Button variant="primary" size="sm" className="min-h-[38px] text-xs font-bold">
+                      Lihat Rincian Tugas
+                    </Button>
                   </Link>
                 </div>
-              )}
-            </div>
-          </section>
-
-          {/* Mini Map (col-span 2) */}
-          <section className="xl:col-span-2 p-1.5 md:p-2 rounded-xl bg-black/[0.02] ring-1 ring-black/5 shadow-xs flex flex-col h-72 xl:h-full min-h-[280px]">
-            <div className="h-full rounded-lg border border-white/60 bg-interaction-bg overflow-hidden relative shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_2px_8px_rgba(0,0,0,0.02)]">
-              {/* Overlay controls */}
-              <div className="absolute top-3 left-3 right-3 z-10 flex justify-between pointer-events-none">
-                <div className="bg-white border border-outline-variant shadow-2xs rounded px-3 py-2 flex items-center gap-2 pointer-events-auto">
-                  <div className="w-2.5 h-2.5 rounded-full bg-primary pulse-dot" />
-                  <span className="text-xs font-bold text-on-surface uppercase tracking-wider font-mono">
-                    Radar • {nearbyCount} Task
-                  </span>
-                </div>
-                <Link
-                  href="/feed?view=map"
-                  className="w-8 h-8 bg-white/95 backdrop-blur border border-outline-variant rounded shadow-2xs flex items-center justify-center text-on-surface-variant pointer-events-auto hover:text-primary transition-colors"
-                  title="Buka Peta Penuh"
-                >
-                  <span className="material-symbols-outlined text-[16px]" aria-hidden="true">open_in_full</span>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-3">
+                <SearchX className="w-10 h-10 text-on-surface-variant/40" />
+                <p className="text-xs font-medium text-on-surface-variant">Belum ada tugas terdekat di radius 2km.</p>
+                <Link href="/feed">
+                  <Button variant="secondary" size="sm">Jelajahi Semua Area</Button>
                 </Link>
               </div>
+            )}
+          </section>
 
-              {/* Map Component */}
-              <div className="absolute inset-0 z-0">
-                <MapPickerWrapper
-                  center={{ latitude: coords.latitude, longitude: coords.longitude }}
-                  tasks={tasks}
-                  radiusKm={2}
-                />
-              </div>
-
-              {/* Bottom indicator */}
-              <div className="absolute bottom-3 left-3 right-3 z-10 text-center pointer-events-none">
-                <span className="inline-block bg-white border border-outline-variant/60 px-3 py-1.5 rounded text-xs text-on-surface-variant font-mono font-bold uppercase tracking-wider shadow-2xs">
-                  Radius 2 KM Terdeteksi
+          {/* Mini Radar Map (col-span 2) */}
+          <section className="xl:col-span-2 rounded-2xl bg-surface-container-lowest border border-card-border shadow-xs flex flex-col h-64 xl:h-full min-h-[260px] overflow-hidden relative">
+            {/* Map Overlay Controls */}
+            <div className="absolute top-3 left-3 right-3 z-10 flex justify-between pointer-events-none">
+              <div className="bg-surface-container-lowest/95 backdrop-blur border border-card-border shadow-xs rounded-lg px-2.5 py-1.5 flex items-center gap-2 pointer-events-auto">
+                <div className="w-2 h-2 rounded-full bg-primary pulse-dot" />
+                <span className="text-[11px] font-bold text-on-surface uppercase tracking-wider font-mono tabular-nums">
+                  Radar • {nearbyCount} Task
                 </span>
               </div>
+              <Link
+                href="/cari-tugas"
+                className="w-8 h-8 bg-surface-container-lowest/95 backdrop-blur border border-card-border rounded-lg shadow-xs flex items-center justify-center text-on-surface-variant pointer-events-auto hover:text-primary transition-colors"
+                title="Buka Peta Penuh"
+              >
+                <Maximize2 className="w-4 h-4" />
+              </Link>
+            </div>
+
+            {/* Map Component Container */}
+            <div className="absolute inset-0 z-0">
+              <MapPickerWrapper
+                center={{ latitude: coords.latitude, longitude: coords.longitude }}
+                tasks={tasks}
+                radiusKm={2}
+              />
+            </div>
+
+            {/* Bottom status badge */}
+            <div className="absolute bottom-3 left-3 right-3 z-10 text-center pointer-events-none">
+              <span className="inline-block bg-surface-container-lowest/90 backdrop-blur border border-card-border px-3 py-1 rounded-full text-[10px] text-on-surface-variant font-mono font-bold uppercase tracking-wider shadow-xs">
+                Radius 5 KM Kampus Aktif
+              </span>
             </div>
           </section>
         </motion.div>
 
-        {/* ───────────── INTEGRATED TABBED PANEL (Aktivitas vs Rekomendasi) ───────────── */}
+        {/* ───────────── INTEGRATED TABBED WORKFLOW PANEL ───────────── */}
         <motion.section
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="bg-white border border-outline-variant/60 rounded-xl p-5 shadow-2xs flex flex-col gap-4"
+          transition={{ duration: 0.35, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="bg-surface-container-lowest border border-card-border rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col gap-4"
         >
           {/* Tab Header */}
-          <div className="flex items-center justify-between border-b border-outline-variant/40 pb-3" role="tablist">
-            <div className="flex items-center gap-4">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "recommendations"}
-                aria-controls="panel-recommendations"
-                id="tab-recommendations"
-                onClick={() => setActiveTab("recommendations")}
-                className={`text-sm font-bold pb-1 transition-all cursor-pointer relative ${
-                  activeTab === "recommendations" ? "text-primary" : "text-on-surface-variant hover:text-on-surface"
-                }`}
-              >
-                Rekomendasi Tugas ({recommendedTasks.length})
-                {activeTab === "recommendations" && (
-                  <motion.div layoutId="tabUnderline" className="absolute bottom-[-13px] left-0 right-0 h-0.5 bg-primary rounded-full" />
-                )}
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "activity"}
-                aria-controls="panel-activity"
-                id="tab-activity"
-                onClick={() => setActiveTab("activity")}
-                className={`text-sm font-bold pb-1 transition-all cursor-pointer relative ${
-                  activeTab === "activity" ? "text-primary" : "text-on-surface-variant hover:text-on-surface"
-                }`}
-              >
-                Aktivitas Saya ({myActiveTasks.length})
-                {activeTab === "activity" && (
-                  <motion.div layoutId="tabUnderline" className="absolute bottom-[-13px] left-0 right-0 h-0.5 bg-primary rounded-full" />
-                )}
-              </button>
-            </div>
+          <div className="flex items-center justify-between border-b border-card-border pb-1">
+            <Tabs
+              value={activeTab}
+              onValueChange={(val) => setActiveTab(val as "recommendations" | "activity")}
+              variant="underline"
+            >
+              <TabsList className="border-b-0">
+                <TabsTrigger value="recommendations">
+                  Rekomendasi Tugas ({recommendedTasks.length})
+                </TabsTrigger>
+                <TabsTrigger value="activity">
+                  Aktivitas Saya ({myActiveTasks.length})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
 
-            <Link href="/feed" className="text-xs font-bold text-primary hover:underline flex items-center gap-0.5">
-              Lihat Semua <span className="material-symbols-outlined text-[14px]" aria-hidden="true">arrow_forward</span>
+            <Link href="/feed" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+              Lihat Semua <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          {/* Tab Content */}
-          {activeTab === "recommendations" ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1" id="panel-recommendations" role="tabpanel" aria-labelledby="tab-recommendations">
-              {recommendedTasks.slice(0, 3).map((task) => (
-                <Link key={task.id_task} href={`/task/${task.id_task}`}>
-                  <div className="group border border-outline-variant/60 rounded-lg p-3.5 hover:border-primary/50 hover:bg-surface-container-low transition-all cursor-pointer flex flex-col justify-between h-full space-y-3 shadow-2xs">
-                    <div>
-                      <div className="flex justify-between items-start gap-2 mb-1">
-                        <h4 className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-2 leading-snug">
-                          {task.title}
-                        </h4>
-                        <span className="text-xs font-mono font-bold text-primary shrink-0 bg-primary/5 px-2 py-0.5 rounded border border-primary/10">
-                          {formatCurrency(task.compensation)}
+          {/* Tab Content Panels */}
+          <AnimatePresence mode="wait" initial={false}>
+            {activeTab === "recommendations" ? (
+              <motion.div
+                key="recommendations"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1"
+                id="panel-recommendations"
+                role="tabpanel"
+                aria-labelledby="tab-recommendations"
+              >
+                {recommendedTasks.slice(0, 3).map((task) => (
+                  <Link key={task.id_task} href={`/task/${task.id_task}`}>
+                    <div className="group border border-card-border rounded-xl p-4 hover:border-primary/40 hover:bg-surface-container-low transition-colors duration-150 cursor-pointer flex flex-col justify-between h-full space-y-3 shadow-xs min-h-[140px]">
+                      <div>
+                        <div className="flex justify-between items-start gap-2 mb-1.5">
+                          <h4 className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors duration-150 line-clamp-2 leading-snug">
+                            {task.title}
+                          </h4>
+                          <span className="text-xs font-mono font-bold text-primary shrink-0 bg-primary/10 px-2 py-0.5 rounded-lg border border-primary/20 tabular-nums">
+                            {formatCurrency(task.compensation)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed font-body-sm">
+                          {task.description}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs text-on-surface-variant pt-3 border-t border-card-border font-mono">
+                        <span className="flex items-center gap-1.5">
+                          <Store className="w-3.5 h-3.5 text-on-surface-variant" />
+                          {task.requester_name || "UMKM"}
+                        </span>
+                        <span className="flex items-center gap-1 text-primary font-bold tabular-nums">
+                          <Footprints className="w-3.5 h-3.5" />
+                          {task.distance ? `${task.distance.toFixed(1)} km` : "Dekat"}
                         </span>
                       </div>
-                      <p className="text-xs text-on-surface-variant line-clamp-2">
-                        {task.description}
-                      </p>
                     </div>
-
-                    <div className="flex items-center justify-between text-xs text-on-surface-variant pt-3 border-t border-outline-variant/30 font-mono">
-                      <span className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[16px]" aria-hidden="true">storefront</span>
-                        {task.requester_name || "UMKM"}
-                      </span>
-                      <span className="flex items-center gap-1.5 text-primary font-bold">
-                        <span className="material-symbols-outlined text-[16px]" aria-hidden="true">directions_walk</span>
-                        {task.distance ? `${task.distance.toFixed(1)} km` : "~"}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-
-              {recommendedTasks.length === 0 && (
-                <div className="col-span-3 py-10 flex flex-col items-center justify-center text-center gap-2">
-                  <span className="material-symbols-outlined text-[40px] text-outline-variant/40" aria-hidden="true">search_off</span>
-                  <p className="text-sm font-semibold text-on-surface-variant">Belum ada rekomendasi tugas saat ini.</p>
-                  <Link href="/feed">
-                    <Button variant="secondary" size="sm">Buka Feed Tugas</Button>
                   </Link>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3 pt-1" id="panel-activity" role="tabpanel" aria-labelledby="tab-activity">
-              {loadingActivity ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1" aria-live="polite" aria-label="Memuat aktivitas...">
-                  {[0, 1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="border border-outline-variant/40 rounded-lg p-4 flex flex-col gap-3 animate-pulse"
-                      style={{ animationDelay: `${i * 80}ms` }}
-                    >
-                      {/* Title + badge row */}
-                      <div className="flex justify-between items-start gap-2">
-                        <div className="flex-1 space-y-1.5">
-                          <div className="h-3 bg-surface-container-high rounded w-[75%]" />
-                          <div className="h-3 bg-surface-container rounded w-[50%]" />
-                        </div>
-                        <div className="h-5 w-16 bg-surface-container-high rounded-full shrink-0" />
-                      </div>
-                      {/* Meta row */}
-                      <div className="flex items-center justify-between">
-                        <div className="h-2.5 bg-surface-container rounded w-[40%]" />
-                        <div className="h-2.5 bg-primary/10 rounded w-[25%]" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : myActiveTasks.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {myActiveTasks.slice(0, 4).map((app) => {
-                    const statusName = app.application_status || "Pending";
-                    const statusColor = statusName === "accepted" ? "bg-secondary text-on-secondary" : statusName === "rejected" ? "bg-error text-on-error" : "bg-tertiary text-on-tertiary";
-                    return (
-                      <Link key={app.id_task_applicants} href={`/task/${app.id_tasks}`}>
-                        <div className="group border border-outline-variant/60 rounded-lg p-4 hover:border-primary/50 hover:bg-surface-container-low transition-all cursor-pointer flex flex-col gap-3 shadow-2xs">
-                          <div className="flex justify-between items-start gap-2">
-                            <h4 className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-2 leading-snug flex-1">
-                              {app.judul_tugas || "Tugas"}
-                            </h4>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${statusColor}`}>
-                              {statusName}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between text-xs text-on-surface-variant">
-                            <span className="flex items-center gap-1.5 font-medium">
-                              <span className="material-symbols-outlined text-[14px]" aria-hidden="true">person</span>
-                              {app.requester?.nama_lengkap || "Pemberi Kerja"}
-                            </span>
-                            <span className="font-mono font-bold text-primary">
-                              {app.kompensasi ? formatCurrency(app.kompensasi) : "-"}
-                            </span>
-                          </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              ) : (
-                /* Actionable Empty State */
-                <div className="bg-surface-container-low/50 border border-outline-variant/60 border-dashed rounded-lg p-5 flex flex-col items-center justify-center text-center">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-2xs border border-outline-variant mb-2">
-                    <span className="material-symbols-outlined text-primary text-[20px]" aria-hidden="true">pending_actions</span>
-                  </div>
-                  <h4 className="text-sm font-bold text-on-surface">Belum ada tugas aktif</h4>
-                  <p className="text-xs text-on-surface-variant mt-0.5 max-w-sm mb-3">
-                    {role === "worker"
-                      ? "Ambil tugas terdekat di sekitarmu untuk mulai mengumpulkan poin."
-                      : "Post tugas baru untuk menemukan mahasiswa yang siap membantu."}
-                  </p>
-                  {role === "worker" ? (
+                ))}
+
+                {recommendedTasks.length === 0 && (
+                  <div className="col-span-full py-10 flex flex-col items-center justify-center text-center gap-2">
+                    <SearchX className="w-8 h-8 text-on-surface-variant/40" />
+                    <p className="text-xs font-medium text-on-surface-variant">Belum ada rekomendasi tugas saat ini.</p>
                     <Link href="/feed">
-                      <Button variant="primary" size="sm">Cari Tugas Sekarang</Button>
+                      <Button variant="secondary" size="sm">Buka Feed Tugas</Button>
                     </Link>
-                  ) : (
-                    <Link href="/task/new">
-                      <Button variant="primary" size="sm">Post Tugas Pertama</Button>
-                    </Link>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+                  </div>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="activity"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+                className="space-y-3 pt-1"
+                id="panel-activity"
+                role="tabpanel"
+                aria-labelledby="tab-activity"
+              >
+                {myActiveTasks.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {myActiveTasks.slice(0, 4).map((app) => {
+                      const statusName = app.application_status || "Pending";
+                      const statusColor =
+                        statusName === "accepted"
+                          ? "bg-secondary-container text-secondary border-secondary/30"
+                          : statusName === "rejected"
+                          ? "bg-error-container text-error border-error/30"
+                          : "bg-tertiary-container text-tertiary border-tertiary/30";
+
+                      return (
+                        <Link key={app.id_task_applicants} href={`/task/${app.id_tasks}`}>
+                          <div className="group border border-card-border rounded-xl p-4 hover:border-primary/40 hover:bg-surface-container-low transition-colors duration-150 cursor-pointer flex flex-col gap-3 shadow-xs">
+                            <div className="flex justify-between items-start gap-2">
+                              <h4 className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors duration-150 line-clamp-2 leading-snug flex-1">
+                                {app.judul_tugas || "Tugas"}
+                              </h4>
+                              <span className={cn("text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shrink-0 border font-mono", statusColor)}>
+                                {statusName}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs text-on-surface-variant">
+                              <span className="flex items-center gap-1.5 font-medium">
+                                <User className="w-3.5 h-3.5 text-on-surface-variant" />
+                                {app.requester?.nama_lengkap || "Pemberi Kerja"}
+                              </span>
+                              <span className="font-mono font-bold text-primary tabular-nums">
+                                {app.kompensasi ? formatCurrency(app.kompensasi) : "-"}
+                              </span>
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="bg-surface-container-low border border-card-border border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center">
+                    <div className="w-10 h-10 bg-surface-container-lowest rounded-xl flex items-center justify-center shadow-xs border border-card-border mb-2 text-primary">
+                      <Clock className="w-5 h-5" />
+                    </div>
+                    <h4 className="text-sm font-bold text-on-surface">Belum ada tugas aktif</h4>
+                    <p className="text-xs text-on-surface-variant mt-0.5 max-w-sm mb-3">
+                      {role === "worker"
+                        ? "Ambil tugas terdekat di sekitarmu untuk mulai mengumpulkan poin."
+                        : "Post tugas baru untuk menemukan mahasiswa yang siap membantu."}
+                    </p>
+                    {role === "worker" ? (
+                      <Link href="/feed">
+                        <Button variant="primary" size="sm">Cari Tugas Sekarang</Button>
+                      </Link>
+                    ) : (
+                      <Link href="/task/new">
+                        <Button variant="primary" size="sm">Post Tugas Pertama</Button>
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Footer Trust Indicator */}
-          <div className="pt-4 flex items-center justify-center gap-2 text-on-surface-variant/80 text-xs font-mono border-t border-outline-variant/30 mt-2">
-            <span className="material-symbols-outlined text-[16px] text-tertiary" aria-hidden="true">verified_user</span>
+          <div className="pt-4 flex items-center justify-center gap-2 text-on-surface-variant text-xs font-mono border-t border-card-border mt-2">
+            <ShieldCheck className="w-4 h-4 text-tertiary" />
             <span>Semua transaksi dilindungi sistem Escrow CEPAT • SDG 8</span>
           </div>
         </motion.section>

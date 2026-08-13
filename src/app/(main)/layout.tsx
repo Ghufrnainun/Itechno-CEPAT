@@ -5,6 +5,8 @@ import { Sidebar } from "@/components/ui/Sidebar";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { ToastProvider } from "@/components/ui/Toast";
 import { useFCM } from "@/hooks/useFCM";
+import { BellRing } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 type Role = "worker" | "requester";
 
@@ -45,27 +47,29 @@ function FcmBridge() {
   
   if (permission === 'default' && !dismissed) {
     return (
-      <div className="fixed bottom-[80px] lg:bottom-6 left-4 right-4 lg:left-6 lg:right-auto lg:w-96 bg-surface border border-outline shadow-lg rounded-xl p-4 z-30 flex flex-col gap-3 animate-in slide-in-from-bottom-5">
+      <div className="fixed bottom-[80px] lg:bottom-6 left-4 right-4 lg:left-6 lg:right-auto lg:w-96 bg-surface-container-lowest border border-card-border shadow-lg rounded-xl p-4 z-30 flex flex-col gap-3 animate-in slide-in-from-bottom-5 font-sans">
         <div>
-          <h4 className="font-bold text-on-surface flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">notifications_active</span>
+          <h4 className="font-headline font-bold text-sm text-on-surface flex items-center gap-2">
+            <BellRing className="w-4.5 h-4.5 text-primary" />
             Aktifkan Notifikasi
           </h4>
-          <p className="text-sm text-on-surface-variant mt-1">Dapatkan info instan saat lamaranmu diterima atau ada tugas baru di sekitarmu.</p>
+          <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+            Dapatkan info instan saat lamaranmu diterima atau ada tugas baru di sekitarmu.
+          </p>
         </div>
-        <div className="flex justify-end gap-3 mt-1">
+        <div className="flex justify-end gap-2 mt-1">
           <button 
             onClick={handleDismiss}
-            className="text-on-surface-variant px-3 py-2 text-sm font-medium hover:text-on-surface transition-colors"
+            className="text-on-surface-variant px-3 py-1.5 text-xs font-semibold hover:text-on-surface transition-colors cursor-pointer"
           >
             Nanti
           </button>
-          <button 
+          <Button 
+            size="sm"
             onClick={requestPermission}
-            className="bg-primary text-on-primary px-4 py-2 rounded-full font-bold text-sm hover:bg-opacity-90 transition-all shadow-sm"
           >
             Izinkan
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -112,6 +116,11 @@ export default function MainAppLayout({
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data) {
+            const roleName = json.data.role?.nama_role || json.data.role;
+            if (roleName === 'Admin') {
+              window.location.href = '/admin/dashboard';
+              return;
+            }
             setUser(json.data);
           }
         }
@@ -136,10 +145,10 @@ export default function MainAppLayout({
     <RoleContext.Provider value={{ role, setRole, toggleRole, user }}>
       <ToastProvider>
         <FcmBridge />
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-primary focus:text-on-primary font-bold shadow-md m-2 rounded-md">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-3 focus:bg-primary focus:text-on-primary font-bold shadow-md m-2 rounded-lg text-xs">
           Skip to main content
         </a>
-        <div className="flex h-screen w-screen overflow-hidden bg-layout-bg font-sans">
+        <div className="flex h-screen w-screen overflow-hidden bg-surface font-sans">
           {/* Sidebar Left */}
           <Sidebar role={role} onRoleToggle={toggleRole} user={user} />
 

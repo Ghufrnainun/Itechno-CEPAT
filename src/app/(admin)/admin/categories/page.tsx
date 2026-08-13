@@ -5,12 +5,7 @@ import AdminTopbar from '@/components/admin/AdminTopbar';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import AdminModal from '@/components/admin/AdminModal';
 import AdminSelect, { SelectOption } from '@/components/admin/AdminSelect';
-import {
-  MOCK_ADMIN_CATEGORIES,
-  MOCK_ADMIN_SKILLS,
-  AdminCategory,
-  AdminSkill,
-} from '@/lib/admin/mock-data';
+import { Button } from '@/components/ui/Button';
 import {
   Plus,
   Edit2,
@@ -45,18 +40,18 @@ const ICON_MAP: Record<string, any> = {
 
 function renderCategoryIcon(iconName: string | null) {
   const IconComponent = (iconName && ICON_MAP[iconName]) || Folder;
-  return <IconComponent className="w-4 h-4 text-[#0F766E]" />;
+  return <IconComponent className="w-4 h-4 text-primary" />;
 }
 
 export interface APICategory {
-  id: string; // mapped from id_category
+  id: string;
   nama_kategori: string;
   icon: string | null;
   total_tasks: number;
 }
 
 export interface APISkill {
-  id: string; // mapped from id_skill_master
+  id: string;
   nama_skill: string;
   total_users: number;
 }
@@ -75,8 +70,9 @@ export default function CategorySkillsManagementPage() {
     try {
       setLoading(true);
       const res = await fetch('/api/skills', { cache: 'no-store' });
-      const json = await res.json();
-      if (json.success) {
+      if (!res.ok) return;
+      const json = await res.json().catch(() => ({}));
+      if (json.success && Array.isArray(json.data)) {
         setSkills(
           json.data.map((skl: any) => ({
             id: skl.id_skill_master,
@@ -96,8 +92,9 @@ export default function CategorySkillsManagementPage() {
     try {
       setLoading(true);
       const res = await fetch('/api/categories', { cache: 'no-store' });
-      const json = await res.json();
-      if (json.success) {
+      if (!res.ok) return;
+      const json = await res.json().catch(() => ({}));
+      if (json.success && Array.isArray(json.data)) {
         setCategories(
           json.data.map((cat: any) => ({
             id: cat.id_category,
@@ -132,16 +129,16 @@ export default function CategorySkillsManagementPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'category' | 'skill'; id: string; name: string } | null>(null);
 
   const categoryIconOptions: SelectOption[] = [
-    { value: 'Camera', label: 'Camera (Fotografi)', icon: <Camera className="w-3.5 h-3.5 text-[#0F766E]" /> },
-    { value: 'Laptop', label: 'Laptop (Data Entry)', icon: <Laptop className="w-3.5 h-3.5 text-[#0F766E]" /> },
-    { value: 'Palette', label: 'Palette (Desain)', icon: <Palette className="w-3.5 h-3.5 text-[#0F766E]" /> },
-    { value: 'FileText', label: 'FileText (Penulisan)', icon: <FileText className="w-3.5 h-3.5 text-[#0F766E]" /> },
-    { value: 'Box', label: 'Box (Jaga Booth)', icon: <Box className="w-3.5 h-3.5 text-[#0F766E]" /> },
-    { value: 'Truck', label: 'Truck (Kurir)', icon: <Truck className="w-3.5 h-3.5 text-[#0F766E]" /> },
-    { value: 'Wrench', label: 'Wrench (Teknis IT)', icon: <Wrench className="w-3.5 h-3.5 text-[#0F766E]" /> },
-    { value: 'Smartphone', label: 'Smartphone (Social Media)', icon: <Smartphone className="w-3.5 h-3.5 text-[#0F766E]" /> },
-    { value: 'GraduationCap', label: 'GraduationCap (Tutoring)', icon: <GraduationCap className="w-3.5 h-3.5 text-[#0F766E]" /> },
-    { value: 'Folder', label: 'Folder (Umum)', icon: <Folder className="w-3.5 h-3.5 text-[#0F766E]" /> },
+    { value: 'Camera', label: 'Camera (Fotografi)', icon: <Camera className="w-3.5 h-3.5 text-primary" /> },
+    { value: 'Laptop', label: 'Laptop (Data Entry)', icon: <Laptop className="w-3.5 h-3.5 text-primary" /> },
+    { value: 'Palette', label: 'Palette (Desain)', icon: <Palette className="w-3.5 h-3.5 text-primary" /> },
+    { value: 'FileText', label: 'FileText (Penulisan)', icon: <FileText className="w-3.5 h-3.5 text-primary" /> },
+    { value: 'Box', label: 'Box (Jaga Booth)', icon: <Box className="w-3.5 h-3.5 text-primary" /> },
+    { value: 'Truck', label: 'Truck (Kurir)', icon: <Truck className="w-3.5 h-3.5 text-primary" /> },
+    { value: 'Wrench', label: 'Wrench (Teknis IT)', icon: <Wrench className="w-3.5 h-3.5 text-primary" /> },
+    { value: 'Smartphone', label: 'Smartphone (Social Media)', icon: <Smartphone className="w-3.5 h-3.5 text-primary" /> },
+    { value: 'GraduationCap', label: 'GraduationCap (Tutoring)', icon: <GraduationCap className="w-3.5 h-3.5 text-primary" /> },
+    { value: 'Folder', label: 'Folder (Umum)', icon: <Folder className="w-3.5 h-3.5 text-primary" /> },
   ];
 
   // Category Handlers
@@ -169,9 +166,9 @@ export default function CategorySkillsManagementPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nama_kategori: catName, icon: catIcon }),
         });
-        const data = await res.json();
-        if (!data.success) {
-          setErrorMessage(data.message);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          setErrorMessage(data.message || 'Gagal mengubah kategori.');
           return;
         }
       } else {
@@ -180,9 +177,9 @@ export default function CategorySkillsManagementPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nama_kategori: catName, icon: catIcon }),
         });
-        const data = await res.json();
-        if (!data.success) {
-          setErrorMessage(data.message);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          setErrorMessage(data.message || 'Gagal menambah kategori.');
           return;
         }
       }
@@ -217,9 +214,9 @@ export default function CategorySkillsManagementPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nama_skill: skillName }),
         });
-        const data = await res.json();
-        if (!data.success) {
-          setErrorMessage(data.message);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          setErrorMessage(data.message || 'Gagal mengubah skill.');
           return;
         }
       } else {
@@ -228,9 +225,9 @@ export default function CategorySkillsManagementPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nama_skill: skillName }),
         });
-        const data = await res.json();
-        if (!data.success) {
-          setErrorMessage(data.message);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          setErrorMessage(data.message || 'Gagal menambah skill.');
           return;
         }
       }
@@ -251,9 +248,9 @@ export default function CategorySkillsManagementPage() {
         const res = await fetch(`/api/categories/${deleteTarget.id}`, {
           method: 'DELETE',
         });
-        const data = await res.json();
-        if (!data.success) {
-          setErrorMessage(data.message);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          setErrorMessage(data.message || 'Gagal menghapus kategori.');
         } else {
           fetchCategories();
         }
@@ -266,9 +263,9 @@ export default function CategorySkillsManagementPage() {
         const res = await fetch(`/api/skills/${deleteTarget.id}`, {
           method: 'DELETE',
         });
-        const data = await res.json();
-        if (!data.success) {
-          setErrorMessage(data.message);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          setErrorMessage(data.message || 'Gagal menghapus skill.');
         } else {
           fetchSkills();
         }
@@ -285,8 +282,8 @@ export default function CategorySkillsManagementPage() {
     {
       header: 'Category Icon & Name',
       cell: (cat) => (
-        <div className="flex items-center gap-2.5 font-bold text-[#0C1F16] font-sans">
-          <div className="p-1.5 rounded-lg bg-[#E6F4F1] border border-[#0F766E]/20">
+        <div className="flex items-center gap-2.5 font-bold text-on-surface font-headline text-sm">
+          <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20">
             {renderCategoryIcon(cat.icon)}
           </div>
           <span>{cat.nama_kategori}</span>
@@ -296,12 +293,11 @@ export default function CategorySkillsManagementPage() {
     {
       header: 'Total Tasks',
       cell: (cat) => (
-        <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded bg-[#E6F4F1] text-[#0F766E] border border-[#0F766E]/20">
+        <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 tabular-nums">
           {cat.total_tasks} Tasks
         </span>
       ),
     },
-
     {
       header: 'Actions',
       cell: (cat) => (
@@ -311,8 +307,9 @@ export default function CategorySkillsManagementPage() {
               e.stopPropagation();
               handleOpenEditCategory(cat);
             }}
-            className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0C1F16] hover:bg-[#F1F5F9] transition-colors"
+            className="w-8 h-8 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container flex items-center justify-center transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             title="Edit Kategori"
+            aria-label="Edit Kategori"
           >
             <Edit2 className="w-3.5 h-3.5" />
           </button>
@@ -321,8 +318,9 @@ export default function CategorySkillsManagementPage() {
               e.stopPropagation();
               setDeleteTarget({ type: 'category', id: cat.id, name: cat.nama_kategori });
             }}
-            className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
+            className="w-8 h-8 rounded-lg text-error hover:bg-error-container/40 flex items-center justify-center transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error/40"
             title="Hapus Kategori"
+            aria-label="Hapus Kategori"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -336,8 +334,8 @@ export default function CategorySkillsManagementPage() {
     {
       header: 'Skill Name',
       cell: (skl) => (
-        <div className="flex items-center gap-2 font-bold text-[#0C1F16] font-sans">
-          <Sparkles className="w-3.5 h-3.5 text-[#0F766E] shrink-0" />
+        <div className="flex items-center gap-2 font-bold text-on-surface font-headline text-sm">
+          <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
           <span>{skl.nama_skill}</span>
         </div>
       ),
@@ -345,12 +343,11 @@ export default function CategorySkillsManagementPage() {
     {
       header: 'Users Registered',
       cell: (skl) => (
-        <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200">
+        <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-full bg-secondary-container/50 text-secondary border border-secondary/25 tabular-nums">
           {skl.total_users} Users
         </span>
       ),
     },
-
     {
       header: 'Actions',
       cell: (skl) => (
@@ -360,8 +357,9 @@ export default function CategorySkillsManagementPage() {
               e.stopPropagation();
               handleOpenEditSkill(skl);
             }}
-            className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0C1F16] hover:bg-[#F1F5F9] transition-colors"
+            className="w-8 h-8 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container flex items-center justify-center transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             title="Edit Skill"
+            aria-label="Edit Skill"
           >
             <Edit2 className="w-3.5 h-3.5" />
           </button>
@@ -370,8 +368,9 @@ export default function CategorySkillsManagementPage() {
               e.stopPropagation();
               setDeleteTarget({ type: 'skill', id: skl.id, name: skl.nama_skill });
             }}
-            className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
+            className="w-8 h-8 rounded-lg text-error hover:bg-error-container/40 flex items-center justify-center transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error/40"
             title="Hapus Skill"
+            aria-label="Hapus Skill"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -381,20 +380,20 @@ export default function CategorySkillsManagementPage() {
   ];
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 font-sans">
-      <AdminTopbar title="Category & Skills Governance" />
+    <div className="flex-1 flex flex-col min-w-0 font-sans bg-surface">
+      <AdminTopbar title="Category &amp; Skills Governance" />
 
       <main className="flex-1 p-6 space-y-6 max-w-7xl w-full mx-auto">
         {/* Header Tabs & Add Action */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#E2E8F0] shadow-2xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-surface-container-lowest p-4 rounded-xl border border-card-border shadow-xs">
           {/* Tab buttons */}
-          <div className="flex items-center gap-1 p-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg w-full sm:w-auto">
+          <div className="flex items-center gap-1.5 p-1 bg-surface-container-low border border-card-border rounded-lg w-full sm:w-auto">
             <button
               onClick={() => setActiveTab('categories')}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all duration-150 cursor-pointer ${
                 activeTab === 'categories'
-                  ? 'bg-white text-[#0C1F16] shadow-2xs'
-                  : 'text-[#64748B] hover:text-[#0C1F16]'
+                  ? 'bg-surface-container-lowest text-on-surface shadow-xs'
+                  : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
               <Tags className="w-3.5 h-3.5" />
@@ -403,10 +402,10 @@ export default function CategorySkillsManagementPage() {
 
             <button
               onClick={() => setActiveTab('skills')}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all duration-150 cursor-pointer ${
                 activeTab === 'skills'
-                  ? 'bg-white text-[#0C1F16] shadow-2xs'
-                  : 'text-[#64748B] hover:text-[#0C1F16]'
+                  ? 'bg-surface-container-lowest text-on-surface shadow-xs'
+                  : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -415,41 +414,41 @@ export default function CategorySkillsManagementPage() {
           </div>
 
           <div className="flex-1 max-w-sm w-full relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
             <input
               type="text"
               placeholder="Cari kategori atau skill..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs text-[#0C1F16] placeholder-[#94A3B8] outline-none focus:border-[#0F766E] focus:bg-white transition-all"
+              className="w-full pl-9 pr-4 py-2 bg-surface-container-low border border-card-border rounded-lg text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-[background-color,border-color,box-shadow] duration-150"
             />
           </div>
 
           {/* Add Button */}
           {activeTab === 'categories' ? (
-            <button
+            <Button
+              size="sm"
               onClick={handleOpenAddCategory}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#0F766E] hover:bg-[#005C55] text-white text-xs font-bold rounded-lg transition-colors shadow-2xs"
+              icon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" />
               Tambah Kategori Task
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
+              size="sm"
               onClick={handleOpenAddSkill}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#0F766E] hover:bg-[#005C55] text-white text-xs font-bold rounded-lg transition-colors shadow-2xs"
+              icon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" />
               Tambah Master Skill
-            </button>
+            </Button>
           )}
         </div>
 
         {/* Data Tables */}
         {activeTab === 'categories' ? (
           loading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="w-8 h-8 border-4 border-[#0F766E] border-t-transparent rounded-full animate-spin"></div>
+            <div className="flex justify-center items-center py-12 bg-surface-container-lowest border border-card-border rounded-xl shadow-xs">
+              <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
             <DataTable 
@@ -460,8 +459,8 @@ export default function CategorySkillsManagementPage() {
           )
         ) : (
           loading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="w-8 h-8 border-4 border-[#0F766E] border-t-transparent rounded-full animate-spin"></div>
+            <div className="flex justify-center items-center py-12 bg-surface-container-lowest border border-card-border rounded-xl shadow-xs">
+              <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
             <DataTable 
@@ -489,7 +488,7 @@ export default function CategorySkillsManagementPage() {
             />
 
             <div>
-              <label className="block font-bold text-[#0C1F16] mb-1">
+              <label className="block font-bold text-on-surface mb-1.5">
                 Nama Kategori
               </label>
               <input
@@ -497,7 +496,7 @@ export default function CategorySkillsManagementPage() {
                 value={catName}
                 onChange={(e) => setCatName(e.target.value)}
                 placeholder="misal: Fotografi & Videografi"
-                className="w-full px-3 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs text-[#0C1F16] placeholder-[#94A3B8] outline-none focus:border-[#0F766E] focus:bg-white"
+                className="w-full min-h-[44px] px-3.5 py-2.5 bg-surface-container-low border border-card-border rounded-xl text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-all shadow-xs"
               />
             </div>
           </div>
@@ -513,7 +512,7 @@ export default function CategorySkillsManagementPage() {
         >
           <div className="space-y-4 text-xs font-sans">
             <div>
-              <label className="block font-bold text-[#0C1F16] mb-1">
+              <label className="block font-bold text-on-surface mb-1.5">
                 Nama Skill
               </label>
               <input
@@ -521,7 +520,7 @@ export default function CategorySkillsManagementPage() {
                 value={skillName}
                 onChange={(e) => setSkillName(e.target.value)}
                 placeholder="misal: Adobe Photoshop / Illustrator"
-                className="w-full px-3 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs text-[#0C1F16] placeholder-[#94A3B8] outline-none focus:border-[#0F766E] focus:bg-white"
+                className="w-full min-h-[44px] px-3.5 py-2.5 bg-surface-container-low border border-card-border rounded-xl text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-all shadow-xs"
               />
             </div>
           </div>
@@ -536,11 +535,11 @@ export default function CategorySkillsManagementPage() {
           confirmLabel="Ya, Hapus Permanen"
           confirmVariant="danger"
         >
-          <div className="flex items-start gap-3 p-3 bg-rose-50 rounded-lg border border-rose-200 text-xs text-rose-800 font-sans">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+          <div className="flex items-start gap-3 p-3.5 bg-error-container/40 rounded-lg border border-error/25 text-xs text-error font-sans">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <div>
               <p className="font-bold">Apakah kamu yakin ingin menghapus "{deleteTarget?.name}"?</p>
-              <p className="mt-1 text-[11px] opacity-90">
+              <p className="mt-1 text-[11px] opacity-90 leading-relaxed">
                 Tindakan ini tidak dapat dibatalkan. Seluruh data task atau profil user yang menggunakan item ini akan kehilangan referensi tag terkait.
               </p>
             </div>
@@ -554,17 +553,18 @@ export default function CategorySkillsManagementPage() {
           title="Pemberitahuan"
         >
           <div className="flex flex-col items-center justify-center p-4 text-center">
-            <div className="w-14 h-14 rounded-full bg-rose-100 flex items-center justify-center mb-5 ring-4 ring-rose-50">
-              <AlertCircle className="w-7 h-7 text-rose-600" />
+            <div className="w-14 h-14 rounded-full bg-error-container flex items-center justify-center mb-5 ring-4 ring-error/10">
+              <AlertCircle className="w-7 h-7 text-error" />
             </div>
-            <h4 className="font-bold text-[#0C1F16] text-base mb-2">Tindakan Ditolak</h4>
-            <p className="text-sm text-[#64748B] mb-6 leading-relaxed max-w-sm">{errorMessage}</p>
-            <button
+            <h4 className="font-bold text-on-surface text-base mb-2 font-headline">Tindakan Ditolak</h4>
+            <p className="text-sm text-on-surface-variant mb-6 leading-relaxed max-w-sm">{errorMessage}</p>
+            <Button
+              variant="primary"
+              fullWidth
               onClick={() => setErrorMessage(null)}
-              className="w-full py-2.5 bg-[#0C1F16] hover:bg-[#1E293B] text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
             >
               Saya Mengerti
-            </button>
+            </Button>
           </div>
         </AdminModal>
       </main>

@@ -1,13 +1,18 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,106 +31,116 @@ export default function AdminLoginPage() {
       const data = await res.json();
 
       if (!data.success) {
-        setError(data.message || 'Login gagal. Periksa kembali credentials Anda.');
+        setError(data.message || 'Email atau password admin salah.');
         return;
       }
 
-      // Berhasil login — redirect ke dashboard
       router.replace('/admin/dashboard');
     } catch {
-      setError('Terjadi kesalahan jaringan. Coba lagi.');
+      setError('Terjadi kendala jaringan saat menghubungi server.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#F7F6F3] text-[#111111] p-4 relative">
-      {/* Login Container */}
-      <div className="relative w-full max-w-sm bg-white border border-[#EAEAEA] rounded-xl p-8 shadow-sm space-y-6">
-        {/* Brand & Security Header */}
+    <div className="min-h-screen w-full flex items-center justify-center bg-surface text-on-surface p-4 sm:p-6 font-sans">
+      <div className="w-full max-w-sm bg-surface-container-lowest border border-card-border rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+        {/* Brand & Title */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-10 h-10 rounded-md bg-[#E6F4F1] text-[#0F766E] border border-[#BDE3DC]/60 mb-1">
-            <ShieldCheck className="w-5 h-5" />
+          <Link href="/" className="inline-flex items-center justify-center">
+            <Image
+              src="/logo.svg"
+              alt="CEPAT Logo"
+              width={40}
+              height={40}
+              className="rounded-xl object-contain"
+              priority
+            />
+          </Link>
+          <div>
+            <h1 className="text-xl font-extrabold tracking-tight text-on-surface font-headline">
+              Login Admin
+            </h1>
+            <p className="text-xs text-on-surface-variant mt-1">
+              Masuk untuk mengelola platform CEPAT
+            </p>
           </div>
-          <h1 className="text-xl font-extrabold tracking-tight text-[#111111] font-sans">
-            CEPAT Admin
-          </h1>
-          <p className="text-xs text-[#787774]">
-            Internal Platform Governance Portal
-          </p>
         </div>
 
-        {/* Error Banner */}
+        {/* Error Alert */}
         {error && (
-          <div className="flex items-start gap-2.5 p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
-            <span>{error}</span>
+          <div
+            role="alert"
+            className="flex items-start gap-2.5 p-3 bg-error-container/30 border border-error/25 rounded-xl text-xs text-error animate-fadeIn"
+          >
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span className="leading-relaxed">{error}</span>
           </div>
         )}
 
-        {/* Credentials Form */}
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-[#787774] mb-1">
-              Admin Email Address
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#787774]" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={loading}
-                className="w-full pl-9 pr-3 py-2 bg-[#F7F6F3] border border-[#EAEAEA] rounded-md text-xs text-[#111111] placeholder-[#787774] focus:border-[#111111] focus:bg-white outline-none transition-all disabled:opacity-60"
-                placeholder="admin@domain.id"
-              />
-            </div>
-          </div>
+          <Input
+            label="Email"
+            type="email"
+            placeholder="admin@itechno.id"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            leftIcon={<Mail className="w-4 h-4" />}
+            disabled={loading}
+            autoComplete="email"
+            required
+          />
 
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-[#787774] mb-1">
-              Security Password
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#787774]" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-                className="w-full pl-9 pr-3 py-2 bg-[#F7F6F3] border border-[#EAEAEA] rounded-md text-xs text-[#111111] placeholder-[#787774] focus:border-[#111111] focus:bg-white outline-none transition-all disabled:opacity-60"
-                placeholder="••••••••••••"
-              />
-            </div>
-          </div>
+          <Input
+            label="Password"
+            type={showPassword ? 'text' : 'password'}
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            leftIcon={<Lock className="w-4 h-4" />}
+            rightIcon={
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
+                tabIndex={-1}
+                aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            }
+            disabled={loading}
+            autoComplete="current-password"
+            required
+          />
 
-          <button
+          <Button
             type="submit"
+            variant="primary"
+            fullWidth
+            size="lg"
             disabled={loading || !email || !password}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#111111] hover:bg-[#333333] text-white text-xs font-bold rounded-md transition-colors disabled:opacity-50 mt-2"
+            className="mt-2 text-sm font-bold"
           >
-            {loading ? (
-              <>
-                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Authenticating...</span>
-              </>
-            ) : (
-              <>
-                <span>Sign In to Admin Console</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </>
-            )}
-          </button>
+            {loading ? 'Memproses...' : 'Masuk'}
+          </Button>
         </form>
 
-        {/* Footnote */}
-        <div className="pt-4 border-t border-[#EAEAEA] text-center">
-          <p className="text-[10px] text-[#787774]">
-            Protected area. Unauthorized access attempts are monitored and logged.
-          </p>
+        {/* Back Link */}
+        <div className="pt-2 border-t border-card-border text-center">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-primary font-semibold transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Kembali ke Beranda
+          </Link>
         </div>
       </div>
     </div>

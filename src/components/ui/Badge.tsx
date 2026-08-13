@@ -1,43 +1,48 @@
 import React from "react";
 import { TaskStatus } from "@/types/database";
+import { cn } from "@/lib/utils";
 
-interface BadgeProps {
+export interface BadgeProps {
   status: TaskStatus | string;
+  className?: string;
 }
 
-export function Badge({ status }: BadgeProps) {
-  let style = "inline-flex items-center gap-xs px-sm py-[2px] rounded-full font-label-sm text-label-sm font-semibold uppercase tracking-wider ";
+export function Badge({ status, className }: BadgeProps) {
+  let variantStyle = "bg-surface-container text-primary border border-outline-variant";
   let label: string = status;
 
   switch (status.toLowerCase()) {
     case "open":
-      style += "bg-surface-container text-primary border border-outline-variant";
+      variantStyle = "bg-primary/10 text-primary border border-primary/20";
       label = "Terbuka";
       break;
     case "accepted":
-      style += "bg-amber-500/10 text-amber-600 border border-amber-500/20";
+      variantStyle = "bg-tertiary-container text-tertiary border border-tertiary/25";
       label = "Diterima";
       break;
     case "in_progress":
-      style += "bg-primary-container/10 text-primary-container border border-primary-container/20";
+      variantStyle = "bg-primary-container/15 text-primary-container border border-primary-container/30";
       label = "Dikerjakan";
       break;
     case "completed":
-      style += "bg-secondary-container/20 text-secondary border border-secondary/20";
+      variantStyle = "bg-secondary-container text-secondary border border-secondary/25";
       label = "Selesai";
       break;
     case "rejected":
-      style += "bg-error/10 text-error border border-error/20";
-      label = "Ditolak";
-      break;
     case "cancelled":
-      style += "bg-error/10 text-error border border-error/20";
-      label = "Dibatalkan";
+      variantStyle = "bg-error-container text-error border border-error/25";
+      label = status.toLowerCase() === "rejected" ? "Ditolak" : "Dibatalkan";
       break;
   }
 
   return (
-    <span className={style}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-label-sm text-[11px] font-semibold tracking-wider uppercase",
+        variantStyle,
+        className
+      )}
+    >
       {label}
     </span>
   );

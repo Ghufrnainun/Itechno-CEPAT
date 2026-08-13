@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
+import { Star } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface RatingStarsProps {
-  rating: number; // 0 sampai 5
+  rating: number; // 0 to 5
   maxStars?: number;
   size?: "sm" | "md" | "lg";
   interactive?: boolean;
@@ -22,13 +24,12 @@ export function RatingStars({
   showScore = false,
 }: RatingStarsProps) {
   const [hoverRating, setHoverRating] = useState<number | null>(null);
-
   const displayRating = hoverRating !== null ? hoverRating : rating;
 
   const sizeClasses = {
-    sm: "text-[16px]",
-    md: "text-[20px]",
-    lg: "text-[28px]",
+    sm: "w-3.5 h-3.5",
+    md: "w-4.5 h-4.5",
+    lg: "w-6 h-6",
   };
 
   const handleStarClick = (index: number) => {
@@ -38,11 +39,10 @@ export function RatingStars({
   };
 
   return (
-    <div className={`inline-flex items-center gap-1 ${className}`}>
+    <div className={cn("inline-flex items-center gap-1", className)}>
       {Array.from({ length: maxStars }, (_, i) => {
         const starNumber = i + 1;
-        const isFilled = starNumber <= displayRating;
-        const isHalf = !isFilled && starNumber - 0.5 <= displayRating;
+        const isFilled = starNumber <= Math.round(displayRating);
 
         return (
           <button
@@ -52,28 +52,27 @@ export function RatingStars({
             onClick={() => handleStarClick(starNumber)}
             onMouseEnter={() => interactive && setHoverRating(starNumber)}
             onMouseLeave={() => interactive && setHoverRating(null)}
-            className={`transition-transform duration-150 ${
-              interactive ? "cursor-pointer hover:scale-115 active:scale-95" : "cursor-default"
-            }`}
+            className={cn(
+              "transition-transform duration-150 p-0.5",
+              interactive
+                ? "cursor-pointer hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
+                : "cursor-default"
+            )}
           >
-            <span
-              className={`material-symbols-outlined select-none ${sizeClasses[size]} ${
-                isFilled || isHalf
-                  ? "text-amber-400 font-filled"
-                  : "text-neutral-300"
-              }`}
-              style={{
-                fontVariationSettings: isFilled ? "'FILL' 1" : "'FILL' 0",
-              }}
-            >
-              {isFilled ? "star" : isHalf ? "star_half" : "star"}
-            </span>
+            <Star
+              className={cn(
+                sizeClasses[size],
+                isFilled
+                  ? "fill-amber-400 text-amber-400"
+                  : "fill-transparent text-outline-variant/60"
+              )}
+            />
           </button>
         );
       })}
 
       {showScore && (
-        <span className="ml-1 font-mono font-bold text-on-surface text-sm">
+        <span className="ml-1 font-mono font-bold text-on-surface text-sm tabular-nums">
           {rating.toFixed(1)}
         </span>
       )}
