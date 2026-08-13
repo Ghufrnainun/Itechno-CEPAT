@@ -1033,7 +1033,119 @@ Semua error mengikuti format standar:
 
 ---
 
-## 12. Catatan untuk AI Agent
+## 12. User Reports & Admin Global Search APIs
+
+### POST `/api/reports`
+
+🔒 **Authenticated User** — Mengirimkan laporan masalah/aduan dari pengguna ke Admin.
+
+**Request Body:**
+```json
+{
+  "kategori": "Kendala Teknis / Bug",
+  "subjek": "Gagal tarik saldo poin",
+  "deskripsi": "Saat klik tarik saldo muncul pesan error 500 pada jam 14:00"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Laporan Anda berhasil dikirim ke Admin.",
+  "data": {
+    "id_report": "uuid",
+    "kategori": "Kendala Teknis / Bug",
+    "subjek": "Gagal tarik saldo poin",
+    "status": "pending",
+    "created_at": "2026-08-13T20:00:00.000Z"
+  }
+}
+```
+
+---
+
+### GET `/api/admin/search`
+
+🔒 **Admin Auth** — Pencarian global real-time (debounced) di seluruh database admin: Menu, Pengguna, Task, dan Kategori.
+
+**Query Parameters:**
+- `q`: Kata kunci pencarian (min 1 karakter)
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "menus": [
+      { "title": "User Management", "url": "/admin/users", "description": "...", "icon": "Users" }
+    ],
+    "users": [
+      { "id": "uuid", "nama_lengkap": "Budi Santoso", "email": "budi@gmail.com", "role": "Worker" }
+    ],
+    "tasks": [
+      { "id": "uuid", "judul_tugas": "Desain Banner", "kompensasi": 50000, "status": "open" }
+    ],
+    "categories": [
+      { "id": "uuid", "nama_kategori": "Desain Grafis", "total_tasks": 12 }
+    ]
+  }
+}
+```
+
+---
+
+### GET `/api/admin/reports`
+
+🔒 **Admin Auth** — Mengambil daftar laporan pengguna terdaftar dengan pagination, filter status, dan statistik.
+
+**Query Parameters:**
+- `search` (optional): Filter kata kunci subjek, deskripsi, atau nama pelapor
+- `status` (optional): Filter status (`All`, `pending`, `reviewed`, `resolved`, `rejected`)
+- `id` (optional): Ambil laporan spesifik berdasarkan ID
+- `page` (default: 1)
+- `limit` (default: 10)
+
+---
+
+### PATCH `/api/admin/reports/[reportId]`
+
+🔒 **Admin Auth** — Memperbarui status laporan user (`reviewed`, `resolved`, `rejected`) dan mengirimkan notifikasi update ke user.
+
+**Request Body:**
+```json
+{
+  "status": "resolved"
+}
+```
+
+---
+
+### GET `/api/admin/notifications`
+
+🔒 **Admin Auth** — Mengambil daftar notifikasi khusus admin (`user_report`, `report`, `dispute`, `admin_alert`) dan jumlah belum dibaca.
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "type": "user_report",
+      "title": "Laporan Baru dari Budi Santoso",
+      "message": "[Kendala Teknis / Bug] Gagal tarik saldo poin",
+      "is_read": false,
+      "created_at": "2026-08-13T20:00:00.000Z"
+    }
+  ],
+  "unreadCount": 1
+}
+```
+
+---
+
+## 13. Catatan untuk AI Agent
 
 - Semua API route ada di `src/app/api/` menggunakan Next.js App Router conventions (`route.ts` file).
 - Auth check: gunakan `createServerClient` dari `@supabase/ssr` lalu `supabase.auth.getUser()`.

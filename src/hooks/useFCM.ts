@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { requestFcmToken, onFcmForegroundMessage } from "@/lib/firebase/client";
 import { useToast } from "@/components/ui/Toast";
 
@@ -37,7 +37,7 @@ export function useFCM() {
     }
   }, []);
 
-  const requestPermission = async () => {
+  const requestPermission = useCallback(async () => {
     const token = await requestFcmToken();
     if (token) {
       setFcmToken(token);
@@ -56,14 +56,16 @@ export function useFCM() {
     } else {
       setPermission(Notification.permission);
     }
-  };
+  }, []);
 
   // Listen to foreground FCM messages
   useEffect(() => {
     const unsubscribe = onFcmForegroundMessage((payload: any) => {
       const title = payload?.notification?.title || payload?.data?.title || "Notifikasi Baru";
       const body = payload?.notification?.body || payload?.data?.body || "";
-      showToast(`${title}: ${body}`);
+      if (showToast) {
+        showToast(`${title}: ${body}`);
+      }
     });
 
     return () => {
