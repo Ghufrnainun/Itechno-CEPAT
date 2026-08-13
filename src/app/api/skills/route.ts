@@ -30,7 +30,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { nama_skill } = body
+    const { nama_skill, icon } = body
 
     if (!nama_skill) {
       return NextResponse.json(
@@ -53,8 +53,9 @@ export async function POST(request: NextRequest) {
 
     const newSkill = await prisma.skillsMaster.create({
       data: {
-        nama_skill
-      }
+        nama_skill,
+        icon
+      } as any
     })
 
     return NextResponse.json({

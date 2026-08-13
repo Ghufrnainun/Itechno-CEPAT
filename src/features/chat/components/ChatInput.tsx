@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import Image from 'next/image';
 import EmojiPicker from 'emoji-picker-react';
 
 interface ChatInputProps {
@@ -128,7 +129,7 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
       {/* Image Preview Container */}
       {previewUrl && (
         <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-outline-variant ml-14 shadow-sm">
-          <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+          <Image src={previewUrl} alt="Preview" fill className="object-cover" unoptimized />
           <button
             onClick={clearSelectedFile}
             disabled={isUploading}

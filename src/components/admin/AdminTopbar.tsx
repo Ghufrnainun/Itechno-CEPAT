@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   Search,
@@ -731,9 +732,11 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
         {/* Admin User Info */}
         <div className="flex items-center gap-2.5">
           {adminUser?.avatar_url ? (
-            <img
+            <Image
               src={adminUser.avatar_url}
               alt="Admin Profile"
+              width={32}
+              height={32}
               className="w-8 h-8 rounded-full object-cover ring-2 ring-[#0F766E]/20"
             />
           ) : (

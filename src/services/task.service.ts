@@ -246,7 +246,7 @@ export const taskService = {
           select: { id_user: true, nama_lengkap: true, avatar_url: true },
         },
         requirements: {
-          include: { skills_master: { select: { nama_skill: true } } },
+          include: { skills_master: { select: { id_skill_master: true, nama_skill: true, icon: true } } },
         },
         _count: { select: { applicants: true } },
       },
@@ -291,7 +291,7 @@ export const taskService = {
           },
         },
         requirements: {
-          include: { skills_master: { select: { nama_skill: true } } },
+          include: { skills_master: { select: { id_skill_master: true, nama_skill: true, icon: true } } },
         },
         applicants: {
           include: {
@@ -413,7 +413,11 @@ export const taskService = {
       longitude: geo.longitude,
       id_requester: task.id_requester,
       requester: task.requester,
-      requirements: task.requirements.map((r) => r.skills_master.nama_skill),
+      requirements: task.requirements.map((r) => ({
+        id_skill: r.skills_master.id_skill_master,
+        nama_skill: r.skills_master.nama_skill,
+        icon: r.skills_master.icon,
+      })),
       applicants: task.applicants.map((a) => ({
         id_task_applicants: a.id_task_applicants,
         id_worker: a.id_worker,

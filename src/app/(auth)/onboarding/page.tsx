@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/Input";
-import { Sparkles } from "lucide-react";
+import { renderIcon } from "@/lib/icon-map";
 
 const BIO_TEMPLATES = [
   "Siap bantu tugas harian, admin, dan data entry.",
@@ -108,9 +108,9 @@ function StepProfile({
 }: {
   bio: string;
   setBio: (v: string) => void;
-  availableSkills: { id_skill_master: string; nama_skill: string }[];
-  selectedSkills: { id_skill_master: string; nama_skill: string; deskripsi_pengalaman: string; certificate_url: string }[];
-  toggleSkill: (skill: { id_skill_master: string; nama_skill: string }) => void;
+  availableSkills: { id_skill_master: string; nama_skill: string; icon: string | null }[];
+  selectedSkills: { id_skill_master: string; nama_skill: string; icon: string | null; deskripsi_pengalaman: string; certificate_url: string }[];
+  toggleSkill: (skill: { id_skill_master: string; nama_skill: string; icon: string | null }) => void;
   updateSkillDetail: (skillId: string, field: 'deskripsi_pengalaman' | 'certificate_url', val: string) => void;
   onBack: () => void;
   onSubmit: () => void;
@@ -194,7 +194,7 @@ function StepProfile({
                       : "border-outline-variant/60 bg-white hover:bg-surface-container-low text-on-surface-variant hover:border-primary/30"
                   }`}
                 >
-                  <Sparkles className="w-6 h-6 mb-1 text-primary/80" strokeWidth={1.5} />
+                  {renderIcon(skill.icon, "w-6 h-6 mb-1 text-primary/80")}
                   <span className="text-[12px] font-bold leading-tight capitalize tracking-wide font-sans text-on-surface-variant">
                     {skill.nama_skill}
                   </span>
@@ -215,7 +215,7 @@ function StepProfile({
                 return (
                   <div key={skill.id_skill_master} className="p-3 border border-outline-variant rounded-xl bg-surface-container-lowest flex flex-col gap-2">
                     <p className="text-sm font-bold text-primary flex items-center gap-2 capitalize font-sans tracking-wide">
-                      <Sparkles className="w-4 h-4 text-primary" strokeWidth={2} />
+                      {renderIcon(skill.icon, "w-4 h-4 text-primary")}
                       {skill.nama_skill}
                     </p>
                     <textarea
@@ -280,8 +280,8 @@ function OnboardingContent() {
   const [bio, setBio] = useState("");
   const [univ, setUniv] = useState("");
   const [phone, setPhone] = useState("");
-  const [availableSkills, setAvailableSkills] = useState<{ id_skill_master: string; nama_skill: string }[]>([]);
-  const [selectedSkills, setSelectedSkills] = useState<{ id_skill_master: string; nama_skill: string; deskripsi_pengalaman: string; certificate_url: string }[]>([]);
+  const [availableSkills, setAvailableSkills] = useState<{ id_skill_master: string; nama_skill: string; icon: string | null }[]>([]);
+  const [selectedSkills, setSelectedSkills] = useState<{ id_skill_master: string; nama_skill: string; icon: string | null; deskripsi_pengalaman: string; certificate_url: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -300,15 +300,18 @@ function OnboardingContent() {
     fetchSkills();
   }, []);
 
-  const toggleSkill = (skill: { id_skill_master: string; nama_skill: string }) => {
-    const exists = selectedSkills.find(s => s.id_skill_master === skill.id_skill_master);
-    if (exists) {
-      if (selectedSkills.length > 1) {
-        setSelectedSkills(selectedSkills.filter((s) => s.id_skill_master !== skill.id_skill_master));
+  const toggleSkill = (skill: { id_skill_master: string; nama_skill: string; icon: string | null }) => {
+    setSelectedSkills(prev => {
+      const exists = prev.find(s => s.id_skill_master === skill.id_skill_master);
+      if (exists) {
+        if (prev.length > 1) {
+          return prev.filter(s => s.id_skill_master !== skill.id_skill_master);
+        }
+        return prev;
+      } else {
+        return [...prev, { ...skill, deskripsi_pengalaman: "", certificate_url: "" }];
       }
-    } else {
-      setSelectedSkills([...selectedSkills, { id_skill_master: skill.id_skill_master, nama_skill: skill.nama_skill, deskripsi_pengalaman: "", certificate_url: "" }]);
-    }
+    });
   };
 
   const updateSkillDetail = (skillId: string, field: 'deskripsi_pengalaman' | 'certificate_url', val: string) => {

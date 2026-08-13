@@ -95,6 +95,7 @@ export async function POST(
 
     // 2. Pastikan Supabase Auth tidak memblokir OAuth exchange sebelum app callback membaca detail ban
     if (user.auth_id) {
+      const supabaseAdmin = createAdminClient()
       try {
         const supabaseAdmin = createAdminClient()
         await supabaseAdmin.auth.admin.updateUserById(user.auth_id, {

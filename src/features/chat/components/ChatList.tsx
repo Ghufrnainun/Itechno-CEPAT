@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Image from 'next/image';
 
 interface ChatRoomData {
   id_chat_room: string;
@@ -20,6 +21,7 @@ interface ChatRoomData {
     id_message: string;
     teks_pesan: string | null;
     image_url: string | null;
+    is_deleted_for_everyone: boolean;
     created_at: string;
   }[];
   unreadCount?: number;
@@ -211,7 +213,8 @@ export function ChatList({ rooms, selectedRoomId, currentUserId, onSelectRoom, i
 
             
             if (lastMessage) {
-              if (lastMessage.image_url) displayMessage = "📷 Mengirim gambar";
+              if (lastMessage.is_deleted_for_everyone) displayMessage = "🚫 Pesan ini telah dihapus";
+              else if (lastMessage.image_url) displayMessage = "📷 Mengirim gambar";
               else if (lastMessage.teks_pesan) displayMessage = lastMessage.teks_pesan;
               
               const d = new Date(lastMessage.created_at);
@@ -252,7 +255,7 @@ export function ChatList({ rooms, selectedRoomId, currentUserId, onSelectRoom, i
                 <div className="relative shrink-0 mr-md">
                   {otherUser.avatar_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={otherUser.avatar_url} alt="Profile" className="w-12 h-12 rounded-full object-cover border border-outline-variant/30" referrerPolicy="no-referrer" />
+                    <Image src={otherUser.avatar_url} alt="Profile" width={48} height={48} className="w-12 h-12 rounded-full object-cover border border-outline-variant/30" referrerPolicy="no-referrer" />
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center border border-outline-variant/30">
                       <span className="material-symbols-outlined text-on-surface-variant">person</span>

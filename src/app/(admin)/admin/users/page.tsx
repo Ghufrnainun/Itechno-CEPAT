@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import AdminDrawer from '@/components/admin/AdminDrawer';
@@ -269,9 +270,11 @@ export default function UserManagementPage() {
       cell: (user) => (
         <div className="flex items-center gap-3">
           {user.avatar_url ? (
-            <img
+            <Image
               src={user.avatar_url}
               alt={user.nama_lengkap}
+              width={32}
+              height={32}
               className="w-8 h-8 rounded-full object-cover border border-[#E2E8F0]"
             />
           ) : (
@@ -444,9 +447,11 @@ export default function UserManagementPage() {
               {/* Header Card */}
               <div className="flex items-center gap-4 p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
                 {selectedUser.avatar_url ? (
-                  <img
+                  <Image
                     src={selectedUser.avatar_url}
                     alt={selectedUser.nama_lengkap}
+                    width={48}
+                    height={48}
                     className="w-12 h-12 rounded-full object-cover border border-[#E2E8F0]"
                   />
                 ) : (

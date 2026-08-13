@@ -46,7 +46,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const messages = await prisma.message.findMany({
       where: { 
         id_chat_room: roomId,
-        ...(clearedAt ? { created_at: { gt: clearedAt } } : {})
+        ...(clearedAt ? { created_at: { gt: clearedAt } } : {}),
+        NOT: {
+          deleted_by: {
+            has: currentUser.id_user
+          }
+        }
       },
       orderBy: { created_at: 'asc' },
       include: {
@@ -198,24 +203,49 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     const body = await request.json()
-    const { messageIds } = body
+    const { messageIds, type } = body
 
     if (!messageIds || !Array.isArray(messageIds) || messageIds.length === 0) {
       return NextResponse.json({ success: false, message: 'messageIds tidak valid.' }, { status: 400 })
     }
 
-    const result = await prisma.message.deleteMany({
-      where: {
-        id_chat_room: roomId,
-        id_message: { in: messageIds },
-        // To be safe, only allow deleting own messages, or just allow any message in the room
-        // if we assume "Delete chat" can delete any message. Let's restrict to own messages.
-        // Wait, if I am the requester and I delete the chat, I might want to delete their message too.
-        // Let's just allow deleting any message in the room that belongs to this room.
-      }
-    })
+    if (type === 'for_everyone') {
+      const result = await prisma.message.updateMany({
+        where: {
+          id_chat_room: roomId,
+          id_message: { in: messageIds },
+          id_sender: currentUser.id_user // ONLY allow deleting own messages
+        },
+        data: {
+          is_deleted_for_everyone: true,
+          teks_pesan: null,
+          image_url: null
+        }
+      })
+      return NextResponse.json({ success: true, deleted_count: result.count })
+    } else {
+      // Default to "for_me"
+      const messages = await prisma.message.findMany({
+        where: {
+          id_chat_room: roomId,
+          id_message: { in: messageIds },
+        },
+        select: { id_message: true, deleted_by: true }
+      })
 
-    return NextResponse.json({ success: true, deleted_count: result.count })
+      const updatePromises = messages.map(msg => {
+        if (!msg.deleted_by.includes(currentUser.id_user)) {
+          return prisma.message.update({
+            where: { id_message: msg.id_message },
+            data: { deleted_by: { push: currentUser.id_user } } // Prisma supports push on PostgreSQL arrays in update!
+          });
+        }
+      })
+      
+      await Promise.all(updatePromises)
+      
+      return NextResponse.json({ success: true, deleted_count: messages.length })
+    }
   } catch (error: any) {
     console.error(`[DELETE /api/chat/[roomId]] Error:`, error)
     return NextResponse.json(

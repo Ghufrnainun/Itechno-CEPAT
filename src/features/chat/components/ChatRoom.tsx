@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { ChatInput } from './ChatInput';
 
@@ -9,6 +10,7 @@ interface Message {
   teks_pesan: string | null;
   image_url: string | null;
   is_read: boolean;
+  is_deleted_for_everyone: boolean;
   created_at: string;
   sender: {
     id_user: string;
@@ -27,9 +29,10 @@ interface ChatRoomProps {
     otherUserId: string;
     otherUserAvatarUrl?: string | null;
   };
+  onMessageAdded?: () => void;
 }
 
-export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomProps) {
+export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdded }: ChatRoomProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
@@ -45,6 +48,16 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomPr
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedMessages, setSelectedMessages] = useState<string[]>([]);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  
+  // Custom Dialog state
+  const [dialog, setDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'alert' | 'confirm' | 'delete_options';
+    onConfirm?: () => void;
+    onConfirmForEveryone?: () => void;
+  }>({ isOpen: false, title: '', message: '', type: 'alert' });
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
@@ -135,7 +148,12 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomPr
               teks_pesan: newMessageRaw.teks_pesan,
               image_url: newMessageRaw.image_url,
               is_read: newMessageRaw.is_read || false,
-              created_at: newMessageRaw.created_at,
+              is_deleted_for_everyone: newMessageRaw.is_deleted_for_everyone || false,
+              // Supabase Realtime often sends timestamp without timezone (missing Z or +) 
+              // which causes browsers to parse it as local time instead of UTC.
+              created_at: (!newMessageRaw.created_at.includes('Z') && !newMessageRaw.created_at.includes('+'))
+                ? newMessageRaw.created_at.replace(' ', 'T') + 'Z'
+                : newMessageRaw.created_at,
               sender: {
                 id_user: newMessageRaw.id_sender,
                 nama_lengkap: newMessageRaw.id_sender === currentUserId ? "Anda" : roomInfo.otherUserName,
@@ -151,6 +169,8 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomPr
           if (newMessageRaw.id_sender !== currentUserId) {
             fetch(`/api/chat/${roomId}`, { method: 'PUT' }).catch(console.error);
           }
+          
+          if (onMessageAdded) onMessageAdded();
         }
       )
       .on(
@@ -164,9 +184,28 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomPr
           console.warn("[Realtime] Received UPDATE payload:", payload);
           const updatedMessage = payload.new as any;
           if (updatedMessage.id_chat_room !== roomId) return; // Manual filter
-          setMessages(prev => prev.map(m => 
-            m.id_message === updatedMessage.id_message ? { ...m, is_read: updatedMessage.is_read } : m
-          ));
+          
+          setMessages(prev => {
+            // Check if deleted for me
+            if (updatedMessage.deleted_by && Array.isArray(updatedMessage.deleted_by) && updatedMessage.deleted_by.includes(currentUserId)) {
+               return prev.filter(m => m.id_message !== updatedMessage.id_message);
+            }
+            
+            // Otherwise update properties including tombstone
+            return prev.map(m => 
+              m.id_message === updatedMessage.id_message 
+                ? { 
+                    ...m, 
+                    is_read: updatedMessage.is_read,
+                    is_deleted_for_everyone: updatedMessage.is_deleted_for_everyone,
+                    teks_pesan: updatedMessage.teks_pesan,
+                    image_url: updatedMessage.image_url
+                  } 
+                : m
+            );
+          });
+          
+          if (onMessageAdded) onMessageAdded();
         }
       )
       .subscribe((status, err) => {
@@ -197,6 +236,8 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomPr
           return [...prev, data.data];
         });
         setTimeout(scrollToBottom, 100);
+        
+        if (onMessageAdded) onMessageAdded();
       }
     } catch (e) {
       console.error(e);
@@ -206,51 +247,98 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomPr
 
   const handleDeleteSelected = async () => {
     if (selectedMessages.length === 0) return;
-    if (!confirm("Hapus pesan yang dipilih? Pesan ini akan dihapus permanen.")) return;
     
-    setIsActionLoading(true);
-    try {
-      const res = await fetch(`/api/chat/${roomId}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messageIds: selectedMessages })
-      });
-      if (res.ok) {
-        setMessages(prev => prev.filter(m => !selectedMessages.includes(m.id_message)));
-        setIsSelectionMode(false);
-        setSelectedMessages([]);
-      } else {
-        alert("Gagal menghapus pesan.");
+    const selectedMsgsObjs = messages.filter(m => selectedMessages.includes(m.id_message));
+    const allOwnedByMe = selectedMsgsObjs.every(m => m.id_sender === currentUserId);
+
+    const deleteFn = async (type: 'for_me' | 'for_everyone') => {
+      setIsActionLoading(true);
+      try {
+        const res = await fetch(`/api/chat/${roomId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messageIds: selectedMessages, type })
+        });
+        if (res.ok) {
+          if (type === 'for_me') {
+            setMessages(prev => prev.filter(m => !selectedMessages.includes(m.id_message)));
+          } else {
+            setMessages(prev => prev.map(m => {
+              if (selectedMessages.includes(m.id_message)) {
+                return {
+                  ...m,
+                  is_deleted_for_everyone: true,
+                  teks_pesan: null,
+                  image_url: null
+                };
+              }
+              return m;
+            }));
+          }
+          if (onMessageAdded) onMessageAdded();
+          setIsSelectionMode(false);
+          setSelectedMessages([]);
+          setDialog(prev => ({ ...prev, isOpen: false }));
+        } else {
+          setDialog({ isOpen: true, title: "Gagal Menghapus", message: "Terjadi kesalahan saat menghapus pesan. Silakan coba lagi.", type: 'alert' });
+        }
+      } catch (e) {
+        console.error(e);
+        setDialog({ isOpen: true, title: "Kesalahan Koneksi", message: "Tidak dapat terhubung ke server. Silakan periksa koneksi Anda.", type: 'alert' });
+      } finally {
+        setIsActionLoading(false);
       }
-    } catch (e) {
-      console.error(e);
-      alert("Terjadi kesalahan koneksi.");
-    } finally {
-      setIsActionLoading(false);
+    };
+    
+    if (allOwnedByMe) {
+      setDialog({
+        isOpen: true,
+        title: "Konfirmasi Penghapusan Pesan",
+        message: "Hapus pesan ini untuk Anda sendiri atau untuk semua orang?",
+        type: 'delete_options',
+        onConfirm: () => deleteFn('for_me'),
+        onConfirmForEveryone: () => deleteFn('for_everyone')
+      });
+    } else {
+      setDialog({
+        isOpen: true,
+        title: "Konfirmasi Penghapusan Pesan",
+        message: "Pesan ini hanya akan dihapus untuk Anda. Lawan bicara masih dapat melihat pesan yang mereka kirim.",
+        type: 'confirm',
+        onConfirm: () => deleteFn('for_me'),
+      });
     }
   };
 
   const handleClearChat = async () => {
-    if (!confirm("Bersihkan semua pesan dari obrolan ini?")) return;
-    setIsActionLoading(true);
-    try {
-      const res = await fetch('/api/chat/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'clear', roomIds: [roomId] })
-      });
-      if (res.ok) {
-        setMessages([]);
-        setIsMenuOpen(false);
-      } else {
-        alert("Gagal membersihkan obrolan.");
+    setDialog({
+      isOpen: true,
+      title: "Kosongkan Obrolan",
+      message: "Apakah Anda yakin ingin mengosongkan obrolan ini? Tindakan ini bersifat permanen di sisi Anda.",
+      type: 'confirm',
+      onConfirm: async () => {
+        setIsActionLoading(true);
+        try {
+          const res = await fetch('/api/chat/action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'clear', roomIds: [roomId] })
+          });
+          if (res.ok) {
+            setMessages([]);
+            setIsMenuOpen(false);
+            setDialog(prev => ({ ...prev, isOpen: false }));
+          } else {
+            setDialog({ isOpen: true, title: "Gagal Membersihkan", message: "Terjadi kesalahan saat membersihkan obrolan. Silakan coba lagi.", type: 'alert' });
+          }
+        } catch (e) {
+          console.error(e);
+          setDialog({ isOpen: true, title: "Kesalahan Koneksi", message: "Tidak dapat terhubung ke server. Silakan periksa koneksi Anda.", type: 'alert' });
+        } finally {
+          setIsActionLoading(false);
+        }
       }
-    } catch (e) {
-      console.error(e);
-      alert("Terjadi kesalahan koneksi.");
-    } finally {
-      setIsActionLoading(false);
-    }
+    });
   };
 
   const toggleMessageSelection = (id: string) => {
@@ -317,7 +405,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomPr
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center border border-outline-variant/30 shrink-0 overflow-hidden relative">
                 {roomInfo.otherUserAvatarUrl ? (
-                  <img src={roomInfo.otherUserAvatarUrl} alt={roomInfo.otherUserName} className="w-full h-full object-cover" />
+                  <Image src={roomInfo.otherUserAvatarUrl} alt={roomInfo.otherUserName} fill className="object-cover" />
                 ) : (
                   <span className="material-symbols-outlined text-on-surface-variant">person</span>
                 )}
@@ -394,49 +482,68 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomPr
               <div 
                 key={msg.id_message} 
                 id={`msg-${msg.id_message}`}
-                className={`flex flex-col max-w-[70%] ${isMe ? 'self-end items-end' : 'self-start items-start'} transition-colors duration-500`}
-                onClick={() => toggleMessageSelection(msg.id_message)}
+                className={`flex w-full items-center gap-md ${isMe ? 'flex-row-reverse' : 'flex-row'} transition-colors duration-500`}
               >
                 {isSelectionMode && (
-                  <div className={`absolute ${isMe ? '-left-8' : '-right-8'} top-1/2 -translate-y-1/2`}>
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary text-white' : 'border-outline-variant'}`}>
-                      {isSelected && <span className="material-symbols-outlined text-[14px]">check</span>}
+                  <div 
+                    className={`flex shrink-0 items-center justify-center p-2 ${msg.is_deleted_for_everyone ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    onClick={() => { if (!msg.is_deleted_for_everyone) toggleMessageSelection(msg.id_message) }}
+                  >
+                    <div className={`w-5 h-5 rounded-sm border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary text-white' : 'border-outline-variant'}`}>
+                      {isSelected && <span className="material-symbols-outlined text-[14px] font-bold">check</span>}
                     </div>
                   </div>
                 )}
+                
                 <div 
-                  className={`p-sm md:p-md rounded-2xl shadow-sm relative group transition-colors duration-500 ${
-                    isSelected
-                      ? 'bg-primary/20 border-primary'
-                      : highlightedMessageId === msg.id_message 
-                      ? 'bg-amber-100 border-amber-300' 
-                      : isMe 
-                        ? 'bg-surface-container text-on-surface rounded-tr-sm border border-outline-variant/40' 
-                        : 'bg-white text-on-surface rounded-tl-sm border border-outline-variant/40'
-                  } ${isSelectionMode ? 'cursor-pointer hover:opacity-80' : ''}`}
+                  className={`flex flex-col max-w-[70%] ${isMe ? 'items-end' : 'items-start'} ${isSelectionMode && !msg.is_deleted_for_everyone ? 'cursor-pointer hover:opacity-80' : ''}`}
+                  onClick={() => { if (isSelectionMode && !msg.is_deleted_for_everyone) toggleMessageSelection(msg.id_message) }}
                 >
-                  {msg.image_url ? (
-                    <div className="flex flex-col gap-xs">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img 
-                        src={msg.image_url} 
-                        alt="Attachment" 
-                        className="rounded-lg max-w-[250px] object-cover border border-outline-variant/20 cursor-pointer hover:opacity-90 transition-opacity" 
-                        onClick={() => window.open(msg.image_url!, '_blank')}
-                      />
-                      {msg.teks_pesan && <p className="font-body-sm text-body-sm whitespace-pre-wrap break-words">{msg.teks_pesan}</p>}
-                    </div>
-                  ) : (
-                    <p className="font-body-sm text-body-sm leading-relaxed whitespace-pre-wrap break-words">{msg.teks_pesan}</p>
-                  )}
+                  <div 
+                    className={`p-sm md:p-md rounded-2xl shadow-sm relative transition-colors duration-500 ${
+                      isSelected
+                        ? 'bg-primary/20 border border-primary text-on-surface'
+                        : highlightedMessageId === msg.id_message 
+                        ? 'bg-amber-100 border border-amber-300 text-on-surface' 
+                        : isMe 
+                          ? 'bg-surface-container text-on-surface rounded-tr-sm border border-outline-variant/40' 
+                          : 'bg-white text-on-surface rounded-tl-sm border border-outline-variant/40'
+                    }`}
+                  >
+                    {msg.is_deleted_for_everyone ? (
+                      <div className="flex items-center gap-1 text-on-surface-variant/80 italic font-body-sm text-sm">
+                        <span className="material-symbols-outlined text-[16px]">block</span>
+                        <p>Pesan ini telah dihapus</p>
+                      </div>
+                    ) : msg.image_url ? (
+                      <div className="flex flex-col gap-xs">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <Image 
+                          src={msg.image_url} 
+                          alt="Attachment" 
+                          width={250}
+                          height={250}
+                          className="rounded-lg object-cover border border-outline-variant/20 cursor-pointer hover:opacity-90 transition-opacity" 
+                          onClick={(e) => {
+                            if (!isSelectionMode) window.open(msg.image_url!, '_blank');
+                            else e.preventDefault();
+                          }}
+                        />
+                        {msg.teks_pesan && <p className="font-body-sm text-body-sm whitespace-pre-wrap break-words">{msg.teks_pesan}</p>}
+                      </div>
+                    ) : (
+                      <p className="font-body-sm text-body-sm leading-relaxed whitespace-pre-wrap break-words">{msg.teks_pesan}</p>
+                    )}
+                  </div>
                   
-                  <div className={`flex items-center gap-1 mt-1 justify-end ${msg.image_url && !msg.teks_pesan ? 'absolute bottom-2 right-2 bg-black/40 text-white px-2 rounded-full' : 'text-outline'}`}>
-                    <span className="text-[10px] font-mono">
+                  {/* Timestamp & Status */}
+                  <div className={`flex items-center gap-1 mt-1 text-[11px] ${isSelectionMode && isSelected ? 'text-primary font-medium' : 'text-on-surface-variant'}`}>
+                    <span>
                       {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                     {isMe && (
-                      <span className="material-symbols-outlined text-[14px] text-blue-500" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">
-                        {msg.is_read ? 'done_all' : 'check'}
+                      <span className={`material-symbols-outlined text-[14px] ${msg.is_read ? 'text-blue-500' : 'text-outline-variant'}`} aria-hidden="true">
+                        done_all
                       </span>
                     )}
                   </div>
@@ -515,6 +622,76 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo }: ChatRoomPr
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+      
+      {/* Custom Dialog / Modal */}
+      {dialog.isOpen && (
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-on-surface/40 backdrop-blur-sm p-4">
+          <div className="bg-white border border-outline-variant rounded-xl p-6 shadow-xl w-full max-w-sm flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
+            <div>
+              <h3 className="font-headline-sm font-bold text-on-surface mb-2">{dialog.title}</h3>
+              <p className="font-body-md text-on-surface-variant leading-relaxed">{dialog.message}</p>
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-4">
+              {dialog.type === 'delete_options' ? (
+                <div className="flex flex-col gap-2 w-full">
+                  <button 
+                    onClick={() => { if (dialog.onConfirmForEveryone) dialog.onConfirmForEveryone(); }}
+                    className="w-full px-4 py-2 rounded-lg font-label-md text-white bg-error hover:bg-error/90 transition-colors flex items-center justify-center gap-2"
+                    disabled={isActionLoading}
+                  >
+                    {isActionLoading && <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>}
+                    Hapus untuk Semua Orang
+                  </button>
+                  <button 
+                    onClick={() => { if (dialog.onConfirm) dialog.onConfirm(); }}
+                    className="w-full px-4 py-2 rounded-lg font-label-md text-white bg-error hover:bg-error/90 transition-colors flex items-center justify-center gap-2"
+                    disabled={isActionLoading}
+                  >
+                    {isActionLoading && <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>}
+                    Hapus untuk Saya
+                  </button>
+                  <button 
+                    onClick={() => setDialog({ ...dialog, isOpen: false })}
+                    className="w-full px-4 py-2 rounded-lg font-label-md text-primary hover:bg-surface-container transition-colors mt-2"
+                    disabled={isActionLoading}
+                  >
+                    Batal
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {dialog.type === 'confirm' && (
+                    <button 
+                      onClick={() => setDialog({ ...dialog, isOpen: false })}
+                      className="px-4 py-2 rounded-lg font-label-md text-primary hover:bg-surface-container transition-colors"
+                      disabled={isActionLoading}
+                    >
+                      Batal
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => {
+                      if (dialog.type === 'confirm' && dialog.onConfirm) {
+                        dialog.onConfirm();
+                      } else {
+                        setDialog({ ...dialog, isOpen: false });
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-lg font-label-md text-white flex items-center gap-2 transition-colors ${
+                      dialog.type === 'confirm' ? 'bg-error hover:bg-error/90' : 'bg-primary hover:bg-primary/90'
+                    }`}
+                    disabled={isActionLoading}
+                  >
+                    {isActionLoading && <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>}
+                    {dialog.type === 'confirm' && dialog.title.includes('Kosongkan') ? 'Kosongkan' : dialog.type === 'confirm' ? 'Hapus untuk Saya' : 'Mengerti'}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
