@@ -30,6 +30,44 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    if (dbUser?.is_banned) {
+      const now = new Date();
+      if (
+        dbUser.ban_type === "TEMPORARY" &&
+        dbUser.banned_until &&
+        now > dbUser.banned_until
+      ) {
+        // Auto unban
+        await prisma.user.update({
+          where: { id_user: dbUser.id_user },
+          data: {
+            is_banned: false,
+            ban_type: null,
+            ban_reason: null,
+            banned_at: null,
+            banned_until: null,
+          },
+        });
+        dbUser.is_banned = false;
+      } else {
+        await supabase.auth.signOut();
+        return NextResponse.json(
+          {
+            success: false,
+            is_banned: true,
+            message: "Akun Anda telah ditangguhkan.",
+            ban_details: {
+              type: dbUser.ban_type ?? "PERMANENT",
+              reason: dbUser.ban_reason ?? "Akun Anda ditangguhkan oleh admin.",
+              banned_at: dbUser.banned_at ? dbUser.banned_at.toISOString() : null,
+              banned_until: dbUser.banned_until ? dbUser.banned_until.toISOString() : null,
+            },
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     if (!dbUser) {
       const fallbackName =
         authUser.user_metadata?.nama_lengkap ||

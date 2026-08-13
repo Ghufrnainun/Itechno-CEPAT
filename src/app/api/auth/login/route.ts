@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { prisma } from '@/lib/prisma'
 import { loginSchema, formatZodErrors } from '@/lib/validations'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
@@ -41,26 +42,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { email, password } = parsed.data
+    const { email: identifier, password } = parsed.data
 
-    // --- 1. Login via Supabase Auth ---
-    const supabase = await createClient()
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (authError || !authData.session) {
-      // Pesan generik — jangan beri tahu attacker apakah email terdaftar atau tidak
-      return NextResponse.json(
-        { success: false, message: 'Email atau password salah.' },
-        { status: 401 }
-      )
-    }
-
-    // --- 2. Ambil data profil dari tabel User Prisma ---
-    const userProfile = await prisma.user.findUnique({
-      where: { email },
+    // --- 1. Ambil data profil dari tabel User Prisma (match Email atau Username) ---
+    const userProfile = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier.trim().toLowerCase() },
+          { username: identifier.trim().toLowerCase() },
+        ],
+      },
       select: {
         id_user: true,
         email: true,
@@ -73,6 +64,12 @@ export async function POST(request: NextRequest) {
         rating_avg: true,
         total_completed: true,
         total_balance: true,
+        auth_id: true,
+        is_banned: true,
+        ban_type: true,
+        ban_reason: true,
+        banned_at: true,
+        banned_until: true,
         role: {
           select: { nama_role: true },
         },
@@ -81,8 +78,72 @@ export async function POST(request: NextRequest) {
 
     if (!userProfile) {
       return NextResponse.json(
-        { success: false, message: 'Profil pengguna tidak ditemukan.' },
-        { status: 404 }
+        { success: false, message: 'Email atau password salah.' },
+        { status: 401 }
+      )
+    }
+
+    // --- 2. Cek status penangguhan (Ban) ---
+    if (userProfile.is_banned) {
+      const now = new Date()
+      // Cek jika Temporary Ban sudah kedaluwarsa
+      if (
+        userProfile.ban_type === 'TEMPORARY' &&
+        userProfile.banned_until &&
+        now > userProfile.banned_until
+      ) {
+        // Auto-unban user
+        await prisma.user.update({
+          where: { id_user: userProfile.id_user },
+          data: {
+            is_banned: false,
+            ban_type: null,
+            ban_reason: null,
+            banned_at: null,
+            banned_until: null,
+          },
+        })
+
+        if (userProfile.auth_id) {
+          try {
+            const adminClient = createAdminClient()
+            await adminClient.auth.admin.updateUserById(userProfile.auth_id, {
+              ban_duration: 'none',
+            })
+          } catch (e) {
+            console.error('[login] Auto-unban Supabase error:', e)
+          }
+        }
+      } else {
+        // Masih ter-ban: Tolak login dan kembalikan detail rincian ban
+        return NextResponse.json(
+          {
+            success: false,
+            is_banned: true,
+            message: 'Akun Anda telah ditangguhkan.',
+            ban_details: {
+              type: userProfile.ban_type ?? 'PERMANENT',
+              reason: userProfile.ban_reason ?? 'Tidak ada alasan khusus.',
+              banned_at: userProfile.banned_at ? userProfile.banned_at.toISOString() : null,
+              banned_until: userProfile.banned_until ? userProfile.banned_until.toISOString() : null,
+            },
+          },
+          { status: 403 }
+        )
+      }
+    }
+
+    // --- 3. Login via Supabase Auth ---
+    const supabase = await createClient()
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: userProfile.email,
+      password,
+    })
+
+    if (authError || !authData.session) {
+      return NextResponse.json(
+        { success: false, message: 'Email atau password salah.' },
+        { status: 401 }
       )
     }
 

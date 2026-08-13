@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Users,
@@ -15,9 +15,23 @@ import {
   LogOut,
 } from 'lucide-react';
 
-export default function AdminSidebar() {
+interface AdminUser {
+  id: string;
+  email: string;
+  nama_lengkap: string;
+  avatar_url?: string;
+  username: string;
+}
+
+interface AdminSidebarProps {
+  adminUser?: AdminUser | null;
+}
+
+export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   const navItems = [
     { label: 'Overview', href: '/admin/dashboard', icon: LayoutDashboard },
@@ -25,6 +39,17 @@ export default function AdminSidebar() {
     { label: 'Task Management', href: '/admin/tasks', icon: ClipboardList },
     { label: 'Category & Skills', href: '/admin/categories', icon: Tags },
   ];
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await fetch('/api/admin/auth/logout', { method: 'POST' });
+    } catch {
+      // Abaikan error — tetap redirect
+    } finally {
+      router.replace('/admin/login');
+    }
+  };
 
   return (
     <aside
@@ -84,6 +109,29 @@ export default function AdminSidebar() {
         )}
       </div>
 
+      {/* Admin User Badge */}
+      {adminUser && !collapsed && (
+        <div className="mx-3 mt-3 px-3 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg">
+          <div className="flex items-center gap-2.5">
+            {adminUser.avatar_url ? (
+              <img
+                src={adminUser.avatar_url}
+                alt={adminUser.nama_lengkap}
+                className="w-7 h-7 rounded-full object-cover border border-[#E2E8F0] shrink-0"
+              />
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-[#0F766E] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                {adminUser.nama_lengkap.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="truncate">
+              <p className="text-[11px] font-bold text-[#0C1F16] truncate">{adminUser.nama_lengkap}</p>
+              <p className="text-[10px] font-mono text-[#0F766E] uppercase tracking-wider">Admin</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Nav Menu */}
       <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
         {navItems.map((item) => {
@@ -121,16 +169,17 @@ export default function AdminSidebar() {
           {!collapsed && <span>Main App Feed</span>}
         </Link>
 
-        <Link
-          href="/login"
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-sans font-medium text-rose-600 hover:bg-rose-50 transition-colors ${
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-sans font-medium text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-50 ${
             collapsed ? 'justify-center px-0' : ''
           }`}
-          title={collapsed ? 'Exit Admin' : undefined}
+          title={collapsed ? 'Logout Admin' : undefined}
         >
           <LogOut className="w-4 h-4 shrink-0 text-rose-600" />
-          {!collapsed && <span>Exit Admin</span>}
-        </Link>
+          {!collapsed && <span>{loggingOut ? 'Logging out...' : 'Logout Admin'}</span>}
+        </button>
       </div>
     </aside>
   );

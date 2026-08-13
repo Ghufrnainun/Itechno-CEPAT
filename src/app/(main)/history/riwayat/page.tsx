@@ -16,6 +16,9 @@ interface WorkerTask {
   kompensasi: number;
   task_status: string;
   application_status: string;
+  apply_count?: number;
+  alasan_penolakan?: string | null;
+  max_apply_attempts?: number;
   applied_at: string;
   completed_at: string | null;
   requester: { id_user: string; nama_lengkap: string; avatar_url: string | null } | null;
@@ -86,6 +89,18 @@ function WorkerHistoryCard({ task }: { task: WorkerTask }) {
             </div>
           )}
         </div>
+
+        {/* Alasan Penolakan jika ditolak */}
+        {task.application_status === "rejected" && (
+          <div className="bg-error-container/20 rounded-lg p-xs text-xs text-error font-label-sm flex flex-col gap-0.5 border border-error/20">
+            <span className="font-bold">Ditolak: {task.alasan_penolakan || "Belum terpilih untuk tugas ini"}</span>
+            {task.apply_count !== undefined && (
+              <span className="text-[10px] text-on-surface-variant">
+                Percobaan: {task.apply_count} dari {task.max_apply_attempts ?? 3} maksimal
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Rating yang diterima (jika task selesai & sudah dirating) */}
         {task.received_rating !== null && (

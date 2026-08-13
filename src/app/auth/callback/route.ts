@@ -7,6 +7,16 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const next = searchParams.get('next')
+  const errorCode = searchParams.get('error_code')
+  const errorDesc = searchParams.get('error_description')
+
+  // Tangkap jika user yang mencoba OAuth sedang di-ban (sebelum exchange code)
+  if (errorCode === 'user_banned' || errorDesc?.toLowerCase().includes('banned')) {
+    const reason = encodeURIComponent('Akun Anda ditangguhkan oleh admin.')
+    return NextResponse.redirect(
+      `${origin}/login?banned=true&type=PERMANENT&reason=${reason}`
+    )
+  }
 
   if (code) {
     const cookieStore = await cookies()
@@ -50,8 +60,45 @@ export async function GET(request: Request) {
             no_telpon: true,
             bio: true,
             id_role: true,
+            is_banned: true,
+            ban_type: true,
+            ban_reason: true,
+            banned_until: true,
           },
         })
+
+        // Jika user ter-ban di database Prisma
+        if (dbUser?.is_banned) {
+          const now = new Date()
+          if (
+            dbUser.ban_type === 'TEMPORARY' &&
+            dbUser.banned_until &&
+            now > dbUser.banned_until
+          ) {
+            // Auto unban
+            await prisma.user.update({
+              where: { id_user: dbUser.id_user },
+              data: {
+                is_banned: false,
+                ban_type: null,
+                ban_reason: null,
+                banned_at: null,
+                banned_until: null,
+              },
+            })
+          } else {
+            // Logout Supabase session yang baru dibuat
+            await supabase.auth.signOut()
+
+            const type = dbUser.ban_type ?? 'PERMANENT'
+            const reason = encodeURIComponent(dbUser.ban_reason ?? 'Akun Anda ditangguhkan oleh admin.')
+            const until = dbUser.banned_until ? encodeURIComponent(dbUser.banned_until.toISOString()) : ''
+
+            return NextResponse.redirect(
+              `${origin}/login?banned=true&type=${type}&reason=${reason}&until=${until}`
+            )
+          }
+        }
 
         let isNewUser = false
 
@@ -101,6 +148,10 @@ export async function GET(request: Request) {
               no_telpon: true,
               bio: true,
               id_role: true,
+              is_banned: true,
+              ban_type: true,
+              ban_reason: true,
+              banned_until: true,
             },
           })
         }

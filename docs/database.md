@@ -132,6 +132,11 @@ CREATE TABLE "User" (
     "email" TEXT NOT NULL,
     "auth_id" UUID,
     "fcm_token" TEXT,
+    "is_banned" BOOLEAN NOT NULL DEFAULT false,             -- status penangguhan akun
+    "ban_type" TEXT,                                        -- jenis ban: PERMANENT / TEMPORARY
+    "ban_reason" TEXT,                                      -- alasan penangguhan dari admin
+    "banned_at" TIMESTAMP(3),                               -- timestamp penangguhan dimulai
+    "banned_until" TIMESTAMP(3),                            -- tanggal berakhirnya penangguhan (temporary)
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id_user")
 );
@@ -273,7 +278,12 @@ CREATE TABLE "User" (
   no_telpon             TEXT,               -- TEXT, bukan INT (leading zero)
   email                 TEXT NOT NULL UNIQUE,
   auth_id               UUID UNIQUE,        -- FK ke auth.users.id
-  fcm_token             TEXT                -- untuk Firebase Cloud Messaging
+  fcm_token             TEXT,               -- untuk Firebase Cloud Messaging
+  is_banned             BOOLEAN NOT NULL DEFAULT false, -- status penangguhan akun
+  ban_type              TEXT,               -- PERMANENT | TEMPORARY
+  ban_reason            TEXT,               -- alasan penangguhan dari admin
+  banned_at             TIMESTAMP(3),       -- timestamp penangguhan dimulai
+  banned_until          TIMESTAMP(3)        -- timestamp kedaluwarsa penangguhan (temporary)
 );
 
 -- Saldo tersedia untuk user = total_balance - held_balance

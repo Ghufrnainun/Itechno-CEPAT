@@ -2,20 +2,41 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Lock, Mail, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('admin@itechno.id');
-  const [password, setPassword] = useState('Password123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setError(null);
     setLoading(true);
-    setTimeout(() => {
-      router.push('/admin/dashboard');
-    }, 500);
+
+    try {
+      const res = await fetch('/api/admin/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        setError(data.message || 'Login gagal. Periksa kembali credentials Anda.');
+        return;
+      }
+
+      // Berhasil login — redirect ke dashboard
+      router.replace('/admin/dashboard');
+    } catch {
+      setError('Terjadi kesalahan jaringan. Coba lagi.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -35,6 +56,14 @@ export default function AdminLoginPage() {
           </p>
         </div>
 
+        {/* Error Banner */}
+        {error && (
+          <div className="flex items-start gap-2.5 p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
+            <span>{error}</span>
+          </div>
+        )}
+
         {/* Credentials Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -48,7 +77,8 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full pl-9 pr-3 py-2 bg-[#F7F6F3] border border-[#EAEAEA] rounded-md text-xs text-[#111111] placeholder-[#787774] focus:border-[#111111] focus:bg-white outline-none transition-all"
+                disabled={loading}
+                className="w-full pl-9 pr-3 py-2 bg-[#F7F6F3] border border-[#EAEAEA] rounded-md text-xs text-[#111111] placeholder-[#787774] focus:border-[#111111] focus:bg-white outline-none transition-all disabled:opacity-60"
                 placeholder="admin@domain.id"
               />
             </div>
@@ -65,7 +95,8 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full pl-9 pr-3 py-2 bg-[#F7F6F3] border border-[#EAEAEA] rounded-md text-xs text-[#111111] placeholder-[#787774] focus:border-[#111111] focus:bg-white outline-none transition-all"
+                disabled={loading}
+                className="w-full pl-9 pr-3 py-2 bg-[#F7F6F3] border border-[#EAEAEA] rounded-md text-xs text-[#111111] placeholder-[#787774] focus:border-[#111111] focus:bg-white outline-none transition-all disabled:opacity-60"
                 placeholder="••••••••••••"
               />
             </div>
@@ -73,11 +104,14 @@ export default function AdminLoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !email || !password}
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#111111] hover:bg-[#333333] text-white text-xs font-bold rounded-md transition-colors disabled:opacity-50 mt-2"
           >
             {loading ? (
-              <span>Authenticating...</span>
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Authenticating...</span>
+              </>
             ) : (
               <>
                 <span>Sign In to Admin Console</span>

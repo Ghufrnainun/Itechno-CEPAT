@@ -7,8 +7,11 @@ export const createTaskSchema = z.object({
   kompensasi: z.number().positive('Kompensasi harus lebih dari 0.'),
   latitude: z.number().min(-90).max(90, 'Latitude tidak valid.'),
   longitude: z.number().min(-180).max(180, 'Longitude tidak valid.'),
-  id_category: z.string().min(1, 'Kategori tugas wajib dipilih.'),
+  id_category: z.string().optional(),
+  kategori: z.string().optional(),
   skill_requirements: z.array(z.string()).optional(),
+  max_applicants: z.number().int().min(1, 'Batas pelamar minimal 1.').default(1),
+  max_apply_attempts: z.number().int().min(1, 'Batas percobaan minimal 1.').default(3),
 })
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>
@@ -20,13 +23,14 @@ export const applyTaskSchema = z.object({
 export type ApplyTaskInput = z.infer<typeof applyTaskSchema>
 
 export const updateTaskStatusSchema = z.object({
-  status: z.enum(['confirm_start', 'completed', 'cancelled']),
+  status: z.enum(['start', 'confirm_start', 'completed', 'cancelled']),
 })
 
 export type UpdateTaskStatusInput = z.infer<typeof updateTaskStatusSchema>
 
 export const updateApplicantSchema = z.object({
   action: z.enum(['accept', 'reject']),
+  alasan_penolakan: z.string().max(500, 'Alasan penolakan maksimal 500 karakter.').optional(),
 })
 
 export type UpdateApplicantInput = z.infer<typeof updateApplicantSchema>

@@ -1,29 +1,150 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import AdminDrawer from '@/components/admin/AdminDrawer';
 import StatusBadge from '@/components/admin/StatusBadge';
-import { MOCK_ADMIN_TASKS, AdminTask } from '@/lib/admin/mock-data';
-import { Search, MapPin, Clock, CheckCircle, XCircle } from 'lucide-react';
+import AdminModal from '@/components/admin/AdminModal';
+import { Search, MapPin, Clock, CheckCircle, XCircle, AlertCircle, CheckCircle2 } from 'lucide-react';
+
+interface AdminTask {
+  id: string;
+  judul_tugas: string;
+  deskripsi_tugas: string;
+  kompensasi: number;
+  estimasi_waktu?: string;
+  created_at: string;
+  status: string;
+  kategori: string;
+  kategori_icon?: string;
+  applicants_count: number;
+  requester: {
+    id: string;
+    nama_lengkap: string;
+    email: string;
+    avatar_url?: string;
+  };
+  worker_assigned?: {
+    id: string;
+    nama_lengkap: string;
+    email: string;
+  } | null;
+}
+
+interface Toast {
+  type: 'success' | 'error';
+  message: string;
+}
+
+function ToastNotif({ toast, onClose }: { toast: Toast; onClose: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 4000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  return (
+    <div
+      className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-lg text-xs font-medium font-sans ${
+        toast.type === 'success'
+          ? 'bg-[#E6F4F1] border-[#0F766E]/30 text-[#0F766E]'
+          : 'bg-rose-50 border-rose-200 text-rose-700'
+      }`}
+    >
+      {toast.type === 'success' ? (
+        <CheckCircle2 className="w-4 h-4 shrink-0" />
+      ) : (
+        <AlertCircle className="w-4 h-4 shrink-0" />
+      )}
+      <span>{toast.message}</span>
+    </div>
+  );
+}
+
+const STATUS_TABS = ['All', 'open', 'accepted', 'in_progress', 'completed', 'cancelled'];
 
 export default function TaskManagementPage() {
-  const [tasks, setTasks] = useState<AdminTask[]>(MOCK_ADMIN_TASKS);
+  const [tasks, setTasks] = useState<AdminTask[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [selectedTask, setSelectedTask] = useState<AdminTask | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    action: 'takedown' | 'force-complete';
+    task: AdminTask;
+  } | null>(null);
 
-  const filteredTasks = tasks.filter((t) => {
-    const matchesSearch =
-      t.judul_tugas.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.requester_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.kategori.toLowerCase().includes(searchTerm.toLowerCase());
+  const fetchTasks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        search: searchTerm,
+        status: statusFilter,
+        page: String(page),
+        limit: '10',
+      });
+      const res = await fetch(`/api/admin/tasks?${params}`);
+      const json = await res.json();
+      if (json.success) {
+        setTasks(json.data);
+        setTotalPages(json.meta.totalPages);
+        setTotal(json.meta.total);
+      }
+    } catch (err) {
+      console.error('Fetch tasks error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchTerm, statusFilter, page]);
 
-    const matchesStatus = statusFilter === 'All' || t.status === statusFilter;
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(debounce);
+  }, [searchTerm, statusFilter]);
 
-    return matchesSearch && matchesStatus;
-  });
+  useEffect(() => {
+    fetchTasks();
+  }, [page, statusFilter, searchTerm]);
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmModal) return;
+    const { action, task } = confirmModal;
+    setConfirmModal(null);
+    setActionLoading(action + '-' + task.id);
+
+    try {
+      const endpoint =
+        action === 'takedown'
+          ? `/api/admin/tasks/${task.id}/takedown`
+          : `/api/admin/tasks/${task.id}/force-complete`;
+
+      const res = await fetch(endpoint, { method: 'POST' });
+      const data = await res.json();
+
+      if (data.success) {
+        showToast('success', data.message);
+        setSelectedTask(null);
+        fetchTasks(); // Refresh list
+      } else {
+        showToast('error', data.message);
+      }
+    } catch {
+      showToast('error', 'Gagal menghubungi server.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const columns: Column<AdminTask>[] = [
     {
@@ -39,11 +160,10 @@ export default function TaskManagementPage() {
     },
     {
       header: 'Requester',
-      accessorKey: 'requester_name',
       cell: (task) => (
         <div>
-          <div className="text-xs font-bold text-[#111111]">{task.requester_name}</div>
-          <div className="text-[11px] text-[#787774] font-mono">{task.requester_email}</div>
+          <div className="text-xs font-bold text-[#111111]">{task.requester.nama_lengkap}</div>
+          <div className="text-[11px] text-[#787774] font-mono">{task.requester.email}</div>
         </div>
       ),
     },
@@ -69,8 +189,15 @@ export default function TaskManagementPage() {
     },
     {
       header: 'Created Date',
-      accessorKey: 'created_at',
-      cell: (task) => <span className="text-xs text-[#787774]">{task.created_at}</span>,
+      cell: (task) => (
+        <span className="text-xs text-[#787774]">
+          {new Date(task.created_at).toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          })}
+        </span>
+      ),
     },
   ];
 
@@ -95,11 +222,11 @@ export default function TaskManagementPage() {
 
           {/* Status Tabs */}
           <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-            {['All', 'open', 'accepted', 'in_progress', 'completed', 'cancelled'].map((st) => (
+            {STATUS_TABS.map((st) => (
               <button
                 key={st}
-                onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1.5 rounded-md text-[11px] font-bold capitalize transition-colors ${
+                onClick={() => { setStatusFilter(st); setPage(1); }}
+                className={`px-3 py-1.5 rounded-md text-[11px] font-bold capitalize transition-colors whitespace-nowrap ${
                   statusFilter === st
                     ? 'bg-[#111111] text-white'
                     : 'bg-[#F7F6F3] text-[#787774] hover:text-[#111111] hover:bg-[#EAEAEA]'
@@ -108,17 +235,50 @@ export default function TaskManagementPage() {
                 {st === 'in_progress' ? 'In Progress' : st}
               </button>
             ))}
+            <span className="ml-2 text-[11px] font-mono text-[#787774] shrink-0">
+              {total} tasks
+            </span>
           </div>
         </div>
 
         {/* Data Table */}
-        <DataTable
-          columns={columns}
-          data={filteredTasks}
-          onRowClick={(task) => setSelectedTask(task)}
-          pageSize={5}
-          emptyMessage="No micro-tasks found matching your filters"
-        />
+        {loading ? (
+          <div className="bg-white border border-[#E2E8F0] rounded-xl p-8 flex justify-center">
+            <div className="w-8 h-8 border-4 border-[#0F766E] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <>
+            <DataTable
+              columns={columns}
+              data={tasks}
+              onRowClick={(task) => setSelectedTask(task)}
+              pageSize={10}
+              emptyMessage="No micro-tasks found matching your filters"
+            />
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1.5 text-xs font-bold rounded-lg border border-[#E2E8F0] bg-white text-[#0C1F16] hover:bg-[#F8FAFC] disabled:opacity-40 transition-colors"
+                >
+                  ← Prev
+                </button>
+                <span className="text-xs font-mono text-[#64748B]">
+                  {page} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-3 py-1.5 text-xs font-bold rounded-lg border border-[#E2E8F0] bg-white text-[#0C1F16] hover:bg-[#F8FAFC] disabled:opacity-40 transition-colors"
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+          </>
+        )}
 
         {/* Slide-over Task Detail Drawer */}
         <AdminDrawer
@@ -144,11 +304,15 @@ export default function TaskManagementPage() {
                   <span className="text-sm font-extrabold text-[#0F766E] font-mono">
                     +{selectedTask.kompensasi} PTS
                   </span>
-                  <span className="text-xs text-[#787774]">•</span>
-                  <span className="text-xs text-[#787774] flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    Est. {selectedTask.estimasi_waktu}
-                  </span>
+                  {selectedTask.estimasi_waktu && (
+                    <>
+                      <span className="text-xs text-[#787774]">•</span>
+                      <span className="text-xs text-[#787774] flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        Est. {selectedTask.estimasi_waktu}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -162,14 +326,19 @@ export default function TaskManagementPage() {
                 </p>
               </div>
 
-              {/* Location & Geo radius */}
-              <div className="space-y-1.5">
-                <h5 className="text-[10px] font-bold uppercase tracking-wider text-[#787774]">
-                  Location & Radius
-                </h5>
-                <div className="flex items-center gap-2 text-xs text-[#2F3437]">
-                  <MapPin className="w-3.5 h-3.5 text-[#0F766E] shrink-0" />
-                  <span>{selectedTask.lokasi_label}</span>
+              {/* Dates */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="p-2.5 rounded-md bg-[#FBFBFA] border border-[#EAEAEA]">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#787774]">Dibuat</span>
+                  <p className="text-xs font-bold text-[#111111]">
+                    {new Date(selectedTask.created_at).toLocaleDateString('id-ID', {
+                      day: '2-digit', month: 'short', year: 'numeric',
+                    })}
+                  </p>
+                </div>
+                <div className="p-2.5 rounded-md bg-[#FBFBFA] border border-[#EAEAEA]">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#787774]">Applicants</span>
+                  <p className="text-xs font-bold text-[#111111]">{selectedTask.applicants_count} orang</p>
                 </div>
               </div>
 
@@ -181,9 +350,9 @@ export default function TaskManagementPage() {
                     Requester
                   </span>
                   <p className="text-xs font-bold text-[#111111]">
-                    {selectedTask.requester_name}
+                    {selectedTask.requester.nama_lengkap}
                   </p>
-                  <p className="text-[11px] text-[#787774] font-mono">{selectedTask.requester_email}</p>
+                  <p className="text-[11px] text-[#787774] font-mono">{selectedTask.requester.email}</p>
                 </div>
 
                 {/* Worker Assigned */}
@@ -192,11 +361,13 @@ export default function TaskManagementPage() {
                     Worker Assigned
                   </span>
                   <p className="text-xs font-bold text-[#111111]">
-                    {selectedTask.worker_assigned || 'None assigned yet'}
+                    {selectedTask.worker_assigned?.nama_lengkap || 'None assigned yet'}
                   </p>
-                  <p className="text-[11px] text-[#787774]">
-                    {selectedTask.applicants_count} applicants in queue
-                  </p>
+                  {selectedTask.worker_assigned && (
+                    <p className="text-[11px] text-[#787774] font-mono">
+                      {selectedTask.worker_assigned.email}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -207,25 +378,98 @@ export default function TaskManagementPage() {
                 </h5>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => alert(`Task '${selectedTask.judul_tugas}' taken down.`)}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-md bg-[#FDEBEC] hover:bg-[#F8D2D4] text-[#9F2F2D] border border-[#F8D2D4]/60 transition-colors"
+                    onClick={() =>
+                      !['cancelled', 'completed'].includes(selectedTask.status) &&
+                      setConfirmModal({ action: 'takedown', task: selectedTask })
+                    }
+                    disabled={
+                      ['cancelled', 'completed'].includes(selectedTask.status) ||
+                      actionLoading === 'takedown-' + selectedTask.id
+                    }
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-md bg-[#FDEBEC] hover:bg-[#F8D2D4] text-[#9F2F2D] border border-[#F8D2D4]/60 transition-colors disabled:opacity-40"
                   >
-                    <XCircle className="w-3.5 h-3.5" />
+                    {actionLoading === 'takedown-' + selectedTask.id ? (
+                      <span className="w-3 h-3 border-2 border-rose-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <XCircle className="w-3.5 h-3.5" />
+                    )}
                     Take Down Task
                   </button>
                   <button
-                    onClick={() => alert(`Status for '${selectedTask.judul_tugas}' forced to Completed.`)}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-md bg-[#EDF3EC] hover:bg-[#D5E5D3] text-[#346538] border border-[#D5E5D3]/60 transition-colors"
+                    onClick={() =>
+                      selectedTask.status !== 'completed' &&
+                      selectedTask.status !== 'cancelled' &&
+                      setConfirmModal({ action: 'force-complete', task: selectedTask })
+                    }
+                    disabled={
+                      ['completed', 'cancelled'].includes(selectedTask.status) ||
+                      actionLoading === 'force-complete-' + selectedTask.id
+                    }
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-md bg-[#EDF3EC] hover:bg-[#D5E5D3] text-[#346538] border border-[#D5E5D3]/60 transition-colors disabled:opacity-40"
                   >
-                    <CheckCircle className="w-3.5 h-3.5" />
+                    {actionLoading === 'force-complete-' + selectedTask.id ? (
+                      <span className="w-3 h-3 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <CheckCircle className="w-3.5 h-3.5" />
+                    )}
                     Force Complete
                   </button>
                 </div>
+                {['cancelled', 'completed'].includes(selectedTask.status) && (
+                  <p className="text-[10px] text-[#94A3B8] text-center">
+                    Task ini sudah dalam status final ({selectedTask.status}).
+                  </p>
+                )}
               </div>
             </div>
           )}
         </AdminDrawer>
+
+        {/* Confirmation Modal */}
+        <AdminModal
+          isOpen={!!confirmModal}
+          onClose={() => setConfirmModal(null)}
+          title={
+            confirmModal?.action === 'takedown'
+              ? 'Konfirmasi Take Down Task'
+              : 'Konfirmasi Force Complete'
+          }
+          onConfirm={handleConfirmAction}
+          confirmLabel={
+            confirmModal?.action === 'takedown' ? 'Ya, Take Down' : 'Ya, Force Complete'
+          }
+          confirmVariant={confirmModal?.action === 'takedown' ? 'danger' : 'primary'}
+        >
+          <div
+            className={`flex items-start gap-3 p-3 rounded-lg border text-xs font-sans ${
+              confirmModal?.action === 'takedown'
+                ? 'bg-rose-50 border-rose-200 text-rose-800'
+                : 'bg-[#E6F4F1] border-[#0F766E]/20 text-[#0C4A45]'
+            }`}
+          >
+            <AlertCircle
+              className={`w-4 h-4 shrink-0 mt-0.5 ${
+                confirmModal?.action === 'takedown' ? 'text-rose-600' : 'text-[#0F766E]'
+              }`}
+            />
+            <div>
+              <p className="font-bold">
+                {confirmModal?.action === 'takedown'
+                  ? `Apakah kamu yakin ingin meng-takedown "${confirmModal?.task.judul_tugas}"?`
+                  : `Apakah kamu yakin ingin force-complete "${confirmModal?.task.judul_tugas}"?`}
+              </p>
+              <p className="mt-1 text-[11px] opacity-90">
+                {confirmModal?.action === 'takedown'
+                  ? 'Task akan dibatalkan. Escrow akan dikembalikan ke requester dan notifikasi akan dikirim.'
+                  : 'Task akan ditandai selesai. Kompensasi akan ditransfer ke worker (jika ada) dan notifikasi akan dikirim.'}
+              </p>
+            </div>
+          </div>
+        </AdminModal>
       </main>
+
+      {/* Toast Notification */}
+      {toast && <ToastNotif toast={toast} onClose={() => setToast(null)} />}
     </div>
   );
 }
