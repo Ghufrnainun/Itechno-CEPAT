@@ -114,9 +114,11 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
         <div className="mx-3 mt-3 px-3 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg">
           <div className="flex items-center gap-2.5">
             {adminUser.avatar_url ? (
-              <img
+              <Image
                 src={adminUser.avatar_url}
                 alt={adminUser.nama_lengkap}
+                width={28}
+                height={28}
                 className="w-7 h-7 rounded-full object-cover border border-[#E2E8F0] shrink-0"
               />
             ) : (

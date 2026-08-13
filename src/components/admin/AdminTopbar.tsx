@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+import Image from 'next/image';
 import { Search, Bell } from 'lucide-react';
 
 interface AdminTopbarProps {
@@ -46,9 +48,11 @@ export default function AdminTopbar({ title = 'Dashboard' }: AdminTopbarProps) {
 
         {/* Admin User Info */}
         <div className="flex items-center gap-2.5">
-          <img
+          <Image
             src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80"
             alt="Admin Profile"
+            width={32}
+            height={32}
             className="w-8 h-8 rounded-full object-cover ring-2 ring-[#0F766E]/20"
           />
           <div className="hidden lg:flex flex-col">

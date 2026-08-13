@@ -157,7 +157,17 @@ export async function PUT(request: NextRequest) {
         if (!skillName) continue;
 
         const deskripsi_pengalaman = isObject ? skillData.deskripsi_pengalaman : null;
-        const certificate_url = isObject ? skillData.certificate_url : null;
+        let certificate_url = isObject ? skillData.certificate_url : null;
+
+        if (certificate_url) {
+          if (!certificate_url.startsWith('http://') && !certificate_url.startsWith('https://')) {
+            certificate_url = `https://${certificate_url}`;
+          }
+          // Basic XSS check
+          if (certificate_url.toLowerCase().includes('javascript:')) {
+            certificate_url = null;
+          }
+        }
 
         let skillMaster = await prisma.skillsMaster.findUnique({
           where: { nama_skill: skillName },

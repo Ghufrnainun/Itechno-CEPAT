@@ -135,6 +135,7 @@ export async function proxy(request: NextRequest) {
           const setCookie = supabaseResponse.headers.get('set-cookie')
           if (setCookie) redirectResponse.headers.set('set-cookie', setCookie)
           return redirectResponse
+        }
       }
     } catch (e) {
       console.error('[Proxy] Ban check error:', e)

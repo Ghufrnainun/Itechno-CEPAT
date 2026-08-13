@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { EscrowBanner } from "@/components/ui/EscrowBanner";
 import { formatCurrency } from "@/lib/utils/format";
 import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
+import { renderIcon } from "@/lib/icon-map";
 
 export default function NewTaskPage() {
   const router = useRouter();
@@ -32,7 +33,8 @@ export default function NewTaskPage() {
   const [mapCenter, setMapCenter] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const [categories, setCategories] = useState<{ id_category: string; nama_kategori: string }[]>([]);
-  const [skills, setSkills] = useState<{ id_skill_master: string; nama_skill: string }[]>([]);
+  const [skills, setSkills] = useState<{ id_skill_master: string; nama_skill: string; icon: string | null }[]>([]);
+  const [isSkillDropdownOpen, setIsSkillDropdownOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -195,30 +197,73 @@ export default function NewTaskPage() {
                 </select>
               </div>
 
-              <div className="flex flex-col gap-xs">
+              <div className="flex flex-col gap-xs relative">
                 <label className="font-body-sm text-body-sm text-on-surface-variant font-medium">Skill (Opsional)</label>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {skills.map((s) => {
-                    const isSelected = selectedSkills.includes(s.id_skill_master);
-                    return (
-                      <button
-                        key={s.id_skill_master}
-                        type="button"
-                        onClick={() => toggleSkill(s.id_skill_master)}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors cursor-pointer ${
-                          isSelected 
-                            ? 'bg-primary text-on-primary border-primary hover:bg-primary/90' 
-                            : 'bg-surface text-on-surface-variant border-outline-variant hover:bg-surface-container-low hover:border-primary/50'
-                        }`}
-                      >
-                        {s.nama_skill}
-                      </button>
-                    );
-                  })}
-                  {skills.length === 0 && (
-                    <span className="text-sm text-on-surface-variant italic">Belum ada skill yang tersedia...</span>
-                  )}
-                </div>
+                
+                {/* Dropdown Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsSkillDropdownOpen(!isSkillDropdownOpen)}
+                  className="input-field text-body-sm font-sans flex justify-between items-center w-full bg-white text-left text-on-surface-variant"
+                >
+                  <span>{selectedSkills.length > 0 ? `${selectedSkills.length} Skill Terpilih` : 'Pilih Skill yang Dibutuhkan...'}</span>
+                  <span className="material-symbols-outlined text-outline" aria-hidden="true">expand_more</span>
+                </button>
+
+                {/* Dropdown Panel */}
+                {isSkillDropdownOpen && (
+                  <div className="absolute top-[70px] left-0 w-full bg-white border border-outline-variant rounded-xl shadow-lg z-20 overflow-hidden flex flex-col">
+                    <div className="max-h-[240px] overflow-y-auto p-2 flex flex-col custom-scrollbar">
+                      {skills.map((s) => {
+                        const isSelected = selectedSkills.includes(s.id_skill_master);
+                        return (
+                          <button
+                            key={s.id_skill_master}
+                            type="button"
+                            onClick={() => toggleSkill(s.id_skill_master)}
+                            className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer w-full text-left ${
+                              isSelected 
+                                ? 'bg-primary/10 text-primary' 
+                                : 'bg-transparent text-on-surface hover:bg-surface-container-low'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              {renderIcon(s.icon, `w-4 h-4 shrink-0 ${isSelected ? "text-primary" : "text-on-surface-variant"}`)}
+                              <span>{s.nama_skill}</span>
+                            </div>
+                            {isSelected && <span className="material-symbols-outlined text-[18px]">check</span>}
+                          </button>
+                        );
+                      })}
+                      {skills.length === 0 && (
+                        <span className="text-sm text-on-surface-variant italic p-3 text-center">Belum ada skill yang tersedia...</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Selected Tags */}
+                {selectedSkills.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {selectedSkills.map(id => {
+                      const s = skills.find(sk => sk.id_skill_master === id);
+                      if (!s) return null;
+                      return (
+                        <div key={id} className="flex items-center gap-1.5 px-3 py-1 bg-surface-container-low border border-outline-variant rounded-full text-[13px] font-medium text-on-surface">
+                          {renderIcon(s.icon, "w-3.5 h-3.5 shrink-0 text-primary")}
+                          <span>{s.nama_skill}</span>
+                          <button 
+                            type="button"
+                            onClick={() => toggleSkill(id)}
+                            className="ml-1 text-on-surface-variant hover:text-rose-600 transition-colors flex items-center justify-center"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">close</span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-sm">

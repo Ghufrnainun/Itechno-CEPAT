@@ -6,6 +6,7 @@ import { useCurrentRole } from "@/app/(main)/layout";
 import { TaskStatus } from "@/types/database";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { useToast } from "@/components/ui/Toast";
+import { renderIcon } from "@/lib/icon-map";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { EscrowBanner } from "@/components/ui/EscrowBanner";
@@ -456,12 +457,13 @@ export default function TaskDetailPage() {
 
             {task.requirements.length > 0 && (
               <div className="flex flex-wrap gap-xs">
-                {task.requirements.map((skill) => (
+                {task.requirements.map((skill: any) => (
                   <span
-                    key={skill}
-                    className="px-2 py-1 rounded-full bg-interaction-bg border border-outline-variant text-primary-container font-label-sm text-[11px] font-semibold"
+                    key={skill.id_skill}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-interaction-bg border border-outline-variant text-primary-container font-label-sm text-[11px] font-semibold"
                   >
-                    {skill}
+                    {renderIcon(skill.icon, "w-3 h-3 shrink-0")}
+                    {skill.nama_skill}
                   </span>
                 ))}
               </div>

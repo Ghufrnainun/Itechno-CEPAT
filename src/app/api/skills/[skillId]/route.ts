@@ -8,7 +8,7 @@ export async function PUT(
   try {
     const { skillId } = await params;
     const body = await request.json()
-    const { nama_skill } = body
+    const { nama_skill, icon } = body
 
     if (!nama_skill) {
       return NextResponse.json(
@@ -44,8 +44,9 @@ export async function PUT(
     const updatedSkill = await prisma.skillsMaster.update({
       where: { id_skill_master: skillId },
       data: {
-        nama_skill
-      }
+        nama_skill,
+        icon: icon !== undefined ? icon : (existing as any).icon // Update icon if provided, else keep existing
+      } as any
     })
 
     return NextResponse.json({

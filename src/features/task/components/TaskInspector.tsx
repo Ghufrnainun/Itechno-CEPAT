@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCurrentRole } from "@/app/(main)/layout";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
+import { renderIcon } from "@/lib/icon-map";
 
 interface TaskInspectorProps {
   task: Task & {
@@ -163,8 +164,9 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
           {task.skills && task.skills.length > 0 ? (
             <div className="flex flex-wrap gap-xs">
               {task.skills.map((skill) => (
-                <div key={skill.id_skill} className="px-sm py-1 bg-primary-container/30 text-primary font-body-sm text-body-sm rounded-full border border-primary/20">
-                  {skill.nama_skill}
+                <div key={skill.id_skill} className="flex items-center gap-1.5 px-sm py-1 bg-primary-container/30 text-primary font-body-sm text-body-sm rounded-full border border-primary/20">
+                  {renderIcon(skill.icon ?? null, "w-3.5 h-3.5 shrink-0")}
+                  <span>{skill.nama_skill}</span>
                 </div>
               ))}
             </div>

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createClient } from "@/lib/supabase/server";
+import { verifyAdminToken } from "@/lib/admin/auth";
 
 export async function GET(
   request: NextRequest,
@@ -32,6 +34,19 @@ export async function GET(
         { success: false, message: "User tidak ditemukan." },
         { status: 404 }
       );
+    }
+
+    const supabase = await createClient();
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const adminAuth = await verifyAdminToken(request);
+
+    const isOwner = authUser?.id === dbUser.id_user || authUser?.email === dbUser.email;
+    const isAdmin = adminAuth.valid;
+
+    if (!isOwner && !isAdmin) {
+      dbUser.email = "[Disembunyikan]";
+      dbUser.no_telpon = "[Disembunyikan]";
+      dbUser.alamat = "[Disembunyikan]";
     }
 
     return NextResponse.json({

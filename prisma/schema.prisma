@@ -29,6 +29,7 @@ model StatusTaskApplicants {
 model SkillsMaster {
   id_skill_master   String             @id @default(uuid())
   nama_skill        String             @unique
+  icon              String?
   skills_user       SkillsUser[]
   task_requirements TaskRequirements[]
 }
@@ -193,15 +194,17 @@ model ChatRoom {
 }
 
 model Message {
-  id_message   String   @id @default(uuid())
-  id_chat_room String
-  id_sender    String
-  teks_pesan   String?
-  image_url    String?
-  is_read      Boolean  @default(false)
-  created_at   DateTime @default(now())
-  chat_room    ChatRoom @relation(fields: [id_chat_room], references: [id_chat_room], onDelete: Cascade)
-  sender       User     @relation("UserMessages", fields: [id_sender], references: [id_user], onDelete: Cascade)
+  id_message                String   @id @default(uuid())
+  id_chat_room              String
+  id_sender                 String
+  teks_pesan                String?
+  image_url                 String?
+  is_read                   Boolean  @default(false)
+  deleted_by                String[] @default([])
+  is_deleted_for_everyone   Boolean  @default(false)
+  created_at                DateTime @default(now())
+  chat_room                 ChatRoom @relation(fields: [id_chat_room], references: [id_chat_room], onDelete: Cascade)
+  sender                    User     @relation("UserMessages", fields: [id_sender], references: [id_user], onDelete: Cascade)
 }
 
 model PaymentTransaction {
