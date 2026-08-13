@@ -9,6 +9,7 @@ import {
   Users,
   ClipboardList,
   Tags,
+  Flag,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
@@ -38,6 +39,7 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
     { label: 'User Management', href: '/admin/users', icon: Users },
     { label: 'Task Management', href: '/admin/tasks', icon: ClipboardList },
     { label: 'Category & Skills', href: '/admin/categories', icon: Tags },
+    { label: 'Laporan User', href: '/admin/reports', icon: Flag },
   ];
 
   const handleLogout = async () => {

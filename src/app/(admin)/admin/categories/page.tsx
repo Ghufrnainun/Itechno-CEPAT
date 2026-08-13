@@ -115,6 +115,12 @@ export default function CategorySkillsManagementPage() {
   };
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchFromUrl = new URLSearchParams(window.location.search).get('search');
+      if (searchFromUrl) {
+        setSearchQuery(searchFromUrl);
+      }
+    }
     fetchCategories();
     fetchSkills();
   }, []);

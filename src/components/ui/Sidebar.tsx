@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
+import { ReportModal } from "@/components/ui/ReportModal";
 
 interface SidebarProps {
   role: "worker" | "requester";
@@ -23,6 +24,7 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
   const { unreadCount } = useNotifications();
   const [loggingOut, setLoggingOut] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   const displayName = user?.nama_lengkap || user?.username || "Pengguna CEPAT";
   const initials = displayName
@@ -330,6 +332,20 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
 
       {/* Footer */}
       <div className={`flex flex-col gap-2 pt-4 border-t border-outline-variant/50 w-full ${!isExpanded && "items-center px-1"}`}>
+        {/* Tombol Laporan ke Admin */}
+        <button
+          type="button"
+          onClick={() => setIsReportModalOpen(true)}
+          title={!isExpanded ? "Laporkan Masalah" : undefined}
+          aria-label="Laporkan masalah ke Admin"
+          className={`sidebar-link flex items-center gap-3 text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-colors rounded-xl focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:outline-none ${isExpanded ? "w-full text-left" : "justify-center w-12 h-12 p-0"}`}
+        >
+          <span className="material-symbols-outlined text-[20px] text-rose-600" aria-hidden="true">
+            flag
+          </span>
+          {isExpanded && "Laporkan Masalah"}
+        </button>
+
         <button
           onClick={handleLogout}
           disabled={loggingOut}
@@ -341,6 +357,12 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
           {isExpanded && (loggingOut ? "Keluar..." : "Keluar")}
         </button>
       </div>
+
+      {/* Modal Laporan */}
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+      />
     </aside>
   );
 }
