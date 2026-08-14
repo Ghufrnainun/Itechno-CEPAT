@@ -29,13 +29,11 @@ import {
   Store,
   Footprints,
   SearchX,
-  Clock,
   User,
   Plus,
   Search,
   ArrowRight,
   Sparkles,
-  Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -129,23 +127,23 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col h-full bg-surface font-sans min-h-screen">
       {/* ───────────── ELEVATED HEADER ───────────── */}
-      <header className="page-header bg-surface-container-lowest border-b border-card-border px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <header className="page-header bg-surface-container-lowest border-b border-card-border px-4 sm:px-6 lg:px-8 py-3.5 sm:py-5 flex flex-row items-center justify-between gap-3 sm:gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-mono font-bold uppercase tracking-wider border border-primary/20 flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider border border-primary/20 flex items-center gap-1">
+              <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
               {getGreeting()}
             </span>
             <span className="text-on-surface-variant text-xs">•</span>
-            <span className="text-xs font-semibold text-on-surface-variant font-mono">
-              Area Kampus Semarang
+            <span className="text-[11px] sm:text-xs font-semibold text-on-surface-variant font-mono">
+              Semarang
             </span>
           </div>
 
-          <h1 className="font-headline font-extrabold text-2xl sm:text-3xl text-on-surface tracking-tight">
+          <h1 className="font-headline font-extrabold text-xl sm:text-3xl text-on-surface tracking-tight">
             Halo, {userName} 👋
           </h1>
-          <p className="font-body-sm text-xs sm:text-sm text-on-surface-variant mt-0.5">
+          <p className="font-body-sm text-xs sm:text-sm text-on-surface-variant mt-0.5 hidden sm:block">
             {role === "worker" ? (
               <>
                 Tersedia <span className="font-bold text-primary font-mono tabular-nums">{nearbyCount} peluang tugas mikro</span> siap dikerjakan hari ini.
@@ -158,17 +156,17 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {role === "requester" ? (
-            <Link href="/task/new" className="w-full sm:w-auto">
-              <Button variant="primary" size="md" icon={<Plus className="w-4 h-4" />} className="w-full sm:w-auto min-h-[44px] text-xs font-bold">
-                Post Tugas Baru
+            <Link href="/task/new">
+              <Button variant="primary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} className="min-h-[38px] sm:min-h-[44px] text-xs font-bold px-3 sm:px-4">
+                Post Tugas
               </Button>
             </Link>
           ) : (
-            <Link href="/feed" className="w-full sm:w-auto">
-              <Button variant="primary" size="md" icon={<Search className="w-4 h-4" />} className="w-full sm:w-auto min-h-[44px] text-xs font-bold">
-                Cari Tugas Terdekat
+            <Link href="/feed">
+              <Button variant="primary" size="sm" icon={<Search className="w-3.5 h-3.5" />} className="min-h-[38px] sm:min-h-[44px] text-xs font-bold px-3 sm:px-4">
+                Cari Tugas
               </Button>
             </Link>
           )}
@@ -177,6 +175,38 @@ export default function DashboardPage() {
 
       {/* ───────────── SCROLLABLE MAIN CONTENT ───────────── */}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6 pb-28 lg:pb-12">
+
+        {/* ───────────── ROLE SWITCHER (MOBILE ONLY - TOP) ───────────── */}
+        <section className="lg:hidden">
+          <div className="bg-surface-container-low border border-card-border rounded-xl p-1 flex relative shadow-xs">
+            <div
+              className="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-primary rounded-lg transition-transform duration-200 ease-out shadow-xs"
+              style={{
+                transform: role === "worker" ? "translateX(0)" : "translateX(100%)",
+              }}
+            />
+            <button
+              onClick={() => role !== "worker" && toggleRole()}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold z-10 transition-colors duration-150 rounded-lg cursor-pointer min-h-[44px]",
+                role === "worker" ? "text-on-primary font-bold" : "text-on-surface"
+              )}
+            >
+              <Briefcase className="w-4 h-4" />
+              Mode Pekerja
+            </button>
+            <button
+              onClick={() => role !== "requester" && toggleRole()}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold z-10 transition-colors duration-150 rounded-lg cursor-pointer min-h-[44px]",
+                role === "requester" ? "text-on-primary font-bold" : "text-on-surface"
+              )}
+            >
+              <PlusSquare className="w-4 h-4" />
+              Mode Pemberi Tugas
+            </button>
+          </div>
+        </section>
 
         {/* ───────────── ASYMMETRIC BENTO STATS GRID (12 Columns) ───────────── */}
         <section className="grid grid-cols-12 gap-3.5 sm:gap-4 md:gap-5">
@@ -334,73 +364,48 @@ export default function DashboardPage() {
           </motion.div>
         </section>
 
-        {/* ───────────── ROLE SWITCHER (MOBILE ONLY) ───────────── */}
-        <section className="lg:hidden">
-          <div className="bg-surface-container-low border border-card-border rounded-xl p-1 flex relative shadow-xs">
-            <div
-              className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-primary rounded-lg transition-transform duration-200 ease-out shadow-xs"
-              style={{
-                transform: role === "worker" ? "translateX(0)" : "translateX(calc(100% + 8px))",
-              }}
-            />
-            <button
-              onClick={() => role !== "worker" && toggleRole()}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold z-10 transition-colors duration-150 rounded-lg cursor-pointer min-h-[44px]",
-                role === "worker" ? "text-on-primary" : "text-on-surface"
-              )}
-            >
-              <Briefcase className="w-4 h-4" />
-              Mode Pekerja
-            </button>
-            <button
-              onClick={() => role !== "requester" && toggleRole()}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold z-10 transition-colors duration-150 rounded-lg cursor-pointer min-h-[44px]",
-                role === "requester" ? "text-on-primary" : "text-on-surface"
-              )}
-            >
-              <PlusSquare className="w-4 h-4" />
-              Mode Pemberi Tugas
-            </button>
-          </div>
-        </section>
 
-        {/* ───────────── QUICK ACCESS GRID (MOBILE ONLY) ───────────── */}
-        <section className="lg:hidden grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          {role === "requester" ? (
-            <Link href="/task/new" className="bg-surface-container-lowest border border-card-border rounded-xl p-3.5 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors duration-150 min-h-[48px]">
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                <PlusSquare className="w-4.5 h-4.5" />
+
+        {/* ───────────── QUICK SHORTCUT STRIP (MOBILE ONLY) ───────────── */}
+        <section className="lg:hidden bg-surface-container-lowest border border-card-border/90 rounded-2xl p-2.5 shadow-2xs">
+          <div className="grid grid-cols-4 gap-1">
+            {role === "requester" ? (
+              <Link href="/task/new" className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-xl hover:bg-surface-container-low transition-colors group">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform shadow-2xs">
+                  <PlusSquare className="w-4.5 h-4.5" />
+                </div>
+                <span className="text-[11px] font-semibold text-on-surface text-center whitespace-nowrap">Post Tugas</span>
+              </Link>
+            ) : (
+              <Link href="/cari-tugas" className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-xl hover:bg-surface-container-low transition-colors group">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform shadow-2xs">
+                  <Compass className="w-4.5 h-4.5" />
+                </div>
+                <span className="text-[11px] font-semibold text-on-surface text-center whitespace-nowrap">Radar Map</span>
+              </Link>
+            )}
+
+            <Link href="/history/riwayat" className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-xl hover:bg-surface-container-low transition-colors group">
+              <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform shadow-2xs">
+                <History className="w-4.5 h-4.5" />
               </div>
-              <span className="text-xs font-bold text-on-surface text-center">Post Tugas</span>
+              <span className="text-[11px] font-semibold text-on-surface text-center whitespace-nowrap">Riwayat</span>
             </Link>
-          ) : (
-            <Link href="/cari-tugas" className="bg-surface-container-lowest border border-card-border rounded-xl p-3.5 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors duration-150 min-h-[48px]">
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                <Compass className="w-4.5 h-4.5" />
+
+            <Link href="/wallet" className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-xl hover:bg-surface-container-low transition-colors group">
+              <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform shadow-2xs">
+                <Wallet className="w-4.5 h-4.5" />
               </div>
-              <span className="text-xs font-bold text-on-surface text-center">Radar Map</span>
+              <span className="text-[11px] font-semibold text-on-surface text-center whitespace-nowrap">Dompet</span>
             </Link>
-          )}
-          <Link href="/history/riwayat" className="bg-surface-container-lowest border border-card-border rounded-xl p-3.5 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors duration-150 min-h-[48px]">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-              <History className="w-4.5 h-4.5" />
-            </div>
-            <span className="text-xs font-bold text-on-surface text-center">Riwayat</span>
-          </Link>
-          <Link href="/wallet" className="bg-surface-container-lowest border border-card-border rounded-xl p-3.5 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors duration-150 min-h-[48px]">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-              <Wallet className="w-4.5 h-4.5" />
-            </div>
-            <span className="text-xs font-bold text-on-surface text-center">Dompet</span>
-          </Link>
-          <Link href="/bantuan" className="bg-surface-container-lowest border border-card-border rounded-xl p-3.5 flex flex-col items-center justify-center gap-2 shadow-xs hover:border-primary/40 transition-colors duration-150 min-h-[48px]">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-              <HelpCircle className="w-4.5 h-4.5" />
-            </div>
-            <span className="text-xs font-bold text-on-surface text-center">Bantuan</span>
-          </Link>
+
+            <Link href="/bantuan" className="flex flex-col items-center justify-center gap-1.5 py-2 px-1 rounded-xl hover:bg-surface-container-low transition-colors group">
+              <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform shadow-2xs">
+                <HelpCircle className="w-4.5 h-4.5" />
+              </div>
+              <span className="text-[11px] font-semibold text-on-surface text-center whitespace-nowrap">Bantuan</span>
+            </Link>
+          </div>
         </section>
 
         {/* ───────────── FEATURED OPPORTUNITY + MINI RADAR MAP ───────────── */}
@@ -519,27 +524,32 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="bg-surface-container-lowest border border-card-border rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col gap-5"
+          className="bg-surface-container-lowest border border-card-border rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col gap-4 sm:gap-5"
         >
-          {/* Tab Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-card-border pb-3">
+          {/* Tab Header - Clean Single-Row Alignment on Mobile */}
+          <div className="flex items-center justify-between gap-2 border-b border-card-border/80 pb-3">
             <Tabs
               value={activeTab}
               onValueChange={(val) => setActiveTab(val as "recommendations" | "activity")}
               variant="pill"
             >
-              <TabsList className="w-fit flex-nowrap">
-                <TabsTrigger value="recommendations">
-                  Rekomendasi Tugas ({recommendedTasks.length})
+              <TabsList className="w-fit flex-nowrap p-0.5">
+                <TabsTrigger value="recommendations" className="px-2.5 sm:px-3.5 py-1.5 text-xs">
+                  Rekomendasi <span className="font-mono text-[11px] opacity-75">({recommendedTasks.length})</span>
                 </TabsTrigger>
-                <TabsTrigger value="activity">
-                  Aktivitas Saya ({myActiveTasks.length})
+                <TabsTrigger value="activity" className="px-2.5 sm:px-3.5 py-1.5 text-xs">
+                  Aktivitas <span className="font-mono text-[11px] opacity-75">({myActiveTasks.length})</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
 
-            <Link href="/feed" className="text-xs font-bold text-primary hover:underline flex items-center gap-1.5 w-fit">
-              Lihat Semua <ArrowRight className="w-3.5 h-3.5" />
+            <Link
+              href={activeTab === "recommendations" ? "/feed" : "/history/riwayat"}
+              className="text-xs font-bold text-primary hover:underline flex items-center gap-1 shrink-0"
+            >
+              <span className="hidden sm:inline">Lihat Semua</span>
+              <span className="sm:hidden">Semua</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 

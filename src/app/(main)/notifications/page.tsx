@@ -146,10 +146,10 @@ export default function NotificationsPage() {
   return (
     <div className="flex flex-col h-full bg-surface font-sans">
       {/* Page Header */}
-      <header className="page-header shrink-0 bg-surface-container-lowest border-b border-card-border px-6 py-5 flex items-center justify-between">
+      <header className="page-header shrink-0 bg-surface-container-lowest border-b border-card-border px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
         <div>
-          <h1 className="font-headline text-2xl text-on-surface font-extrabold tracking-tight">Notifikasi</h1>
-          <p className="font-body-sm text-sm text-on-surface-variant font-medium mt-0.5">
+          <h1 className="font-headline text-xl sm:text-2xl text-on-surface font-extrabold tracking-tight">Notifikasi</h1>
+          <p className="font-body-sm text-xs sm:text-sm text-on-surface-variant font-medium mt-0.5 hidden sm:block">
             Tinjau pembaruan status lamaran, ulasan, dan transfer poin secara real-time.
           </p>
         </div>

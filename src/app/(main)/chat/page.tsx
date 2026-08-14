@@ -89,8 +89,8 @@ function ChatContent() {
 
   return (
     <div className="flex flex-col h-[100dvh] lg:h-full w-full bg-surface font-sans">
-      {/* Page Header */}
-      <header className="shrink-0 bg-surface-container-lowest border-b border-card-border px-6 py-5">
+      {/* Page Header (Desktop only - clean native layout on mobile) */}
+      <header className="hidden md:block shrink-0 bg-surface-container-lowest border-b border-card-border px-6 py-5">
         <div>
           <h1 className="font-headline font-extrabold text-2xl text-on-surface tracking-tight">Chat</h1>
           <p className="font-body-sm text-xs text-on-surface-variant font-medium mt-1">
