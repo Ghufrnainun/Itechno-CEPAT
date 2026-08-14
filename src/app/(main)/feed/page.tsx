@@ -363,7 +363,7 @@ export default function FeedPage() {
               Pesan untuk Pemberi Kerja (Opsional)
             </label>
             <textarea
-              className="w-full bg-surface-container-low border border-card-border rounded-xl p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[90px] custom-scrollbar"
+              className="w-full bg-surface-container-low border border-card-border rounded-lg p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[90px] custom-scrollbar"
               placeholder="Perkenalkan pengalaman Anda atau beri pesan singkat kepada pemberi kerja..."
               value={applyMessage}
               onChange={(e) => setApplyMessage(e.target.value)}
