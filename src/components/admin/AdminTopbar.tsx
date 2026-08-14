@@ -752,8 +752,6 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
               {adminUser?.email || 'admin@itechno.id'}
             </span>
           </div>
-            </span>
-          </div>
         </div>
       </div>
     </header>
