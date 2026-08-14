@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "./Button";
+import { Sun, Moon, Menu, X, ArrowRight } from "lucide-react";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,7 +31,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-surface-container-lowest/90 backdrop-blur-md border-b border-outline-variant">
+    <header className="sticky top-0 z-50 w-full bg-surface-container-lowest/90 backdrop-blur-md border-b border-card-border">
       <nav
         aria-label="Navigasi Utama CEPAT"
         className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between transition-colors duration-200"
@@ -56,25 +57,25 @@ export function Navbar() {
           <div className="hidden md:flex gap-1 items-center">
             <a
               href="#cara-kerja"
-              className="text-on-surface-variant hover:text-primary hover:bg-surface-container-low font-medium text-sm px-3.5 py-2 rounded-lg transition-colors"
+              className="text-on-surface-variant hover:text-primary hover:bg-surface-container-low font-medium text-sm px-3.5 py-2 rounded-lg transition-colors duration-150"
             >
               Cara Kerja
             </a>
             <a
               href="#fitur"
-              className="text-on-surface-variant hover:text-primary hover:bg-surface-container-low font-medium text-sm px-3.5 py-2 rounded-lg transition-colors"
+              className="text-on-surface-variant hover:text-primary hover:bg-surface-container-low font-medium text-sm px-3.5 py-2 rounded-lg transition-colors duration-150"
             >
               Fitur
             </a>
             <a
               href="#untuk-umkm"
-              className="text-on-surface-variant hover:text-primary hover:bg-surface-container-low font-medium text-sm px-3.5 py-2 rounded-lg transition-colors"
+              className="text-on-surface-variant hover:text-primary hover:bg-surface-container-low font-medium text-sm px-3.5 py-2 rounded-lg transition-colors duration-150"
             >
               Untuk UMKM
             </a>
             <a
               href="#dampak-sdg"
-              className="text-on-surface-variant hover:text-primary hover:bg-surface-container-low font-medium text-sm px-3.5 py-2 rounded-lg transition-colors"
+              className="text-on-surface-variant hover:text-primary hover:bg-surface-container-low font-medium text-sm px-3.5 py-2 rounded-lg transition-colors duration-150"
             >
               Dampak SDG 8
             </a>
@@ -86,11 +87,13 @@ export function Navbar() {
           <button
             onClick={toggleDarkMode}
             aria-label={isDark ? "Beralih ke Mode Terang" : "Beralih ke Mode Gelap"}
-            className="w-10 h-10 rounded-lg bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-on-surface transition-colors active:scale-95 border border-outline-variant/60"
+            className="w-10 h-10 rounded-lg bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-on-surface transition-colors duration-150 active:scale-95 border border-card-border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
-            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
-              {isDark ? "light_mode" : "dark_mode"}
-            </span>
+            {isDark ? (
+              <Sun className="w-4.5 h-4.5 text-amber-400" />
+            ) : (
+              <Moon className="w-4.5 h-4.5 text-on-surface" />
+            )}
           </button>
 
           <Link href="/login">
@@ -102,11 +105,7 @@ export function Navbar() {
             <Button
               variant="primary"
               size="sm"
-              icon={
-                <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
-                  arrow_forward
-                </span>
-              }
+              icon={<ArrowRight className="w-3.5 h-3.5" />}
             >
               Mulai Cari Tugas
             </Button>
@@ -118,11 +117,13 @@ export function Navbar() {
           <button
             onClick={toggleDarkMode}
             aria-label={isDark ? "Beralih ke Mode Terang" : "Beralih ke Mode Gelap"}
-            className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-on-surface border border-outline-variant/60"
+            className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-on-surface border border-card-border"
           >
-            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
-              {isDark ? "light_mode" : "dark_mode"}
-            </span>
+            {isDark ? (
+              <Sun className="w-4.5 h-4.5 text-amber-400" />
+            ) : (
+              <Moon className="w-4.5 h-4.5 text-on-surface" />
+            )}
           </button>
 
           <button
@@ -130,11 +131,9 @@ export function Navbar() {
             aria-expanded={isOpen}
             aria-controls="mobile-menu"
             aria-label="Buka/Tutup Menu Navigasi Mobile"
-            className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-on-surface border border-outline-variant/60 active:scale-95 min-h-[44px] min-w-[44px]"
+            className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-on-surface border border-card-border active:scale-95 min-h-[44px] min-w-[44px]"
           >
-            <span className="material-symbols-outlined text-[22px]" aria-hidden="true">
-              {isOpen ? "close" : "menu"}
-            </span>
+            {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </nav>
@@ -143,7 +142,7 @@ export function Navbar() {
       {isOpen && (
         <div
           id="mobile-menu"
-          className="md:hidden border-t border-outline-variant bg-surface-container-lowest p-4 flex flex-col gap-2 shadow-lg"
+          className="md:hidden border-t border-card-border bg-surface-container-lowest p-4 flex flex-col gap-2 shadow-lg"
         >
           <a
             href="#cara-kerja"
@@ -166,7 +165,7 @@ export function Navbar() {
           >
             Untuk UMKM
           </a>
-          <div className="pt-2 border-t border-outline-variant flex flex-col gap-2">
+          <div className="pt-2 border-t border-card-border flex flex-col gap-2">
             <Link href="/login" onClick={() => setIsOpen(false)}>
               <Button variant="primary" fullWidth>
                 Mulai Cari Tugas

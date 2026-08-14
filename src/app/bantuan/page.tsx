@@ -1,5 +1,15 @@
 import Link from "next/link";
 import { LandingNavbar } from "@/components/landing/LandingNavbar";
+import {
+  UserPlus,
+  CheckSquare,
+  Coins,
+  Star,
+  Wrench,
+  HelpCircle,
+  Mail,
+  ArrowLeft,
+} from "lucide-react";
 
 export const metadata = {
   title: "Bantuan — CEPAT",
@@ -10,7 +20,7 @@ export const metadata = {
 const FAQ_CATEGORIES = [
   {
     id: "memulai",
-    icon: "person_add",
+    icon: UserPlus,
     title: "Memulai di CEPAT",
     items: [
       {
@@ -33,7 +43,7 @@ const FAQ_CATEGORIES = [
   },
   {
     id: "tugas",
-    icon: "task_alt",
+    icon: CheckSquare,
     title: "Posting & Mencari Tugas",
     items: [
       {
@@ -60,7 +70,7 @@ const FAQ_CATEGORIES = [
   },
   {
     id: "poin",
-    icon: "payments",
+    icon: Coins,
     title: "Poin & Kompensasi",
     items: [
       {
@@ -83,7 +93,7 @@ const FAQ_CATEGORIES = [
   },
   {
     id: "rating",
-    icon: "star",
+    icon: Star,
     title: "Rating & Reputasi",
     items: [
       {
@@ -102,7 +112,7 @@ const FAQ_CATEGORIES = [
   },
   {
     id: "teknis",
-    icon: "build",
+    icon: Wrench,
     title: "Masalah Teknis",
     items: [
       {
@@ -125,7 +135,7 @@ const FAQ_CATEGORIES = [
   },
   {
     id: "lainnya",
-    icon: "help",
+    icon: HelpCircle,
     title: "Lainnya",
     items: [
       {
@@ -146,93 +156,91 @@ const FAQ_CATEGORIES = [
 
 export default function BantuanPage() {
   return (
-    <div className="landing-page min-h-screen bg-layout-bg font-sans">
+    <div className="landing-page min-h-screen bg-surface font-sans">
       <LandingNavbar />
 
       <main className="max-w-3xl mx-auto px-4 md:px-6 pt-28 pb-20">
         {/* Header */}
         <div className="mb-10">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight mb-3">
+          <h1 className="font-headline text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight mb-3">
             Bantuan
           </h1>
-          <p className="text-base text-on-surface-variant leading-relaxed max-w-prose">
+          <p className="font-body-sm text-base text-on-surface-variant leading-relaxed max-w-prose">
             Temukan jawaban atas pertanyaan umum di bawah ini. Kalau tidak
             ketemu, hubungi kami langsung.
           </p>
         </div>
 
-        {/* Contact CTA */}
+        {/* Quick Contact Banner */}
         <div className="mb-10 p-5 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-on-surface mb-1">
+            <p className="text-sm font-bold text-on-surface mb-1">
               Butuh bantuan lebih lanjut?
             </p>
-            <p className="text-sm text-on-surface-variant">
+            <p className="text-xs text-on-surface-variant">
               Tim kami merespons dalam 1 hari kerja.
             </p>
           </div>
           <a
             href="mailto:bantuan@cepat.id"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-on-primary font-semibold text-sm hover:bg-primary/90 transition-colors shrink-0"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-on-primary font-semibold text-xs hover:bg-primary/90 transition-colors shrink-0 shadow-xs"
           >
-            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">mail</span>
+            <Mail className="w-4 h-4" />
             bantuan@cepat.id
           </a>
         </div>
 
         {/* FAQ Categories */}
         <div className="space-y-10">
-          {FAQ_CATEGORIES.map((cat) => (
-            <section key={cat.id} id={cat.id}>
-              <div className="flex items-center gap-3 mb-5 pb-2 border-b border-outline-variant">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <span
-                    className="material-symbols-outlined text-primary text-[18px]"
-                    style={{ fontVariationSettings: "'FILL' 1" }}
-                   aria-hidden="true">
-                    {cat.icon}
-                  </span>
+          {FAQ_CATEGORIES.map((cat) => {
+            const IconComp = cat.icon;
+            return (
+              <section key={cat.id} id={cat.id}>
+                <div className="flex items-center gap-3 mb-5 pb-2.5 border-b border-card-border">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-primary">
+                    <IconComp className="w-4 h-4" />
+                  </div>
+                  <h2 className="font-headline text-lg font-bold text-on-surface">{cat.title}</h2>
                 </div>
-                <h2 className="text-lg font-bold text-on-surface">{cat.title}</h2>
-              </div>
 
-              <div className="space-y-5">
-                {cat.items.map((item, i) => (
-                  <div key={i} className="flex gap-4">
-                    <div className="pt-0.5 shrink-0">
-                      <div className="w-5 h-5 rounded-full bg-surface-container border border-outline-variant flex items-center justify-center">
-                        <span className="text-[10px] font-bold text-on-surface-variant">
-                          {i + 1}
-                        </span>
+                <div className="space-y-4">
+                  {cat.items.map((item, i) => (
+                    <div key={i} className="flex gap-4 p-4 rounded-xl bg-surface-container-lowest border border-card-border shadow-xs">
+                      <div className="pt-0.5 shrink-0">
+                        <div className="w-5 h-5 rounded-full bg-surface-container border border-card-border flex items-center justify-center">
+                          <span className="text-[10px] font-bold text-on-surface-variant font-mono">
+                            {i + 1}
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="font-headline text-sm font-bold text-on-surface mb-1">
+                          {item.q}
+                        </h3>
+                        <p className="font-body-sm text-xs md:text-sm text-on-surface-variant leading-relaxed">
+                          {item.a}
+                        </p>
                       </div>
                     </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-on-surface mb-1">
-                        {item.q}
-                      </h3>
-                      <p className="text-sm text-on-surface-variant leading-relaxed">
-                        {item.a}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ))}
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </div>
 
         {/* Back link */}
-        <div className="mt-14 pt-6 border-t border-outline-variant flex items-center gap-6">
+        <div className="mt-14 pt-6 border-t border-card-border flex items-center gap-6 text-xs font-semibold">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm text-on-surface-variant hover:text-primary transition-colors"
+            className="inline-flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors"
           >
-            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_back</span>
+            <ArrowLeft className="w-4 h-4" />
             Kembali ke Beranda
           </Link>
           <Link
             href="/kebijakan-privasi"
-            className="text-sm text-on-surface-variant hover:text-primary transition-colors"
+            className="text-on-surface-variant hover:text-primary transition-colors"
           >
             Kebijakan Privasi →
           </Link>

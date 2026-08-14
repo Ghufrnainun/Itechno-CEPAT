@@ -101,8 +101,20 @@ export async function proxy(request: NextRequest) {
     try {
       const dbUser = await prisma.user.findFirst({
         where: { OR: [{ auth_id: user.id }, { email: user.email! }] },
-        select: { id_user: true, is_banned: true, ban_type: true, ban_reason: true, banned_until: true },
+        select: {
+          id_user: true,
+          is_banned: true,
+          ban_type: true,
+          ban_reason: true,
+          banned_until: true,
+          role: { select: { nama_role: true } },
+        },
       })
+
+      // Admin role is strictly forbidden from accessing main worker dashboard
+      if (dbUser?.role?.nama_role === 'Admin' && isProtectedRoute) {
+        return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+      }
 
       if (dbUser?.is_banned) {
         const now = new Date()
@@ -138,19 +150,21 @@ export async function proxy(request: NextRequest) {
         }
       }
     } catch (e) {
-      console.error('[Proxy] Ban check error:', e)
+      console.error('[Proxy] Auth check error:', e)
     }
   }
 
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone()
-    url.pathname = '/login'
+    url.pathname = '/register'
     url.search = ''
     return NextResponse.redirect(url)
   }
 
   return supabaseResponse
 }
+
+export const middleware = proxy
 
 export const config = {
   matcher: [

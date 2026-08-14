@@ -7,6 +7,20 @@ import { useToast } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
 import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import {
+  Wallet,
+  CheckCircle2,
+  XCircle,
+  UserCheck,
+  Star,
+  MessageSquare,
+  Info,
+  CheckCheck,
+  BellOff,
+  ChevronRight,
+  Loader2,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function NotificationsPage() {
   const router = useRouter();
@@ -24,21 +38,21 @@ export default function NotificationsPage() {
       case "points":
       case "escrow":
       case "topup":
-        return <span className="material-symbols-outlined text-secondary text-[24px]" aria-hidden="true">account_balance_wallet</span>;
+        return <Wallet className="w-5 h-5 text-secondary" />;
       case "accept":
-        return <span className="material-symbols-outlined text-primary text-[24px]" aria-hidden="true">check_circle</span>;
+        return <CheckCircle2 className="w-5 h-5 text-primary" />;
       case "reject":
       case "cancel":
-        return <span className="material-symbols-outlined text-error text-[24px]" aria-hidden="true">cancel</span>;
+        return <XCircle className="w-5 h-5 text-error" />;
       case "apply":
-        return <span className="material-symbols-outlined text-amber-500 text-[24px]" aria-hidden="true">assignment_ind</span>;
+        return <UserCheck className="w-5 h-5 text-amber-500" />;
       case "review":
       case "milestone":
-        return <span className="material-symbols-outlined text-amber-400 text-[24px]" aria-hidden="true">star</span>;
+        return <Star className="w-5 h-5 text-amber-400 fill-amber-400" />;
       case "chat":
-        return <span className="material-symbols-outlined text-primary text-[24px]" aria-hidden="true">chat</span>;
+        return <MessageSquare className="w-5 h-5 text-primary" />;
       default:
-        return <span className="material-symbols-outlined text-outline text-[24px]" aria-hidden="true">info</span>;
+        return <Info className="w-5 h-5 text-on-surface-variant" />;
     }
   };
 
@@ -53,18 +67,15 @@ export default function NotificationsPage() {
   const getNotificationLink = (notif: NotificationItem): string | null => {
     const data = notif.data || {};
 
-    // 1. Direct URL/link/href in payload
     if (typeof data.url === "string" && data.url) return data.url;
     if (typeof data.link === "string" && data.link) return data.link;
     if (typeof data.href === "string" && data.href) return data.href;
 
-    // 2. Task ID in payload
     const taskId = data.task_id || data.taskId || data.id_tasks || data.id_task;
     if (taskId && typeof taskId === "string") {
       return `/task/${taskId}`;
     }
 
-    // 3. Fallback based on notification type
     switch (notif.type) {
       case "apply":
       case "accept":
@@ -133,47 +144,60 @@ export default function NotificationsPage() {
   const readCount = notifications.filter((n) => n.isRead).length;
 
   return (
-    <div className="flex flex-col h-full bg-layout-bg font-sans">
+    <div className="flex flex-col h-full bg-surface font-sans">
       {/* Page Header */}
-      <header className="page-header shrink-0">
+      <header className="page-header shrink-0 bg-surface-container-lowest border-b border-card-border px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
         <div>
-          <h1 className="font-headline-md text-headline-md text-on-surface font-extrabold">Notifikasi</h1>
-          <p className="font-body-sm text-body-sm text-on-surface-variant font-medium">
+          <h1 className="font-headline text-xl sm:text-2xl text-on-surface font-extrabold tracking-tight">Notifikasi</h1>
+          <p className="font-body-sm text-xs sm:text-sm text-on-surface-variant font-medium mt-0.5 hidden sm:block">
             Tinjau pembaruan status lamaran, ulasan, dan transfer poin secara real-time.
           </p>
         </div>
         {unreadCount > 0 && (
-          <Button variant="secondary" className="py-1.5 px-3 text-xs font-bold" onClick={handleMarkAllAsRead}>
-            <span className="material-symbols-outlined text-[14px]" aria-hidden="true">done_all</span>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleMarkAllAsRead}
+            icon={<CheckCheck className="w-4 h-4" />}
+          >
             Tandai Dibaca
           </Button>
         )}
       </header>
 
-      <div className="max-w-4xl mx-auto w-full p-lg md:p-xl flex flex-col gap-lg">
+      <div className="max-w-4xl mx-auto w-full p-4 md:p-6 lg:p-8 flex flex-col gap-5">
         {/* Filter Navigation Tabs */}
-        <div className="flex items-center justify-between border-b border-outline-variant/60 pb-xs">
-          <div className="flex items-center gap-md">
+        <div className="flex items-center justify-between border-b border-card-border pb-2">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setFilterTab("all")}
-              className={`tab-underline font-bold ${filterTab === "all" ? "active" : ""}`}
+              className={cn(
+                "tab-underline font-bold text-xs py-1.5 px-2 cursor-pointer transition-colors duration-150",
+                filterTab === "all" ? "text-primary active" : "text-on-surface-variant hover:text-on-surface"
+              )}
             >
               Semua ({notifications.length})
             </button>
             <button
               onClick={() => setFilterTab("unread")}
-              className={`tab-underline font-bold flex items-center gap-xs ${filterTab === "unread" ? "active" : ""}`}
+              className={cn(
+                "tab-underline font-bold text-xs py-1.5 px-2 flex items-center gap-1.5 cursor-pointer transition-colors duration-150",
+                filterTab === "unread" ? "text-primary active" : "text-on-surface-variant hover:text-on-surface"
+              )}
             >
               Belum Dibaca
               {unreadCount > 0 && (
-                <span className="bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.2 rounded-full font-mono">
+                <span className="bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono tabular-nums">
                   {unreadCount}
                 </span>
               )}
             </button>
             <button
               onClick={() => setFilterTab("read")}
-              className={`tab-underline font-bold ${filterTab === "read" ? "active" : ""}`}
+              className={cn(
+                "tab-underline font-bold text-xs py-1.5 px-2 cursor-pointer transition-colors duration-150",
+                filterTab === "read" ? "text-primary active" : "text-on-surface-variant hover:text-on-surface"
+              )}
             >
               Sudah Dibaca ({readCount})
             </button>
@@ -181,17 +205,19 @@ export default function NotificationsPage() {
         </div>
 
         {/* Notifications Card List */}
-        <div className="bg-white border border-outline-variant rounded-xl divide-y divide-outline-variant/60 overflow-hidden shadow-sm">
+        <div className="bg-surface-container-lowest border border-card-border rounded-xl divide-y divide-card-border overflow-hidden shadow-xs">
           {isLoading ? (
-            <div className="p-xl text-center py-12 flex flex-col items-center gap-sm">
-              <span className="material-symbols-outlined text-primary text-[36px] animate-spin" aria-hidden="true">sync</span>
-              <p className="font-body-sm text-on-surface-variant font-medium">Memuat notifikasi...</p>
+            <div className="p-12 text-center flex flex-col items-center justify-center gap-3">
+              <Loader2 className="w-7 h-7 text-primary animate-spin" />
+              <p className="font-body-sm text-xs text-on-surface-variant font-medium">Memuat notifikasi...</p>
             </div>
           ) : filteredNotifications.length === 0 ? (
-            <div className="p-xl text-center flex flex-col items-center gap-sm py-16">
-              <span className="material-symbols-outlined text-outline text-[48px]" aria-hidden="true">notifications_off</span>
-              <p className="font-headline-sm text-headline-sm text-on-surface font-bold">Tidak ada notifikasi</p>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">
+            <div className="p-12 text-center flex flex-col items-center justify-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant">
+                <BellOff className="w-6 h-6" />
+              </div>
+              <p className="font-headline text-sm font-bold text-on-surface">Tidak ada notifikasi</p>
+              <p className="font-body-sm text-xs text-on-surface-variant max-w-xs">
                 {filterTab === "unread" ? "Semua notifikasi sudah Anda baca." : "Tidak ada notifikasi yang sesuai dengan filter ini."}
               </p>
             </div>
@@ -199,44 +225,49 @@ export default function NotificationsPage() {
             filteredNotifications.map((notif: NotificationItem) => (
               <div
                 key={notif.id}
-                className={`group p-md flex items-start gap-md transition-all cursor-pointer hover:bg-surface-container-low/60 ${
+                className={cn(
+                  "group p-4 flex items-start gap-3.5 transition-[background-color] duration-150 cursor-pointer hover:bg-surface-container-low/60",
                   notif.isRead
-                    ? "bg-white"
-                    : "bg-surface-container-low/40 border-l-4 border-l-primary"
-                }`}
+                    ? "bg-surface-container-lowest"
+                    : "bg-primary/5 border-l-3 border-l-primary"
+                )}
                 onClick={() => handleNotificationClick(notif)}
               >
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                  notif.type === "points" ? "bg-secondary-container/20" :
-                  notif.type === "accept" ? "bg-primary-container/15" :
-                  notif.type === "apply" ? "bg-amber-50" :
-                  notif.type === "review" ? "bg-amber-100/50" :
+                <div className={cn(
+                  "w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border border-card-border/40",
+                  notif.type === "points" ? "bg-secondary-container/40" :
+                  notif.type === "accept" ? "bg-primary/10" :
+                  notif.type === "apply" ? "bg-amber-500/10" :
+                  notif.type === "review" ? "bg-amber-500/10" :
                   "bg-surface-container"
-                }`}>
+                )}>
                   {getIcon(notif.type)}
                 </div>
 
-                <div className="flex-grow flex flex-col gap-xs overflow-hidden">
-                  <div className="flex justify-between items-start gap-md">
-                    <h3 className={`font-body-md text-body-md group-hover:text-primary transition-colors ${notif.isRead ? "font-semibold text-on-surface-variant" : "font-bold text-on-surface"}`}>
+                <div className="flex-grow flex flex-col gap-1 overflow-hidden min-w-0">
+                  <div className="flex justify-between items-start gap-2">
+                    <h3 className={cn(
+                      "font-body-md text-xs group-hover:text-primary transition-colors duration-150 leading-snug",
+                      notif.isRead ? "font-semibold text-on-surface-variant" : "font-bold text-on-surface"
+                    )}>
                       {notif.title}
                     </h3>
-                    <div className="flex items-center gap-xs shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {!notif.isRead && (
-                        <span className="w-2 h-2 rounded-full bg-primary shrink-0"></span>
+                        <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
                       )}
-                      <span className="font-label-sm text-label-sm text-on-surface-variant font-mono">
+                      <span className="font-mono text-[10px] text-on-surface-variant shrink-0 tabular-nums">
                         {formatTime(notif.createdAt)}
                       </span>
                     </div>
                   </div>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                  <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
                     {notif.message}
                   </p>
                 </div>
 
-                <div className="hidden sm:flex items-center text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all self-center shrink-0">
-                  <span className="material-symbols-outlined text-[20px]" aria-hidden="true">chevron_right</span>
+                <div className="hidden sm:flex items-center text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-[opacity,transform] duration-150 self-center shrink-0">
+                  <ChevronRight className="w-4 h-4" />
                 </div>
               </div>
             ))
@@ -246,4 +277,3 @@ export default function NotificationsPage() {
     </div>
   );
 }
-

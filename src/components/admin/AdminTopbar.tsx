@@ -147,17 +147,17 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
   const getMenuIcon = (iconName: string) => {
     switch (iconName) {
       case 'LayoutDashboard':
-        return <LayoutDashboard className="w-4 h-4 text-[#0F766E]" />;
+        return <LayoutDashboard className="w-4 h-4 text-[var(--primary)]" />;
       case 'Users':
-        return <Users className="w-4 h-4 text-[#0F766E]" />;
+        return <Users className="w-4 h-4 text-[var(--primary)]" />;
       case 'ClipboardList':
-        return <ClipboardList className="w-4 h-4 text-[#0F766E]" />;
+        return <ClipboardList className="w-4 h-4 text-[var(--primary)]" />;
       case 'Tag':
-        return <Tag className="w-4 h-4 text-[#0F766E]" />;
+        return <Tag className="w-4 h-4 text-[var(--primary)]" />;
       case 'Flag':
         return <Flag className="w-4 h-4 text-rose-600" />;
       default:
-        return <Folder className="w-4 h-4 text-[#0F766E]" />;
+        return <Folder className="w-4 h-4 text-[var(--primary)]" />;
     }
   };
 
@@ -360,13 +360,13 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
   let currentIndexTracker = 0;
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-white border-b border-[#E2E8F0] shadow-2xs">
+    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-white border-b border-card-border shadow-2xs">
       {/* Title / Breadcrumb */}
       <div className="flex items-center gap-3">
-        <h1 className="font-headline font-bold text-lg text-[#0C1F16] tracking-tight">
+        <h1 className="font-headline font-bold text-lg text-on-surface tracking-tight">
           {title}
         </h1>
-        <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider uppercase bg-[#E6F4F1] text-[#0F766E] border border-[#0F766E]/20">
+        <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase bg-primary/10 text-primary border border-primary/20">
           Super Admin
         </span>
       </div>
@@ -374,9 +374,9 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
       {/* Right Tools & Profile */}
       <div className="flex items-center gap-4">
         {/* Global Search Component */}
-        <div ref={containerRef} className="relative w-72 sm:w-80 md:w-96">
+        <div ref={containerRef} className="relative w-44 sm:w-72 md:w-80 lg:w-96">
           <div className="relative flex items-center">
-            <Search className="absolute left-3 w-4 h-4 text-[#64748B] pointer-events-none" />
+            <Search className="absolute left-3 w-4 h-4 text-on-surface-variant pointer-events-none" />
             <input
               ref={inputRef}
               type="text"
@@ -385,13 +385,13 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
               onFocus={() => {
                 if (query.trim()) setIsOpen(true);
               }}
-              placeholder="Cari menu, user, task, atau kategori..."
-              className="w-full pl-9 pr-14 py-1.5 text-xs font-sans bg-[#F8FAFC] text-[#0C1F16] placeholder-[#94A3B8] rounded-xl border border-[#E2E8F0] focus:border-[#0F766E] focus:bg-white focus:ring-2 focus:ring-[#0F766E]/10 outline-none transition-all"
+              placeholder="Cari menu, user, task..."
+              className="w-full pl-9 pr-14 py-1.5 text-xs font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 rounded-xl border border-card-border focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20 outline-none transition-all"
             />
 
             <div className="absolute right-2.5 flex items-center gap-1">
               {loading ? (
-                <Loader2 className="w-3.5 h-3.5 text-[#0F766E] animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
               ) : query ? (
                 <button
                   type="button"
@@ -401,13 +401,13 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                     setResults({ menus: [], users: [], tasks: [], categories: [] });
                     inputRef.current?.focus();
                   }}
-                  className="p-0.5 rounded-md hover:bg-[#E2E8F0] text-[#64748B] transition-colors"
+                  className="p-0.5 rounded-md hover:bg-surface-container text-on-surface-variant transition-colors"
                   title="Clear search"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               ) : (
-                <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-[#94A3B8] bg-white border border-[#E2E8F0] rounded shadow-2xs">
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-on-surface-variant/70 bg-white border border-card-border rounded shadow-2xs">
                   <Command className="w-2.5 h-2.5" />K
                 </kbd>
               )}
@@ -416,26 +416,26 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
 
           {/* Search Dropdown Modal */}
           {isOpen && query.trim() !== '' && (
-            <div className="absolute top-full right-0 left-0 mt-2 bg-white rounded-xl border border-[#E2E8F0] shadow-xl overflow-hidden z-50 max-h-[75vh] flex flex-col animate-in fade-in-50 zoom-in-95 duration-150">
+            <div className="absolute top-full right-0 left-0 mt-2 bg-white rounded-xl border border-card-border shadow-xl overflow-hidden z-50 max-h-[75vh] flex flex-col animate-in fade-in-50 zoom-in-95 duration-150">
               {loading && totalResultsCount === 0 ? (
-                <div className="p-6 text-center text-xs text-[#64748B] flex flex-col items-center gap-2">
-                  <Loader2 className="w-5 h-5 text-[#0F766E] animate-spin" />
+                <div className="p-6 text-center text-xs text-on-surface-variant flex flex-col items-center gap-2">
+                  <Loader2 className="w-5 h-5 text-primary animate-spin" />
                   <span>Mencari di seluruh database...</span>
                 </div>
               ) : totalResultsCount === 0 && !loading ? (
-                <div className="p-8 text-center text-xs text-[#64748B] flex flex-col items-center gap-2">
-                  <Folder className="w-8 h-8 text-[#CBD5E1]" />
-                  <p className="font-medium text-[#0C1F16]">Hasil tidak ditemukan</p>
-                  <p className="text-[11px] text-[#94A3B8]">
+                <div className="p-8 text-center text-xs text-on-surface-variant flex flex-col items-center gap-2">
+                  <Folder className="w-8 h-8 text-outline-variant" />
+                  <p className="font-medium text-on-surface">Hasil tidak ditemukan</p>
+                  <p className="text-[11px] text-on-surface-variant/70">
                     Tidak ada menu, user, task, atau kategori yang cocok dengan &quot;{query}&quot;.
                   </p>
                 </div>
               ) : (
-                <div className="overflow-y-auto divide-y divide-[#F1F5F9] p-2 space-y-2">
+                <div className="overflow-y-auto divide-y divide-card-border/40 p-2 space-y-2">
                   {/* Group 1: Menu Admin */}
                   {results.menus.length > 0 && (
                     <div className="space-y-1">
-                      <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-[#0F766E] flex items-center gap-1.5">
+                      <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
                         <Sparkles className="w-3 h-3" />
                         Menu & Halaman Admin
                       </div>
@@ -448,19 +448,19 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                             onClick={() => navigateTo(menu.url)}
                             onMouseEnter={() => setSelectedIndex(itemIdx)}
                             className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors ${
-                              isSelected ? 'bg-[#E6F4F1] text-[#0F766E]' : 'hover:bg-[#F8FAFC] text-[#0C1F16]'
+                              isSelected ? 'bg-primary/10 text-[var(--primary)]' : 'hover:bg-surface-container-low text-on-surface'
                             }`}
                           >
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="p-1.5 rounded-md bg-[#F1F5F9] group-hover:bg-white shrink-0">
+                              <div className="p-1.5 rounded-md bg-surface-container group-hover:bg-white shrink-0">
                                 {getMenuIcon(menu.icon)}
                               </div>
                               <div className="truncate">
                                 <p className="text-xs font-bold truncate">{menu.title}</p>
-                                <p className="text-[11px] text-[#64748B] truncate">{menu.description}</p>
+                                <p className="text-[11px] text-on-surface-variant truncate">{menu.description}</p>
                               </div>
                             </div>
-                            <ArrowRight className={`w-3.5 h-3.5 shrink-0 transition-transform ${isSelected ? 'translate-x-1 text-[#0F766E]' : 'text-[#94A3B8]'}`} />
+                            <ArrowRight className={`w-3.5 h-3.5 shrink-0 transition-transform ${isSelected ? 'translate-x-1 text-[var(--primary)]' : 'text-on-surface-variant/70'}`} />
                           </div>
                         );
                       })}
@@ -470,7 +470,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                   {/* Group 2: Pengguna */}
                   {results.users.length > 0 && (
                     <div className="space-y-1 pt-1">
-                      <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-[#0F766E] flex items-center gap-1.5">
+                      <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-[var(--primary)] flex items-center gap-1.5">
                         <Users className="w-3 h-3" />
                         Pengguna (Users)
                       </div>
@@ -484,7 +484,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                             onClick={() => navigateTo(targetUrl)}
                             onMouseEnter={() => setSelectedIndex(itemIdx)}
                             className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors ${
-                              isSelected ? 'bg-[#E6F4F1] text-[#0F766E]' : 'hover:bg-[#F8FAFC] text-[#0C1F16]'
+                              isSelected ? 'bg-primary/10 text-[var(--primary)]' : 'hover:bg-surface-container-low text-on-surface'
                             }`}
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
@@ -492,26 +492,26 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                                 <img
                                   src={user.avatar_url}
                                   alt={user.nama_lengkap}
-                                  className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-[#0F766E]/20"
+                                  className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-[var(--primary)]/20"
                                 />
                               ) : (
-                                <div className="w-7 h-7 rounded-full bg-[#E6F4F1] text-[#0F766E] flex items-center justify-center font-bold text-xs shrink-0">
+                                <div className="w-7 h-7 rounded-full bg-primary/10 text-[var(--primary)] flex items-center justify-center font-bold text-xs shrink-0">
                                   {user.nama_lengkap.charAt(0).toUpperCase()}
                                 </div>
                               )}
                               <div className="truncate">
                                 <p className="text-xs font-bold truncate flex items-center gap-1.5">
                                   <span>{user.nama_lengkap}</span>
-                                  <span className="text-[10px] font-mono px-1.5 py-0.2 bg-[#F1F5F9] text-[#64748B] rounded border border-[#E2E8F0]">
+                                  <span className="text-[10px] font-mono px-1.5 py-0.2 bg-surface-container text-on-surface-variant rounded border border-card-border">
                                     {user.role}
                                   </span>
                                 </p>
-                                <p className="text-[11px] text-[#64748B] truncate">
+                                <p className="text-[11px] text-on-surface-variant truncate">
                                   @{user.username} • {user.email}
                                 </p>
                               </div>
                             </div>
-                            <ArrowRight className={`w-3.5 h-3.5 shrink-0 transition-transform ${isSelected ? 'translate-x-1 text-[#0F766E]' : 'text-[#94A3B8]'}`} />
+                            <ArrowRight className={`w-3.5 h-3.5 shrink-0 transition-transform ${isSelected ? 'translate-x-1 text-[var(--primary)]' : 'text-on-surface-variant/70'}`} />
                           </div>
                         );
                       })}
@@ -521,7 +521,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                   {/* Group 3: Tugas (Tasks) */}
                   {results.tasks.length > 0 && (
                     <div className="space-y-1 pt-1">
-                      <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-[#0F766E] flex items-center gap-1.5">
+                      <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-[var(--primary)] flex items-center gap-1.5">
                         <ClipboardList className="w-3 h-3" />
                         Tugas (Tasks)
                       </div>
@@ -535,26 +535,26 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                             onClick={() => navigateTo(targetUrl)}
                             onMouseEnter={() => setSelectedIndex(itemIdx)}
                             className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors ${
-                              isSelected ? 'bg-[#E6F4F1] text-[#0F766E]' : 'hover:bg-[#F8FAFC] text-[#0C1F16]'
+                              isSelected ? 'bg-primary/10 text-[var(--primary)]' : 'hover:bg-surface-container-low text-on-surface'
                             }`}
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="p-1.5 rounded-md bg-[#E6F4F1] text-[#0F766E] font-mono text-[10px] font-bold shrink-0">
+                              <div className="p-1.5 rounded-md bg-primary/10 text-[var(--primary)] font-mono text-[10px] font-bold shrink-0">
                                 {task.kategori.slice(0, 2).toUpperCase()}
                               </div>
                               <div className="truncate">
                                 <p className="text-xs font-bold truncate">{task.judul_tugas}</p>
-                                <p className="text-[11px] text-[#64748B] truncate">
-                                  Oleh: <span className="font-semibold text-[#0C1F16]">{task.requester_name}</span> • Status:{' '}
+                                <p className="text-[11px] text-on-surface-variant truncate">
+                                  Oleh: <span className="font-semibold text-on-surface">{task.requester_name}</span> • Status:{' '}
                                   <span className="capitalize">{task.status}</span>
                                 </p>
                               </div>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                              <span className="font-mono text-xs font-extrabold text-[#0F766E]">
+                              <span className="font-mono text-xs font-extrabold text-primary">
                                 {task.kompensasi.toLocaleString('id-ID')} PTS
                               </span>
-                              <ArrowRight className={`w-3.5 h-3.5 transition-transform ${isSelected ? 'translate-x-1 text-[#0F766E]' : 'text-[#94A3B8]'}`} />
+                              <ArrowRight className={`w-3.5 h-3.5 transition-transform ${isSelected ? 'translate-x-1 text-primary' : 'text-on-surface-variant/70'}`} />
                             </div>
                           </div>
                         );
@@ -565,7 +565,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                   {/* Group 4: Kategori */}
                   {results.categories.length > 0 && (
                     <div className="space-y-1 pt-1">
-                      <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-[#0F766E] flex items-center gap-1.5">
+                      <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
                         <Tag className="w-3 h-3" />
                         Kategori & Skill
                       </div>
@@ -579,21 +579,21 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                             onClick={() => navigateTo(targetUrl)}
                             onMouseEnter={() => setSelectedIndex(itemIdx)}
                             className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors ${
-                              isSelected ? 'bg-[#E6F4F1] text-[#0F766E]' : 'hover:bg-[#F8FAFC] text-[#0C1F16]'
+                              isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-surface-container-low text-on-surface'
                             }`}
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="p-1.5 rounded-md bg-[#F1F5F9] text-[#0F766E] shrink-0">
+                              <div className="p-1.5 rounded-md bg-surface-container text-primary shrink-0">
                                 <Tag className="w-3.5 h-3.5" />
                               </div>
                               <div className="truncate">
                                 <p className="text-xs font-bold truncate">{cat.nama_kategori}</p>
-                                <p className="text-[11px] text-[#64748B] truncate">
+                                <p className="text-[11px] text-on-surface-variant truncate">
                                   {cat.total_tasks} task terdaftar dalam kategori ini
                                 </p>
                               </div>
                             </div>
-                            <ArrowRight className={`w-3.5 h-3.5 shrink-0 transition-transform ${isSelected ? 'translate-x-1 text-[#0F766E]' : 'text-[#94A3B8]'}`} />
+                            <ArrowRight className={`w-3.5 h-3.5 shrink-0 transition-transform ${isSelected ? 'translate-x-1 text-primary' : 'text-on-surface-variant/70'}`} />
                           </div>
                         );
                       })}
@@ -603,20 +603,20 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
               )}
 
               {/* Footer hint */}
-              <div className="px-3 py-2 bg-[#F8FAFC] border-t border-[#E2E8F0] flex items-center justify-between text-[10px] text-[#64748B]">
+              <div className="px-3 py-2 bg-surface-container-low border-t border-card-border flex items-center justify-between text-[10px] text-on-surface-variant">
                 <div className="flex items-center gap-3">
                   <span>
-                    <kbd className="px-1 py-0.5 bg-white border border-[#CBD5E1] rounded font-mono font-bold text-[#0C1F16]">↑↓</kbd> Navigasi
+                    <kbd className="px-1 py-0.5 bg-white border border-outline-variant rounded font-mono font-bold text-on-surface">↑↓</kbd> Navigasi
                   </span>
                   <span>
-                    <kbd className="px-1 py-0.5 bg-white border border-[#CBD5E1] rounded font-mono font-bold text-[#0C1F16]">↵</kbd> Pilih
+                    <kbd className="px-1 py-0.5 bg-white border border-outline-variant rounded font-mono font-bold text-on-surface">↵</kbd> Pilih
                   </span>
                   <span>
-                    <kbd className="px-1 py-0.5 bg-white border border-[#CBD5E1] rounded font-mono font-bold text-[#0C1F16]">ESC</kbd> Tutup
+                    <kbd className="px-1 py-0.5 bg-white border border-outline-variant rounded font-mono font-bold text-on-surface">ESC</kbd> Tutup
                   </span>
                 </div>
                 {totalResultsCount > 0 && (
-                  <span className="font-mono font-bold text-[#0F766E]">
+                  <span className="font-mono font-bold text-primary">
                     {totalResultsCount} Hasil
                   </span>
                 )}
@@ -633,7 +633,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
               setIsNotifOpen((prev) => !prev);
               requestPermission();
             }}
-            className="p-2 rounded-xl text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0C1F16] transition-colors relative"
+            className="p-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors relative"
             title="Notifikasi Admin"
           >
             <Bell className="w-5 h-5" />
@@ -646,11 +646,11 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
 
           {/* Admin Notification Popup */}
           {isNotifOpen && (
-            <div className="absolute top-full right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl border border-[#E2E8F0] shadow-xl overflow-hidden z-50 flex flex-col animate-in fade-in-50 zoom-in-95 duration-150">
-              <div className="p-3.5 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between">
+            <div className="absolute top-full right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl border border-card-border shadow-xl overflow-hidden z-50 flex flex-col animate-in fade-in-50 zoom-in-95 duration-150">
+              <div className="p-3.5 bg-surface-container-low border-b border-card-border flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Bell className="w-4 h-4 text-[#0F766E]" />
-                  <span className="text-xs font-bold text-[#0C1F16]">Notifikasi Admin</span>
+                  <Bell className="w-4 h-4 text-[var(--primary)]" />
+                  <span className="text-xs font-bold text-on-surface">Notifikasi Admin</span>
                   {unreadCount > 0 && (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-100 text-rose-700">
                       {unreadCount} Baru
@@ -662,7 +662,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                     type="button"
                     onClick={handleMarkAllRead}
                     disabled={notifLoading}
-                    className="text-[11px] font-bold text-[#0F766E] hover:underline flex items-center gap-1 disabled:opacity-50"
+                    className="text-[11px] font-bold text-[var(--primary)] hover:underline flex items-center gap-1 disabled:opacity-50"
                   >
                     <CheckCheck className="w-3.5 h-3.5" />
                     Tandai Semua Dibaca
@@ -672,7 +672,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
 
               <div className="max-h-80 overflow-y-auto divide-y divide-[#F1F5F9]">
                 {notifications.length === 0 ? (
-                  <div className="p-6 text-center text-xs text-[#94A3B8]">
+                  <div className="p-6 text-center text-xs text-on-surface-variant/70">
                     Belum ada notifikasi atau laporan baru.
                   </div>
                 ) : (
@@ -680,21 +680,21 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                     <div
                       key={notif.id}
                       onClick={() => handleNotificationClick(notif)}
-                      className={`p-3 flex items-start gap-3 hover:bg-[#F8FAFC] cursor-pointer transition-colors ${
-                        !notif.is_read ? 'bg-[#E6F4F1]/30 font-semibold' : ''
+                      className={`p-3 flex items-start gap-3 hover:bg-surface-container-low cursor-pointer transition-colors ${
+                        !notif.is_read ? 'bg-primary/10/30 font-semibold' : ''
                       }`}
                     >
                       <div className="p-2 rounded-lg bg-rose-50 text-rose-600 shrink-0 mt-0.5 border border-rose-100">
                         <Flag className="w-3.5 h-3.5" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-[#0C1F16] truncate">
+                        <p className="text-xs font-bold text-on-surface truncate">
                           {notif.title}
                         </p>
-                        <p className="text-[11px] text-[#64748B] line-clamp-2 mt-0.5">
+                        <p className="text-[11px] text-on-surface-variant line-clamp-2 mt-0.5">
                           {notif.message}
                         </p>
-                        <p className="text-[10px] font-mono text-[#94A3B8] mt-1">
+                        <p className="text-[10px] font-mono text-on-surface-variant/70 mt-1">
                           {new Date(notif.created_at).toLocaleTimeString('id-ID', {
                             hour: '2-digit',
                             minute: '2-digit',
@@ -702,21 +702,21 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                         </p>
                       </div>
                       {!notif.is_read && (
-                        <span className="w-2 h-2 rounded-full bg-[#0F766E] shrink-0 mt-1.5" />
+                        <span className="w-2 h-2 rounded-full bg-[var(--primary)] shrink-0 mt-1.5" />
                       )}
                     </div>
                   ))
                 )}
               </div>
 
-              <div className="p-2.5 bg-[#F8FAFC] border-t border-[#E2E8F0] text-center">
+              <div className="p-2.5 bg-surface-container-low border-t border-card-border text-center">
                 <button
                   type="button"
                   onClick={() => {
                     setIsNotifOpen(false);
                     router.push('/admin/reports');
                   }}
-                  className="text-xs font-bold text-[#0F766E] hover:underline inline-flex items-center gap-1"
+                  className="text-xs font-bold text-[var(--primary)] hover:underline inline-flex items-center gap-1"
                 >
                   Lihat Semua Halaman Laporan User
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -727,7 +727,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
         </div>
 
         {/* Divider */}
-        <div className="w-px h-6 bg-[#E2E8F0]" />
+        <div className="w-px h-6 bg-card-border" />
 
         {/* Admin User Info */}
         <div className="flex items-center gap-2.5">
@@ -737,18 +737,18 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
               alt="Admin Profile"
               width={32}
               height={32}
-              className="w-8 h-8 rounded-full object-cover ring-2 ring-[#0F766E]/20"
+              className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-[#E6F4F1] text-[#0F766E] flex items-center justify-center font-bold text-xs ring-2 ring-[#0F766E]/20 shrink-0">
+            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs ring-2 ring-primary/20 shrink-0">
               {(adminUser?.nama_lengkap || 'Admin').charAt(0).toUpperCase()}
             </div>
           )}
           <div className="hidden lg:flex flex-col">
-            <span className="font-sans font-bold text-xs text-[#0C1F16]">
+            <span className="font-sans font-bold text-xs text-on-surface">
               {adminUser?.nama_lengkap || 'Admin ITechno'}
             </span>
-            <span className="font-mono text-[10px] text-[#64748B]">
+            <span className="font-mono text-[10px] text-on-surface-variant">
               {adminUser?.email || 'admin@itechno.id'}
             </span>
           </div>

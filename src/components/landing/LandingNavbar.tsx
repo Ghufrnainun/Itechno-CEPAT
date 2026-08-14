@@ -4,6 +4,9 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
+import { Menu, X } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils";
 
 export function LandingNavbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,11 +23,12 @@ export function LandingNavbar() {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className={`fixed top-4 left-4 right-4 mx-auto max-w-5xl z-50 transition-all duration-300 rounded-xl ${
+        className={cn(
+          "fixed top-4 left-4 right-4 mx-auto max-w-5xl z-50 transition-all duration-300 rounded-xl",
           isScrolled 
-            ? "bg-white/85 backdrop-blur-md shadow-sm border border-outline-variant/60" 
+            ? "bg-surface-container-lowest/90 backdrop-blur-md shadow-xs border border-card-border" 
             : "bg-transparent border-transparent"
-        }`}
+        )}
       >
         <nav className="px-4 py-3 md:px-6 flex items-center justify-between">
           {/* Logo */}
@@ -35,36 +39,39 @@ export function LandingNavbar() {
               width={100}
               height={32}
               className="h-8 w-auto logo-img"
+              style={{ width: 'auto' }}
               priority
             />
           </Link>
 
           {/* Desktop Links */}
-          <div className="hidden md:flex items-center gap-6">
-            <a href="#cara-kerja" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Cara Kerja</a>
-            <a href="#fitur" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Fitur</a>
-            <a href="#untuk-umkm" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Untuk UMKM</a>
+          <div className="hidden md:flex items-center gap-6 font-sans">
+            <a href="#cara-kerja" className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors duration-150">Cara Kerja</a>
+            <a href="#fitur" className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors duration-150">Fitur</a>
+            <a href="#untuk-umkm" className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors duration-150">Untuk UMKM</a>
           </div>
 
           {/* Desktop CTAs */}
-          <div className="hidden md:flex items-center gap-3">
-            <Link href="/login" className="text-sm font-semibold text-on-surface hover:text-primary transition-colors px-3.5 py-2 rounded-lg">
-              Masuk
+          <div className="hidden md:flex items-center gap-2.5">
+            <Link href="/login">
+              <Button variant="ghost" size="sm">
+                Masuk
+              </Button>
             </Link>
-            <Link href="/register" className="text-sm font-semibold text-on-primary bg-primary px-5 py-2.5 rounded-lg hover:bg-primary-container transition-colors shadow-sm inline-flex items-center justify-center">
-              Daftar
+            <Link href="/register">
+              <Button variant="primary" size="sm">
+                Daftar
+              </Button>
             </Link>
           </div>
 
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden z-50 w-11 h-11 rounded-lg bg-surface-container flex items-center justify-center text-on-surface cursor-pointer"
+            className="md:hidden z-50 w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-on-surface cursor-pointer active:scale-95 transition-transform"
             aria-label="Menu"
           >
-            <span className="material-symbols-outlined text-[22px]" aria-hidden="true">
-              {isOpen ? "close" : "menu"}
-            </span>
+            {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </nav>
       </motion.header>
@@ -77,18 +84,22 @@ export function LandingNavbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40 bg-white/95 backdrop-blur-xl flex flex-col items-center justify-center gap-8 px-6"
+            className="fixed inset-0 z-40 bg-surface/98 backdrop-blur-xl flex flex-col items-center justify-center gap-6 px-6 font-sans"
           >
-            <a href="#cara-kerja" onClick={() => setIsOpen(false)} className="text-2xl font-bold text-on-surface">Cara Kerja</a>
-            <a href="#fitur" onClick={() => setIsOpen(false)} className="text-2xl font-bold text-on-surface">Fitur</a>
-            <a href="#untuk-umkm" onClick={() => setIsOpen(false)} className="text-2xl font-bold text-on-surface">Untuk UMKM</a>
+            <a href="#cara-kerja" onClick={() => setIsOpen(false)} className="text-xl font-bold text-on-surface">Cara Kerja</a>
+            <a href="#fitur" onClick={() => setIsOpen(false)} className="text-xl font-bold text-on-surface">Fitur</a>
+            <a href="#untuk-umkm" onClick={() => setIsOpen(false)} className="text-xl font-bold text-on-surface">Untuk UMKM</a>
             
-            <div className="flex flex-col w-full max-w-xs gap-3 mt-8">
-              <Link href="/register" onClick={() => setIsOpen(false)} className="w-full text-center text-lg font-semibold text-on-primary bg-primary px-6 py-4 rounded-lg shadow-sm">
-                Daftar
+            <div className="flex flex-col w-full max-w-xs gap-3 mt-6">
+              <Link href="/register" onClick={() => setIsOpen(false)}>
+                <Button variant="primary" fullWidth size="lg">
+                  Daftar
+                </Button>
               </Link>
-              <Link href="/login" onClick={() => setIsOpen(false)} className="w-full text-center text-lg font-semibold text-on-surface bg-surface-container px-6 py-4 rounded-lg">
-                Masuk
+              <Link href="/login" onClick={() => setIsOpen(false)}>
+                <Button variant="secondary" fullWidth size="lg">
+                  Masuk
+                </Button>
               </Link>
             </div>
           </motion.div>

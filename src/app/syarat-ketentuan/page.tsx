@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LandingNavbar } from "@/components/landing/LandingNavbar";
+import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
   title: "Syarat & Ketentuan — CEPAT",
@@ -187,17 +188,17 @@ export default function SyaratKetentuanPage() {
         </div>
 
         {/* Back link */}
-        <div className="mt-10 pt-6 border-t border-outline-variant flex items-center gap-6">
+        <div className="mt-10 pt-6 border-t border-card-border flex items-center gap-6 text-xs font-semibold">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm text-on-surface-variant hover:text-primary transition-colors"
+            className="inline-flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors"
           >
-            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_back</span>
+            <ArrowLeft className="w-4 h-4" />
             Kembali ke Beranda
           </Link>
           <Link
             href="/bantuan"
-            className="text-sm text-on-surface-variant hover:text-primary transition-colors"
+            className="text-on-surface-variant hover:text-primary transition-colors"
           >
             Bantuan →
           </Link>

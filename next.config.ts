@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    cpus: 4,
+  },
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',

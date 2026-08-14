@@ -6,7 +6,10 @@ import DataTable, { Column } from '@/components/admin/DataTable';
 import AdminDrawer from '@/components/admin/AdminDrawer';
 import StatusBadge from '@/components/admin/StatusBadge';
 import AdminModal from '@/components/admin/AdminModal';
-import { Search, MapPin, Clock, CheckCircle, XCircle, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Search, Clock, CheckCircle, XCircle, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/motion/tabs';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface AdminTask {
   id: string;
@@ -47,8 +50,8 @@ function ToastNotif({ toast, onClose }: { toast: Toast; onClose: () => void }) {
     <div
       className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-lg text-xs font-medium font-sans ${
         toast.type === 'success'
-          ? 'bg-[#E6F4F1] border-[#0F766E]/30 text-[#0F766E]'
-          : 'bg-rose-50 border-rose-200 text-rose-700'
+          ? 'bg-primary/10 border-primary/30 text-primary'
+          : 'bg-error-container/40 border-error/30 text-error'
       }`}
     >
       {toast.type === 'success' ? (
@@ -98,11 +101,15 @@ export default function TaskManagementPage() {
         limit: '10',
       });
       const res = await fetch(`/api/admin/tasks?${params}`);
-      const json = await res.json();
-      if (json.success) {
+      if (!res.ok) {
+        setTasks([]);
+        return;
+      }
+      const json = await res.json().catch(() => ({}));
+      if (json.success && Array.isArray(json.data)) {
         setTasks(json.data);
-        setTotalPages(json.meta.totalPages);
-        setTotal(json.meta.total);
+        setTotalPages(json.meta?.totalPages || 1);
+        setTotal(json.meta?.total || 0);
       }
     } catch (err) {
       console.error('Fetch tasks error:', err);
@@ -120,7 +127,7 @@ export default function TaskManagementPage() {
 
   useEffect(() => {
     fetchTasks();
-  }, [page, statusFilter, searchTerm]);
+  }, [page, statusFilter, searchTerm, fetchTasks]);
 
   const showToast = (type: 'success' | 'error', message: string) => {
     setToast({ type, message });
@@ -139,14 +146,14 @@ export default function TaskManagementPage() {
           : `/api/admin/tasks/${task.id}/force-complete`;
 
       const res = await fetch(endpoint, { method: 'POST' });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
-      if (data.success) {
+      if (res.ok && data.success) {
         showToast('success', data.message);
         setSelectedTask(null);
         fetchTasks(); // Refresh list
       } else {
-        showToast('error', data.message);
+        showToast('error', data.message || 'Gagal memproses aksi.');
       }
     } catch {
       showToast('error', 'Gagal menghubungi server.');
@@ -160,10 +167,10 @@ export default function TaskManagementPage() {
       header: 'Task Title & Category',
       cell: (task) => (
         <div className="max-w-xs">
-          <div className="font-bold text-[#111111] truncate" title={task.judul_tugas}>
+          <div className="font-bold text-on-surface truncate font-headline text-sm" title={task.judul_tugas}>
             {task.judul_tugas}
           </div>
-          <div className="text-[11px] text-[#787774]">{task.kategori}</div>
+          <div className="text-[11px] text-on-surface-variant font-medium">{task.kategori}</div>
         </div>
       ),
     },
@@ -171,8 +178,8 @@ export default function TaskManagementPage() {
       header: 'Requester',
       cell: (task) => (
         <div>
-          <div className="text-xs font-bold text-[#111111]">{task.requester.nama_lengkap}</div>
-          <div className="text-[11px] text-[#787774] font-mono">{task.requester.email}</div>
+          <div className="text-xs font-bold text-on-surface">{task.requester.nama_lengkap}</div>
+          <div className="text-[11px] text-on-surface-variant font-mono">{task.requester.email}</div>
         </div>
       ),
     },
@@ -183,7 +190,7 @@ export default function TaskManagementPage() {
     {
       header: 'Compensation',
       cell: (task) => (
-        <span className="text-xs font-extrabold text-[#0F766E] font-mono">
+        <span className="text-xs font-extrabold text-primary font-mono tabular-nums">
           +{task.kompensasi} PTS
         </span>
       ),
@@ -191,7 +198,7 @@ export default function TaskManagementPage() {
     {
       header: 'Applicants',
       cell: (task) => (
-        <span className="text-xs font-medium text-[#2F3437]">
+        <span className="text-xs font-medium text-on-surface tabular-nums">
           {task.applicants_count} applicants
         </span>
       ),
@@ -199,7 +206,7 @@ export default function TaskManagementPage() {
     {
       header: 'Created Date',
       cell: (task) => (
-        <span className="text-xs text-[#787774]">
+        <span className="text-xs text-on-surface-variant">
           {new Date(task.created_at).toLocaleDateString('id-ID', {
             day: '2-digit',
             month: 'short',
@@ -211,82 +218,71 @@ export default function TaskManagementPage() {
   ];
 
   return (
-    <div className="flex-1 flex flex-col min-w-0">
+    <div className="flex-1 flex flex-col min-w-0 font-sans">
       <AdminTopbar title="Task Management" />
 
-      <main className="flex-1 p-6 space-y-6 max-w-7xl w-full mx-auto">
+      <main className="flex-1 px-4 sm:px-8 py-8 lg:py-12 space-y-8 max-w-[1400px] w-full mx-auto">
         {/* Search & Status Filter */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#EAEAEA]">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-card-border shadow-xs">
           {/* Search Box */}
           <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#787774]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant" />
             <input
               type="text"
-              placeholder="Search task by title, category, or requester..."
+              placeholder="Cari task berdasarkan judul, kategori, atau requester..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs bg-[#F7F6F3] text-[#111111] placeholder-[#787774] rounded-md border border-[#EAEAEA] focus:border-[#111111] focus:bg-white outline-none transition-all"
+              className="w-full pl-9 pr-3.5 py-2 min-h-[40px] text-xs font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 rounded-xl border border-card-border focus:border-primary focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
             />
           </div>
 
-          {/* Status Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-            {STATUS_TABS.map((st) => (
-              <button
-                key={st}
-                onClick={() => { setStatusFilter(st); setPage(1); }}
-                className={`px-3 py-1.5 rounded-md text-[11px] font-bold capitalize transition-colors whitespace-nowrap ${
-                  statusFilter === st
-                    ? 'bg-[#111111] text-white'
-                    : 'bg-[#F7F6F3] text-[#787774] hover:text-[#111111] hover:bg-[#EAEAEA]'
-                }`}
-              >
-                {st === 'in_progress' ? 'In Progress' : st}
-              </button>
-            ))}
-            <span className="ml-2 text-[11px] font-mono text-[#787774] shrink-0">
+          {/* Motion Status Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+            <Tabs
+              value={statusFilter}
+              onValueChange={(val) => { setStatusFilter(val); setPage(1); }}
+              variant="segment"
+            >
+              <TabsList className="w-fit">
+                {STATUS_TABS.map((st) => (
+                  <TabsTrigger key={st} value={st} className="capitalize text-[11px] py-1 px-3">
+                    {st === 'in_progress' ? 'In Progress' : st}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+            <span className="text-[11px] font-mono text-on-surface-variant shrink-0 tabular-nums">
               {total} tasks
             </span>
           </div>
         </div>
 
-        {/* Data Table */}
+        {/* Data Table / Loading Skeleton */}
         {loading ? (
-          <div className="bg-white border border-[#E2E8F0] rounded-xl p-8 flex justify-center">
-            <div className="w-8 h-8 border-4 border-[#0F766E] border-t-transparent rounded-full animate-spin" />
+          <div className="bg-white border border-card-border rounded-2xl p-6 shadow-xs space-y-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between gap-4 py-2.5 border-b border-card-border/40 last:border-0">
+                <div className="space-y-1.5 w-1/3 min-w-[180px]">
+                  <Skeleton className="h-4 w-3/4 rounded" />
+                  <Skeleton className="h-2.5 w-1/2 rounded" />
+                </div>
+                <div className="space-y-1 w-1/4 hidden sm:block">
+                  <Skeleton className="h-3.5 w-2/3 rounded" />
+                  <Skeleton className="h-2.5 w-1/2 rounded" />
+                </div>
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-4 w-16 rounded font-mono" />
+              </div>
+            ))}
           </div>
         ) : (
-          <>
-            <DataTable
-              columns={columns}
-              data={tasks}
-              onRowClick={(task) => setSelectedTask(task)}
-              pageSize={10}
-              emptyMessage="No micro-tasks found matching your filters"
-            />
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="px-3 py-1.5 text-xs font-bold rounded-lg border border-[#E2E8F0] bg-white text-[#0C1F16] hover:bg-[#F8FAFC] disabled:opacity-40 transition-colors"
-                >
-                  ← Prev
-                </button>
-                <span className="text-xs font-mono text-[#64748B]">
-                  {page} / {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="px-3 py-1.5 text-xs font-bold rounded-lg border border-[#E2E8F0] bg-white text-[#0C1F16] hover:bg-[#F8FAFC] disabled:opacity-40 transition-colors"
-                >
-                  Next →
-                </button>
-              </div>
-            )}
-          </>
+          <DataTable
+            columns={columns}
+            data={tasks}
+            onRowClick={(task) => setSelectedTask(task)}
+            pageSize={10}
+            emptyMessage="Tidak ada tugas yang cocok dengan filter Anda."
+          />
         )}
 
         {/* Slide-over Task Detail Drawer */}
@@ -297,26 +293,26 @@ export default function TaskManagementPage() {
           subtitle={`Task ID: ${selectedTask?.id}`}
         >
           {selectedTask && (
-            <div className="space-y-6 text-xs">
+            <div className="space-y-6 text-xs font-sans">
               {/* Header Title Card */}
-              <div className="space-y-2 p-4 rounded-xl bg-[#FBFBFA] border border-[#EAEAEA]">
+              <div className="space-y-2 p-4 rounded-xl bg-surface-container-low border border-card-border">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-[#0F766E]">
+                  <span className="text-[11px] font-bold text-primary font-mono uppercase tracking-wider">
                     {selectedTask.kategori}
                   </span>
                   <StatusBadge status={selectedTask.status} />
                 </div>
-                <h4 className="text-sm font-bold text-[#111111] font-sans leading-snug">
+                <h4 className="text-sm font-bold text-on-surface font-headline leading-snug">
                   {selectedTask.judul_tugas}
                 </h4>
                 <div className="flex items-center gap-2 pt-1">
-                  <span className="text-sm font-extrabold text-[#0F766E] font-mono">
+                  <span className="text-sm font-extrabold text-primary font-mono tabular-nums">
                     +{selectedTask.kompensasi} PTS
                   </span>
                   {selectedTask.estimasi_waktu && (
                     <>
-                      <span className="text-xs text-[#787774]">•</span>
-                      <span className="text-xs text-[#787774] flex items-center gap-1">
+                      <span className="text-xs text-on-surface-variant">•</span>
+                      <span className="text-xs text-on-surface-variant flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />
                         Est. {selectedTask.estimasi_waktu}
                       </span>
@@ -327,53 +323,53 @@ export default function TaskManagementPage() {
 
               {/* Task Description */}
               <div className="space-y-1.5">
-                <h5 className="text-[10px] font-bold uppercase tracking-wider text-[#787774]">
+                <h5 className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant select-none">
                   Full Description
                 </h5>
-                <p className="text-xs text-[#2F3437] leading-relaxed bg-[#F7F6F3] p-3 rounded-md border border-[#EAEAEA]">
+                <p className="text-xs text-on-surface leading-relaxed bg-surface-container-low p-3.5 rounded-lg border border-card-border whitespace-pre-wrap">
                   {selectedTask.deskripsi_tugas}
                 </p>
               </div>
 
               {/* Dates */}
               <div className="grid grid-cols-2 gap-2">
-                <div className="p-2.5 rounded-md bg-[#FBFBFA] border border-[#EAEAEA]">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#787774]">Dibuat</span>
-                  <p className="text-xs font-bold text-[#111111]">
+                <div className="p-3 rounded-lg bg-surface-container-low border border-card-border">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">Dibuat</span>
+                  <p className="text-xs font-bold text-on-surface mt-0.5">
                     {new Date(selectedTask.created_at).toLocaleDateString('id-ID', {
                       day: '2-digit', month: 'short', year: 'numeric',
                     })}
                   </p>
                 </div>
-                <div className="p-2.5 rounded-md bg-[#FBFBFA] border border-[#EAEAEA]">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#787774]">Applicants</span>
-                  <p className="text-xs font-bold text-[#111111]">{selectedTask.applicants_count} orang</p>
+                <div className="p-3 rounded-lg bg-surface-container-low border border-card-border">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">Applicants</span>
+                  <p className="text-xs font-bold text-on-surface mt-0.5 tabular-nums">{selectedTask.applicants_count} orang</p>
                 </div>
               </div>
 
               {/* People Involved */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Requester */}
-                <div className="p-3 rounded-md bg-[#FBFBFA] border border-[#EAEAEA]">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#787774]">
+                <div className="p-3 rounded-lg bg-surface-container-low border border-card-border">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">
                     Requester
                   </span>
-                  <p className="text-xs font-bold text-[#111111]">
+                  <p className="text-xs font-bold text-on-surface mt-0.5">
                     {selectedTask.requester.nama_lengkap}
                   </p>
-                  <p className="text-[11px] text-[#787774] font-mono">{selectedTask.requester.email}</p>
+                  <p className="text-[11px] text-on-surface-variant font-mono truncate">{selectedTask.requester.email}</p>
                 </div>
 
                 {/* Worker Assigned */}
-                <div className="p-3 rounded-md bg-[#FBFBFA] border border-[#EAEAEA]">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#787774]">
+                <div className="p-3 rounded-lg bg-surface-container-low border border-card-border">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">
                     Worker Assigned
                   </span>
-                  <p className="text-xs font-bold text-[#111111]">
+                  <p className="text-xs font-bold text-on-surface mt-0.5">
                     {selectedTask.worker_assigned?.nama_lengkap || 'None assigned yet'}
                   </p>
                   {selectedTask.worker_assigned && (
-                    <p className="text-[11px] text-[#787774] font-mono">
+                    <p className="text-[11px] text-on-surface-variant font-mono truncate">
                       {selectedTask.worker_assigned.email}
                     </p>
                   )}
@@ -381,12 +377,15 @@ export default function TaskManagementPage() {
               </div>
 
               {/* Admin Governance Controls */}
-              <div className="pt-4 border-t border-[#EAEAEA] space-y-2">
-                <h5 className="text-[10px] font-bold uppercase tracking-wider text-[#787774]">
+              <div className="pt-4 border-t border-card-border space-y-2">
+                <h5 className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant select-none">
                   Task Moderation Actions
                 </h5>
                 <div className="flex gap-2">
-                  <button
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    fullWidth
                     onClick={() =>
                       !['cancelled', 'completed'].includes(selectedTask.status) &&
                       setConfirmModal({ action: 'takedown', task: selectedTask })
@@ -395,16 +394,14 @@ export default function TaskManagementPage() {
                       ['cancelled', 'completed'].includes(selectedTask.status) ||
                       actionLoading === 'takedown-' + selectedTask.id
                     }
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-md bg-[#FDEBEC] hover:bg-[#F8D2D4] text-[#9F2F2D] border border-[#F8D2D4]/60 transition-colors disabled:opacity-40"
+                    icon={actionLoading === 'takedown-' + selectedTask.id ? undefined : <XCircle className="w-3.5 h-3.5" />}
                   >
-                    {actionLoading === 'takedown-' + selectedTask.id ? (
-                      <span className="w-3 h-3 border-2 border-rose-400 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <XCircle className="w-3.5 h-3.5" />
-                    )}
                     Take Down Task
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    fullWidth
                     onClick={() =>
                       selectedTask.status !== 'completed' &&
                       selectedTask.status !== 'cancelled' &&
@@ -414,18 +411,13 @@ export default function TaskManagementPage() {
                       ['completed', 'cancelled'].includes(selectedTask.status) ||
                       actionLoading === 'force-complete-' + selectedTask.id
                     }
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-md bg-[#EDF3EC] hover:bg-[#D5E5D3] text-[#346538] border border-[#D5E5D3]/60 transition-colors disabled:opacity-40"
+                    icon={actionLoading === 'force-complete-' + selectedTask.id ? undefined : <CheckCircle className="w-3.5 h-3.5" />}
                   >
-                    {actionLoading === 'force-complete-' + selectedTask.id ? (
-                      <span className="w-3 h-3 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <CheckCircle className="w-3.5 h-3.5" />
-                    )}
                     Force Complete
-                  </button>
+                  </Button>
                 </div>
                 {['cancelled', 'completed'].includes(selectedTask.status) && (
-                  <p className="text-[10px] text-[#94A3B8] text-center">
+                  <p className="text-[10px] text-on-surface-variant text-center">
                     Task ini sudah dalam status final ({selectedTask.status}).
                   </p>
                 )}
@@ -450,24 +442,20 @@ export default function TaskManagementPage() {
           confirmVariant={confirmModal?.action === 'takedown' ? 'danger' : 'primary'}
         >
           <div
-            className={`flex items-start gap-3 p-3 rounded-lg border text-xs font-sans ${
+            className={`flex items-start gap-3 p-3.5 rounded-lg border text-xs font-sans ${
               confirmModal?.action === 'takedown'
-                ? 'bg-rose-50 border-rose-200 text-rose-800'
-                : 'bg-[#E6F4F1] border-[#0F766E]/20 text-[#0C4A45]'
+                ? 'bg-error-container/40 border-error/25 text-error'
+                : 'bg-primary/10 border-primary/25 text-primary'
             }`}
           >
-            <AlertCircle
-              className={`w-4 h-4 shrink-0 mt-0.5 ${
-                confirmModal?.action === 'takedown' ? 'text-rose-600' : 'text-[#0F766E]'
-              }`}
-            />
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <div>
               <p className="font-bold">
                 {confirmModal?.action === 'takedown'
                   ? `Apakah kamu yakin ingin meng-takedown "${confirmModal?.task.judul_tugas}"?`
                   : `Apakah kamu yakin ingin force-complete "${confirmModal?.task.judul_tugas}"?`}
               </p>
-              <p className="mt-1 text-[11px] opacity-90">
+              <p className="mt-1 text-[11px] opacity-90 leading-relaxed">
                 {confirmModal?.action === 'takedown'
                   ? 'Task akan dibatalkan. Escrow akan dikembalikan ke requester dan notifikasi akan dikirim.'
                   : 'Task akan ditandai selesai. Kompensasi akan ditransfer ke worker (jika ada) dan notifikasi akan dikirim.'}

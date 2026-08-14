@@ -82,8 +82,8 @@ export function useWallet() {
         if (res.status === 401) return; // Belum login, silent
         throw new Error("Gagal mengambil saldo.");
       }
-      const data = await res.json();
-      if (data.success) setBalance(data.data);
+      const data = await res.json().catch(() => ({}));
+      if (data.success && data.data) setBalance(data.data);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Gagal mengambil saldo.";
       setError(msg);
@@ -99,7 +99,7 @@ export function useWallet() {
         if (res.status === 401) return;
         throw new Error("Gagal mengambil histori transaksi.");
       }
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (data.success) {
         setTransactions(data.transactions ?? []);
         setPagination(data.pagination ?? null);
@@ -141,7 +141,7 @@ export function useWallet() {
           body: JSON.stringify({ amount }),
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
 
         if (!res.ok || !data.success) {
           return data.message || "Gagal melakukan top-up.";
@@ -189,7 +189,7 @@ export function useWallet() {
           body: JSON.stringify({ amount }),
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
 
         if (!res.ok || !data.success) {
           return data.message || "Gagal membuat transaksi.";
@@ -246,14 +246,16 @@ export function useWallet() {
       for (let i = 0; i < retries; i++) {
         try {
           const res = await fetch(`/api/payment/status/${orderId}`);
-          const data = await res.json();
+          if (res.ok) {
+            const data = await res.json().catch(() => ({}));
 
-          if (data.success && data.data) {
-            const status = data.data.status as PaymentStatus;
-            if (status === "SUCCESS") {
-              await fetchBalance();
-              await fetchHistory();
-              return status;
+            if (data.success && data.data) {
+              const status = data.data.status as PaymentStatus;
+              if (status === "SUCCESS") {
+                await fetchBalance();
+                await fetchHistory();
+                return status;
+              }
             }
           }
         } catch (err) {

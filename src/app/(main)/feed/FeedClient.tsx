@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useDebounce } from "@/hooks/useDebounce";
 
 import { Modal } from "@/components/ui/Modal";
+import { Plus, Search, SearchX } from "lucide-react";
 
 interface FeedClientProps {
   initialTasks: any[];
@@ -199,7 +200,7 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
   };
 
   return (
-    <div className="flex flex-col h-full bg-layout-bg font-sans">
+    <div className="flex flex-col h-full bg-surface font-sans">
       {/* Main Container - Split Layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side: Feed List */}
@@ -209,15 +210,15 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
             // REQUESTER VIEW: KELOLA TUGAS
             <div className="flex flex-col h-full relative">
               {/* Header for Requester */}
-              <div className="pt-xl px-xl pb-md shrink-0 border-b border-outline-variant/30 bg-surface/95 backdrop-blur-sm z-10 sticky top-0 flex flex-col sm:flex-row justify-between sm:items-end gap-md">
+              <div className="pt-6 px-6 pb-4 shrink-0 border-b border-card-border bg-surface-container-lowest/95 backdrop-blur-md z-10 sticky top-0 flex flex-col sm:flex-row justify-between sm:items-end gap-4">
                 <div>
-                  <h2 className="font-headline-lg text-headline-lg text-on-surface font-extrabold">Kelola Tugas</h2>
-                  <p className="font-body-md text-body-md text-on-surface-variant mt-xs font-medium">
+                  <h2 className="font-headline text-2xl text-on-surface font-extrabold tracking-tight">Kelola Tugas</h2>
+                  <p className="font-body-sm text-xs text-on-surface-variant mt-1 font-medium">
                     {tasks.length} tugas yang pernah Anda posting
                   </p>
                   
                   {/* Filters for Requester */}
-                  <div className="flex items-center gap-lg mt-md overflow-x-auto pb-sm no-scrollbar">
+                  <div className="flex items-center gap-4 mt-3 overflow-x-auto pb-1 no-scrollbar">
                     {[
                       { id: "all", label: "Semua" },
                       { id: "open", label: "Sedang Mencari" },
@@ -226,7 +227,7 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
                       <button 
                         key={filter.id}
                         onClick={() => setSortBy(filter.id)}
-                        className={`font-label-md text-label-md pb-1 whitespace-nowrap transition-colors border-b-2 ${sortBy === filter.id || (sortBy === "all" && filter.id === "all") ? "text-primary font-bold border-primary" : "text-on-surface-variant hover:text-on-surface border-transparent font-medium"}`}
+                        className={`font-sans text-xs pb-1 whitespace-nowrap transition-colors border-b-2 cursor-pointer ${sortBy === filter.id || (sortBy === "all" && filter.id === "all") ? "text-primary font-bold border-primary" : "text-on-surface-variant hover:text-on-surface border-transparent font-medium"}`}
                       >
                         {filter.label}
                       </button>
@@ -234,20 +235,22 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
                   </div>
                 </div>
                 <Link href="/task/new">
-                  <Button variant="primary" className="font-bold">
-                    <span className="material-symbols-outlined text-[18px]">add</span> Post Tugas Baru
+                  <Button variant="primary" icon={<Plus className="w-4 h-4" />}>
+                    Post Tugas Baru
                   </Button>
                 </Link>
               </div>
 
               {/* Task List for Requester */}
-              <div className="flex-1 p-xl">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-md pb-32">
+              <div className="flex-1 p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-32">
                   {tasks.length === 0 ? (
-                    <div className="col-span-1 md:col-span-2 flex flex-col items-center gap-sm py-16 text-center">
-                      <span className="material-symbols-outlined text-outline text-[48px]">search_off</span>
-                      <p className="font-headline-sm text-headline-sm text-on-surface font-bold">Tidak ada tugas</p>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant">Belum ada tugas yang sesuai dengan filter.</p>
+                    <div className="col-span-1 md:col-span-2 flex flex-col items-center gap-3 py-16 text-center">
+                      <div className="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant">
+                        <SearchX className="w-6 h-6" />
+                      </div>
+                      <p className="font-headline text-sm font-bold text-on-surface">Tidak ada tugas</p>
+                      <p className="font-body-sm text-xs text-on-surface-variant">Belum ada tugas yang sesuai dengan filter.</p>
                     </div>
                   ) : (
                     tasks.map((task) => (
@@ -266,18 +269,18 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
             // WORKER VIEW: TUGAS TERSEDIA
               <div className="flex flex-col h-full relative">
                 {/* Header with Search and Filters */}
-                <div className="pt-xl px-xl pb-md shrink-0 border-b border-outline-variant/30 bg-surface/95 backdrop-blur-sm z-10 sticky top-0">
-                  <h2 className="font-headline-lg text-headline-lg text-on-surface font-extrabold">Tugas Terdekat</h2>
-                  <p className="font-body-md text-body-md text-on-surface-variant mt-sm font-medium">
+                <div className="pt-6 px-6 pb-4 shrink-0 border-b border-card-border bg-surface-container-lowest/95 backdrop-blur-md z-10 sticky top-0">
+                  <h2 className="font-headline text-2xl text-on-surface font-extrabold tracking-tight">Tugas Terdekat</h2>
+                  <p className="font-body-sm text-xs text-on-surface-variant mt-1 font-medium">
                     {tasks.length} tugas aktif dalam radius pencarian
                   </p>
                   
                   {/* Search & Filters */}
-                  <div className="mt-lg">
+                  <div className="mt-4">
                     <div className="relative w-full max-w-2xl">
-                      <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">search</span>
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant w-4 h-4" />
                       <input 
-                        className="w-full bg-surface border border-[#DDE7E1] rounded-lg py-sm pl-12 pr-md font-body-sm text-body-sm text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none transition-colors" 
+                        className="w-full bg-surface-container-low border border-card-border rounded-xl min-h-[44px] py-2.5 pl-10 pr-4 font-sans text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none transition-all shadow-xs" 
                         placeholder="Cari tugas, kategori, atau UMKM..." 
                         type="text"
                         value={searchQuery}
@@ -285,7 +288,7 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
                       />
                     </div>
                     
-                    <div className="flex items-center gap-lg mt-md overflow-x-auto pb-sm no-scrollbar">
+                    <div className="flex items-center gap-4 mt-3 overflow-x-auto pb-1 no-scrollbar">
                       {[
                         { id: "all", label: "Semua" },
                         { id: "distance_asc", label: "Terdekat" },
@@ -295,7 +298,7 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
                         <button 
                           key={filter.id}
                           onClick={() => setSortBy(filter.id)}
-                          className={`font-label-md text-label-md pb-1 whitespace-nowrap transition-colors border-b-2 ${sortBy === filter.id ? "text-primary font-bold border-primary" : "text-on-surface-variant hover:text-on-surface border-transparent font-medium"}`}
+                          className={`font-sans text-xs pb-1 whitespace-nowrap transition-colors border-b-2 cursor-pointer ${sortBy === filter.id ? "text-primary font-bold border-primary" : "text-on-surface-variant hover:text-on-surface border-transparent font-medium"}`}
                         >
                           {filter.label}
                         </button>
@@ -305,15 +308,15 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
                 </div>
 
                 {/* Task List */}
-                <div className="flex-1 p-xl">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-md pb-32">
+                <div className="flex-1 p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-32">
                     {tasks.length === 0 ? (
-                      <div className="col-span-1 md:col-span-2 flex flex-col items-center gap-sm py-16 text-center">
-                        <span className="material-symbols-outlined text-outline text-[48px]">
-                          search_off
-                        </span>
-                        <p className="font-headline-sm text-headline-sm text-on-surface font-bold">Tidak menemukan tugas</p>
-                        <p className="font-body-sm text-body-sm text-on-surface-variant">Coba sesuaikan filter atau kata kunci pencarian Anda.</p>
+                      <div className="col-span-1 md:col-span-2 flex flex-col items-center gap-3 py-16 text-center">
+                        <div className="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant">
+                          <SearchX className="w-6 h-6" />
+                        </div>
+                        <p className="font-headline text-sm font-bold text-on-surface">Tidak menemukan tugas</p>
+                        <p className="font-body-sm text-xs text-on-surface-variant">Coba sesuaikan filter atau kata kunci pencarian Anda.</p>
                       </div>
                     ) : (
                       tasks.map((task) => (
@@ -346,22 +349,22 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
 
       {/* Modal Popup Pengiriman Pesan Lamaran */}
       <Modal isOpen={isApplyModalOpen} onClose={() => setIsApplyModalOpen(false)} title="Lamar Tugas Pekerjaan">
-        <form onSubmit={handleApplySubmit} className="flex flex-col gap-md">
+        <form onSubmit={handleApplySubmit} className="flex flex-col gap-4 font-sans text-xs">
           {selectedTask && (
-            <div className="p-sm bg-surface-container-low border border-outline-variant/60 rounded-lg flex flex-col gap-xs">
-              <span className="font-body-md text-body-md font-bold text-on-surface">{selectedTask.title}</span>
-              <span className="font-label-sm text-label-sm font-bold text-primary font-mono">
+            <div className="p-3 bg-surface-container-low border border-card-border rounded-xl flex flex-col gap-1">
+              <span className="font-headline font-bold text-sm text-on-surface">{selectedTask.title}</span>
+              <span className="font-mono font-bold text-primary tabular-nums">
                 {formatCurrency(selectedTask.compensation)} / worker
               </span>
             </div>
           )}
 
-          <div className="flex flex-col gap-xs">
-            <label className="font-body-sm text-body-sm text-on-surface-variant font-medium">
+          <div className="flex flex-col gap-1.5">
+            <label className="font-semibold text-on-surface">
               Pesan untuk Pemberi Kerja (Opsional)
             </label>
             <textarea
-              className="input-field min-h-[100px] font-body-sm custom-scrollbar"
+              className="w-full bg-surface-container-low border border-card-border rounded-xl p-3 text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[90px] custom-scrollbar"
               placeholder="Perkenalkan pengalaman Anda atau beri pesan singkat kepada pemberi kerja..."
               value={applyMessage}
               onChange={(e) => setApplyMessage(e.target.value)}
@@ -369,16 +372,17 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
             />
           </div>
 
-          <div className="flex justify-end gap-sm border-t border-outline-variant/30 pt-md mt-sm">
-            <button
+          <div className="flex justify-end gap-2 border-t border-card-border pt-3 mt-1">
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={() => setIsApplyModalOpen(false)}
-              className="font-label-md text-label-md font-bold px-md py-sm rounded border border-outline-variant/60 hover:bg-surface-container cursor-pointer transition-colors"
               disabled={applyLoading}
             >
               Batal
-            </button>
-            <Button type="submit" variant="primary" disabled={applyLoading}>
+            </Button>
+            <Button type="submit" variant="primary" size="sm" disabled={applyLoading}>
               {applyLoading ? "Mengirim..." : "Kirim Lamaran"}
             </Button>
           </div>

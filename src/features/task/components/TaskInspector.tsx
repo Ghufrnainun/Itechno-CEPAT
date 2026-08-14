@@ -3,10 +3,23 @@ import { Task } from "@/types/database";
 import { formatCurrency, formatDistance } from "@/lib/utils/format";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
-import { useCurrentRole } from "@/app/(main)/layout";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { renderIcon } from "@/lib/icon-map";
+import {
+  X,
+  Share2,
+  Bookmark,
+  CheckCircle2,
+  MapPin,
+  Clock,
+  Users,
+  Star,
+  Lock,
+  MessageSquare,
+  Eye,
+  Loader2,
+} from "lucide-react";
 
 interface TaskInspectorProps {
   task: Task & {
@@ -32,7 +45,6 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
   const handleInitChat = async () => {
     try {
       setIsStartingChat(true);
-      // Get current user (worker)
       const resMe = await fetch('/api/users/me');
       const dataMe = await resMe.json();
       if (!dataMe.success) throw new Error("Gagal mendapatkan data user");
@@ -63,46 +75,55 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
   const requesterName = task.requester_name || task.requester?.nama_lengkap || "Pemberi Kerja";
 
   return (
-    <aside className="w-full sm:w-[440px] fixed inset-y-0 right-0 sm:relative bg-surface border-l border-outline-variant flex-shrink-0 h-full flex flex-col z-50 sm:z-20 shadow-xl sm:shadow-[-4px_0_24px_rgba(0,0,0,0.02)] animate-slide-in">
+    <aside className="w-full sm:w-[440px] fixed inset-y-0 right-0 sm:relative bg-surface-container-lowest border-l border-card-border flex-shrink-0 h-full flex flex-col z-50 sm:z-20 shadow-xl animate-fadeIn font-sans">
       {/* Top Nav / Action Bar */}
-      <div className="px-lg py-md flex items-center justify-between border-b border-outline-variant/50">
+      <div className="px-5 py-3.5 flex items-center justify-between border-b border-card-border bg-surface-container-lowest">
         <button 
           onClick={onClose}
-          className="text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center"
+          aria-label="Tutup detail tugas"
+          className="text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer w-8 h-8 rounded-lg hover:bg-surface-container-low flex items-center justify-center"
         >
-          <span className="material-symbols-outlined" aria-hidden="true">close</span>
+          <X className="w-4 h-4" />
         </button>
-        <div className="flex gap-sm">
-          <button className="text-on-surface-variant hover:text-primary transition-colors w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center">
-            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">share</span>
+        <div className="flex items-center gap-1.5">
+          <button
+            title="Bagikan Tugas"
+            aria-label="Bagikan Tugas"
+            className="text-on-surface-variant hover:text-primary transition-colors w-8 h-8 rounded-lg hover:bg-surface-container-low flex items-center justify-center cursor-pointer"
+          >
+            <Share2 className="w-4 h-4" />
           </button>
-          <button className="text-on-surface-variant hover:text-primary transition-colors w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center">
-            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">bookmark_border</span>
+          <button
+            title="Simpan Tugas"
+            aria-label="Simpan Tugas"
+            className="text-on-surface-variant hover:text-primary transition-colors w-8 h-8 rounded-lg hover:bg-surface-container-low flex items-center justify-center cursor-pointer"
+          >
+            <Bookmark className="w-4 h-4" />
           </button>
         </div>
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-lg no-scrollbar custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
         {/* Header Info */}
-        <div className="mb-lg">
-          <h2 className="font-headline-lg text-headline-lg text-on-surface leading-tight mb-sm">{task.title}</h2>
-          <div className="flex items-center justify-between mb-md">
-            <div className="flex items-center gap-sm">
-              <div className="w-10 h-10 min-w-[40px] rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold shrink-0 uppercase">
+        <div>
+          <h2 className="font-headline font-bold text-xl text-on-surface leading-snug mb-3">{task.title}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0 uppercase border border-primary/20">
                 {requesterName.charAt(0)}
               </div>
               <div>
-                <div className="flex items-center gap-xs">
-                  <span className="font-label-md text-label-md font-semibold text-on-surface">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-xs text-on-surface">
                     {requesterName}
                   </span>
-                  <span className="material-symbols-outlined text-[16px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">verified</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-primary fill-primary/10" />
                 </div>
-                <div className="flex items-center gap-xs text-outline font-body-sm text-body-sm">
-                  <span className="flex items-center gap-[2px]">
-                    <span className="material-symbols-outlined text-[14px] text-tertiary-container" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">star</span> 
-                    4.8 Rating
+                <div className="flex items-center gap-1.5 text-on-surface-variant text-[11px]">
+                  <span className="flex items-center gap-1 text-amber-600 font-bold">
+                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                    4.8
                   </span>
                   <span>•</span>
                   <span>Pemberi Kerja</span>
@@ -111,120 +132,119 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
             </div>
           </div>
 
-          <div className="flex flex-col gap-0.5 mb-lg">
-            <span className="font-headline-xl text-headline-xl font-bold text-on-surface font-label-sm font-mono">
+          <div className="flex flex-col gap-0.5 mb-5 p-3.5 bg-surface-container-low rounded-xl border border-card-border">
+            <span className="font-headline text-2xl font-extrabold text-primary font-mono tabular-nums">
               {formatCurrency(task.compensation)} <span className="text-xs font-normal text-on-surface-variant font-sans">/ worker</span>
             </span>
             {task.max_applicants && (
-              <span className="font-label-sm text-[11px] text-on-surface-variant font-mono">
+              <span className="text-[11px] text-on-surface-variant font-mono">
                 Total Escrow: {formatCurrency(task.compensation * task.max_applicants)} ({task.max_applicants} worker)
               </span>
             )}
           </div>
 
-          <div className="grid grid-cols-3 gap-xs bg-surface-container-lowest border border-outline-variant rounded-lg p-sm">
-            <div className="flex flex-col items-center justify-center p-xs border-r border-outline-variant/50 text-center">
-              <span className="material-symbols-outlined text-outline mb-1 text-[18px]" aria-hidden="true">location_on</span>
-              <span className="font-label-md text-xs font-bold text-on-surface">
+          <div className="grid grid-cols-3 gap-2 bg-surface-container-low border border-card-border rounded-xl p-3">
+            <div className="flex flex-col items-center justify-center p-1 border-r border-card-border text-center">
+              <MapPin className="w-4 h-4 text-primary mb-1" />
+              <span className="text-xs font-bold text-on-surface font-mono">
                 {task.distance !== undefined ? formatDistance(task.distance) : "-"}
               </span>
-              <span className="font-body-sm text-[11px] text-on-surface-variant">Jarak</span>
+              <span className="text-[11px] text-on-surface-variant">Jarak</span>
             </div>
-            <div className="flex flex-col items-center justify-center p-xs border-r border-outline-variant/50 text-center">
-              <span className="material-symbols-outlined text-outline mb-1 text-[18px]" aria-hidden="true">schedule</span>
-              <span className="font-label-md text-xs font-bold text-on-surface">{task.duration_estimate || "-"}</span>
-              <span className="font-body-sm text-[11px] text-on-surface-variant">Estimasi</span>
+            <div className="flex flex-col items-center justify-center p-1 border-r border-card-border text-center">
+              <Clock className="w-4 h-4 text-primary mb-1" />
+              <span className="text-xs font-bold text-on-surface">{task.duration_estimate || "-"}</span>
+              <span className="text-[11px] text-on-surface-variant">Estimasi</span>
             </div>
-            <div className="flex flex-col items-center justify-center p-xs text-center">
-              <span className="material-symbols-outlined text-outline mb-1 text-[18px]" aria-hidden="true">group</span>
-              <span className="font-label-md text-xs font-bold text-on-surface">{task.max_applicants ?? 1} Orang</span>
-              <span className="font-body-sm text-[11px] text-on-surface-variant">Max Worker</span>
+            <div className="flex flex-col items-center justify-center p-1 text-center">
+              <Users className="w-4 h-4 text-primary mb-1" />
+              <span className="text-xs font-bold text-on-surface">{task.max_applicants ?? 1} Worker</span>
+              <span className="text-[11px] text-on-surface-variant">Kuota</span>
             </div>
           </div>
         </div>
 
         {/* Escrow Box */}
-        <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-lg p-md flex items-start gap-md mb-lg">
-          <span className="material-symbols-outlined text-[#D97706]" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">lock</span>
-          <p className="font-body-sm text-body-sm text-[#92400E]">
-            Dana <span className="font-label-md text-label-md font-bold font-mono">{formatCurrency(task.compensation)} / worker</span> ditahan aman dan cair setelah bukti kerja disetujui.
+        <div className="bg-tertiary-container/30 border border-tertiary/25 rounded-xl p-3.5 flex items-start gap-3 text-tertiary">
+          <Lock className="w-4 h-4 shrink-0 mt-0.5" />
+          <p className="text-xs leading-relaxed">
+            Dana <span className="font-bold font-mono">{formatCurrency(task.compensation)} / worker</span> ditahan aman di Escrow dan langsung dicairkan setelah hasil kerja disetujui.
           </p>
         </div>
 
         {/* Task Description */}
-        <div className="mb-lg">
-          <h3 className="font-headline-sm text-headline-sm text-on-surface mb-xs">Deskripsi</h3>
-          <p className="font-body-sm text-body-sm text-on-surface-variant whitespace-pre-wrap">
+        <div>
+          <h3 className="font-headline font-bold text-xs uppercase tracking-wider text-on-surface-variant mb-2">Deskripsi Tugas</h3>
+          <p className="text-xs text-on-surface leading-relaxed whitespace-pre-wrap bg-surface-container-low p-3.5 rounded-xl border border-card-border">
             {task.description}
           </p>
         </div>
 
-        <div className="mb-xl">
-          <h3 className="font-headline-sm text-headline-sm text-on-surface mb-md">Skill yang Dibutuhkan</h3>
+        <div>
+          <h3 className="font-headline font-bold text-xs uppercase tracking-wider text-on-surface-variant mb-2">Skill yang Dibutuhkan</h3>
           {task.skills && task.skills.length > 0 ? (
-            <div className="flex flex-wrap gap-xs">
+            <div className="flex flex-wrap gap-1.5">
               {task.skills.map((skill) => (
-                <div key={skill.id_skill} className="flex items-center gap-1.5 px-sm py-1 bg-primary-container/30 text-primary font-body-sm text-body-sm rounded-full border border-primary/20">
+                <div key={skill.id_skill} className="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full border border-primary/20">
                   {renderIcon(skill.icon ?? null, "w-3.5 h-3.5 shrink-0")}
                   <span>{skill.nama_skill}</span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="font-body-sm text-body-sm text-on-surface-variant italic">Tidak ada spesifikasi skill khusus.</p>
+            <p className="text-xs text-on-surface-variant italic">Tidak ada spesifikasi skill khusus.</p>
           )}
         </div>
       </div>
 
       {/* Bottom CTA Fixed */}
-      <div className="p-lg pb-24 sm:pb-lg bg-surface border-t border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.02)] flex flex-col gap-sm">
+      <div className="p-4 bg-surface-container-lowest border-t border-card-border flex flex-col gap-2.5">
         {isApplied ? (
-          <div className="flex flex-col gap-xs p-sm bg-surface-container-low border border-outline-variant/60 rounded-xl">
-            <div className="flex items-center gap-xs text-primary font-bold font-label-sm text-xs">
-              <span className="material-symbols-outlined text-[16px]">info</span>
+          <div className="flex flex-col gap-2 p-3 bg-surface-container-low border border-card-border rounded-xl">
+            <div className="flex items-center gap-1.5 text-primary font-bold text-xs">
+              <CheckCircle2 className="w-4 h-4" />
               Status Lamaran Anda:
             </div>
-            <p className="font-body-sm text-[12px] text-on-surface leading-relaxed">
+            <p className="text-xs text-on-surface leading-relaxed">
               {applicationStatus === "accepted" ? (
                 task.status === "open" ? (
-                  "Anda sudah diterima, sedang melakukan pencarian untuk worker tambahan"
+                  "Anda sudah diterima! Pekerjaan siap dikerjakan."
                 ) : (
-                  "Anda sudah diterima, tugas siap/sedang dikerjakan"
+                  "Anda sudah diterima, tugas sedang berlangsung."
                 )
               ) : (
-                "Anda sudah melamar, menunggu jawaban dari requester"
+                "Lamaran Anda telah dikirim, menunggu persetujuan pemberi kerja."
               )}
             </p>
             <Button
               variant="secondary"
-              className="w-full py-sm text-xs mt-xs flex items-center justify-center gap-xs"
+              size="sm"
+              fullWidth
+              icon={<Eye className="w-3.5 h-3.5" />}
               onClick={() => router.push(`/task/${task.id_task}`)}
             >
-              <span className="material-symbols-outlined text-[16px]">visibility</span>
               Lihat Detail Halaman Tugas
             </Button>
           </div>
         ) : (
-          <div className="flex gap-sm">
+          <div className="flex gap-2.5">
             <Button 
               variant="secondary"
-              className="flex-1 py-md text-[16px] flex items-center justify-center gap-xs"
+              size="lg"
+              className="flex-1"
               onClick={handleInitChat}
               disabled={isStartingChat}
+              icon={isStartingChat ? undefined : <MessageSquare className="w-4 h-4" />}
             >
-              {isStartingChat ? (
-                <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
-              ) : (
-                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">chat</span>
-              )}
               {isStartingChat ? "Memproses..." : "Chat"}
             </Button>
             <Button 
               variant="primary"
-              className="flex-1 py-md text-[16px]"
+              size="lg"
+              className="flex-1"
               onClick={onApply}
             >
-              Ambil tugas ini
+              Ambil Tugas Ini
             </Button>
           </div>
         )}

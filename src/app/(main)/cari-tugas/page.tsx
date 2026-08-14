@@ -10,20 +10,19 @@ import { TaskInspector } from "@/features/task/components/TaskInspector";
 import { useToast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { MapPinOff, Radio } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function CariTugasPage() {
   const { coords, loading: locLoading } = useGeolocation();
   const { showToast } = useToast();
   
   const [tasks, setTasks] = useState<(Task & { distance: number })[]>([]);
-  const [radius, setRadius] = useState<number>(3); // Default 3km
+  const [radius, setRadius] = useState<number>(3);
   
-  // Selected task for inspector
   const [selectedTask, setSelectedTask] = useState<(Task & { distance?: number }) | null>(null);
-  
   const [appliedTaskIds, setAppliedTaskIds] = useState<string[]>([]);
 
-  // Apply Modal state
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [applyMessage, setApplyMessage] = useState("");
   const [taskToApply, setTaskToApply] = useState<string | null>(null);
@@ -34,9 +33,6 @@ export default function CariTugasPage() {
       if (locLoading) return;
       const fetched = await getFeedTasks(coords.latitude, coords.longitude, radius);
       setTasks(fetched);
-      
-      // If selectedTask is no longer in radius, maybe clear it? 
-      // For now we keep it so the user can still read it.
     }
     loadTasks();
   }, [coords, radius, locLoading]);
@@ -45,8 +41,9 @@ export default function CariTugasPage() {
     async function loadAppliedTaskIds() {
       try {
         const res = await fetch('/api/tasks/applications/me');
-        const data = await res.json();
-        if (data.success) {
+        if (!res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        if (data.success && Array.isArray(data.data)) {
           setAppliedTaskIds(data.data.map((app: any) => app.id_tasks));
         }
       } catch (e) {
@@ -73,7 +70,7 @@ export default function CariTugasPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pesan: applyMessage })
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       
       if (res.ok && data.success) {
         setAppliedTaskIds(prev => [...prev, taskToApply]);
@@ -90,21 +87,21 @@ export default function CariTugasPage() {
   };
 
   return (
-    <div className="flex flex-col h-full font-sans bg-layout-bg overflow-hidden relative">
+    <div className="flex flex-col h-full font-sans bg-surface overflow-hidden relative">
       {/* Header */}
-      <header className="page-header shrink-0 z-30 bg-white relative">
+      <header className="page-header shrink-0 z-30 bg-surface-container-lowest border-b border-card-border px-6 py-5 flex items-center justify-between">
         <div>
-          <h1 className="font-headline-md text-headline-md text-on-surface">Cari Tugas Sekitar</h1>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
+          <h1 className="font-headline text-2xl text-on-surface font-extrabold tracking-tight">Cari Tugas Sekitar</h1>
+          <p className="font-body-sm text-sm text-on-surface-variant font-medium mt-0.5">
             Temukan tugas yang tersedia di dekat lokasimu saat ini.
           </p>
         </div>
         
         {/* Radius Filter */}
-        <div className="flex flex-col items-end gap-1">
-          <label className="font-label-sm text-label-sm text-on-surface font-semibold flex justify-between w-[200px]">
+        <div className="flex flex-col items-end gap-1.5">
+          <label className="font-sans text-xs text-on-surface font-semibold flex justify-between w-[180px]">
             <span>Radius Pencarian</span>
-            <span className="text-primary">{radius} km</span>
+            <span className="text-primary font-mono font-bold tabular-nums">{radius} km</span>
           </label>
           <input
             type="range"
@@ -113,15 +110,15 @@ export default function CariTugasPage() {
             step="1"
             value={radius}
             onChange={(e) => setRadius(Number(e.target.value))}
-            className="w-[200px] accent-primary"
+            className="w-[180px] accent-primary cursor-pointer"
           />
         </div>
       </header>
 
       {/* Main Container */}
-      <div className="flex-1 w-full h-full flex flex-col md:flex-row relative overflow-hidden bg-surface-container-low">
+      <div className="flex-1 w-full h-full flex flex-col md:flex-row relative overflow-hidden bg-surface">
         
-        {/* Background Map Layer (Top on Mobile, Right on Desktop) */}
+        {/* Background Map Layer */}
         <div className="h-[45vh] md:h-full md:flex-1 relative z-0 order-1 md:order-2">
           <MapPickerWrapper
             center={{ latitude: coords.latitude, longitude: coords.longitude }}
@@ -133,27 +130,27 @@ export default function CariTugasPage() {
               if (clicked) setSelectedTask(clicked);
             }}
           />
-          <div className="absolute top-4 left-4 md:left-6 z-10 bg-white/95 border border-outline-variant shadow rounded px-md py-xs font-label-sm text-label-sm flex items-center gap-xs">
-            <span className="pulse-dot w-2.5 h-2.5 rounded-full bg-secondary-container inline-block"></span>
+          <div className="absolute top-4 left-4 md:left-6 z-10 bg-surface-container-lowest/95 backdrop-blur border border-card-border shadow-xs rounded-lg px-3 py-1.5 font-mono text-xs flex items-center gap-2 font-bold text-on-surface">
+            <div className="pulse-dot w-2 h-2 rounded-full bg-primary inline-block" />
             Peta Radar Aktif
           </div>
         </div>
 
-        {/* Left Sidebar - Task List (Bottom on Mobile, Left on Desktop) */}
-        <aside className="flex-1 md:w-[350px] bg-white/95 backdrop-blur-md border-t md:border-t-0 md:border-r border-outline-variant shadow-lg z-10 flex flex-col order-2 md:order-1 animate-slide-in">
-          <div className="p-md border-b border-outline-variant/50 bg-surface">
-            <h3 className="font-headline-sm text-headline-sm text-on-surface flex items-center justify-between">
+        {/* Left Sidebar - Task List */}
+        <aside className="flex-1 md:w-[350px] bg-surface-container-lowest border-t md:border-t-0 md:border-r border-card-border shadow-xs z-10 flex flex-col order-2 md:order-1">
+          <div className="p-4 border-b border-card-border bg-surface-container-low flex items-center justify-between">
+            <h3 className="font-headline text-sm font-bold text-on-surface">
               Tugas Ditemukan
-              <span className="bg-primary-container text-on-primary-container text-xs px-2 py-1 rounded-full font-mono font-bold">
-                {tasks.length}
-              </span>
             </h3>
+            <span className="bg-primary/10 text-primary border border-primary/20 text-xs px-2.5 py-0.5 rounded-full font-mono font-bold tabular-nums">
+              {tasks.length}
+            </span>
           </div>
-          <div className="flex-1 overflow-y-auto p-sm flex flex-col gap-sm custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2.5 custom-scrollbar">
             {tasks.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-48 text-center px-4">
-                <span className="material-symbols-outlined text-outline text-[40px] mb-2" aria-hidden="true">location_off</span>
-                <p className="font-body-sm text-on-surface-variant">Tidak ada tugas dalam radius {radius} km.</p>
+              <div className="flex flex-col items-center justify-center h-48 text-center px-4 gap-2">
+                <MapPinOff className="w-8 h-8 text-outline-variant/60" />
+                <p className="font-body-sm text-xs text-on-surface-variant">Tidak ada tugas dalam radius {radius} km.</p>
               </div>
             ) : (
               tasks.map((task) => (
@@ -184,9 +181,9 @@ export default function CariTugasPage() {
 
       {/* Modal: Lamar Pekerjaan */}
       <Modal isOpen={isApplyModalOpen} onClose={() => setIsApplyModalOpen(false)} title="Kirim Lamaran Kerja">
-        <form onSubmit={handleApplySubmit} className="flex flex-col gap-md">
-          <div className="flex flex-col gap-xs">
-            <label className="font-body-sm text-body-sm text-on-surface-variant font-medium">
+        <form onSubmit={handleApplySubmit} className="flex flex-col gap-4 font-sans text-xs">
+          <div className="flex flex-col gap-1.5">
+            <label className="font-semibold text-on-surface">
               Pesan (Opsional)
             </label>
             <textarea
@@ -195,18 +192,18 @@ export default function CariTugasPage() {
               placeholder="Ceritakan mengapa Anda cocok untuk pekerjaan ini..."
               rows={4}
               maxLength={500}
-              className="w-full bg-surface-container border border-outline rounded p-sm text-on-surface font-body-sm text-body-sm focus:outline-none focus:border-primary resize-none"
+              className="w-full bg-surface-container-low border border-card-border rounded-xl p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none resize-none min-h-[90px]"
             />
-            <span className="text-right font-label-sm text-label-sm text-on-surface-variant">
+            <span className="text-right font-mono text-[10px] text-on-surface-variant tabular-nums">
               {applyMessage.length}/500
             </span>
           </div>
 
-          <div className="flex gap-sm justify-end mt-sm">
-            <Button type="button" variant="ghost" onClick={() => setIsApplyModalOpen(false)} disabled={actionLoading}>
+          <div className="flex gap-2 justify-end mt-1 border-t border-card-border pt-3">
+            <Button type="button" variant="secondary" size="sm" onClick={() => setIsApplyModalOpen(false)} disabled={actionLoading}>
               Batal
             </Button>
-            <Button type="submit" variant="primary" disabled={actionLoading}>
+            <Button type="submit" size="sm" disabled={actionLoading}>
               {actionLoading ? "Mengirim..." : "Kirim Lamaran"}
             </Button>
           </div>

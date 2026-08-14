@@ -5,15 +5,16 @@ import AdminTopbar from '@/components/admin/AdminTopbar';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import AdminDrawer from '@/components/admin/AdminDrawer';
 import KPICard from '@/components/admin/KPICard';
+import StatusBadge from '@/components/admin/StatusBadge';
+import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
 import {
   Flag,
   Search,
   CheckCircle2,
   AlertCircle,
   Clock,
-  User as UserIcon,
   Mail,
-  Phone,
   Tag,
   ShieldCheck,
   XCircle,
@@ -57,8 +58,8 @@ function ToastNotif({ toast, onClose }: { toast: Toast; onClose: () => void }) {
     <div
       className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-lg text-xs font-medium font-sans animate-in slide-in-from-bottom-4 ${
         toast.type === 'success'
-          ? 'bg-[#E6F4F1] border-[#0F766E]/30 text-[#0F766E]'
-          : 'bg-rose-50 border-rose-200 text-rose-700'
+          ? 'bg-primary/10 border-primary/25 text-primary'
+          : 'bg-error-container/40 border-error/25 text-error'
       }`}
     >
       {toast.type === 'success' ? (
@@ -72,27 +73,13 @@ function ToastNotif({ toast, onClose }: { toast: Toast; onClose: () => void }) {
 }
 
 function ReportStatusBadge({ status }: { status: string }) {
-  let badgeStyle = 'bg-amber-50 text-amber-700 border-amber-200';
-  let label = 'PENDING';
-
-  if (status === 'reviewed') {
-    badgeStyle = 'bg-blue-50 text-blue-700 border-blue-200';
-    label = 'DITINJAU';
-  } else if (status === 'resolved') {
-    badgeStyle = 'bg-[#E6F4F1] text-[#0F766E] border-[#0F766E]/30';
-    label = 'SELESAI';
-  } else if (status === 'rejected') {
-    badgeStyle = 'bg-rose-50 text-rose-700 border-rose-200';
-    label = 'DITOLAK';
-  }
-
-  return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider border ${badgeStyle}`}
-    >
-      {label}
-    </span>
-  );
+  const statusMap: Record<string, string> = {
+    pending: 'menunggu',
+    reviewed: 'diproses',
+    resolved: 'selesai',
+    rejected: 'ditolak',
+  };
+  return <StatusBadge status={statusMap[status] || status} />;
 }
 
 export default function AdminReportsPage() {
@@ -195,16 +182,16 @@ export default function AdminReportsPage() {
             <img
               src={row.user.avatar_url}
               alt={row.user.nama_lengkap}
-              className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-[#0F766E]/20"
+              className="w-8 h-8 rounded-full object-cover shrink-0 border border-card-border"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-[#E6F4F1] text-[#0F766E] flex items-center justify-center font-bold text-xs shrink-0">
+            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
               {row.user.nama_lengkap.charAt(0).toUpperCase()}
             </div>
           )}
           <div className="truncate">
-            <p className="text-xs font-bold text-[#0C1F16] truncate">{row.user.nama_lengkap}</p>
-            <p className="text-[11px] text-[#64748B] truncate">{row.user.email}</p>
+            <p className="text-xs font-bold text-on-surface font-headline truncate">{row.user.nama_lengkap}</p>
+            <p className="text-[11px] text-on-surface-variant font-mono truncate">{row.user.email}</p>
           </div>
         </div>
       ),
@@ -212,7 +199,7 @@ export default function AdminReportsPage() {
     {
       header: 'Kategori',
       cell: (row) => (
-        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#F1F5F9] text-[#0C1F16]">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-surface-container-low text-on-surface border border-card-border">
           {row.kategori}
         </span>
       ),
@@ -221,8 +208,8 @@ export default function AdminReportsPage() {
       header: 'Subjek Laporan',
       cell: (row) => (
         <div className="max-w-xs truncate">
-          <p className="text-xs font-bold text-[#0C1F16] truncate">{row.subjek}</p>
-          <p className="text-[11px] text-[#64748B] truncate">{row.deskripsi}</p>
+          <p className="text-xs font-bold text-on-surface truncate">{row.subjek}</p>
+          <p className="text-[11px] text-on-surface-variant truncate">{row.deskripsi}</p>
         </div>
       ),
     },
@@ -233,7 +220,7 @@ export default function AdminReportsPage() {
     {
       header: 'Tanggal',
       cell: (row) => (
-        <span className="font-mono text-xs text-[#64748B]">
+        <span className="font-mono text-xs text-on-surface-variant tabular-nums">
           {new Date(row.created_at).toLocaleDateString('id-ID', {
             day: '2-digit',
             month: 'short',
@@ -247,22 +234,23 @@ export default function AdminReportsPage() {
     {
       header: 'Aksi',
       cell: (row) => (
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
           onClick={() => setSelectedReport(row)}
-          className="px-3 py-1 text-xs font-bold text-[#0F766E] hover:bg-[#E6F4F1] rounded-lg transition-colors border border-[#0F766E]/20"
         >
-          Lihat Detail
-        </button>
+          Detail
+        </Button>
       ),
     },
   ];
 
   return (
-    <div className="flex-1 flex flex-col min-w-0">
-      <AdminTopbar title="Laporan & Aduan Pengguna" />
+    <div className="flex-1 flex flex-col min-w-0 font-sans">
+      <AdminTopbar title="Laporan &amp; Aduan Pengguna" />
 
-      <main className="flex-1 p-6 space-y-6 max-w-7xl w-full mx-auto font-sans">
+      <main className="flex-1 px-4 sm:px-8 py-8 lg:py-12 space-y-8 max-w-[1400px] w-full mx-auto font-sans">
         {/* KPI Cards Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <KPICard
@@ -270,33 +258,33 @@ export default function AdminReportsPage() {
             value={stats.totalAll}
             change="semua laporan"
             isPositive={true}
-            icon={<Flag className="w-4 h-4" />}
+            icon={<Flag className="w-4 h-4 text-primary" />}
           />
           <KPICard
             title="Laporan Pending"
             value={stats.pending}
             change="perlu respon"
             isPositive={false}
-            icon={<Clock className="w-4 h-4" />}
+            icon={<Clock className="w-4 h-4 text-tertiary" />}
           />
           <KPICard
             title="Sedang Ditinjau"
             value={stats.reviewed}
             change="proses investigasi"
             isPositive={true}
-            icon={<FileText className="w-4 h-4" />}
+            icon={<FileText className="w-4 h-4 text-primary" />}
           />
           <KPICard
             title="Selesai Ditangani"
             value={stats.resolved}
             change="laporan tuntas"
             isPositive={true}
-            icon={<ShieldCheck className="w-4 h-4" />}
+            icon={<ShieldCheck className="w-4 h-4 text-primary" />}
           />
         </div>
 
         {/* Filter Bar & Search */}
-        <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bg-white border border-card-border rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Status Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
             {['All', 'pending', 'reviewed', 'resolved', 'rejected'].map((tab) => (
@@ -307,10 +295,10 @@ export default function AdminReportsPage() {
                   setStatusFilter(tab);
                   setPage(1);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer whitespace-nowrap ${
                   statusFilter === tab
-                    ? 'bg-[#0F766E] text-white shadow-xs'
-                    : 'text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0C1F16]'
+                    ? 'bg-primary text-on-primary shadow-xs font-bold'
+                    : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
                 }`}
               >
                 {tab === 'All' ? 'Semua Status' : tab}
@@ -320,61 +308,76 @@ export default function AdminReportsPage() {
 
           {/* Search Input */}
           <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Cari subjek, deskripsi, atau nama..."
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#F8FAFC] text-[#0C1F16] placeholder-[#94A3B8] rounded-lg border border-[#E2E8F0] focus:border-[#0F766E] outline-none transition-all"
+              className="w-full pl-9 pr-3.5 py-2 text-xs font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 rounded-xl border border-card-border focus:border-primary focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
             />
           </div>
         </div>
 
-        {/* Data Table */}
-        <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-2xs overflow-hidden">
-          {loading ? (
-            <div className="p-12 text-center text-xs text-[#64748B] flex flex-col items-center justify-center gap-2">
-              <Loader2 className="w-6 h-6 text-[#0F766E] animate-spin" />
-              <span>Memuat data laporan pengguna...</span>
-            </div>
-          ) : (
+        {/* Data Table / Loading Skeleton */}
+        {loading ? (
+          <div className="bg-white border border-card-border rounded-2xl p-6 shadow-xs space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between gap-4 py-2.5 border-b border-card-border/40 last:border-0">
+                <div className="flex items-center gap-3 w-1/3 min-w-[180px]">
+                  <Skeleton variant="circular" className="w-8 h-8 shrink-0" />
+                  <div className="space-y-1.5 w-full">
+                    <Skeleton className="h-3.5 w-3/4 rounded" />
+                    <Skeleton className="h-2.5 w-1/2 rounded" />
+                  </div>
+                </div>
+                <Skeleton className="h-6 w-24 rounded-md" />
+                <Skeleton className="h-3.5 w-1/4 rounded hidden sm:block" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-8 w-16 rounded-lg" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white border border-card-border rounded-2xl shadow-xs overflow-hidden">
             <DataTable
               data={reports}
               columns={columns}
               pageSize={10}
               emptyMessage="Belum ada laporan dari pengguna."
             />
-          )}
 
-          {/* Pagination */}
-          {!loading && totalPages > 1 && (
-            <div className="px-5 py-3 border-t border-[#E2E8F0] flex items-center justify-between text-xs text-[#64748B]">
-              <span>
-                Menampilkan halaman <strong className="text-[#0C1F16]">{page}</strong> dari{' '}
-                <strong className="text-[#0C1F16]">{totalPages}</strong> ({total} total laporan)
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="px-3 py-1 rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] disabled:opacity-50 font-bold"
-                >
-                  Sebelumnya
-                </button>
-                <button
-                  type="button"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className="px-3 py-1 rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] disabled:opacity-50 font-bold"
-                >
-                  Selanjutnya
-                </button>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="px-5 py-3 border-t border-card-border flex items-center justify-between text-xs text-on-surface-variant font-sans">
+                <span>
+                  Menampilkan halaman <strong className="text-on-surface">{page}</strong> dari{' '}
+                  <strong className="text-on-surface">{totalPages}</strong> ({total} total laporan)
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Sebelumnya
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    Selanjutnya
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Detail Drawer */}
@@ -384,39 +387,39 @@ export default function AdminReportsPage() {
           onClose={() => setSelectedReport(null)}
           title="Detail Laporan Pengguna"
         >
-          <div className="space-y-6 font-sans">
+          <div className="space-y-6 font-sans text-xs">
             {/* Header User Card */}
-            <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center gap-3">
+            <div className="p-4 rounded-xl bg-surface-container-low border border-card-border flex items-center gap-3">
               {selectedReport.user.avatar_url ? (
                 <img
                   src={selectedReport.user.avatar_url}
                   alt={selectedReport.user.nama_lengkap}
-                  className="w-12 h-12 rounded-full object-cover ring-2 ring-[#0F766E]/20"
+                  className="w-12 h-12 rounded-full object-cover border border-card-border"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-[#E6F4F1] text-[#0F766E] flex items-center justify-center font-bold text-base">
+                <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-base shrink-0">
                   {selectedReport.user.nama_lengkap.charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="truncate">
-                <h4 className="text-sm font-bold text-[#0C1F16] truncate">
+                <h4 className="text-sm font-bold text-on-surface font-headline truncate">
                   {selectedReport.user.nama_lengkap}
                 </h4>
-                <p className="text-xs text-[#64748B] truncate flex items-center gap-1.5 mt-0.5">
-                  <Mail className="w-3.5 h-3.5 text-[#0F766E]" />
+                <p className="text-xs text-on-surface-variant truncate flex items-center gap-1.5 mt-0.5 font-mono">
+                  <Mail className="w-3.5 h-3.5 text-primary" />
                   {selectedReport.user.email}
                 </p>
-                <p className="text-[11px] font-mono text-[#0F766E] uppercase tracking-wider mt-0.5">
+                <p className="text-[11px] font-mono text-primary uppercase tracking-wider font-semibold mt-0.5">
                   Role: {selectedReport.user.role}
                 </p>
               </div>
             </div>
 
             {/* Status & Category Info */}
-            <div className="flex items-center justify-between p-3 rounded-xl border border-[#E2E8F0] bg-white">
+            <div className="flex items-center justify-between p-3.5 rounded-xl border border-card-border bg-surface-container-low">
               <div className="flex items-center gap-2">
-                <Tag className="w-4 h-4 text-[#0F766E]" />
-                <span className="text-xs font-bold text-[#0C1F16]">
+                <Tag className="w-4 h-4 text-primary" />
+                <span className="text-xs font-bold text-on-surface">
                   {selectedReport.kategori}
                 </span>
               </div>
@@ -426,28 +429,28 @@ export default function AdminReportsPage() {
             {/* Subject & Description */}
             <div className="space-y-3">
               <div>
-                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#64748B]">
+                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-on-surface-variant">
                   Subjek Laporan
                 </label>
-                <h3 className="text-sm font-bold text-[#0C1F16] mt-0.5">
+                <h3 className="text-sm font-bold text-on-surface mt-0.5">
                   {selectedReport.subjek}
                 </h3>
               </div>
 
               <div>
-                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#64748B]">
+                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-on-surface-variant">
                   Detail Permasalahan
                 </label>
-                <div className="mt-1 p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-xs text-[#0C1F16] leading-relaxed whitespace-pre-wrap">
+                <div className="mt-1 p-3.5 rounded-xl bg-surface-container-low border border-card-border text-xs text-on-surface leading-relaxed whitespace-pre-wrap">
                   {selectedReport.deskripsi}
                 </div>
               </div>
 
               <div>
-                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#64748B]">
+                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-on-surface-variant">
                   Waktu Pelaporan
                 </label>
-                <p className="text-xs font-mono text-[#64748B] mt-0.5">
+                <p className="text-xs font-mono text-on-surface-variant mt-0.5 tabular-nums">
                   {new Date(selectedReport.created_at).toLocaleString('id-ID', {
                     dateStyle: 'full',
                     timeStyle: 'medium',
@@ -457,38 +460,41 @@ export default function AdminReportsPage() {
             </div>
 
             {/* Admin Action Buttons */}
-            <div className="pt-4 border-t border-[#E2E8F0] space-y-2">
-              <p className="text-xs font-bold text-[#0C1F16]">Ubah Status Laporan:</p>
+            <div className="pt-4 border-t border-card-border space-y-2">
+              <p className="text-xs font-bold text-on-surface">Ubah Status Laporan:</p>
               <div className="grid grid-cols-3 gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   disabled={actionLoading || selectedReport.status === 'reviewed'}
                   onClick={() => handleUpdateStatus('reviewed')}
-                  className="py-2 px-3 rounded-xl text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5"
+                  icon={actionLoading ? undefined : <FileText className="w-3.5 h-3.5" />}
                 >
-                  {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
-                  Ditinjau
-                </button>
+                  {actionLoading ? '...' : 'Ditinjau'}
+                </Button>
 
-                <button
+                <Button
                   type="button"
+                  variant="primary"
+                  size="sm"
                   disabled={actionLoading || selectedReport.status === 'resolved'}
                   onClick={() => handleUpdateStatus('resolved')}
-                  className="py-2 px-3 rounded-xl text-xs font-bold bg-[#0F766E] text-white hover:bg-[#0D645E] shadow-xs transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5"
+                  icon={actionLoading ? undefined : <ShieldCheck className="w-3.5 h-3.5" />}
                 >
-                  {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
-                  Selesai
-                </button>
+                  {actionLoading ? '...' : 'Selesai'}
+                </Button>
 
-                <button
+                <Button
                   type="button"
+                  variant="destructive"
+                  size="sm"
                   disabled={actionLoading || selectedReport.status === 'rejected'}
                   onClick={() => handleUpdateStatus('rejected')}
-                  className="py-2 px-3 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5"
+                  icon={actionLoading ? undefined : <XCircle className="w-3.5 h-3.5" />}
                 >
-                  {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
-                  Tolak
-                </button>
+                  {actionLoading ? '...' : 'Tolak'}
+                </Button>
               </div>
             </div>
           </div>

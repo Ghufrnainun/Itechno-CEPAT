@@ -15,6 +15,7 @@ import {
   ExternalLink,
   LogOut,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface AdminUser {
   id: string;
@@ -47,7 +48,7 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
     try {
       await fetch('/api/admin/auth/logout', { method: 'POST' });
     } catch {
-      // Abaikan error — tetap redirect
+      // Ignore error - proceed to redirect
     } finally {
       router.replace('/admin/login');
     }
@@ -55,12 +56,14 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
 
   return (
     <aside
-      className={`relative flex flex-col bg-white text-[#0C1F16] border-r border-[#E2E8F0] transition-all duration-300 z-30 min-h-screen shrink-0 ${
-        collapsed ? 'w-20' : 'w-64'
-      }`}
+      className={cn(
+        "sticky top-0 h-screen flex flex-col bg-white text-on-surface border-r border-card-border",
+        "transition-[width] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] z-30 shrink-0",
+        collapsed ? "w-20" : "w-64"
+      )}
     >
       {/* Header / Brand */}
-      <div className="flex items-center justify-between h-16 px-4 border-b border-[#E2E8F0] w-full">
+      <div className="flex items-center justify-between h-16 px-4 border-b border-card-border w-full shrink-0">
         {collapsed ? (
           <div className="flex items-center justify-between w-full">
             <Link href="/admin/dashboard" className="flex items-center justify-center mx-auto">
@@ -74,8 +77,9 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
             </Link>
             <button
               onClick={() => setCollapsed(false)}
-              className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0C1F16] hover:bg-[#F1F5F9] transition-colors focus:outline-none"
+              className="w-9 h-9 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container flex items-center justify-center transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
               title="Expand Sidebar"
+              aria-label="Expand Sidebar"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -91,10 +95,10 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
                 className="rounded-lg object-contain shrink-0"
               />
               <div className="flex flex-col truncate">
-                <span className="font-headline font-bold text-base text-[#0C1F16] tracking-tight">
+                <span className="font-headline font-bold text-base text-on-surface tracking-tight">
                   CEPAT
                 </span>
-                <span className="font-mono text-[10px] font-semibold tracking-wider uppercase text-[#0F766E]">
+                <span className="font-mono text-[10px] font-semibold tracking-wider uppercase text-primary">
                   Admin Console
                 </span>
               </div>
@@ -102,8 +106,9 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
 
             <button
               onClick={() => setCollapsed(true)}
-              className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0C1F16] hover:bg-[#F1F5F9] transition-colors focus:outline-none shrink-0"
+              className="w-9 h-9 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container flex items-center justify-center transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 shrink-0 cursor-pointer"
               title="Collapse Sidebar"
+              aria-label="Collapse Sidebar"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -113,7 +118,7 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
 
       {/* Admin User Badge */}
       {adminUser && !collapsed && (
-        <div className="mx-3 mt-3 px-3 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg">
+        <div className="mx-3 mt-3 px-3 py-2.5 bg-surface-container-low border border-card-border rounded-lg shrink-0">
           <div className="flex items-center gap-2.5">
             {adminUser.avatar_url ? (
               <Image
@@ -121,23 +126,23 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
                 alt={adminUser.nama_lengkap}
                 width={28}
                 height={28}
-                className="w-7 h-7 rounded-full object-cover border border-[#E2E8F0] shrink-0"
+                className="w-7 h-7 rounded-full object-cover border border-card-border shrink-0"
               />
             ) : (
-              <div className="w-7 h-7 rounded-full bg-[#0F766E] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-full bg-primary text-on-primary text-[10px] font-bold flex items-center justify-center shrink-0">
                 {adminUser.nama_lengkap.charAt(0).toUpperCase()}
               </div>
             )}
             <div className="truncate">
-              <p className="text-[11px] font-bold text-[#0C1F16] truncate">{adminUser.nama_lengkap}</p>
-              <p className="text-[10px] font-mono text-[#0F766E] uppercase tracking-wider">Admin</p>
+              <p className="text-[11px] font-bold text-on-surface truncate">{adminUser.nama_lengkap}</p>
+              <p className="text-[10px] font-mono text-primary uppercase tracking-wider font-semibold">Admin</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Nav Menu */}
-      <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto custom-scrollbar">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -146,14 +151,17 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-sans font-semibold transition-all ${
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-sans font-semibold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
                 isActive
-                  ? 'bg-[#0F766E] text-white shadow-xs font-bold'
-                  : 'text-[#64748B] hover:text-[#0C1F16] hover:bg-[#F1F5F9]'
-              } ${collapsed ? 'justify-center px-0' : ''}`}
+                  ? "bg-primary text-on-primary shadow-xs font-bold"
+                  : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low",
+                collapsed && "justify-center px-0"
+              )}
               title={collapsed ? item.label : undefined}
             >
-              <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#64748B]'}`} />
+              <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-on-primary" : "text-on-surface-variant")} />
               {!collapsed && <span className="truncate">{item.label}</span>}
             </Link>
           );
@@ -161,27 +169,19 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
       </nav>
 
       {/* Footer / Quick Actions */}
-      <div className="p-3 border-t border-[#E2E8F0] space-y-1">
-        <Link
-          href="/feed"
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-sans font-medium text-[#64748B] hover:text-[#0C1F16] hover:bg-[#F1F5F9] transition-colors ${
-            collapsed ? 'justify-center px-0' : ''
-          }`}
-          title={collapsed ? 'Main App Feed' : undefined}
-        >
-          <ExternalLink className="w-4 h-4 shrink-0 text-[#64748B]" />
-          {!collapsed && <span>Main App Feed</span>}
-        </Link>
-
+      <div className="p-3 border-t border-card-border bg-white shrink-0">
         <button
           onClick={handleLogout}
           disabled={loggingOut}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-sans font-medium text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-50 ${
-            collapsed ? 'justify-center px-0' : ''
-          }`}
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-sans font-semibold text-error hover:bg-error-container/30 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] disabled:opacity-50 cursor-pointer",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error/40",
+            collapsed && "justify-center px-0"
+          )}
           title={collapsed ? 'Logout Admin' : undefined}
+          aria-label="Logout Admin"
         >
-          <LogOut className="w-4 h-4 shrink-0 text-rose-600" />
+          <LogOut className="w-4 h-4 shrink-0 text-error" />
           {!collapsed && <span>{loggingOut ? 'Logging out...' : 'Logout Admin'}</span>}
         </button>
       </div>

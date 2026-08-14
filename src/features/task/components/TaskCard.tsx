@@ -3,57 +3,65 @@ import Link from "next/link";
 import { Task } from "@/types/database";
 import { SdgBadge } from "@/components/ui/SdgBadge";
 import { formatCurrency, formatDistance } from "@/lib/utils/format";
+import { Navigation } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface TaskCardProps {
   task: Task & { distance?: number };
   isSelected?: boolean;
   onClick?: () => void;
+  className?: string;
 }
 
-export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
+export function TaskCard({ task, isSelected = false, onClick, className }: TaskCardProps) {
   const cardBody = (
     <div
       onClick={onClick}
-      className={`p-md feed-card w-full ${isSelected ? "selected" : ""}`}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (onClick && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={cn(
+        "p-4 feed-card w-full rounded-xl bg-surface-container-lowest border border-card-border shadow-xs",
+        "transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out",
+        "hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-sm active:scale-[0.985] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer",
+        isSelected && "border-primary bg-primary/5 shadow-xs ring-1 ring-primary/20",
+        className
+      )}
     >
-      <div className="flex justify-between items-start mb-xs">
-        <h3 className="font-headline-sm text-headline-sm text-on-surface leading-tight text-balance text-[18px]">
+      <div className="flex justify-between items-start mb-1.5 gap-2">
+        <h3 className="font-headline text-base font-bold text-on-surface leading-snug text-balance">
           {task.title}
         </h3>
         {task.distance !== undefined && (
-          <div className="flex items-center gap-xs bg-surface-container px-xs py-[2px] rounded shrink-0 ml-2">
-            <span
-              className="material-symbols-outlined text-[14px] text-primary"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-             aria-hidden="true">
-              near_me
-            </span>
-            <span
-              className="font-label-sm text-label-sm text-primary"
-              style={{ fontFamily: "'JetBrains Mono'" }}
-            >
+          <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full shrink-0">
+            <Navigation className="w-3 h-3 text-primary fill-primary/20" />
+            <span className="font-mono text-xs font-semibold text-primary tabular-nums">
               {formatDistance(task.distance)}
             </span>
           </div>
         )}
       </div>
 
-      <p className="font-body-sm text-body-sm text-on-surface-variant mb-md truncate">
+      <p className="font-body-sm text-xs text-on-surface-variant mb-3 line-clamp-2 leading-relaxed">
         {task.description}
       </p>
 
-      <div className="flex justify-between items-end border-t border-outline-variant pt-sm mt-auto">
-        <span
-          className="font-label-md text-label-md text-on-surface font-bold"
-          style={{ fontFamily: "'JetBrains Mono'" }}
-        >
+      <div className="flex justify-between items-end border-t border-card-border/60 pt-2.5 mt-auto">
+        <span className="font-mono text-sm text-on-surface font-extrabold tabular-nums">
           {formatCurrency(task.compensation)}
         </span>
-        
-        <div className="flex items-center gap-sm">
-          <span className="font-label-sm text-[10px] text-on-surface-variant bg-surface-container px-xs py-[2px] rounded uppercase">
-            {task.duration_estimate}
-          </span>
+
+        <div className="flex items-center gap-2">
+          {task.duration_estimate && (
+            <span className="font-mono text-[10px] text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-md uppercase font-medium">
+              {task.duration_estimate}
+            </span>
+          )}
           <SdgBadge />
         </div>
       </div>

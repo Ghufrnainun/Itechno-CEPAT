@@ -1,12 +1,17 @@
 import React from "react";
+import { Briefcase } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export function SdgBadge() {
+export function SdgBadge({ className }: { className?: string }) {
   return (
-    <div className="inline-flex items-center gap-xs px-xs py-[2px] rounded sdg-badge shrink-0">
-      <span className="material-symbols-outlined text-[12px] text-on-secondary-fixed-variant" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">
-        work
-      </span>
-      <span className="font-label-sm text-[10px] text-on-secondary-fixed-variant">
+    <div
+      className={cn(
+        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/40 border border-secondary/20 shrink-0",
+        className
+      )}
+    >
+      <Briefcase className="w-3 h-3 text-secondary" />
+      <span className="font-label-sm text-[10px] font-bold uppercase tracking-wider text-secondary">
         SDG 8
       </span>
     </div>
