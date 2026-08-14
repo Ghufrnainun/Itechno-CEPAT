@@ -27,28 +27,7 @@ import {
   Legend,
 } from 'recharts';
 import { Skeleton } from '@/components/ui/Skeleton';
-
-const STATUS_COLORS: Record<string, string> = {
-  open: 'var(--primary, #0F766E)',
-  accepted: 'var(--secondary, #2563EB)',
-  assigned: 'var(--secondary, #2563EB)',
-  'in progress': 'var(--warning, #D97706)',
-  in_progress: 'var(--warning, #D97706)',
-  submitted: 'var(--purple, #9333EA)',
-  completed: 'var(--success, #16A34A)',
-  cancelled: 'var(--outline, #64748B)',
-  takedown: 'var(--error, #DC2626)',
-};
-
-const PIE_PALETTE = [
-  'var(--primary, #0F766E)',
-  'var(--secondary, #2563EB)',
-  'var(--warning, #D97706)',
-  'var(--success, #16A34A)',
-  'var(--purple, #9333EA)',
-  'var(--error, #DC2626)',
-  'var(--outline, #64748B)'
-];
+import { ADMIN_STATUS_COLORS, ADMIN_PIE_PALETTE } from '@/lib/constants';
 
 interface StatsData {
   totalUsers: number;
@@ -140,10 +119,10 @@ export default function AdminDashboardPage() {
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-surface">
+    <div className="flex-1 flex flex-col min-w-0">
       <AdminTopbar title="Dashboard Overview" />
 
-      <main className="flex-1 p-6 space-y-6 max-w-7xl w-full mx-auto font-sans">
+      <main className="flex-1 px-4 sm:px-8 py-10 lg:py-16 space-y-12 max-w-[1400px] w-full mx-auto font-sans">
         {/* KPI Cards Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-5">
           {loading ? (
@@ -190,204 +169,212 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Charts Grid */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
           {/* Line Chart — Activity Trends */}
-          <div className="lg:col-span-2 bg-surface-container-lowest border border-card-border rounded-xl p-5 shadow-xs">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="font-headline font-bold text-base text-on-surface flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-primary" aria-hidden="true" />
-                  Tren Pembuatan &amp; Penyelesaian Task
-                </h2>
-                <p className="text-xs text-on-surface-variant">
-                  Metrik aktivitas mingguan (7 hari terakhir)
-                </p>
-              </div>
-              <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant border border-card-border">
-                7 Hari Terakhir
-              </span>
-            </div>
-            <div className="h-72 w-full">
-              {loading ? (
-                <Skeleton className="h-full w-full rounded-lg" />
-              ) : trends.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-xs text-on-surface-variant">
-                  Belum ada data aktivitas.
+          <div className="lg:col-span-2 bg-black/5 ring-1 ring-black/5 p-1.5 rounded-[2rem]">
+            <div className="bg-white shadow-[inset_0_1px_1px_rgba(255,255,255,1)] rounded-[calc(2rem-0.375rem)] p-6 sm:p-8 h-full">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="font-headline font-bold text-lg text-on-surface flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-primary" aria-hidden="true" />
+                    Tren Pembuatan &amp; Penyelesaian Task
+                  </h2>
+                  <p className="text-xs text-on-surface-variant mt-1">
+                    Metrik aktivitas mingguan (7 hari terakhir)
+                  </p>
                 </div>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <XAxis
-                      dataKey="date"
-                      stroke="var(--color-outline)"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis stroke="var(--color-outline)" fontSize={11} tickLine={false} axisLine={false} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'var(--color-surface-container-lowest)',
-                        borderColor: 'var(--color-card-border)',
-                        borderRadius: '8px',
-                        color: 'var(--color-on-surface)',
-                        fontSize: '12px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="total"
-                      name="Task Dibuat"
-                      stroke="var(--primary, #0F766E)"
-                      strokeWidth={2.5}
-                      dot={{ r: 3.5, fill: 'var(--primary, #0F766E)' }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="completed"
-                      name="Task Selesai"
-                      stroke="var(--secondary-container, #416900)"
-                      strokeWidth={2}
-                      strokeDasharray="4 4"
-                      dot={{ r: 3, fill: 'var(--secondary-container, #416900)' }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
+                <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-surface-container-low text-on-surface border border-card-border">
+                  7 Hari Terakhir
+                </span>
+              </div>
+              <div className="h-80 w-full">
+                {loading ? (
+                  <Skeleton className="h-full w-full rounded-lg" />
+                ) : trends.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-xs text-on-surface-variant">
+                    Belum ada data aktivitas.
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <XAxis
+                        dataKey="date"
+                        stroke="var(--color-outline)"
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis stroke="var(--color-outline)" fontSize={11} tickLine={false} axisLine={false} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'var(--color-surface-container-lowest)',
+                          borderColor: 'var(--color-card-border)',
+                          borderRadius: '8px',
+                          color: 'var(--color-on-surface)',
+                          fontSize: '12px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="total"
+                        name="Task Dibuat"
+                        stroke="var(--primary, #0F766E)"
+                        strokeWidth={2.5}
+                        dot={{ r: 3.5, fill: 'var(--primary, #0F766E)' }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="completed"
+                        name="Task Selesai"
+                        stroke="var(--secondary-container, #416900)"
+                        strokeWidth={2}
+                        strokeDasharray="4 4"
+                        dot={{ r: 3, fill: 'var(--secondary-container, #416900)' }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Donut Chart — Status Distribution */}
-          <div className="bg-surface-container-lowest border border-card-border rounded-xl p-5 shadow-xs flex flex-col justify-between">
-            <div>
-              <h2 className="font-headline font-bold text-base text-on-surface flex items-center gap-2">
-                <PieIcon className="w-4 h-4 text-primary" aria-hidden="true" />
-                Distribusi Status Task
-              </h2>
-              <p className="text-xs text-on-surface-variant mb-2">
-                Proporsi status task aktif &amp; selesai
-              </p>
-            </div>
+          <div className="bg-black/5 ring-1 ring-black/5 p-1.5 rounded-[2rem]">
+            <div className="bg-white shadow-[inset_0_1px_1px_rgba(255,255,255,1)] rounded-[calc(2rem-0.375rem)] p-6 sm:p-8 h-full flex flex-col justify-between">
+              <div>
+                <h2 className="font-headline font-bold text-lg text-on-surface flex items-center gap-2">
+                  <PieIcon className="w-4 h-4 text-primary" aria-hidden="true" />
+                  Distribusi Status Task
+                </h2>
+                <p className="text-xs text-on-surface-variant mt-1 mb-6">
+                  Proporsi status task aktif &amp; selesai
+                </p>
+              </div>
 
-            <div className="h-60 w-full flex items-center justify-center">
-              {loading ? (
-                <Skeleton className="w-36 h-36 rounded-full" />
-              ) : distribution.length === 0 ? (
-                <p className="text-xs text-on-surface-variant">Belum ada data task.</p>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={distribution}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={80}
-                      paddingAngle={3}
-                      dataKey="value"
-                    >
-                      {distribution.map((entry, index) => {
-                        const key = entry.name.toLowerCase();
-                        const sliceColor =
-                          entry.color ||
-                          STATUS_COLORS[key] ||
-                          STATUS_COLORS[entry.status || ''] ||
-                          PIE_PALETTE[index % PIE_PALETTE.length];
-                        return <Cell key={entry.name} fill={sliceColor} />;
-                      })}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'var(--color-surface-container-lowest)',
-                        borderColor: 'var(--color-card-border)',
-                        borderRadius: '8px',
-                        color: 'var(--color-on-surface)',
-                        fontSize: '12px',
-                      }}
-                    />
-                    <Legend
-                      wrapperStyle={{ fontSize: '11px', color: 'var(--color-on-surface-variant)' }}
-                      iconType="circle"
-                      iconSize={8}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
+              <div className="h-64 w-full flex items-center justify-center">
+                {loading ? (
+                  <Skeleton className="w-40 h-40 rounded-full" />
+                ) : distribution.length === 0 ? (
+                  <p className="text-xs text-on-surface-variant">Belum ada data task.</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={distribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={90}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {distribution.map((entry, index) => {
+                          const key = entry.name.toLowerCase();
+                          const sliceColor =
+                            entry.color ||
+                            ADMIN_STATUS_COLORS[key] ||
+                            ADMIN_STATUS_COLORS[entry.status || ''] ||
+                            ADMIN_PIE_PALETTE[index % ADMIN_PIE_PALETTE.length];
+                          return <Cell key={entry.name} fill={sliceColor} />;
+                        })}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'var(--color-surface-container-lowest)',
+                          borderColor: 'var(--color-card-border)',
+                          borderRadius: '8px',
+                          color: 'var(--color-on-surface)',
+                          fontSize: '12px',
+                        }}
+                      />
+                      <Legend
+                        wrapperStyle={{ fontSize: '11px', color: 'var(--color-on-surface-variant)', paddingTop: '20px' }}
+                        iconType="circle"
+                        iconSize={8}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
             </div>
           </div>
         </section>
 
         {/* Recent Tasks List */}
-        <section className="bg-surface-container-lowest border border-card-border rounded-xl p-5 shadow-xs">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="font-headline font-bold text-base text-on-surface">
-                Aktivitas Task Terkini
-              </h2>
-              <p className="text-xs text-on-surface-variant">
-                5 task terakhir yang dipublikasikan di platform
-              </p>
-            </div>
-            <a
-              href="/admin/tasks"
-              className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
-            >
-              Lihat Semua Task
-              <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
-            </a>
-          </div>
-
-          {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full rounded-lg" />
-              ))}
-            </div>
-          ) : recentTasks.length === 0 ? (
-            <p className="text-xs text-on-surface-variant text-center py-8">
-              Belum ada task yang dibuat.
-            </p>
-          ) : (
-            <div className="divide-y divide-card-border">
-              {recentTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="py-3 flex items-center justify-between gap-4 hover:bg-surface-container-low px-2 rounded-lg transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2 rounded-md bg-primary/10 text-primary font-mono text-[11px] font-bold shrink-0">
-                      {task.kategori.slice(0, 2)}
-                    </div>
-                    <div className="truncate">
-                      <h4 className="text-xs font-bold text-on-surface truncate">
-                        {task.judul_tugas}
-                      </h4>
-                      <p className="text-[11px] text-on-surface-variant truncate">
-                        oleh{' '}
-                        <span className="font-semibold text-on-surface">
-                          {task.requester.nama_lengkap}
-                        </span>{' '}
-                        •{' '}
-                        {new Date(task.created_at).toLocaleDateString('id-ID', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4 shrink-0">
-                    <span className="text-xs font-extrabold text-primary font-mono tabular-nums">
-                      +{task.kompensasi} PTS
-                    </span>
-                    <StatusBadge status={task.status} />
-                  </div>
+        <section className="bg-black/5 ring-1 ring-black/5 p-1.5 rounded-[2rem]">
+          <div className="bg-white shadow-[inset_0_1px_1px_rgba(255,255,255,1)] rounded-[calc(2rem-0.375rem)] p-6 sm:p-8 h-full">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="font-headline font-bold text-lg text-on-surface">
+                  Aktivitas Task Terkini
+                </h2>
+                <p className="text-xs text-on-surface-variant mt-1">
+                  5 task terakhir yang dipublikasikan di platform
+                </p>
+              </div>
+              <a
+                href="/admin/tasks"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline hover:text-primary/80 transition-colors"
+              >
+                Lihat Semua Task
+                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                  <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
                 </div>
-              ))}
+              </a>
             </div>
-          )}
+
+            {loading ? (
+              <div className="space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-14 w-full rounded-xl" />
+                ))}
+              </div>
+            ) : recentTasks.length === 0 ? (
+              <p className="text-xs text-on-surface-variant text-center py-10">
+                Belum ada task yang dibuat.
+              </p>
+            ) : (
+              <div className="divide-y divide-card-border/60">
+                {recentTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="group py-4 flex items-center justify-between gap-4 hover:bg-black/[0.02] -mx-4 px-4 rounded-xl transition-all duration-300"
+                  >
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-primary/10 text-primary font-mono text-xs font-bold shrink-0 ring-1 ring-card-border transition-transform group-hover:scale-105">
+                        {task.kategori.slice(0, 2)}
+                      </div>
+                      <div className="truncate">
+                        <h4 className="text-sm font-bold text-on-surface truncate group-hover:text-primary transition-colors">
+                          {task.judul_tugas}
+                        </h4>
+                        <p className="text-[11px] text-on-surface-variant truncate mt-0.5">
+                          oleh{' '}
+                          <span className="font-semibold text-on-surface">
+                            {task.requester.nama_lengkap}
+                          </span>{' '}
+                          •{' '}
+                          {new Date(task.created_at).toLocaleDateString('id-ID', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-5 shrink-0">
+                      <span className="text-sm font-extrabold text-primary font-mono tabular-nums">
+                        +{task.kompensasi} PTS
+                      </span>
+                      <StatusBadge status={task.status} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </section>
       </main>
     </div>

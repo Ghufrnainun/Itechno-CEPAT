@@ -33,7 +33,7 @@ export default function DataTable<T extends { id: string | number }>({
   const currentData = data.slice(startIndex, startIndex + pageSize);
 
   return (
-    <div className="bg-surface-container-lowest border border-card-border rounded-xl overflow-hidden shadow-xs">
+    <div className="bg-white border border-card-border rounded-2xl overflow-hidden shadow-xs">
       <div className="overflow-x-auto">
         <table className="w-full text-left font-sans text-xs">
           <thead className="bg-surface-container-low border-b border-card-border font-mono text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
@@ -61,10 +61,10 @@ export default function DataTable<T extends { id: string | number }>({
                     }
                   }}
                   className={cn(
-                    "transition-colors duration-150 focus-visible:outline-none focus-visible:bg-surface-container-low",
+                    "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:outline-none focus-visible:bg-surface-container-low",
                     onRowClick
-                      ? "cursor-pointer hover:bg-surface-container-low"
-                      : "hover:bg-surface-container-low/50"
+                      ? "cursor-pointer hover:bg-black/5 active:scale-[0.99]"
+                      : "hover:bg-black/[0.02]"
                   )}
                 >
                   {columns.map((col, idx) => (
@@ -106,7 +106,7 @@ export default function DataTable<T extends { id: string | number }>({
           <button
             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
             disabled={currentPage === 1}
-            className="w-9 h-9 rounded-lg border border-card-border text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
+            className="w-9 h-9 rounded-lg border border-card-border text-on-surface-variant hover:text-on-surface hover:bg-black/5 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.95] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
             title="Halaman Sebelumnya"
             aria-label="Halaman Sebelumnya"
           >
@@ -120,7 +120,7 @@ export default function DataTable<T extends { id: string | number }>({
           <button
             onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             disabled={currentPage === totalPages}
-            className="w-9 h-9 rounded-lg border border-card-border text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
+            className="w-9 h-9 rounded-lg border border-card-border text-on-surface-variant hover:text-on-surface hover:bg-black/5 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.95] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
             title="Halaman Selanjutnya"
             aria-label="Halaman Selanjutnya"
           >

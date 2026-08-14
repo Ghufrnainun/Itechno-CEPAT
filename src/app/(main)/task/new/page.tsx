@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useToast } from "@/components/ui/Toast";
-import { Input } from "@/components/ui/Input";
+import { Input, Select, Label } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { EscrowBanner } from "@/components/ui/EscrowBanner";
 import { formatCurrency } from "@/lib/utils/format";
@@ -180,11 +180,11 @@ export default function NewTaskPage() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="font-semibold text-on-surface">Kategori</label>
-                <select
+                <Label required className="font-semibold text-on-surface">Kategori</Label>
+                <Select
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full min-h-[44px] bg-surface-container-low border border-card-border rounded-xl px-3.5 text-xs text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none transition-all font-sans cursor-pointer"
+                  placeholder="-- Pilih Kategori --"
                   required
                 >
                   <option value="">-- Pilih Kategori --</option>
@@ -193,7 +193,7 @@ export default function NewTaskPage() {
                       {c.nama_kategori}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
 
               <div className="flex flex-col gap-1.5 relative">

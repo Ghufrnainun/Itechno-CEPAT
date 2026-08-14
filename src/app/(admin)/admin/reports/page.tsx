@@ -7,6 +7,7 @@ import AdminDrawer from '@/components/admin/AdminDrawer';
 import KPICard from '@/components/admin/KPICard';
 import StatusBadge from '@/components/admin/StatusBadge';
 import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
 import {
   Flag,
   Search,
@@ -246,10 +247,10 @@ export default function AdminReportsPage() {
   ];
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-surface font-sans">
+    <div className="flex-1 flex flex-col min-w-0 font-sans">
       <AdminTopbar title="Laporan &amp; Aduan Pengguna" />
 
-      <main className="flex-1 p-6 space-y-6 max-w-7xl w-full mx-auto font-sans">
+      <main className="flex-1 px-4 sm:px-8 py-8 lg:py-12 space-y-8 max-w-[1400px] w-full mx-auto font-sans">
         {/* KPI Cards Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <KPICard
@@ -283,7 +284,7 @@ export default function AdminReportsPage() {
         </div>
 
         {/* Filter Bar & Search */}
-        <div className="bg-surface-container-lowest border border-card-border rounded-xl p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bg-white border border-card-border rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Status Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
             {['All', 'pending', 'reviewed', 'resolved', 'rejected'].map((tab) => (
@@ -313,57 +314,70 @@ export default function AdminReportsPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Cari subjek, deskripsi, atau nama..."
-              className="w-full pl-9 pr-3.5 py-2 text-xs font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 rounded-xl border border-card-border focus:border-primary focus:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all shadow-xs"
+              className="w-full pl-9 pr-3.5 py-2 text-xs font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 rounded-xl border border-card-border focus:border-primary focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
             />
           </div>
         </div>
 
-        {/* Data Table */}
-        <div className="bg-surface-container-lowest border border-card-border rounded-xl shadow-xs overflow-hidden">
-          {loading ? (
-            <div className="p-12 text-center text-xs text-on-surface-variant flex flex-col items-center justify-center gap-3">
-              <Loader2 className="w-6 h-6 text-primary animate-spin" />
-              <span>Memuat data laporan pengguna...</span>
-            </div>
-          ) : (
+        {/* Data Table / Loading Skeleton */}
+        {loading ? (
+          <div className="bg-white border border-card-border rounded-2xl p-6 shadow-xs space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between gap-4 py-2.5 border-b border-card-border/40 last:border-0">
+                <div className="flex items-center gap-3 w-1/3 min-w-[180px]">
+                  <Skeleton variant="circular" className="w-8 h-8 shrink-0" />
+                  <div className="space-y-1.5 w-full">
+                    <Skeleton className="h-3.5 w-3/4 rounded" />
+                    <Skeleton className="h-2.5 w-1/2 rounded" />
+                  </div>
+                </div>
+                <Skeleton className="h-6 w-24 rounded-md" />
+                <Skeleton className="h-3.5 w-1/4 rounded hidden sm:block" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-8 w-16 rounded-lg" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white border border-card-border rounded-2xl shadow-xs overflow-hidden">
             <DataTable
               data={reports}
               columns={columns}
               pageSize={10}
               emptyMessage="Belum ada laporan dari pengguna."
             />
-          )}
 
-          {/* Pagination */}
-          {!loading && totalPages > 1 && (
-            <div className="px-5 py-3 border-t border-card-border flex items-center justify-between text-xs text-on-surface-variant font-sans">
-              <span>
-                Menampilkan halaman <strong className="text-on-surface">{page}</strong> dari{' '}
-                <strong className="text-on-surface">{totalPages}</strong> ({total} total laporan)
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                >
-                  Sebelumnya
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                >
-                  Selanjutnya
-                </Button>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="px-5 py-3 border-t border-card-border flex items-center justify-between text-xs text-on-surface-variant font-sans">
+                <span>
+                  Menampilkan halaman <strong className="text-on-surface">{page}</strong> dari{' '}
+                  <strong className="text-on-surface">{totalPages}</strong> ({total} total laporan)
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Sebelumnya
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    Selanjutnya
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Detail Drawer */}

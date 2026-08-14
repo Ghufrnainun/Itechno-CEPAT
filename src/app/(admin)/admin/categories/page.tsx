@@ -16,6 +16,8 @@ import {
   Search,
 } from 'lucide-react';
 import { renderIcon } from '@/lib/icon-map';
+import { CATEGORY_ICON_OPTIONS_RAW } from '@/lib/constants';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 export interface APICategory {
   id: string;
@@ -111,43 +113,7 @@ export default function CategorySkillsManagementPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'category' | 'skill'; id: string; name: string } | null>(null);
 
-  const iconOptions: SelectOption[] = [
-    { value: 'Camera', label: 'Camera (Fotografi)' },
-    { value: 'Laptop', label: 'Laptop (Data Entry)' },
-    { value: 'Palette', label: 'Palette (Desain)' },
-    { value: 'FileText', label: 'FileText (Penulisan)' },
-    { value: 'Box', label: 'Box (Jaga Booth)' },
-    { value: 'Truck', label: 'Truck (Kurir)' },
-    { value: 'Wrench', label: 'Wrench (Teknis IT)' },
-    { value: 'Smartphone', label: 'Smartphone (Sosmed)' },
-    { value: 'GraduationCap', label: 'GraduationCap (Tutoring)' },
-    { value: 'Folder', label: 'Folder (Umum)' },
-    { value: 'Sparkles', label: 'Sparkles (Kreatif / Spesial)' },
-    { value: 'Code', label: 'Code (Programming)' },
-    { value: 'PenTool', label: 'PenTool (Ilustrasi)' },
-    { value: 'Megaphone', label: 'Megaphone (Marketing)' },
-    { value: 'Music', label: 'Music (Audio)' },
-    { value: 'Video', label: 'Video (Editing/Produksi)' },
-    { value: 'Languages', label: 'Languages (Bahasa)' },
-    { value: 'Briefcase', label: 'Briefcase (Bisnis)' },
-    { value: 'Calculator', label: 'Calculator (Akuntansi)' },
-    { value: 'ChefHat', label: 'ChefHat (Kuliner)' },
-    { value: 'HeartPulse', label: 'HeartPulse (Kesehatan)' },
-    { value: 'Scissors', label: 'Scissors (Salon/Kecantikan)' },
-    { value: 'Brush', label: 'Brush (Seni Lukis)' },
-    { value: 'Hammer', label: 'Hammer (Tukang/Bangunan)' },
-    { value: 'Activity', label: 'Activity (Fitness/Olahraga)' },
-    { value: 'Cpu', label: 'Cpu (Hardware/Server)' },
-    { value: 'Globe', label: 'Globe (Web/Internet)' },
-    { value: 'Users', label: 'Users (SDM/Manajemen)' },
-    { value: 'Database', label: 'Database (Data Science)' },
-    { value: 'ShoppingCart', label: 'ShoppingCart (E-Commerce)' },
-    { value: 'TrendingUp', label: 'TrendingUp (Sales/Bisnis)' },
-    { value: 'Car', label: 'Car (Otomotif/Sopir)' },
-    { value: 'Shield', label: 'Shield (Keamanan/Security)' },
-    { value: 'Mic', label: 'Mic (Voiceover/MC)' },
-    { value: 'Gamepad', label: 'Gamepad (Gaming)' },
-  ].map(opt => ({ ...opt, icon: renderIcon(opt.value, "w-3.5 h-3.5 text-primary") }));
+  const iconOptions: SelectOption[] = CATEGORY_ICON_OPTIONS_RAW.map(opt => ({ ...opt, icon: renderIcon(opt.value, "w-3.5 h-3.5 text-primary") }));
 
   // Category Handlers
   const handleOpenAddCategory = () => {
@@ -392,19 +358,19 @@ export default function CategorySkillsManagementPage() {
   ];
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 font-sans bg-surface">
+    <div className="flex-1 flex flex-col min-w-0 font-sans">
       <AdminTopbar title="Category &amp; Skills Governance" />
 
-      <main className="flex-1 p-6 space-y-6 max-w-7xl w-full mx-auto">
+      <main className="flex-1 px-4 sm:px-8 py-8 lg:py-12 space-y-8 max-w-[1400px] w-full mx-auto">
         {/* Header Tabs & Add Action */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-surface-container-lowest p-4 rounded-xl border border-card-border shadow-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-card-border shadow-xs">
           {/* Tab buttons */}
-          <div className="flex items-center gap-1.5 p-1 bg-surface-container-low border border-card-border rounded-lg w-full sm:w-auto">
+          <div className="flex items-center gap-1.5 p-1 bg-surface-container-low border border-card-border rounded-xl w-full sm:w-auto">
             <button
               onClick={() => setActiveTab('categories')}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all duration-150 cursor-pointer ${
                 activeTab === 'categories'
-                  ? 'bg-surface-container-lowest text-on-surface shadow-xs'
+                  ? 'bg-white text-on-surface shadow-xs'
                   : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
@@ -416,7 +382,7 @@ export default function CategorySkillsManagementPage() {
               onClick={() => setActiveTab('skills')}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all duration-150 cursor-pointer ${
                 activeTab === 'skills'
-                  ? 'bg-surface-container-lowest text-on-surface shadow-xs'
+                  ? 'bg-white text-on-surface shadow-xs'
                   : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
@@ -432,7 +398,7 @@ export default function CategorySkillsManagementPage() {
               placeholder="Cari kategori atau skill..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-surface-container-low border border-card-border rounded-lg text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-[background-color,border-color,box-shadow] duration-150"
+              className="w-full pl-9 pr-4 py-2 bg-surface-container-low border border-card-border rounded-xl text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
             />
           </div>
 
@@ -456,11 +422,23 @@ export default function CategorySkillsManagementPage() {
           )}
         </div>
 
-        {/* Data Tables */}
+        {/* Data Tables / Loading Skeleton */}
         {activeTab === 'categories' ? (
           loading ? (
-            <div className="flex justify-center items-center py-12 bg-surface-container-lowest border border-card-border rounded-xl shadow-xs">
-              <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="bg-white border border-card-border rounded-2xl p-6 shadow-xs space-y-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between gap-4 py-2.5 border-b border-card-border/40 last:border-0">
+                  <div className="flex items-center gap-3 w-1/3 min-w-[180px]">
+                    <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                    <Skeleton className="h-4 w-3/4 rounded" />
+                  </div>
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <div className="flex gap-2">
+                    <Skeleton className="w-8 h-8 rounded-lg" />
+                    <Skeleton className="w-8 h-8 rounded-lg" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <DataTable 
@@ -471,8 +449,20 @@ export default function CategorySkillsManagementPage() {
           )
         ) : (
           loading ? (
-            <div className="flex justify-center items-center py-12 bg-surface-container-lowest border border-card-border rounded-xl shadow-xs">
-              <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="bg-white border border-card-border rounded-2xl p-6 shadow-xs space-y-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between gap-4 py-2.5 border-b border-card-border/40 last:border-0">
+                  <div className="flex items-center gap-3 w-1/3 min-w-[180px]">
+                    <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                    <Skeleton className="h-4 w-3/4 rounded" />
+                  </div>
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <div className="flex gap-2">
+                    <Skeleton className="w-8 h-8 rounded-lg" />
+                    <Skeleton className="w-8 h-8 rounded-lg" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <DataTable 
@@ -508,7 +498,7 @@ export default function CategorySkillsManagementPage() {
                 value={catName}
                 onChange={(e) => setCatName(e.target.value)}
                 placeholder="misal: Fotografi & Videografi"
-                className="w-full min-h-[44px] px-3.5 py-2.5 bg-surface-container-low border border-card-border rounded-xl text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-all shadow-xs"
+                className="w-full min-h-[42px] px-3.5 py-2.5 bg-surface-container-low border border-card-border rounded-xl text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all shadow-2xs"
               />
             </div>
           </div>
@@ -538,7 +528,7 @@ export default function CategorySkillsManagementPage() {
                 value={skillName}
                 onChange={(e) => setSkillName(e.target.value)}
                 placeholder="misal: Adobe Photoshop / Illustrator"
-                className="w-full min-h-[44px] px-3.5 py-2.5 bg-surface-container-low border border-card-border rounded-xl text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-all shadow-xs"
+                className="w-full min-h-[42px] px-3.5 py-2.5 bg-surface-container-low border border-card-border rounded-xl text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all shadow-2xs"
               />
             </div>
           </div>

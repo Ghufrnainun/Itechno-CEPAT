@@ -57,8 +57,8 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
   return (
     <aside
       className={cn(
-        "sticky top-0 h-screen flex flex-col bg-surface-container-lowest text-on-surface border-r border-card-border",
-        "transition-[width] duration-200 ease-out z-30 shrink-0",
+        "sticky top-0 h-screen flex flex-col bg-white text-on-surface border-r border-card-border",
+        "transition-[width] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] z-30 shrink-0",
         collapsed ? "w-20" : "w-64"
       )}
     >
@@ -152,7 +152,7 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-sans font-semibold transition-[background-color,color] duration-150",
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-sans font-semibold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
                 isActive
                   ? "bg-primary text-on-primary shadow-xs font-bold"
@@ -169,12 +169,12 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
       </nav>
 
       {/* Footer / Quick Actions */}
-      <div className="p-3 border-t border-card-border bg-surface-container-lowest shrink-0">
+      <div className="p-3 border-t border-card-border bg-white shrink-0">
         <button
           onClick={handleLogout}
           disabled={loggingOut}
           className={cn(
-            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-sans font-semibold text-error hover:bg-error-container/30 transition-colors duration-150 disabled:opacity-50 cursor-pointer",
+            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-sans font-semibold text-error hover:bg-error-container/30 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] disabled:opacity-50 cursor-pointer",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error/40",
             collapsed && "justify-center px-0"
           )}

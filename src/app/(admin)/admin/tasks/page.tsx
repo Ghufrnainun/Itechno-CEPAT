@@ -9,6 +9,7 @@ import AdminModal from '@/components/admin/AdminModal';
 import { Search, Clock, CheckCircle, XCircle, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/motion/tabs';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface AdminTask {
   id: string;
@@ -217,12 +218,12 @@ export default function TaskManagementPage() {
   ];
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-surface">
+    <div className="flex-1 flex flex-col min-w-0 font-sans">
       <AdminTopbar title="Task Management" />
 
-      <main className="flex-1 p-6 space-y-6 max-w-7xl w-full mx-auto font-sans">
+      <main className="flex-1 px-4 sm:px-8 py-8 lg:py-12 space-y-8 max-w-[1400px] w-full mx-auto">
         {/* Search & Status Filter */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-surface-container-lowest p-4 rounded-xl border border-card-border shadow-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-card-border shadow-xs">
           {/* Search Box */}
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant" />
@@ -231,7 +232,7 @@ export default function TaskManagementPage() {
               placeholder="Cari task berdasarkan judul, kategori, atau requester..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3.5 py-2.5 min-h-[44px] text-base sm:text-xs bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 rounded-xl border border-card-border focus:border-primary focus:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-all shadow-xs"
+              className="w-full pl-9 pr-3.5 py-2 min-h-[40px] text-xs font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 rounded-xl border border-card-border focus:border-primary focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
             />
           </div>
 
@@ -256,21 +257,32 @@ export default function TaskManagementPage() {
           </div>
         </div>
 
-        {/* Data Table */}
+        {/* Data Table / Loading Skeleton */}
         {loading ? (
-          <div className="bg-surface-container-lowest border border-card-border rounded-xl p-8 flex justify-center shadow-xs">
-            <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="bg-white border border-card-border rounded-2xl p-6 shadow-xs space-y-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between gap-4 py-2.5 border-b border-card-border/40 last:border-0">
+                <div className="space-y-1.5 w-1/3 min-w-[180px]">
+                  <Skeleton className="h-4 w-3/4 rounded" />
+                  <Skeleton className="h-2.5 w-1/2 rounded" />
+                </div>
+                <div className="space-y-1 w-1/4 hidden sm:block">
+                  <Skeleton className="h-3.5 w-2/3 rounded" />
+                  <Skeleton className="h-2.5 w-1/2 rounded" />
+                </div>
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-4 w-16 rounded font-mono" />
+              </div>
+            ))}
           </div>
         ) : (
-          <>
-            <DataTable
-              columns={columns}
-              data={tasks}
-              onRowClick={(task) => setSelectedTask(task)}
-              pageSize={10}
-              emptyMessage="Tidak ada tugas yang cocok dengan filter Anda."
-            />
-          </>
+          <DataTable
+            columns={columns}
+            data={tasks}
+            onRowClick={(task) => setSelectedTask(task)}
+            pageSize={10}
+            emptyMessage="Tidak ada tugas yang cocok dengan filter Anda."
+          />
         )}
 
         {/* Slide-over Task Detail Drawer */}

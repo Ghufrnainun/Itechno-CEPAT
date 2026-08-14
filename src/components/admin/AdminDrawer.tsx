@@ -54,7 +54,7 @@ export default function AdminDrawer({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: '100%' }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="w-screen max-w-md bg-surface-container-lowest border-l border-card-border shadow-xl flex flex-col"
+              className="w-screen max-w-md bg-white border-l border-card-border shadow-xl flex flex-col"
             >
               {/* Header */}
               <div className="px-6 py-4 border-b border-card-border flex items-center justify-between bg-surface-container-low/50">

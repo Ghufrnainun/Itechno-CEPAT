@@ -74,7 +74,7 @@ export function ReportModal({ isOpen, onClose, onSuccess }: ReportModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent maxWidth="md">
+      <DialogContent maxWidth="md" className="overflow-visible">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-error-container/40 text-error flex items-center justify-center shrink-0 border border-error/25">
@@ -89,8 +89,8 @@ export function ReportModal({ isOpen, onClose, onSuccess }: ReportModalProps) {
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <DialogBody>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-visible">
+          <DialogBody className="overflow-visible">
             {/* Status Alerts */}
             {errorMsg && (
               <div className="p-3.5 rounded-xl bg-error-container/40 border border-error/25 text-error text-xs flex items-center gap-2 font-medium">

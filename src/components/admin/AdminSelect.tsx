@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useId } from 'react';
+import { useState, useRef, useEffect, useId, useCallback } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -28,11 +28,22 @@ export default function AdminSelect({
   label,
 }: AdminSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const listboxRef = useRef<HTMLDivElement>(null);
   const labelId = useId();
   const listboxId = useId();
 
-  const selectedOption = options.find((opt) => opt.value === value);
+  const selectedIndex = options.findIndex((opt) => opt.value === value);
+  const selectedOption = options[selectedIndex];
+
+  // Sync highlightedIndex when opening
+  useEffect(() => {
+    if (isOpen) {
+      setHighlightedIndex(selectedIndex >= 0 ? selectedIndex : 0);
+    }
+  }, [isOpen, selectedIndex]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -44,8 +55,52 @@ export default function AdminSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleSelect = useCallback(
+    (val: string) => {
+      onChange(val);
+      setIsOpen(false);
+      triggerRef.current?.focus();
+    },
+    [onChange]
+  );
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isOpen) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        setIsOpen(true);
+      }
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsOpen(false);
+      triggerRef.current?.focus();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (options.length === 0 ? 0 : (prev + 1) % options.length));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        options.length === 0 ? 0 : (prev - 1 + options.length) % options.length
+      );
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if (highlightedIndex >= 0 && highlightedIndex < options.length) {
+        handleSelect(options[highlightedIndex].value);
+      }
+    } else if (e.key === 'Tab') {
+      setIsOpen(false);
+    }
+  };
+
   return (
-    <div className={cn("relative flex flex-col gap-1.5", className)} ref={dropdownRef}>
+    <div
+      className={cn("relative flex flex-col gap-1.5", className)}
+      ref={dropdownRef}
+      onKeyDown={handleKeyDown}
+    >
       {label && (
         <label id={labelId} className="font-sans text-[11px] font-bold uppercase tracking-wider text-on-surface-variant select-none">
           {label}
@@ -54,14 +109,18 @@ export default function AdminSelect({
 
       {/* Trigger Button */}
       <button
+        ref={triggerRef}
         type="button"
         role="combobox"
         aria-labelledby={label ? labelId : undefined}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-controls={listboxId}
+        aria-activedescendant={
+          isOpen && highlightedIndex >= 0 ? `${listboxId}-opt-${highlightedIndex}` : undefined
+        }
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between gap-2 px-3 py-2 text-xs font-sans font-semibold bg-surface-container-low text-on-surface border border-card-border rounded-lg hover:border-primary/40 hover:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-[background-color,border-color,box-shadow] duration-150 cursor-pointer shadow-2xs"
+        className="flex items-center justify-between gap-2 px-3.5 py-2.5 min-h-[42px] text-xs font-sans font-semibold bg-surface-container-low text-on-surface border border-card-border rounded-xl hover:border-primary/40 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-all duration-150 cursor-pointer shadow-2xs"
       >
         <span className="truncate flex items-center gap-2">
           {selectedOption?.icon}
@@ -79,28 +138,32 @@ export default function AdminSelect({
       {isOpen && (
         <div
           id={listboxId}
+          ref={listboxRef}
           role="listbox"
-          className="absolute top-full left-0 right-0 mt-1 z-50 bg-surface-container-lowest border border-card-border rounded-xl shadow-lg py-1 overflow-hidden animate-fadeIn font-sans text-xs"
+          className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-card-border rounded-xl shadow-lg py-1 overflow-hidden font-sans text-xs"
         >
           <div className="max-h-60 overflow-y-auto divide-y divide-card-border/40 custom-scrollbar">
-            {options.map((option) => {
+            {options.map((option, index) => {
               const isSelected = option.value === value;
+              const isHighlighted = index === highlightedIndex;
 
               return (
                 <button
+                  id={`${listboxId}-opt-${index}`}
                   key={option.value}
                   type="button"
                   role="option"
+                  tabIndex={-1}
                   aria-selected={isSelected}
-                  onClick={() => {
-                    onChange(option.value);
-                    setIsOpen(false);
-                  }}
+                  onClick={() => handleSelect(option.value)}
+                  onMouseEnter={() => setHighlightedIndex(index)}
                   className={cn(
                     "w-full flex items-center justify-between px-3.5 py-2.5 text-left font-medium transition-colors duration-150 cursor-pointer",
-                    "focus-visible:outline-none focus-visible:bg-surface-container-low",
+                    "focus-visible:outline-none",
                     isSelected
                       ? "bg-primary/10 text-primary font-bold"
+                      : isHighlighted
+                      ? "bg-surface-container-low text-on-surface"
                       : "text-on-surface hover:bg-surface-container-low"
                   )}
                 >
@@ -118,3 +181,4 @@ export default function AdminSelect({
     </div>
   );
 }
+
