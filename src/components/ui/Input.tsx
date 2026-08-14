@@ -1,69 +1,118 @@
-import React from "react";
+"use client";
+
+import React, { forwardRef } from "react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  error?: string;
-  helperText?: string;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
+// ─── Label Component ────────────────────────────────────────────────────────
+export interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {
+  required?: boolean;
 }
 
-export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, helperText, leftIcon, rightIcon, className, id, ...props }, ref) => {
-    const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+export const Label = forwardRef<HTMLLabelElement, LabelProps>(
+  ({ className, children, required, ...props }, ref) => (
+    <label
+      ref={ref}
+      className={cn("block text-xs font-bold text-on-surface mb-1.5 select-none", className)}
+      {...props}
+    >
+      {children}
+      {required && <span className="text-error ml-0.5">*</span>}
+    </label>
+  )
+);
+Label.displayName = "Label";
 
+// ─── Input Component ────────────────────────────────────────────────────────
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  error?: boolean;
+  icon?: React.ReactNode;
+}
+
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  ({ className, error, icon, type = "text", ...props }, ref) => {
     return (
-      <div className="flex flex-col gap-1.5 w-full font-sans">
-        {label && (
-          <label
-            htmlFor={inputId}
-            className="text-xs sm:text-sm font-semibold text-on-surface select-none flex items-center justify-between"
-          >
-            <span>{label}</span>
-          </label>
+      <div className="relative flex items-center w-full">
+        {icon && (
+          <div className="absolute left-3.5 text-on-surface-variant pointer-events-none shrink-0">
+            {icon}
+          </div>
         )}
-        <div className="relative flex items-center w-full">
-          {leftIcon && (
-            <div className="absolute left-3.5 text-on-surface-variant pointer-events-none flex items-center justify-center">
-              {leftIcon}
-            </div>
+        <input
+          type={type}
+          ref={ref}
+          className={cn(
+            "w-full px-3.5 py-2.5 text-xs sm:text-sm font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/40 rounded-xl border transition-all duration-150 shadow-2xs focus-visible:outline-none min-h-[42px]",
+            icon && "pl-10",
+            error
+              ? "border-error focus:border-error focus:ring-2 focus:ring-error/20"
+              : "border-card-border/90 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20",
+            className
           )}
-          <input
-            id={inputId}
-            ref={ref}
-            className={cn(
-              "w-full bg-surface-container-lowest border border-card-border rounded-lg min-h-[44px] px-3.5 py-2.5 " +
-              "text-base sm:text-sm text-on-surface placeholder:text-on-surface-variant/50 " +
-              "transition-[border-color,box-shadow] duration-150 ease-out outline-none " +
-              "focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest " +
-              "disabled:opacity-50 disabled:cursor-not-allowed",
-              leftIcon && "pl-10",
-              rightIcon && "pr-10",
-              error && "border-error focus:border-error focus:ring-error/20",
-              className
-            )}
-            {...props}
-          />
-          {rightIcon && (
-            <div className="absolute right-3.5 text-on-surface-variant flex items-center justify-center">
-              {rightIcon}
-            </div>
-          )}
-        </div>
-        {error ? (
-          <span className="text-xs text-error font-medium">
-            {error}
-          </span>
-        ) : helperText ? (
-          <span className="text-[11px] text-on-surface-variant font-medium">
-            {helperText}
-          </span>
-        ) : null}
+          {...props}
+        />
       </div>
     );
   }
 );
-
 Input.displayName = "Input";
+
+// ─── Select Component (With Custom Hidden Native Chevron) ───────────────────
+export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  error?: boolean;
+  icon?: React.ReactNode;
+}
+
+export const Select = forwardRef<HTMLSelectElement, SelectProps>(
+  ({ className, children, error, icon, ...props }, ref) => {
+    return (
+      <div className="relative flex items-center w-full">
+        {icon && (
+          <div className="absolute left-3.5 text-on-surface-variant pointer-events-none shrink-0 z-10">
+            {icon}
+          </div>
+        )}
+        <select
+          ref={ref}
+          className={cn(
+            "w-full appearance-none px-3.5 py-2.5 pr-10 text-xs sm:text-sm font-sans bg-surface-container-low text-on-surface rounded-xl border transition-all duration-150 shadow-2xs focus-visible:outline-none cursor-pointer min-h-[42px]",
+            icon && "pl-10",
+            error
+              ? "border-error focus:border-error focus:ring-2 focus:ring-error/20"
+              : "border-card-border/90 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20",
+            className
+          )}
+          {...props}
+        >
+          {children}
+        </select>
+        <ChevronDown className="w-4 h-4 text-on-surface-variant pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 shrink-0 z-10 opacity-70" />
+      </div>
+    );
+  }
+);
+Select.displayName = "Select";
+
+// ─── Textarea Component ──────────────────────────────────────────────────────
+export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  error?: boolean;
+}
+
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ className, error, ...props }, ref) => {
+    return (
+      <textarea
+        ref={ref}
+        className={cn(
+          "w-full px-3.5 py-2.5 text-xs sm:text-sm font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/40 rounded-xl border transition-all duration-150 shadow-2xs focus-visible:outline-none resize-none",
+          error
+            ? "border-error focus:border-error focus:ring-2 focus:ring-error/20"
+            : "border-card-border/90 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20",
+          className
+        )}
+        {...props}
+      />
+    );
+  }
+);
+Textarea.displayName = "Textarea";

@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { RatingStars } from "@/components/ui/RatingStars";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import { Label, Textarea } from "@/components/ui/Input";
 
 interface ReviewModalProps {
   isOpen: boolean;
@@ -98,17 +99,16 @@ export function ReviewModal({
 
         {/* Comment Input */}
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="review-comment" className="text-xs font-bold text-on-surface">
+          <Label htmlFor="review-comment">
             Ulasan Singkat (Opsional)
-          </label>
-          <textarea
+          </Label>
+          <Textarea
             id="review-comment"
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Tulis kesan, kecepatan pengerjaan, atau saran..."
             rows={3}
             maxLength={500}
-            className="w-full p-3 rounded-xl border border-card-border bg-surface-container-low text-on-surface focus:bg-surface-container-lowest focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-base sm:text-xs resize-none min-h-[85px]"
           />
           <span className="text-right text-[11px] text-on-surface-variant font-mono">
             {comment.length}/500
