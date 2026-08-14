@@ -519,16 +519,16 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="bg-surface-container-lowest border border-card-border rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col gap-4"
+          className="bg-surface-container-lowest border border-card-border rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col gap-5"
         >
           {/* Tab Header */}
-          <div className="flex items-center justify-between border-b border-card-border pb-1">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-card-border pb-3">
             <Tabs
               value={activeTab}
               onValueChange={(val) => setActiveTab(val as "recommendations" | "activity")}
-              variant="underline"
+              variant="pill"
             >
-              <TabsList className="border-b-0">
+              <TabsList className="w-fit flex-nowrap">
                 <TabsTrigger value="recommendations">
                   Rekomendasi Tugas ({recommendedTasks.length})
                 </TabsTrigger>
@@ -538,7 +538,7 @@ export default function DashboardPage() {
               </TabsList>
             </Tabs>
 
-            <Link href="/feed" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+            <Link href="/feed" className="text-xs font-bold text-primary hover:underline flex items-center gap-1.5 w-fit">
               Lihat Semua <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -552,20 +552,27 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.15 }}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1"
+                className={cn(
+                  "grid gap-4 pt-1",
+                  recommendedTasks.length === 1
+                    ? "grid-cols-1 max-w-md"
+                    : recommendedTasks.length === 2
+                    ? "grid-cols-1 sm:grid-cols-2 max-w-3xl"
+                    : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                )}
                 id="panel-recommendations"
                 role="tabpanel"
                 aria-labelledby="tab-recommendations"
               >
                 {recommendedTasks.slice(0, 3).map((task) => (
                   <Link key={task.id_task} href={`/task/${task.id_task}`}>
-                    <div className="group border border-card-border rounded-xl p-4 hover:border-primary/40 hover:bg-surface-container-low transition-colors duration-150 cursor-pointer flex flex-col justify-between h-full space-y-3 shadow-xs min-h-[140px]">
+                    <div className="group bg-surface-container-low/60 border border-card-border/80 rounded-xl p-4 hover:border-primary/40 hover:bg-surface-container-low transition-all duration-200 cursor-pointer flex flex-col justify-between h-full gap-3 shadow-xs min-h-[145px]">
                       <div>
-                        <div className="flex justify-between items-start gap-2 mb-1.5">
+                        <div className="flex justify-between items-start gap-2 mb-2">
                           <h4 className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors duration-150 line-clamp-2 leading-snug">
                             {task.title}
                           </h4>
-                          <span className="text-xs font-mono font-bold text-primary shrink-0 bg-primary/10 px-2 py-0.5 rounded-lg border border-primary/20 tabular-nums">
+                          <span className="text-xs font-mono font-bold text-primary shrink-0 bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/20 tabular-nums">
                             {formatCurrency(task.compensation)}
                           </span>
                         </div>
@@ -574,13 +581,13 @@ export default function DashboardPage() {
                         </p>
                       </div>
 
-                      <div className="flex items-center justify-between text-xs text-on-surface-variant pt-3 border-t border-card-border font-mono">
-                        <span className="flex items-center gap-1.5">
-                          <Store className="w-3.5 h-3.5 text-on-surface-variant" />
+                      <div className="flex items-center justify-between text-xs text-on-surface-variant pt-3 border-t border-card-border/60 font-mono">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <Store className="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
                           {task.requester_name || "UMKM"}
                         </span>
                         <span className="flex items-center gap-1 text-primary font-bold tabular-nums">
-                          <Footprints className="w-3.5 h-3.5" />
+                          <Footprints className="w-3.5 h-3.5 shrink-0" />
                           {task.distance ? `${task.distance.toFixed(1)} km` : "Dekat"}
                         </span>
                       </div>
@@ -611,19 +618,22 @@ export default function DashboardPage() {
                 aria-labelledby="tab-activity"
               >
                 {myActiveTasks.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <div className={cn(
+                    "grid gap-3.5",
+                    myActiveTasks.length === 1 ? "grid-cols-1 max-w-md" : "grid-cols-1 md:grid-cols-2"
+                  )}>
                     {myActiveTasks.slice(0, 4).map((app) => {
                       const statusName = app.application_status || "Pending";
                       const statusColor =
                         statusName === "accepted"
-                          ? "bg-secondary-container text-secondary border-secondary/30"
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
                           : statusName === "rejected"
                           ? "bg-error-container text-error border-error/30"
-                          : "bg-tertiary-container text-tertiary border-tertiary/30";
+                          : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
 
                       return (
                         <Link key={app.id_task_applicants} href={`/task/${app.id_tasks}`}>
-                          <div className="group border border-card-border rounded-xl p-4 hover:border-primary/40 hover:bg-surface-container-low transition-colors duration-150 cursor-pointer flex flex-col gap-3 shadow-xs">
+                          <div className="group bg-surface-container-low/60 border border-card-border/80 rounded-xl p-4 hover:border-primary/40 hover:bg-surface-container-low transition-all duration-200 cursor-pointer flex flex-col gap-3 shadow-xs">
                             <div className="flex justify-between items-start gap-2">
                               <h4 className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors duration-150 line-clamp-2 leading-snug flex-1">
                                 {app.judul_tugas || "Tugas"}
@@ -632,9 +642,9 @@ export default function DashboardPage() {
                                 {statusName}
                               </span>
                             </div>
-                            <div className="flex items-center justify-between text-xs text-on-surface-variant">
+                            <div className="flex items-center justify-between text-xs text-on-surface-variant font-mono">
                               <span className="flex items-center gap-1.5 font-medium">
-                                <User className="w-3.5 h-3.5 text-on-surface-variant" />
+                                <User className="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
                                 {app.requester?.nama_lengkap || "Pemberi Kerja"}
                               </span>
                               <span className="font-mono font-bold text-primary tabular-nums">
@@ -647,22 +657,20 @@ export default function DashboardPage() {
                     })}
                   </div>
                 ) : (
-                  <div className="bg-surface-container-low border border-card-border border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center">
-                    <div className="w-10 h-10 bg-surface-container-lowest rounded-xl flex items-center justify-center shadow-xs border border-card-border mb-2 text-primary">
-                      <Clock className="w-5 h-5" />
-                    </div>
-                    <h4 className="text-sm font-bold text-on-surface">Belum ada tugas aktif</h4>
-                    <p className="text-xs text-on-surface-variant mt-0.5 max-w-sm mb-3">
+                  <div className="bg-surface-container-low/40 border border-card-border rounded-xl p-8 flex flex-col items-center justify-center text-center gap-2">
+                    <CheckCircle2 className="w-8 h-8 text-on-surface-variant/40" />
+                    <p className="text-xs font-bold text-on-surface">Belum ada aktivitas tugas berjalan</p>
+                    <p className="text-xs text-on-surface-variant max-w-xs leading-relaxed">
                       {role === "worker"
                         ? "Ambil tugas terdekat di sekitarmu untuk mulai mengumpulkan poin."
                         : "Post tugas baru untuk menemukan mahasiswa yang siap membantu."}
                     </p>
                     {role === "worker" ? (
-                      <Link href="/feed">
+                      <Link href="/feed" className="mt-1">
                         <Button variant="primary" size="sm">Cari Tugas Sekarang</Button>
                       </Link>
                     ) : (
-                      <Link href="/task/new">
+                      <Link href="/task/new" className="mt-1">
                         <Button variant="primary" size="sm">Post Tugas Pertama</Button>
                       </Link>
                     )}

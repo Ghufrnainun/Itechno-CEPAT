@@ -10,6 +10,7 @@ import { EscrowBanner } from "@/components/ui/EscrowBanner";
 import { formatCurrency } from "@/lib/utils/format";
 import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
 import { renderIcon } from "@/lib/icon-map";
+import { Lock, ChevronDown, Check, X, MapPin, Search, Info } from "lucide-react";
 
 export default function NewTaskPage() {
   const router = useRouter();
@@ -138,28 +139,26 @@ export default function NewTaskPage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-layout-bg font-sans">
+    <div className="flex flex-col h-full bg-surface font-sans text-xs">
       {/* Page Header */}
-      <header className="page-header">
-        <div className="flex items-center gap-sm">
-          <div>
-            <h1 className="font-headline-lg text-headline-lg text-on-surface font-extrabold">Post Tugas Baru</h1>
-            <p className="font-body-sm text-body-sm text-on-surface-variant font-medium">Buat tugas baru untuk dikerjakan oleh worker mikro terdekat</p>
-          </div>
+      <header className="shrink-0 bg-surface-container-lowest border-b border-card-border px-6 py-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="font-headline font-extrabold text-2xl text-on-surface tracking-tight">Post Tugas Baru</h1>
+          <p className="font-body-sm text-xs text-on-surface-variant font-medium mt-1">Buat tugas baru untuk dikerjakan oleh worker mikro terdekat</p>
         </div>
-        <div className="flex items-center gap-sm px-md py-sm rounded-lg bg-amber-50 border border-amber-200">
-          <span className="material-symbols-outlined text-[16px] text-amber-600" aria-hidden="true">lock</span>
-          <span className="font-label-sm text-label-sm text-amber-600 font-medium">Dana dikunci escrow saat tugas diterima</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/25">
+          <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+          <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold">Dana dikunci escrow saat tugas diterima</span>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto w-full p-4 md:p-8 pb-28 md:pb-8 flex flex-col gap-lg overflow-y-auto custom-scrollbar">
+      <div className="max-w-4xl mx-auto w-full p-4 md:p-8 pb-28 md:pb-8 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
         <EscrowBanner />
 
-        <form onSubmit={handleSubmit} className="bg-white border border-outline-variant rounded-xl p-md md:p-lg flex flex-col gap-md shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+        <form onSubmit={handleSubmit} className="bg-surface-container-lowest border border-card-border rounded-2xl p-6 md:p-8 flex flex-col gap-6 shadow-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Form Fields */}
-            <div className="flex flex-col gap-md">
+            <div className="flex flex-col gap-4">
               <Input
                 label="Judul Tugas"
                 type="text"
@@ -169,10 +168,10 @@ export default function NewTaskPage() {
                 required
               />
 
-              <div className="flex flex-col gap-xs">
-                <label className="font-body-sm text-body-sm text-on-surface-variant font-medium">Deskripsi Tugas</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="font-semibold text-on-surface">Deskripsi Tugas</label>
                 <textarea
-                  className="input-field min-h-[100px] font-body-sm custom-scrollbar"
+                  className="w-full bg-surface-container-low border border-card-border rounded-xl p-3 text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[100px] custom-scrollbar font-sans"
                   placeholder="Jelaskan instruksi kerja, kriteria hasil, dan perlengkapan yang perlu dibawa."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -180,12 +179,12 @@ export default function NewTaskPage() {
                 />
               </div>
 
-              <div className="flex flex-col gap-xs">
-                <label className="font-body-sm text-body-sm text-on-surface-variant font-medium">Kategori</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="font-semibold text-on-surface">Kategori</label>
                 <select
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
-                  className="input-field text-body-sm font-sans"
+                  className="w-full min-h-[44px] bg-surface-container-low border border-card-border rounded-xl px-3.5 text-xs text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none transition-all font-sans cursor-pointer"
                   required
                 >
                   <option value="">-- Pilih Kategori --</option>
@@ -197,22 +196,22 @@ export default function NewTaskPage() {
                 </select>
               </div>
 
-              <div className="flex flex-col gap-xs relative">
-                <label className="font-body-sm text-body-sm text-on-surface-variant font-medium">Skill (Opsional)</label>
+              <div className="flex flex-col gap-1.5 relative">
+                <label className="font-semibold text-on-surface">Skill (Opsional)</label>
                 
                 {/* Dropdown Button */}
                 <button
                   type="button"
                   onClick={() => setIsSkillDropdownOpen(!isSkillDropdownOpen)}
-                  className="input-field text-body-sm font-sans flex justify-between items-center w-full bg-white text-left text-on-surface-variant"
+                  className="min-h-[44px] px-3.5 bg-surface-container-low border border-card-border rounded-xl text-xs font-sans flex justify-between items-center w-full text-left text-on-surface-variant cursor-pointer"
                 >
                   <span>{selectedSkills.length > 0 ? `${selectedSkills.length} Skill Terpilih` : 'Pilih Skill yang Dibutuhkan...'}</span>
-                  <span className="material-symbols-outlined text-outline" aria-hidden="true">expand_more</span>
+                  <ChevronDown className="w-4 h-4 text-on-surface-variant shrink-0" />
                 </button>
 
                 {/* Dropdown Panel */}
                 {isSkillDropdownOpen && (
-                  <div className="absolute top-[70px] left-0 w-full bg-white border border-outline-variant rounded-xl shadow-lg z-20 overflow-hidden flex flex-col">
+                  <div className="absolute top-[70px] left-0 w-full bg-surface-container-lowest border border-card-border rounded-xl shadow-xl z-20 overflow-hidden flex flex-col">
                     <div className="max-h-[240px] overflow-y-auto p-2 flex flex-col custom-scrollbar">
                       {skills.map((s) => {
                         const isSelected = selectedSkills.includes(s.id_skill_master);
@@ -221,22 +220,22 @@ export default function NewTaskPage() {
                             key={s.id_skill_master}
                             type="button"
                             onClick={() => toggleSkill(s.id_skill_master)}
-                            className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer w-full text-left ${
+                            className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer w-full text-left ${
                               isSelected 
                                 ? 'bg-primary/10 text-primary' 
                                 : 'bg-transparent text-on-surface hover:bg-surface-container-low'
                             }`}
                           >
-                            <div className="flex items-center gap-2.5">
+                            <div className="flex items-center gap-2">
                               {renderIcon(s.icon, `w-4 h-4 shrink-0 ${isSelected ? "text-primary" : "text-on-surface-variant"}`)}
                               <span>{s.nama_skill}</span>
                             </div>
-                            {isSelected && <span className="material-symbols-outlined text-[18px]">check</span>}
+                            {isSelected && <Check className="w-4 h-4" />}
                           </button>
                         );
                       })}
                       {skills.length === 0 && (
-                        <span className="text-sm text-on-surface-variant italic p-3 text-center">Belum ada skill yang tersedia...</span>
+                        <span className="text-xs text-on-surface-variant italic p-3 text-center">Belum ada skill yang tersedia...</span>
                       )}
                     </div>
                   </div>
@@ -249,15 +248,15 @@ export default function NewTaskPage() {
                       const s = skills.find(sk => sk.id_skill_master === id);
                       if (!s) return null;
                       return (
-                        <div key={id} className="flex items-center gap-1.5 px-3 py-1 bg-surface-container-low border border-outline-variant rounded-full text-[13px] font-medium text-on-surface">
+                        <div key={id} className="flex items-center gap-1.5 px-3 py-1 bg-surface-container-low border border-card-border rounded-full text-xs font-medium text-on-surface">
                           {renderIcon(s.icon, "w-3.5 h-3.5 shrink-0 text-primary")}
                           <span>{s.nama_skill}</span>
                           <button 
                             type="button"
                             onClick={() => toggleSkill(id)}
-                            className="ml-1 text-on-surface-variant hover:text-rose-600 transition-colors flex items-center justify-center"
+                            className="ml-1 text-on-surface-variant hover:text-error transition-colors flex items-center justify-center cursor-pointer"
                           >
-                            <span className="material-symbols-outlined text-[16px]">close</span>
+                            <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       );
@@ -266,7 +265,7 @@ export default function NewTaskPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-sm">
+              <div className="grid grid-cols-2 gap-4">
                 <Input
                   label="Estimasi Durasi (Jam)"
                   type="number"
@@ -287,9 +286,9 @@ export default function NewTaskPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-sm">
+              <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Batas Maksimal Pelamar / Worker"
+                  label="Batas Maksimal Pelamar"
                   type="number"
                   placeholder="Contoh: 3"
                   value={maxApplicants}
@@ -298,7 +297,7 @@ export default function NewTaskPage() {
                   required
                 />
                 <Input
-                  label="Batas Percobaan Apply (per Worker)"
+                  label="Batas Percobaan Apply"
                   type="number"
                   placeholder="Contoh: 3"
                   value={maxApplyAttempts}
@@ -309,13 +308,13 @@ export default function NewTaskPage() {
               </div>
 
               {/* Ringkasan Escrow Real-time */}
-              <div className="bg-surface-container-low border border-outline-variant/60 rounded-lg p-sm flex flex-col gap-xs font-label-sm">
+              <div className="bg-surface-container-low border border-card-border rounded-xl p-3 flex flex-col gap-1 text-xs">
                 <span className="text-on-surface-variant font-medium">Ringkasan Penguncian Escrow:</span>
-                <div className="flex items-center justify-between text-body-sm">
+                <div className="flex items-center justify-between">
                   <span className="text-on-surface-variant font-mono">
                     {parseInt(maxApplicants, 10) || 1} Worker × {formatCurrency(parseFloat(compensation) || 0)}
                   </span>
-                  <span className="font-bold text-primary font-mono text-[15px]">
+                  <span className="font-bold text-primary font-mono text-sm">
                     Total: {formatCurrency((parseFloat(compensation) || 0) * (parseInt(maxApplicants, 10) || 1))}
                   </span>
                 </div>
@@ -323,17 +322,17 @@ export default function NewTaskPage() {
             </div>
 
             {/* Location Picker Map */}
-            <div className="flex flex-col gap-xs">
-              <label className="font-body-sm text-body-sm text-on-surface-variant font-medium flex items-center gap-xs">
-                <span className="material-symbols-outlined text-[16px]" aria-hidden="true">location_on</span>
+            <div className="flex flex-col gap-3">
+              <label className="font-semibold text-on-surface flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-primary shrink-0" />
                 Titik Lokasi Tugas
               </label>
               
-              <div className="flex items-center gap-sm mb-xs">
+              <div className="flex items-center gap-2">
                 <div className="flex-grow">
                   <Input 
                     type="text" 
-                    placeholder="Cari lokasi spesifik (misal: UGM, Monas)" 
+                    placeholder="Cari lokasi (misal: UGM, Monas)" 
                     value={searchLocation}
                     onChange={(e) => setSearchLocation(e.target.value)}
                     onKeyDown={(e) => {
@@ -347,20 +346,21 @@ export default function NewTaskPage() {
                 <Button 
                   type="button" 
                   variant="secondary" 
-                  className="px-md mt-2 md:mt-0 whitespace-nowrap"
+                  size="sm"
+                  className="whitespace-nowrap h-[44px]"
                   onClick={handleSearchLocation}
                   disabled={searching}
+                  icon={<Search className="w-4 h-4" />}
                 >
-                  <span className="material-symbols-outlined text-[18px]">search</span>
                   Cari
                 </Button>
               </div>
               
-              <div className="font-body-sm text-on-surface-variant mb-xs">
+              <div className="text-xs text-on-surface-variant">
                 Atau geser pin pada peta untuk memilih lokasi.
               </div>
 
-              <div className="flex-grow h-[260px] md:h-auto min-h-[220px] relative rounded-lg overflow-hidden border border-outline-variant">
+              <div className="flex-grow h-[260px] md:h-auto min-h-[220px] relative rounded-xl overflow-hidden border border-card-border shadow-xs">
                 <MapPickerWrapper
                   center={mapCenter || { latitude: coords.latitude, longitude: coords.longitude }}
                   onLocationSelect={handleLocationSelect}
@@ -368,29 +368,30 @@ export default function NewTaskPage() {
               </div>
 
               {lat && lng ? (
-                <span className="font-label-sm text-label-sm text-primary font-mono mt-xs flex items-center gap-xs">
-                  <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">location_on</span>
+                <span className="text-xs text-primary font-mono font-medium flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5" />
                   Koordinat Terpilih: {lat.toFixed(6)}, {lng.toFixed(6)}
                 </span>
               ) : (
-                <span className="font-label-sm text-label-sm text-error mt-xs flex items-center gap-xs">
-                  <span className="material-symbols-outlined text-[14px]" aria-hidden="true">info</span>
+                <span className="text-xs text-error font-medium flex items-center gap-1">
+                  <Info className="w-3.5 h-3.5" />
                   Silakan klik titik di peta untuk menandai lokasi.
                 </span>
               )}
             </div>
           </div>
 
-          <div className="border-t border-outline-variant/50 pt-md flex justify-end gap-sm">
-            <button
+          <div className="border-t border-card-border pt-4 flex justify-end gap-3">
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={() => router.back()}
-              className="font-label-md text-label-md font-bold px-lg py-sm rounded-lg border border-outline-variant/60 hover:bg-surface-container-low cursor-pointer transition-colors"
             >
               Batal
-            </button>
+            </Button>
             
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" variant="primary" size="sm" disabled={loading}>
               {loading ? "Memproses..." : "Posting Tugas Sekarang"}
             </Button>
           </div>

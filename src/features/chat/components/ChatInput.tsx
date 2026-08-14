@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
 import EmojiPicker from 'emoji-picker-react';
+import { AlertTriangle, X, ImagePlus, Smile, Send, Loader2 } from 'lucide-react';
 
 interface ChatInputProps {
   onSendMessage: (text: string | null, imageUrl: string | null) => Promise<void>;
@@ -31,7 +32,6 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
   }, [externalFile]);
 
   useEffect(() => {
-    // Cleanup object URL to avoid memory leaks
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
@@ -61,7 +61,6 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
     const file = e.target.files?.[0];
     if (!file || disabled) return;
     handleFileSelect(file);
-    // Reset input so the same file can be selected again if removed
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -82,7 +81,6 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
       let uploadedImageUrl = null;
 
       if (selectedFile) {
-        // Upload to Supabase Storage "chat_images" bucket
         const fileExt = selectedFile.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
         
@@ -117,30 +115,31 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
   };
 
   return (
-    <div className="p-md bg-surface border-t border-outline-variant flex flex-col gap-sm relative">
-      {/* Custom Error Alert (Orange & Green, Sharp Edges) */}
+    <div className="p-4 bg-surface-container-lowest border-t border-card-border flex flex-col gap-3 relative font-sans">
+      {/* Error Alert */}
       {errorMsg && (
-        <div className="absolute top-[-50px] left-1/2 -translate-x-1/2 bg-orange-100 border-2 border-orange-500 text-orange-800 px-4 py-2 font-bold z-50 rounded-none shadow-[4px_4px_0_var(--color-primary,green)] animate-in fade-in slide-in-from-bottom-2 whitespace-nowrap flex items-center gap-2">
-          <span className="material-symbols-outlined text-orange-600">warning</span>
+        <div className="absolute top-[-44px] left-1/2 -translate-x-1/2 bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 px-4 py-2 text-xs font-semibold z-50 rounded-xl shadow-lg animate-in fade-in slide-in-from-bottom-2 whitespace-nowrap flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
           {errorMsg}
         </div>
       )}
 
       {/* Image Preview Container */}
       {previewUrl && (
-        <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-outline-variant ml-14 shadow-sm">
+        <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-card-border ml-12 shadow-xs">
           <Image src={previewUrl} alt="Preview" fill className="object-cover" unoptimized />
           <button
             onClick={clearSelectedFile}
             disabled={isUploading}
-            className="absolute top-1 right-1 w-6 h-6 bg-surface/80 rounded-full flex items-center justify-center text-on-surface hover:bg-error hover:text-on-error transition-colors disabled:opacity-50"
+            aria-label="Hapus gambar"
+            className="absolute top-1 right-1 w-6 h-6 bg-surface-container-lowest/80 rounded-full flex items-center justify-center text-on-surface hover:bg-error hover:text-on-error transition-colors cursor-pointer disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-[14px]">close</span>
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
-      <div className="flex items-center gap-md w-full z-20">
+      <div className="flex items-center gap-3 w-full z-20">
         <input
           type="file"
           accept="image/*"
@@ -152,24 +151,29 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
           type="button"
           disabled={disabled || isUploading}
           onClick={() => fileInputRef.current?.click()}
-          className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer disabled:opacity-50"
+          aria-label="Unggah Gambar"
+          className="w-9 h-9 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer disabled:opacity-50"
         >
-          <span className="material-symbols-outlined text-[24px]">
-            {isUploading ? 'hourglass_empty' : 'add_photo_alternate'}
-          </span>
+          {isUploading ? (
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+          ) : (
+            <ImagePlus className="w-5 h-5" />
+          )}
         </button>
+        
         <div className="relative">
           <button 
             type="button"
             disabled={disabled || isUploading}
             onClick={() => setShowEmojiPicker(prev => !prev)}
-            className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer hidden sm:flex disabled:opacity-50"
+            aria-label="Pilih Emoji"
+            className="w-9 h-9 items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer hidden sm:flex disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-[24px]" aria-hidden="true">mood</span>
+            <Smile className="w-5 h-5" />
           </button>
           
           {showEmojiPicker && (
-            <div className="absolute bottom-12 left-0 z-50">
+            <div className="absolute bottom-12 left-0 z-50 shadow-2xl rounded-2xl overflow-hidden">
               <EmojiPicker 
                 onEmojiClick={(emojiData) => {
                   setText(prev => prev + emojiData.emoji);
@@ -182,7 +186,7 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
 
         <form 
           onSubmit={handleSendForm} 
-          className="flex-1 flex items-center gap-sm bg-white rounded-full px-4 py-2 border border-outline-variant/60 focus-within:border-primary transition-colors"
+          className="flex-1 flex items-center gap-2 bg-surface-container-low rounded-2xl px-4 py-2 border border-card-border focus-within:border-primary focus-within:bg-surface-container-lowest transition-all"
         >
           <input 
             type="text"
@@ -190,16 +194,15 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
             onChange={(e) => setText(e.target.value)}
             disabled={disabled || isUploading}
             placeholder={isUploading ? "Mengirim pesan..." : (selectedFile ? "Tambah keterangan..." : "Ketik pesan...")}
-            className="flex-1 bg-transparent border-none focus:outline-none font-body-sm text-body-sm text-on-surface disabled:opacity-50"
+            className="flex-1 bg-transparent border-none focus:outline-none text-xs text-on-surface placeholder:text-on-surface-variant/50 disabled:opacity-50 font-sans"
           />
           <button 
             type="submit" 
             disabled={(!text.trim() && !selectedFile) || disabled || isUploading}
-            className={`flex items-center justify-center transition-colors ${((text.trim() || selectedFile) && !disabled && !isUploading) ? 'text-primary cursor-pointer' : 'text-outline-variant opacity-50'}`}
+            aria-label="Kirim Pesan"
+            className={`flex items-center justify-center transition-colors p-1 rounded-lg ${((text.trim() || selectedFile) && !disabled && !isUploading) ? 'text-primary hover:bg-primary/10 cursor-pointer' : 'text-on-surface-variant/30 cursor-not-allowed'}`}
           >
-            <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">
-              send
-            </span>
+            <Send className="w-4 h-4" />
           </button>
         </form>
       </div>

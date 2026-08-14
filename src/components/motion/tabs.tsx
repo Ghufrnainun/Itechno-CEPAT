@@ -83,9 +83,9 @@ export function Tabs({
 }
 
 const listClasses: Record<Variant, string> = {
-  pill: "inline-flex items-center gap-1 rounded-full bg-surface-container-low border border-card-border p-1",
-  underline: "inline-flex items-center gap-1 border-b border-card-border",
-  segment: "inline-flex items-center gap-0.5 rounded-xl bg-surface-container-low border border-card-border p-1",
+  pill: "inline-flex items-center gap-1 rounded-full bg-surface-container-low border border-card-border p-1 max-w-full overflow-x-auto no-scrollbar shadow-xs",
+  underline: "inline-flex items-center gap-2 border-b border-card-border max-w-full overflow-x-auto no-scrollbar",
+  segment: "inline-flex items-center gap-1 rounded-full bg-surface-container-low border border-card-border p-1 max-w-full overflow-x-auto no-scrollbar shadow-xs",
 };
 
 export function TabsList({ children, className }: { children: ReactNode; className?: string }) {
@@ -119,17 +119,17 @@ export function TabsTrigger({
         aria-selected={active}
         onClick={() => setValue(value)}
         className={cn(
-          "relative isolate px-3.5 pb-2.5 pt-1.5 -mb-px text-xs font-bold transition-colors min-h-[40px] inline-flex items-center gap-2 cursor-pointer font-sans select-none",
-          active ? "text-primary" : "text-on-surface-variant hover:text-on-surface",
+          "relative isolate px-3.5 pb-2.5 pt-1.5 -mb-px text-xs font-bold transition-colors min-h-[38px] inline-flex items-center justify-center gap-2 cursor-pointer font-sans select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+          active ? "text-primary font-bold" : "text-on-surface-variant hover:text-on-surface font-medium",
           className,
         )}
       >
-        {children}
+        <span className="relative z-10 inline-flex items-center gap-1.5">{children}</span>
         {active ? (
           <motion.span
             layoutId={layoutId}
             className={cn(
-              "absolute -bottom-px left-0 right-0 h-0.5 bg-primary rounded-full",
+              "absolute -bottom-px left-0 right-0 h-0.5 bg-primary rounded-full z-10",
               indicatorClassName,
             )}
           />
@@ -138,38 +138,36 @@ export function TabsTrigger({
     );
   }
 
-  const radius = variant === "pill" ? "rounded-full" : "rounded-lg";
+  const radiusClass = "rounded-full";
 
   return (
-    <div className="relative">
-      {active ? (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={() => setValue(value)}
+      className={cn(
+        "relative isolate inline-flex items-center justify-center whitespace-nowrap px-4 py-2 text-xs font-bold font-sans outline-none cursor-pointer select-none transition-colors duration-150 min-h-[36px]",
+        radiusClass,
+        active
+          ? "text-primary font-bold"
+          : "text-on-surface-variant hover:text-on-surface font-medium",
+        className,
+      )}
+    >
+      {active && (
         <motion.span
           layoutId={layoutId}
-          style={{ borderRadius: variant === "pill" ? 9999 : 8 }}
+          style={{ borderRadius: 9999 }}
           className={cn(
-            "absolute inset-0 bg-surface-container-lowest border border-card-border shadow-xs",
-            radius,
+            "absolute inset-0 z-0 bg-surface-container-lowest border border-card-border/80 shadow-xs pointer-events-none",
+            radiusClass,
             indicatorClassName,
           )}
         />
-      ) : null}
-      <button
-        type="button"
-        role="tab"
-        aria-selected={active}
-        onClick={() => setValue(value)}
-        className={cn(
-          "relative z-10 inline-flex items-center justify-center whitespace-nowrap bg-transparent px-3.5 py-1.5 text-xs font-bold font-sans outline-none cursor-pointer select-none transition-colors",
-          active
-            ? "text-primary shadow-xs"
-            : "text-on-surface-variant hover:text-on-surface",
-          radius,
-          className,
-        )}
-      >
-        {children}
-      </button>
-    </div>
+      )}
+      <span className="relative z-10 inline-flex items-center gap-1.5">{children}</span>
+    </button>
   );
 }
 

@@ -3,6 +3,21 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { ChatInput } from './ChatInput';
+import { Button } from '@/components/ui/Button';
+import {
+  UploadCloud,
+  X,
+  Trash2,
+  ArrowLeft,
+  User,
+  MoreVertical,
+  MessageSquare,
+  Check,
+  Ban,
+  CheckCheck,
+  Search,
+  Loader2,
+} from 'lucide-react';
 
 interface Message {
   id_message: string;
@@ -100,7 +115,6 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
     : [];
 
   useEffect(() => {
-    // 1. Fetch initial messages
     const fetchMessages = async () => {
       try {
         const res = await fetch(`/api/chat/${roomId}`);
@@ -108,8 +122,6 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
         if (data.success) {
           setMessages(data.data);
           setTimeout(scrollToBottom, 100);
-          
-          // Mark as read after fetching
           fetch(`/api/chat/${roomId}`, { method: 'PUT' }).catch(console.error);
         }
       } catch (error) {
@@ -121,7 +133,6 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
     
     fetchMessages();
 
-    // 2. Setup Supabase Realtime Subscription
     const channel = supabase
       .channel(`room:${roomId}`)
       .on(
@@ -132,16 +143,12 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
           table: 'Message'
         },
         async (payload) => {
-          console.warn("[Realtime] Received INSERT payload:", payload);
-          // New message received via WebSocket!
           const newMessageRaw = payload.new as any;
-          
-          if (newMessageRaw.id_chat_room !== roomId) return; // Manual filter
+          if (newMessageRaw.id_chat_room !== roomId) return;
           
           setMessages(prev => {
             if (prev.some(m => m.id_message === newMessageRaw.id_message)) return prev;
             
-            // Temporary sender object until we refresh or if we can infer
             const newMsg: Message = {
               id_message: newMessageRaw.id_message,
               id_sender: newMessageRaw.id_sender,
@@ -149,8 +156,6 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
               image_url: newMessageRaw.image_url,
               is_read: newMessageRaw.is_read || false,
               is_deleted_for_everyone: newMessageRaw.is_deleted_for_everyone || false,
-              // Supabase Realtime often sends timestamp without timezone (missing Z or +) 
-              // which causes browsers to parse it as local time instead of UTC.
               created_at: (!newMessageRaw.created_at.includes('Z') && !newMessageRaw.created_at.includes('+'))
                 ? newMessageRaw.created_at.replace(' ', 'T') + 'Z'
                 : newMessageRaw.created_at,
@@ -165,7 +170,6 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
           
           setTimeout(scrollToBottom, 100);
 
-          // If the message is from the other user, mark it as read immediately
           if (newMessageRaw.id_sender !== currentUserId) {
             fetch(`/api/chat/${roomId}`, { method: 'PUT' }).catch(console.error);
           }
@@ -181,17 +185,14 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
           table: 'Message'
         },
         (payload) => {
-          console.warn("[Realtime] Received UPDATE payload:", payload);
           const updatedMessage = payload.new as any;
-          if (updatedMessage.id_chat_room !== roomId) return; // Manual filter
+          if (updatedMessage.id_chat_room !== roomId) return;
           
           setMessages(prev => {
-            // Check if deleted for me
             if (updatedMessage.deleted_by && Array.isArray(updatedMessage.deleted_by) && updatedMessage.deleted_by.includes(currentUserId)) {
                return prev.filter(m => m.id_message !== updatedMessage.id_message);
             }
             
-            // Otherwise update properties including tombstone
             return prev.map(m => 
               m.id_message === updatedMessage.id_message 
                 ? { 
@@ -209,7 +210,6 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
         }
       )
       .subscribe((status, err) => {
-        console.warn(`[Realtime] Subscription status for room ${roomId}:`, status);
         if (err) console.error('[Realtime] Subscription error:', err);
       });
 
@@ -230,7 +230,6 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
       if (!data.success) {
         alert("Gagal mengirim pesan: " + data.message);
       } else {
-        // Optimistically append the message to the chat so we don't rely solely on WebSocket
         setMessages(prev => {
           if (prev.some(m => m.id_message === data.data.id_message)) return prev;
           return [...prev, data.data];
@@ -349,26 +348,26 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
   };
 
   return (
-    <div className="flex flex-row h-full w-full relative overflow-hidden">
+    <div className="flex flex-row h-full w-full relative overflow-hidden font-sans">
       {/* Main Chat Area */}
       <div 
-        className="flex flex-col flex-1 h-full bg-surface-container-lowest relative border-r border-outline-variant/60"
+        className="flex flex-col flex-1 h-full bg-surface-container-lowest relative border-r border-card-border"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
       {/* Global Drag Overlay */}
       {isDragging && (
-        <div className="absolute inset-0 z-50 bg-primary/10 border-4 border-dashed border-primary flex items-center justify-center pointer-events-none transition-all">
-          <div className="bg-surface p-8 border-2 border-primary shadow-[8px_8px_0_var(--color-primary,#16a34a)] flex flex-col items-center">
-            <span className="material-symbols-outlined text-[64px] text-primary mb-4">cloud_upload</span>
-            <p className="font-heading-md text-primary font-bold">Lepaskan Gambar di Sini</p>
+        <div className="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary flex items-center justify-center backdrop-blur-xs transition-all">
+          <div className="bg-surface-container-lowest p-6 rounded-2xl border border-primary shadow-xl flex flex-col items-center">
+            <UploadCloud className="w-12 h-12 text-primary mb-3" />
+            <p className="font-headline text-primary font-bold text-sm">Lepaskan Gambar di Sini</p>
           </div>
         </div>
       )}
 
       {/* Header */}
-      <div className="h-[72px] px-lg border-b border-outline-variant/60 flex items-center gap-md bg-white shadow-sm z-10 flex-shrink-0">
+      <div className="h-[72px] px-6 border-b border-card-border flex items-center gap-3 bg-surface-container-lowest shadow-xs z-10 flex-shrink-0">
         {isSelectionMode ? (
           <>
             <button 
@@ -376,20 +375,22 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
                 setIsSelectionMode(false);
                 setSelectedMessages([]);
               }}
-              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container transition-colors shrink-0"
+              aria-label="Batalkan pilihan pesan"
+              className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-surface-container-low transition-colors shrink-0 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[24px]">close</span>
+              <X className="w-5 h-5 text-on-surface-variant" />
             </button>
-            <div className="flex-1 font-headline-sm font-bold text-on-surface">
+            <div className="flex-1 font-headline font-bold text-sm text-on-surface">
               {selectedMessages.length} Terpilih
             </div>
             {selectedMessages.length > 0 && (
               <button 
                 onClick={handleDeleteSelected}
                 disabled={isActionLoading}
-                className="w-10 h-10 rounded-full flex items-center justify-center text-error hover:bg-error/10 transition-colors shrink-0 disabled:opacity-50"
+                aria-label="Hapus pesan terpilih"
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-error hover:bg-error-container/30 transition-colors shrink-0 cursor-pointer disabled:opacity-50"
               >
-                <span className="material-symbols-outlined text-[24px]">delete</span>
+                <Trash2 className="w-5 h-5" />
               </button>
             )}
           </>
@@ -397,63 +398,64 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
           <>
             <button 
               onClick={onBack}
-              className="md:hidden w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container transition-colors shrink-0"
+              aria-label="Kembali ke daftar obrolan"
+              className="md:hidden w-9 h-9 rounded-xl flex items-center justify-center hover:bg-surface-container-low transition-colors shrink-0 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
+              <ArrowLeft className="w-5 h-5 text-on-surface-variant" />
             </button>
-            <Link href={`/profile/${roomInfo.otherUserId}`} className="flex items-center gap-md hover:bg-surface-container/30 px-2 py-1 rounded-lg transition-colors min-w-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center border border-outline-variant/30 shrink-0 overflow-hidden relative">
+            <Link href={`/profile/${roomInfo.otherUserId}`} className="flex items-center gap-3 hover:bg-surface-container-low/60 p-1.5 rounded-xl transition-colors min-w-0">
+              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden relative border border-primary/20">
                 {roomInfo.otherUserAvatarUrl ? (
                   <Image src={roomInfo.otherUserAvatarUrl} alt={roomInfo.otherUserName} fill className="object-cover" />
                 ) : (
-                  <span className="material-symbols-outlined text-on-surface-variant">person</span>
+                  <User className="w-5 h-5" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-body-md text-body-md font-semibold text-on-surface truncate hover:text-primary transition-colors">{roomInfo.otherUserName}</h3>
-                <span className="font-label-sm text-label-sm text-primary flex items-center gap-xs">
-                  <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
+                <h3 className="font-headline font-bold text-xs text-on-surface truncate hover:text-primary transition-colors">{roomInfo.otherUserName}</h3>
+                <span className="text-[11px] text-primary flex items-center gap-1 font-mono">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
                   Online
                 </span>
               </div>
             </Link>
             
             <div className="flex-1"></div>
-            <div className="flex gap-sm text-on-surface-variant shrink-0 relative">
+            <div className="flex gap-2 text-on-surface-variant shrink-0 relative">
               <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="Menu obrolan"
+                className="w-9 h-9 rounded-xl hover:bg-surface-container-low flex items-center justify-center transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined" aria-hidden="true">more_vert</span>
+                <MoreVertical className="w-5 h-5" />
               </button>
               
               {isMenuOpen && (
-                <div className="absolute right-0 top-12 w-48 bg-white border border-outline-variant/60 rounded-lg shadow-lg py-1 z-50">
+                <div className="absolute right-0 top-11 w-48 bg-surface-container-lowest border border-card-border rounded-xl shadow-xl py-1.5 z-50 text-xs font-sans">
                   <button 
-                    className="w-full text-left px-4 py-2 hover:bg-surface-container text-on-surface font-body-sm transition-colors" 
+                    className="w-full text-left px-4 py-2 hover:bg-surface-container-low text-on-surface transition-colors cursor-pointer" 
                     onClick={() => {
                       setIsMenuOpen(false);
                       setIsSearchSidebarOpen(true);
                     }}
                   >
-                    Search chat
+                    Cari Pesan
                   </button>
                   <button 
-                    className="w-full text-left px-4 py-2 hover:bg-surface-container text-on-surface font-body-sm transition-colors" 
+                    className="w-full text-left px-4 py-2 hover:bg-surface-container-low text-on-surface transition-colors cursor-pointer" 
                     onClick={() => {
                       setIsMenuOpen(false);
                       setIsSelectionMode(true);
                     }}
                   >
-                    Select chat
+                    Pilih Pesan
                   </button>
                   <button 
-                    className="w-full text-left px-4 py-2 hover:bg-surface-container text-on-surface font-body-sm transition-colors" 
+                    className="w-full text-left px-4 py-2 hover:bg-surface-container-low text-error transition-colors cursor-pointer" 
                     onClick={handleClearChat}
                     disabled={isActionLoading}
                   >
-                    Clear chat
+                    Kosongkan Obrolan
                   </button>
                 </div>
               )}
@@ -463,18 +465,18 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-lg flex flex-col gap-sm custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3 custom-scrollbar bg-surface/50">
         {isLoading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+          <div className="flex-1 flex items-center justify-center text-primary">
+            <Loader2 className="w-7 h-7 animate-spin" />
           </div>
         ) : messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-on-surface-variant text-center opacity-70">
-            <span className="material-symbols-outlined text-[48px] mb-xs">forum</span>
-            <p className="font-body-md text-body-md">Mulai percakapan tentang tugas ini.</p>
+            <MessageSquare className="w-12 h-12 text-primary/30 mb-2" />
+            <p className="text-xs font-medium">Mulai percakapan tentang tugas ini.</p>
           </div>
         ) : (
-          messages.map((msg, index) => {
+          messages.map((msg) => {
             const isMe = msg.id_sender === currentUserId;
             const isSelected = selectedMessages.includes(msg.id_message);
 
@@ -482,69 +484,66 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
               <div 
                 key={msg.id_message} 
                 id={`msg-${msg.id_message}`}
-                className={`flex w-full items-center gap-md ${isMe ? 'flex-row-reverse' : 'flex-row'} transition-colors duration-500`}
+                className={`flex w-full items-center gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'} transition-colors duration-300`}
               >
                 {isSelectionMode && (
                   <div 
                     className={`flex shrink-0 items-center justify-center p-2 ${msg.is_deleted_for_everyone ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     onClick={() => { if (!msg.is_deleted_for_everyone) toggleMessageSelection(msg.id_message) }}
                   >
-                    <div className={`w-5 h-5 rounded-sm border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary text-white' : 'border-outline-variant'}`}>
-                      {isSelected && <span className="material-symbols-outlined text-[14px] font-bold">check</span>}
+                    <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary text-on-primary' : 'border-card-border bg-surface-container-low'}`}>
+                      {isSelected && <Check className="w-3.5 h-3.5 font-bold" />}
                     </div>
                   </div>
                 )}
                 
                 <div 
-                  className={`flex flex-col max-w-[70%] ${isMe ? 'items-end' : 'items-start'} ${isSelectionMode && !msg.is_deleted_for_everyone ? 'cursor-pointer hover:opacity-80' : ''}`}
+                  className={`flex flex-col max-w-[75%] sm:max-w-[65%] ${isMe ? 'items-end' : 'items-start'} ${isSelectionMode && !msg.is_deleted_for_everyone ? 'cursor-pointer hover:opacity-80' : ''}`}
                   onClick={() => { if (isSelectionMode && !msg.is_deleted_for_everyone) toggleMessageSelection(msg.id_message) }}
                 >
                   <div 
-                    className={`p-sm md:p-md rounded-2xl shadow-sm relative transition-colors duration-500 ${
+                    className={`p-3 rounded-2xl shadow-xs text-xs relative transition-colors duration-200 ${
                       isSelected
                         ? 'bg-primary/20 border border-primary text-on-surface'
                         : highlightedMessageId === msg.id_message 
-                        ? 'bg-amber-100 border border-amber-300 text-on-surface' 
+                        ? 'bg-amber-500/20 border border-amber-500/40 text-on-surface' 
                         : isMe 
-                          ? 'bg-surface-container text-on-surface rounded-tr-sm border border-outline-variant/40' 
-                          : 'bg-white text-on-surface rounded-tl-sm border border-outline-variant/40'
+                          ? 'bg-primary text-on-primary rounded-tr-xs border border-primary/20' 
+                          : 'bg-surface-container-lowest text-on-surface rounded-tl-xs border border-card-border'
                     }`}
                   >
                     {msg.is_deleted_for_everyone ? (
-                      <div className="flex items-center gap-1 text-on-surface-variant/80 italic font-body-sm text-sm">
-                        <span className="material-symbols-outlined text-[16px]">block</span>
+                      <div className="flex items-center gap-1.5 italic text-on-surface-variant/80 text-xs">
+                        <Ban className="w-3.5 h-3.5 shrink-0" />
                         <p>Pesan ini telah dihapus</p>
                       </div>
                     ) : msg.image_url ? (
-                      <div className="flex flex-col gap-xs">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <div className="flex flex-col gap-2">
                         <Image 
                           src={msg.image_url} 
-                          alt="Attachment" 
-                          width={250}
-                          height={250}
-                          className="rounded-lg object-cover border border-outline-variant/20 cursor-pointer hover:opacity-90 transition-opacity" 
+                          alt="Lampiran chat" 
+                          width={260}
+                          height={260}
+                          className="rounded-xl object-cover border border-card-border cursor-pointer hover:opacity-90 transition-opacity" 
                           onClick={(e) => {
                             if (!isSelectionMode) window.open(msg.image_url!, '_blank');
                             else e.preventDefault();
                           }}
                         />
-                        {msg.teks_pesan && <p className="font-body-sm text-body-sm whitespace-pre-wrap break-words">{msg.teks_pesan}</p>}
+                        {msg.teks_pesan && <p className="leading-relaxed whitespace-pre-wrap break-words">{msg.teks_pesan}</p>}
                       </div>
                     ) : (
-                      <p className="font-body-sm text-body-sm leading-relaxed whitespace-pre-wrap break-words">{msg.teks_pesan}</p>
+                      <p className="leading-relaxed whitespace-pre-wrap break-words">{msg.teks_pesan}</p>
                     )}
                   </div>
                   
                   {/* Timestamp & Status */}
-                  <div className={`flex items-center gap-1 mt-1 text-[11px] ${isSelectionMode && isSelected ? 'text-primary font-medium' : 'text-on-surface-variant'}`}>
-                    <span>
+                  <div className={`flex items-center gap-1 mt-1 text-[10px] font-mono ${isSelectionMode && isSelected ? 'text-primary font-medium' : 'text-on-surface-variant'}`}>
+                    <span className="tabular-nums">
                       {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                     {isMe && (
-                      <span className={`material-symbols-outlined text-[14px] ${msg.is_read ? 'text-blue-500' : 'text-outline-variant'}`} aria-hidden="true">
-                        done_all
-                      </span>
+                      <CheckCheck className={`w-3.5 h-3.5 ${msg.is_read ? 'text-emerald-500' : 'text-on-surface-variant/50'}`} />
                     )}
                   </div>
                 </div>
@@ -566,26 +565,27 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
 
       {/* Right Sidebar for Search */}
       {isSearchSidebarOpen && (
-        <div className="w-full md:w-80 h-full flex flex-col bg-surface z-50 absolute md:relative right-0 top-0 shadow-[-4px_0_15px_rgba(0,0,0,0.05)] md:shadow-none border-l border-outline-variant/60">
-          <div className="h-[72px] px-lg border-b border-outline-variant/60 flex items-center gap-md bg-white shrink-0">
+        <div className="w-full md:w-80 h-full flex flex-col bg-surface-container-lowest z-50 absolute md:relative right-0 top-0 shadow-xl md:shadow-none border-l border-card-border">
+          <div className="h-[72px] px-5 border-b border-card-border flex items-center justify-between bg-surface-container-lowest shrink-0">
+            <h3 className="font-headline text-sm font-bold text-on-surface">Cari Pesan</h3>
             <button 
               onClick={() => setIsSearchSidebarOpen(false)}
-              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container transition-colors shrink-0"
+              aria-label="Tutup pencarian"
+              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-container-low transition-colors cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[24px]">close</span>
+              <X className="w-4 h-4 text-on-surface-variant" />
             </button>
-            <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">Cari Pesan</h3>
           </div>
           
-          <div className="p-4 border-b border-outline-variant/60 bg-surface-container-lowest">
+          <div className="p-3 border-b border-card-border bg-surface-container-low">
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant w-4 h-4" />
               <input
                 type="text"
-                placeholder="Cari..."
+                placeholder="Cari dalam chat..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-10 pl-10 pr-4 bg-white border border-outline-variant rounded-full text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                className="w-full h-9 pl-9 pr-3.5 bg-surface-container-lowest border border-card-border rounded-xl text-xs text-on-surface focus:outline-none focus:border-primary transition-all font-sans"
                 autoFocus
               />
             </div>
@@ -593,12 +593,12 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
           
           <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
             {!searchQuery.trim() ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-4 text-on-surface-variant opacity-70">
-                <span className="material-symbols-outlined text-[48px] mb-2">search</span>
-                <p className="font-body-sm text-sm">Ketik untuk mencari pesan di obrolan ini.</p>
+              <div className="h-full flex flex-col items-center justify-center text-center p-4 text-on-surface-variant/70">
+                <Search className="w-8 h-8 mb-2" />
+                <p className="text-xs">Ketik kata kunci untuk mencari pesan di obrolan ini.</p>
               </div>
             ) : searchedMessages.length === 0 ? (
-              <div className="text-center p-4 text-on-surface-variant font-body-sm">
+              <div className="text-center p-4 text-on-surface-variant text-xs font-sans">
                 Tidak ada pesan yang cocok dengan &quot;{searchQuery}&quot;
               </div>
             ) : (
@@ -607,17 +607,17 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
                   <button
                     key={msg.id_message}
                     onClick={() => scrollToMessage(msg.id_message)}
-                    className="flex flex-col text-left p-3 hover:bg-surface-container rounded-lg transition-colors border-b border-outline-variant/30 last:border-0"
+                    className="flex flex-col text-left p-3 hover:bg-surface-container-low rounded-xl transition-colors border-b border-card-border/40 last:border-0 cursor-pointer"
                   >
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs font-semibold text-primary truncate max-w-[120px]">
+                      <span className="text-[11px] font-bold text-primary truncate max-w-[120px]">
                         {msg.id_sender === currentUserId ? "Anda" : roomInfo.otherUserName}
                       </span>
-                      <span className="text-[10px] text-on-surface-variant shrink-0">
+                      <span className="text-[10px] text-on-surface-variant font-mono tabular-nums">
                         {new Date(msg.created_at).toLocaleDateString()}
                       </span>
                     </div>
-                    <p className="text-sm text-on-surface line-clamp-2 break-words">{msg.teks_pesan}</p>
+                    <p className="text-xs text-on-surface line-clamp-2 break-words">{msg.teks_pesan}</p>
                   </button>
                 ))}
               </div>
@@ -628,52 +628,59 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
       
       {/* Custom Dialog / Modal */}
       {dialog.isOpen && (
-        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-on-surface/40 backdrop-blur-sm p-4">
-          <div className="bg-white border border-outline-variant rounded-xl p-6 shadow-xl w-full max-w-sm flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-surface-container-lowest border border-card-border rounded-2xl p-6 shadow-2xl w-full max-w-sm flex flex-col gap-4 animate-in zoom-in-95 duration-200 font-sans text-xs">
             <div>
-              <h3 className="font-headline-sm font-bold text-on-surface mb-2">{dialog.title}</h3>
-              <p className="font-body-md text-on-surface-variant leading-relaxed">{dialog.message}</p>
+              <h3 className="font-headline font-bold text-sm text-on-surface mb-1.5">{dialog.title}</h3>
+              <p className="text-on-surface-variant leading-relaxed">{dialog.message}</p>
             </div>
             
-            <div className="flex justify-end gap-3 mt-4">
+            <div className="flex justify-end gap-2.5 mt-2">
               {dialog.type === 'delete_options' ? (
                 <div className="flex flex-col gap-2 w-full">
-                  <button 
+                  <Button 
+                    variant="destructive"
+                    size="sm"
+                    fullWidth
                     onClick={() => { if (dialog.onConfirmForEveryone) dialog.onConfirmForEveryone(); }}
-                    className="w-full px-4 py-2 rounded-lg font-label-md text-white bg-error hover:bg-error/90 transition-colors flex items-center justify-center gap-2"
                     disabled={isActionLoading}
                   >
-                    {isActionLoading && <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>}
-                    Hapus untuk Semua Orang
-                  </button>
-                  <button 
+                    {isActionLoading ? "Memproses..." : "Hapus untuk Semua Orang"}
+                  </Button>
+                  <Button 
+                    variant="secondary"
+                    size="sm"
+                    fullWidth
                     onClick={() => { if (dialog.onConfirm) dialog.onConfirm(); }}
-                    className="w-full px-4 py-2 rounded-lg font-label-md text-white bg-error hover:bg-error/90 transition-colors flex items-center justify-center gap-2"
                     disabled={isActionLoading}
                   >
-                    {isActionLoading && <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>}
                     Hapus untuk Saya
-                  </button>
-                  <button 
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    size="sm"
+                    fullWidth
                     onClick={() => setDialog({ ...dialog, isOpen: false })}
-                    className="w-full px-4 py-2 rounded-lg font-label-md text-primary hover:bg-surface-container transition-colors mt-2"
                     disabled={isActionLoading}
                   >
                     Batal
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <>
                   {dialog.type === 'confirm' && (
-                    <button 
+                    <Button 
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setDialog({ ...dialog, isOpen: false })}
-                      className="px-4 py-2 rounded-lg font-label-md text-primary hover:bg-surface-container transition-colors"
                       disabled={isActionLoading}
                     >
                       Batal
-                    </button>
+                    </Button>
                   )}
-                  <button 
+                  <Button 
+                    variant={dialog.type === 'confirm' ? 'destructive' : 'primary'}
+                    size="sm"
                     onClick={() => {
                       if (dialog.type === 'confirm' && dialog.onConfirm) {
                         dialog.onConfirm();
@@ -681,14 +688,10 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
                         setDialog({ ...dialog, isOpen: false });
                       }
                     }}
-                    className={`px-4 py-2 rounded-lg font-label-md text-white flex items-center gap-2 transition-colors ${
-                      dialog.type === 'confirm' ? 'bg-error hover:bg-error/90' : 'bg-primary hover:bg-primary/90'
-                    }`}
                     disabled={isActionLoading}
                   >
-                    {isActionLoading && <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>}
-                    {dialog.type === 'confirm' && dialog.title.includes('Kosongkan') ? 'Kosongkan' : dialog.type === 'confirm' ? 'Hapus untuk Saya' : 'Mengerti'}
-                  </button>
+                    {isActionLoading ? "Memproses..." : dialog.type === 'confirm' && dialog.title.includes('Kosongkan') ? 'Kosongkan' : dialog.type === 'confirm' ? 'Hapus untuk Saya' : 'Mengerti'}
+                  </Button>
                 </>
               )}
             </div>

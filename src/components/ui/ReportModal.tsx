@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Flag, X, AlertCircle, CheckCircle2, Loader2, Send } from 'lucide-react';
+import { Flag, X, AlertCircle, CheckCircle2, Send } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -81,18 +82,18 @@ export function ReportModal({ isOpen, onClose, onSuccess }: ReportModalProps) {
 
   return createPortal(
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in-50 duration-200">
-      <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#E2E8F0] relative overflow-hidden font-sans animate-in zoom-in-95 duration-200 z-[100000]">
+      <div className="bg-surface-container-lowest rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-card-border relative overflow-hidden font-sans animate-in zoom-in-95 duration-200 z-[100000]">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-[#E2E8F0]">
+        <div className="flex items-center justify-between pb-4 border-b border-card-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100">
+            <div className="w-10 h-10 rounded-xl bg-error-container/40 text-error flex items-center justify-center shrink-0 border border-error/25">
               <Flag className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-headline font-bold text-base text-[#0C1F16]">
+              <h3 className="font-headline font-bold text-base text-on-surface">
                 Laporkan Masalah ke Admin
               </h3>
-              <p className="text-xs text-[#64748B]">
+              <p className="text-xs text-on-surface-variant">
                 Sampaikan kendala, bug, atau aduan Anda langsung kepada tim Admin.
               </p>
             </div>
@@ -100,7 +101,8 @@ export function ReportModal({ isOpen, onClose, onSuccess }: ReportModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0C1F16] transition-colors"
+            aria-label="Tutup modal laporan"
+            className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -108,14 +110,14 @@ export function ReportModal({ isOpen, onClose, onSuccess }: ReportModalProps) {
 
         {/* Status Alerts */}
         {errorMsg && (
-          <div className="mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+          <div className="mt-4 p-3 rounded-xl bg-error-container/40 border border-error/25 text-error text-xs flex items-center gap-2 font-medium">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mt-4 p-3 rounded-xl bg-[#E6F4F1] border border-[#0F766E]/30 text-[#0F766E] text-xs flex items-center gap-2">
+          <div className="mt-4 p-3 rounded-xl bg-primary/10 border border-primary/25 text-primary text-xs flex items-center gap-2 font-medium">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{successMsg}</span>
           </div>
@@ -124,13 +126,13 @@ export function ReportModal({ isOpen, onClose, onSuccess }: ReportModalProps) {
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label className="block text-xs font-bold text-[#0C1F16] mb-1.5">
-              Kategori Laporan <span className="text-rose-500">*</span>
+            <label className="block text-xs font-bold text-on-surface mb-1.5">
+              Kategori Laporan <span className="text-error">*</span>
             </label>
             <select
               value={kategori}
               onChange={(e) => setKategori(e.target.value)}
-              className="w-full px-3 py-2 text-xs font-sans bg-[#F8FAFC] text-[#0C1F16] rounded-xl border border-[#E2E8F0] focus:border-[#0F766E] focus:bg-white outline-none transition-all"
+              className="w-full px-3 py-2 text-xs font-sans bg-surface-container-low text-on-surface rounded-xl border border-card-border focus:border-primary focus:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
             >
               <option value="Kendala Teknis / Bug">Kendala Teknis / Bug Aplikasi</option>
               <option value="Kendala Transaksi & Poin">Kendala Transaksi & Poin Saldo</option>
@@ -142,10 +144,10 @@ export function ReportModal({ isOpen, onClose, onSuccess }: ReportModalProps) {
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-bold text-[#0C1F16]">
-                Subjek Laporan <span className="text-rose-500">*</span>
+              <label className="block text-xs font-bold text-on-surface">
+                Subjek Laporan <span className="text-error">*</span>
               </label>
-              <span className="text-[10px] font-mono text-[#94A3B8]">
+              <span className="text-[10px] font-mono text-on-surface-variant/60">
                 {subjek.length}/150
               </span>
             </div>
@@ -154,7 +156,7 @@ export function ReportModal({ isOpen, onClose, onSuccess }: ReportModalProps) {
               value={subjek}
               onChange={(e) => setSubjek(e.target.value)}
               placeholder="Contoh: Gagal tarik saldo atau task tidak merespons..."
-              className="w-full px-3 py-2 text-xs font-sans bg-[#F8FAFC] text-[#0C1F16] placeholder-[#94A3B8] rounded-xl border border-[#E2E8F0] focus:border-[#0F766E] focus:bg-white outline-none transition-all"
+              className="w-full px-3 py-2 text-xs font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 rounded-xl border border-card-border focus:border-primary focus:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
               maxLength={150}
               required
             />
@@ -162,10 +164,10 @@ export function ReportModal({ isOpen, onClose, onSuccess }: ReportModalProps) {
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-bold text-[#0C1F16]">
-                Detail Deskripsi Permasalahan <span className="text-rose-500">*</span>
+              <label className="block text-xs font-bold text-on-surface">
+                Detail Deskripsi Permasalahan <span className="text-error">*</span>
               </label>
-              <span className="text-[10px] font-mono text-[#94A3B8]">
+              <span className="text-[10px] font-mono text-on-surface-variant/60">
                 {deskripsi.length}/2000
               </span>
             </div>
@@ -175,38 +177,31 @@ export function ReportModal({ isOpen, onClose, onSuccess }: ReportModalProps) {
               placeholder="Jelaskan secara detail kronologi kejadian, ID task terkait (jika ada), atau pesan error yang dialami..."
               rows={4}
               maxLength={2000}
-              className="w-full px-3 py-2 text-xs font-sans bg-[#F8FAFC] text-[#0C1F16] placeholder-[#94A3B8] rounded-xl border border-[#E2E8F0] focus:border-[#0F766E] focus:bg-white outline-none transition-all resize-none"
+              className="w-full px-3 py-2 text-xs font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 rounded-xl border border-card-border focus:border-primary focus:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all resize-none"
               required
             />
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#E2E8F0]">
-            <button
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-card-border">
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 text-xs font-bold text-[#64748B] hover:text-[#0C1F16] transition-colors"
             >
               Batal
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
+              size="sm"
               disabled={loading}
-              className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold bg-[#0F766E] hover:bg-[#0D645E] text-white rounded-xl shadow-xs transition-all disabled:opacity-50"
+              icon={<Send className="w-3.5 h-3.5" />}
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Mengirim...
-                </>
-              ) : (
-                <>
-                  <Send className="w-3.5 h-3.5" />
-                  Kirim Laporan
-                </>
-              )}
-            </button>
+              {loading ? 'Mengirim...' : 'Kirim Laporan'}
+            </Button>
           </div>
         </form>
       </div>
