@@ -13,35 +13,9 @@ import {
   Tags,
   Sparkles,
   AlertCircle,
-  Camera,
-  Laptop,
-  Palette,
-  FileText,
-  Box,
-  Truck,
-  Wrench,
-  Smartphone,
-  GraduationCap,
-  Folder,
   Search,
 } from 'lucide-react';
-
-const ICON_MAP: Record<string, any> = {
-  Camera,
-  Laptop,
-  Palette,
-  FileText,
-  Box,
-  Truck,
-  Wrench,
-  Smartphone,
-  GraduationCap,
-};
-
-function renderCategoryIcon(iconName: string | null) {
-  const IconComponent = (iconName && ICON_MAP[iconName]) || Folder;
-  return <IconComponent className="w-4 h-4 text-primary" />;
-}
+import { renderIcon } from '@/lib/icon-map';
 
 export interface APICategory {
   id: string;
@@ -53,6 +27,7 @@ export interface APICategory {
 export interface APISkill {
   id: string;
   nama_skill: string;
+  icon: string | null;
   total_users: number;
 }
 
@@ -77,6 +52,7 @@ export default function CategorySkillsManagementPage() {
           json.data.map((skl: any) => ({
             id: skl.id_skill_master,
             nama_skill: skl.nama_skill,
+            icon: skl.icon,
             total_users: skl._count?.skills_user || 0,
           }))
         );
@@ -112,6 +88,12 @@ export default function CategorySkillsManagementPage() {
   };
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchFromUrl = new URLSearchParams(window.location.search).get('search');
+      if (searchFromUrl) {
+        setSearchQuery(searchFromUrl);
+      }
+    }
     fetchCategories();
     fetchSkills();
   }, []);
@@ -125,21 +107,47 @@ export default function CategorySkillsManagementPage() {
   const [isSkillModalOpen, setIsSkillModalOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<APISkill | null>(null);
   const [skillName, setSkillName] = useState('');
+  const [skillIcon, setSkillIcon] = useState('Sparkles');
 
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'category' | 'skill'; id: string; name: string } | null>(null);
 
-  const categoryIconOptions: SelectOption[] = [
-    { value: 'Camera', label: 'Camera (Fotografi)', icon: <Camera className="w-3.5 h-3.5 text-primary" /> },
-    { value: 'Laptop', label: 'Laptop (Data Entry)', icon: <Laptop className="w-3.5 h-3.5 text-primary" /> },
-    { value: 'Palette', label: 'Palette (Desain)', icon: <Palette className="w-3.5 h-3.5 text-primary" /> },
-    { value: 'FileText', label: 'FileText (Penulisan)', icon: <FileText className="w-3.5 h-3.5 text-primary" /> },
-    { value: 'Box', label: 'Box (Jaga Booth)', icon: <Box className="w-3.5 h-3.5 text-primary" /> },
-    { value: 'Truck', label: 'Truck (Kurir)', icon: <Truck className="w-3.5 h-3.5 text-primary" /> },
-    { value: 'Wrench', label: 'Wrench (Teknis IT)', icon: <Wrench className="w-3.5 h-3.5 text-primary" /> },
-    { value: 'Smartphone', label: 'Smartphone (Social Media)', icon: <Smartphone className="w-3.5 h-3.5 text-primary" /> },
-    { value: 'GraduationCap', label: 'GraduationCap (Tutoring)', icon: <GraduationCap className="w-3.5 h-3.5 text-primary" /> },
-    { value: 'Folder', label: 'Folder (Umum)', icon: <Folder className="w-3.5 h-3.5 text-primary" /> },
-  ];
+  const iconOptions: SelectOption[] = [
+    { value: 'Camera', label: 'Camera (Fotografi)' },
+    { value: 'Laptop', label: 'Laptop (Data Entry)' },
+    { value: 'Palette', label: 'Palette (Desain)' },
+    { value: 'FileText', label: 'FileText (Penulisan)' },
+    { value: 'Box', label: 'Box (Jaga Booth)' },
+    { value: 'Truck', label: 'Truck (Kurir)' },
+    { value: 'Wrench', label: 'Wrench (Teknis IT)' },
+    { value: 'Smartphone', label: 'Smartphone (Sosmed)' },
+    { value: 'GraduationCap', label: 'GraduationCap (Tutoring)' },
+    { value: 'Folder', label: 'Folder (Umum)' },
+    { value: 'Sparkles', label: 'Sparkles (Kreatif / Spesial)' },
+    { value: 'Code', label: 'Code (Programming)' },
+    { value: 'PenTool', label: 'PenTool (Ilustrasi)' },
+    { value: 'Megaphone', label: 'Megaphone (Marketing)' },
+    { value: 'Music', label: 'Music (Audio)' },
+    { value: 'Video', label: 'Video (Editing/Produksi)' },
+    { value: 'Languages', label: 'Languages (Bahasa)' },
+    { value: 'Briefcase', label: 'Briefcase (Bisnis)' },
+    { value: 'Calculator', label: 'Calculator (Akuntansi)' },
+    { value: 'ChefHat', label: 'ChefHat (Kuliner)' },
+    { value: 'HeartPulse', label: 'HeartPulse (Kesehatan)' },
+    { value: 'Scissors', label: 'Scissors (Salon/Kecantikan)' },
+    { value: 'Brush', label: 'Brush (Seni Lukis)' },
+    { value: 'Hammer', label: 'Hammer (Tukang/Bangunan)' },
+    { value: 'Activity', label: 'Activity (Fitness/Olahraga)' },
+    { value: 'Cpu', label: 'Cpu (Hardware/Server)' },
+    { value: 'Globe', label: 'Globe (Web/Internet)' },
+    { value: 'Users', label: 'Users (SDM/Manajemen)' },
+    { value: 'Database', label: 'Database (Data Science)' },
+    { value: 'ShoppingCart', label: 'ShoppingCart (E-Commerce)' },
+    { value: 'TrendingUp', label: 'TrendingUp (Sales/Bisnis)' },
+    { value: 'Car', label: 'Car (Otomotif/Sopir)' },
+    { value: 'Shield', label: 'Shield (Keamanan/Security)' },
+    { value: 'Mic', label: 'Mic (Voiceover/MC)' },
+    { value: 'Gamepad', label: 'Gamepad (Gaming)' },
+  ].map(opt => ({ ...opt, icon: renderIcon(opt.value, "w-3.5 h-3.5 text-primary") }));
 
   // Category Handlers
   const handleOpenAddCategory = () => {
@@ -195,12 +203,14 @@ export default function CategorySkillsManagementPage() {
   const handleOpenAddSkill = () => {
     setEditingSkill(null);
     setSkillName('');
+    setSkillIcon('Sparkles');
     setIsSkillModalOpen(true);
   };
 
   const handleOpenEditSkill = (skl: APISkill) => {
     setEditingSkill(skl);
     setSkillName(skl.nama_skill);
+    setSkillIcon(skl.icon || 'Sparkles');
     setIsSkillModalOpen(true);
   };
 
@@ -212,7 +222,7 @@ export default function CategorySkillsManagementPage() {
         const res = await fetch(`/api/skills/${editingSkill.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nama_skill: skillName }),
+          body: JSON.stringify({ nama_skill: skillName, icon: skillIcon }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.success) {
@@ -223,7 +233,7 @@ export default function CategorySkillsManagementPage() {
         const res = await fetch('/api/skills', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nama_skill: skillName }),
+          body: JSON.stringify({ nama_skill: skillName, icon: skillIcon }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.success) {
@@ -284,7 +294,7 @@ export default function CategorySkillsManagementPage() {
       cell: (cat) => (
         <div className="flex items-center gap-2.5 font-bold text-on-surface font-headline text-sm">
           <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20">
-            {renderCategoryIcon(cat.icon)}
+            {renderIcon(cat.icon, "w-4 h-4 text-primary")}
           </div>
           <span>{cat.nama_kategori}</span>
         </div>
@@ -334,8 +344,10 @@ export default function CategorySkillsManagementPage() {
     {
       header: 'Skill Name',
       cell: (skl) => (
-        <div className="flex items-center gap-2 font-bold text-on-surface font-headline text-sm">
-          <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+        <div className="flex items-center gap-2.5 font-bold text-on-surface font-headline text-sm">
+          <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20">
+            {renderIcon(skl.icon, "w-4 h-4 text-primary")}
+          </div>
           <span>{skl.nama_skill}</span>
         </div>
       ),
@@ -482,7 +494,7 @@ export default function CategorySkillsManagementPage() {
           <div className="space-y-4 text-xs font-sans">
             <AdminSelect
               label="Ikon Kategori"
-              options={categoryIconOptions}
+              options={iconOptions}
               value={catIcon}
               onChange={setCatIcon}
             />
@@ -511,6 +523,12 @@ export default function CategorySkillsManagementPage() {
           confirmLabel={editingSkill ? 'Update Skill' : 'Buat Skill'}
         >
           <div className="space-y-4 text-xs font-sans">
+            <AdminSelect
+              label="Ikon Skill"
+              options={iconOptions}
+              value={skillIcon}
+              onChange={setSkillIcon}
+            />
             <div>
               <label className="block font-bold text-on-surface mb-1.5">
                 Nama Skill

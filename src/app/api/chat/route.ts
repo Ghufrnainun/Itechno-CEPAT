@@ -48,6 +48,13 @@ export async function GET(request: NextRequest) {
           }
         },
         messages: {
+          where: {
+            NOT: {
+              deleted_by: {
+                has: currentUser.id_user
+              }
+            }
+          },
           orderBy: { created_at: 'desc' },
           take: 100, // fetch enough to compute unread and get the latest non-cleared message
         }
@@ -68,7 +75,7 @@ export async function GET(request: NextRequest) {
         return msg.created_at > clearedAt;
       });
 
-      // If the room was cleared and there are no valid messages since then, hide it entirely
+      // HIDE THE ROOM if it has been cleared and there are no new messages
       if (clearedAt && validMessages.length === 0) {
         return acc;
       }

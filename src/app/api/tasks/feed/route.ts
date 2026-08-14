@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { lat, lng, radius, q, id_category, sort, page, limit } = parsed.data
-    const searchString = q ? `%${q}%` : `%`
+    const searchString = q ? `%${q.replace(/'/g, "''")}%` : `%`
     const offset = (page - 1) * limit
 
     const hasLocation = lat != null && lng != null
@@ -87,7 +87,8 @@ export async function GET(request: NextRequest) {
             json_agg(
               json_build_object(
                 'id_skill', sm.id_skill_master,
-                'nama_skill', sm.nama_skill
+                'nama_skill', sm.nama_skill,
+                'icon', sm.icon
               )
             ), 
             '[]'::json

@@ -22,8 +22,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  Flag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ReportModal } from "@/components/ui/ReportModal";
 
 interface SidebarProps {
   role: "worker" | "requester";
@@ -43,6 +45,7 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
   const { unreadCount } = useNotifications();
   const [loggingOut, setLoggingOut] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   const displayName = user?.nama_lengkap || user?.username || "Pengguna CEPAT";
   const initials = displayName
@@ -303,6 +306,20 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
 
       {/* Footer */}
       <div className={cn("flex flex-col gap-2 pt-3 border-t border-card-border w-full", !isExpanded && "items-center px-1")}>
+        {/* Tombol Laporan ke Admin */}
+        <button
+          type="button"
+          onClick={() => setIsReportModalOpen(true)}
+          title={!isExpanded ? "Laporkan Masalah" : undefined}
+          aria-label="Laporkan masalah ke Admin"
+          className={cn(
+            "sidebar-link flex items-center gap-3 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30 transition-colors rounded-lg focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:outline-none cursor-pointer",
+            isExpanded ? "w-full text-left" : "justify-center w-10 h-10 p-0"
+          )}
+        >
+          <Flag className="w-4 h-4 shrink-0 text-rose-600" aria-hidden="true" />
+          {isExpanded && "Laporkan Masalah"}
+        </button>
         <button
           onClick={handleLogout}
           disabled={loggingOut}
@@ -317,6 +334,12 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
           {isExpanded && (loggingOut ? "Keluar..." : "Keluar")}
         </button>
       </div>
+
+      {/* Modal Laporan */}
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+      />
     </aside>
   );
 }

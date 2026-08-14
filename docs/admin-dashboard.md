@@ -26,12 +26,14 @@ src/
 │           │   └── page.tsx               # User Management Table + Slide-over Drawer
 │           ├── tasks/
 │           │   └── page.tsx               # Task Management Table + Status Filters + Drawer
-│           └── categories/
-│               └── page.tsx               # Categories & Skills Management (Tabbed + Modals)
+│           ├── categories/
+│           │   └── page.tsx               # Categories & Skills Management (Tabbed + Modals)
+│           └── reports/
+│               └── page.tsx               # User Reports Management Table + Status Actions + Drawer
 ├── components/
 │   └── admin/
-│       ├── AdminSidebar.tsx               # Collapsible sidebar dengan active route state
-│       ├── AdminTopbar.tsx                # Topbar dengan search, notifikasi, theme toggle, profile
+│       ├── AdminSidebar.tsx               # Collapsible sidebar dengan active route state (termasuk Laporan User)
+│       ├── AdminTopbar.tsx                # Topbar dengan Global Search (Ctrl+K), Notifikasi FCM, Bell Counter
 │       ├── KPICard.tsx                    # Reusable stat card (anti-side-stripe pattern)
 │       ├── DataTable.tsx                  # Reusable paginated data table
 │       ├── StatusBadge.tsx                # Badges status task berwarna terstandarisasi
@@ -87,6 +89,22 @@ src/
 - **Tab Master Skill**:
   - List nama skill master dan jumlah user yang menguasainya.
   - CRUD master skill secara penuh.
+
+### 3.6 🚩 Manajemen Laporan User (`/admin/reports`)
+- **Fitur Konsol Aduan**:
+  - Menampilkan 4 KPI Cards (Total Laporan, Pending, Ditinjau, Selesai).
+  - DataTable laporan pengguna dilengkapi filter status (`pending`, `reviewed`, `resolved`, `rejected`) dan kolom pencarian.
+  - Slide-over Drawer Detail untuk membaca kronologi permasalahan, data profil pelapor, dan mengubah status laporan.
+  - Otomatis membuka modal detail laporan saat diakses via query parameter URL (`?id=<reportId>`).
+
+### 3.7 🔍 Global Search Bar & Notifikasi Real-time FCM (`AdminTopbar.tsx`)
+- **Pencarian Global (Ctrl + K / Cmd + K)**:
+  - Pencarian real-time (debounced 200ms) di seluruh database: Menu & Halaman Admin, Data Pengguna, Pekerjaan / Task, dan Kategori.
+  - Navigasi keyboard penuh (`ArrowUp`, `ArrowDown`, `Enter`, `Escape`).
+- **Bell Counter Notifikasi & FCM Push**:
+  - Red counter badge jumlah notifikasi laporan belum dibaca.
+  - Mengintegrasikan listener **Firebase Cloud Messaging (FCM)** untuk push notification browser real-time.
+  - Mengklik notifikasi laporan pada dropdown otomatis mengarahkan ke `/admin/reports?id=<reportId>` dan membuka detail aduan.
 
 ---
 

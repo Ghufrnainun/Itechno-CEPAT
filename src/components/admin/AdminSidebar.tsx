@@ -9,6 +9,7 @@ import {
   Users,
   ClipboardList,
   Tags,
+  Flag,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
@@ -39,6 +40,7 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
     { label: 'User Management', href: '/admin/users', icon: Users },
     { label: 'Task Management', href: '/admin/tasks', icon: ClipboardList },
     { label: 'Category & Skills', href: '/admin/categories', icon: Tags },
+    { label: 'Laporan User', href: '/admin/reports', icon: Flag },
   ];
 
   const handleLogout = async () => {
@@ -119,9 +121,11 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
         <div className="mx-3 mt-3 px-3 py-2.5 bg-surface-container-low border border-card-border rounded-lg shrink-0">
           <div className="flex items-center gap-2.5">
             {adminUser.avatar_url ? (
-              <img
+              <Image
                 src={adminUser.avatar_url}
                 alt={adminUser.nama_lengkap}
+                width={28}
+                height={28}
                 className="w-7 h-7 rounded-full object-cover border border-card-border shrink-0"
               />
             ) : (

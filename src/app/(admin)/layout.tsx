@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
+import { ToastProvider } from '@/components/ui/Toast';
 
 interface AdminUser {
   id: string;
@@ -49,7 +50,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   // Halaman login — render tanpa sidebar
   if (isLoginPage) {
-    return <>{children}</>;
+    return <ToastProvider>{children}</ToastProvider>;
   }
 
   // Loading state saat cek session
@@ -70,14 +71,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-sans flex antialiased">
+    <div className="min-h-screen bg-[#F7FAF8] text-[#0C1F16] font-sans flex antialiased">
       {/* Sidebar Navigation */}
       <AdminSidebar adminUser={admin} />
 
-      {/* Main Workspace Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
-        {children}
+        {/* Main Workspace Area */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+          {children}
+        </div>
       </div>
-    </div>
+    </ToastProvider>
   );
 }

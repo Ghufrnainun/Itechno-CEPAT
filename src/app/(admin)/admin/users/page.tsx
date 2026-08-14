@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import AdminDrawer from '@/components/admin/AdminDrawer';
@@ -75,6 +76,15 @@ export default function UserManagementPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchFromUrl = new URLSearchParams(window.location.search).get('search');
+      if (searchFromUrl) {
+        setSearchTerm(searchFromUrl);
+      }
+    }
+  }, []);
+
   // Modals state
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
@@ -124,17 +134,18 @@ export default function UserManagementPage() {
         setTotal(json.meta?.total || 0);
 
         // Update selectedUser if currently open in drawer
-        if (selectedUser) {
-          const updated = json.data.find((u: AdminUser) => u.id === selectedUser.id);
-          if (updated) setSelectedUser(updated);
-        }
+        setSelectedUser((prev) => {
+          if (!prev) return null;
+          const updated = json.data.find((u: AdminUser) => u.id === prev.id);
+          return updated || prev;
+        });
       }
     } catch (err) {
       console.error('Fetch users error:', err);
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, roleFilter, page, selectedUser]);
+  }, [searchTerm, roleFilter, page]);
 
   useEffect(() => {
     const debounce = setTimeout(() => {
@@ -264,9 +275,11 @@ export default function UserManagementPage() {
       cell: (user) => (
         <div className="flex items-center gap-3">
           {user.avatar_url ? (
-            <img
+            <Image
               src={user.avatar_url}
               alt={user.nama_lengkap}
+              width={32}
+              height={32}
               className="w-8 h-8 rounded-full object-cover border border-card-border"
             />
           ) : (
@@ -417,9 +430,11 @@ export default function UserManagementPage() {
               {/* Header Card */}
               <div className="flex items-center gap-4 p-4 rounded-xl bg-surface-container-low border border-card-border">
                 {selectedUser.avatar_url ? (
-                  <img
+                  <Image
                     src={selectedUser.avatar_url}
                     alt={selectedUser.nama_lengkap}
+                    width={48}
+                    height={48}
                     className="w-12 h-12 rounded-full object-cover border border-card-border"
                   />
                 ) : (

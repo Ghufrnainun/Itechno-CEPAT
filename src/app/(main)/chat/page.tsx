@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { ChatList } from "@/features/chat/components/ChatList";
 import { ChatRoom } from "@/features/chat/components/ChatRoom";
 import { createClient } from "@/lib/supabase/client";
-import { MessageSquare } from "lucide-react";
 
 function ChatContent() {
   const searchParams = useSearchParams();
@@ -21,13 +20,9 @@ function ChatContent() {
     try {
       setIsLoading(true);
       const res = await fetch('/api/chat');
-      if (!res.ok) {
-        setRooms([]);
-        return;
-      }
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json();
       
-      if (data.success && Array.isArray(data.data)) {
+      if (data.success) {
         setRooms(data.data);
       }
     } catch (error) {
@@ -44,21 +39,22 @@ function ChatContent() {
         if (!user) return;
         
         const res = await fetch('/api/chat');
-        if (!res.ok) return;
-        const data = await res.json().catch(() => ({}));
+        const data = await res.json();
         
-        if (data.success && Array.isArray(data.data)) {
+        if (data.success) {
           setRooms(data.data);
           
           if (data.data.length > 0) {
+            // Find current user id based on first chat room
             const firstRoom = data.data[0];
-            if (firstRoom.requester?.id_user === user.id) {
+            if (firstRoom.requester.id_user === user.id) {
                setCurrentUserId(user.id);
             } else {
+               // Need API to get real userId, fallback to checking worker
                const resMe = await fetch('/api/users/me').catch(() => null);
                if (resMe && resMe.ok) {
-                 const resMeData = await resMe.json().catch(() => ({}));
-                 if (resMeData.success && resMeData.data?.id_user) {
+                 const resMeData = await resMe.json();
+                 if (resMeData.success) {
                    setCurrentUserId(resMeData.data.id_user);
                  }
                }
@@ -75,14 +71,15 @@ function ChatContent() {
     loadInitialData();
   }, [supabase.auth]);
 
+  // If currentUserId wasn't set by /api/users/me, let's manually fetch it directly
   useEffect(() => {
      if (currentUserId === "") {
         supabase.auth.getUser().then(async ({ data: { user } }) => {
            if (user) {
               const res = await fetch('/api/users/me').catch(() => null);
               if (res && res.ok) {
-                 const json = await res.json().catch(() => ({}));
-                 if (json.success && json.data?.id_user) setCurrentUserId(json.data.id_user);
+                 const json = await res.json();
+                 if (json.success) setCurrentUserId(json.data.id_user);
               }
            }
         })
@@ -92,9 +89,9 @@ function ChatContent() {
   const selectedRoomInfo = rooms.find(r => r.id_chat_room === selectedRoomId);
 
   return (
-    <div className="flex flex-col h-[100dvh] lg:h-full w-full bg-surface font-sans">
+    <div className="flex flex-col h-[100dvh] lg:h-full w-full bg-layout-bg font-sans">
       {/* Page Header */}
-      <header className="page-header shrink-0 bg-surface-container-lowest border-b border-card-border px-6 py-5">
+      <header className="page-header shrink-0 bg-surface-container-lowest border-b border-outline-variant/30 px-6 py-5">
         <div>
           <h1 className="font-headline font-extrabold text-2xl text-on-surface tracking-tight">Chat</h1>
           <p className="font-body-sm text-sm text-on-surface-variant font-medium mt-0.5">
@@ -106,7 +103,7 @@ function ChatContent() {
       <div className="flex flex-1 w-full overflow-hidden">
         {/* Left Panel: Contact List */}
         <div 
-          className={`w-full md:w-[320px] lg:w-[360px] bg-surface-container-lowest border-r border-card-border flex flex-col shrink-0
+          className={`w-full md:w-[320px] lg:w-[380px] bg-white border-r border-outline-variant/60 flex flex-col flex-shrink-0
             ${selectedRoomId ? 'hidden md:flex' : 'flex'}`}
         >
           <ChatList 
@@ -121,16 +118,14 @@ function ChatContent() {
 
         {/* Right Panel: Chat Area */}
         <div 
-          className={`flex-1 flex flex-col bg-surface relative
+          className={`flex-1 flex flex-col bg-layout-bg relative
             ${!selectedRoomId ? 'hidden md:flex' : 'flex'}`}
         >
           {!selectedRoomId ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 p-8">
-              <div className="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center text-on-surface-variant/60">
-                <MessageSquare className="w-7 h-7" />
-              </div>
-              <h2 className="font-headline text-base font-bold text-on-surface">Pilih obrolan untuk mulai mengirim pesan</h2>
-              <p className="font-body-sm text-xs text-on-surface-variant max-w-sm leading-relaxed">
+            <div className="flex-1 flex flex-col items-center justify-center text-center gap-md p-xl">
+              <span className="material-symbols-outlined text-[64px] text-outline-variant" aria-hidden="true">forum</span>
+              <h2 className="font-headline-sm text-headline-sm text-on-surface">Pilih obrolan untuk mulai mengirim pesan</h2>
+              <p className="font-body-sm text-body-sm text-on-surface-variant max-w-sm">
                 Gunakan fitur chat untuk berdiskusi mengenai detail tugas, negosiasi, atau mengabarkan status pekerjaan Anda.
               </p>
             </div>
@@ -151,10 +146,25 @@ function ChatContent() {
                   ? selectedRoomInfo.worker.avatar_url 
                   : selectedRoomInfo.requester.avatar_url
               }}
+              onMessageAdded={fetchRooms}
             />
+          ) : isLoading ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center gap-md p-xl">
+              <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+            </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center">
-              <div className="w-8 h-8 rounded-full border-3 border-primary border-t-transparent animate-spin" />
+            <div className="flex-1 flex flex-col items-center justify-center text-center gap-md p-xl">
+               <span className="material-symbols-outlined text-[64px] text-error" aria-hidden="true">error</span>
+               <h2 className="font-headline-sm text-headline-sm text-on-surface">Obrolan tidak ditemukan</h2>
+               <p className="font-body-sm text-body-sm text-on-surface-variant max-w-sm">
+                 Ruang obrolan ini mungkin sudah dihapus atau Anda tidak memiliki akses.
+               </p>
+               <button 
+                 onClick={() => setSelectedRoomId(null)} 
+                 className="mt-4 px-6 py-2 bg-primary text-white rounded-full font-label-md hover:bg-primary/90 transition-colors"
+               >
+                 Kembali ke Daftar Obrolan
+               </button>
             </div>
           )}
         </div>
@@ -165,7 +175,7 @@ function ChatContent() {
 
 export default function ChatPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-sm text-on-surface-variant font-sans">Memuat chat...</div>}>
+    <Suspense fallback={<div className="p-xl text-center">Memuat chat...</div>}>
       <ChatContent />
     </Suspense>
   )
