@@ -64,6 +64,9 @@ export const taskService = {
       skill_requirements,
       max_applicants = 1,
       max_apply_attempts = 3,
+      is_bidding = false,
+      budget_min,
+      budget_max,
     } = params;
 
     const openStatusId = await getStatusId('open');
@@ -109,11 +112,14 @@ export const taskService = {
     }
 
     // Insert task dengan raw SQL agar bisa pakai ST_MakePoint untuk PostGIS
+    // Catatan escrow bidding: untuk task bidding, `kompensasi` = budget_max (plafon).
+    // Hold escrow tetap kompensasi × slots; selisih bid di-refund saat bid diterima.
     const result = await prisma.$queryRaw<{ id_tasks: string }[]>`
       INSERT INTO "Task" (
         id_tasks, id_requester, id_status_task,
         judul_tugas, deskripsi_tugas, estimasi_waktu, kompensasi,
-        lokasi_geo, created_at, id_category, max_applicants, max_apply_attempts
+        lokasi_geo, created_at, id_category, max_applicants, max_apply_attempts,
+        is_bidding, budget_min, budget_max
       ) VALUES (
         gen_random_uuid(),
         ${requesterId},
@@ -126,7 +132,10 @@ export const taskService = {
         NOW(),
         ${categoryId},
         ${max_applicants},
-        ${max_apply_attempts}
+        ${max_apply_attempts},
+        ${is_bidding},
+        ${budget_min ?? null},
+        ${budget_max ?? null}
       )
       RETURNING id_tasks
     `;
@@ -333,6 +342,9 @@ export const taskService = {
         max_applicants: number | null;
         max_apply_attempts: number | null;
         estimasi_waktu: string | null;
+        is_bidding: boolean | null;
+        budget_min: number | null;
+        budget_max: number | null;
       }>
     >`
       SELECT
@@ -340,7 +352,10 @@ export const taskService = {
         ST_X(lokasi_geo::geometry) AS longitude,
         max_applicants,
         max_apply_attempts,
-        estimasi_waktu
+        estimasi_waktu,
+        is_bidding,
+        budget_min,
+        budget_max
       FROM "Task"
       WHERE id_tasks = ${taskId}
     `;
@@ -351,18 +366,24 @@ export const taskService = {
       longitude: rawTask?.longitude ?? null,
     };
 
-    // Ambil status worker_confirmed secara presisi via raw query
+    // Ambil status worker_confirmed & bid_amount secara presisi via raw query
     const rawApplicantsResult = await prisma.$queryRaw<
-      Array<{ id_task_applicants: string; worker_confirmed: boolean | null }>
+      Array<{
+        id_task_applicants: string;
+        worker_confirmed: boolean | null;
+        bid_amount: number | null;
+      }>
     >`
-      SELECT id_task_applicants, worker_confirmed
+      SELECT id_task_applicants, worker_confirmed, bid_amount
       FROM "TaskApplicants"
       WHERE id_tasks = ${taskId}
     `;
 
     const confirmedMap = new Map<string, boolean>();
+    const bidMap = new Map<string, number | null>();
     rawApplicantsResult.forEach((r) => {
       confirmedMap.set(r.id_task_applicants, r.worker_confirmed === true);
+      bidMap.set(r.id_task_applicants, r.bid_amount ?? null);
     });
 
     // Cek apakah viewer sudah apply dan ambil infonya
@@ -373,6 +394,7 @@ export const taskService = {
       apply_count: number;
       alasan_penolakan: string | null;
       pesan: string | null;
+      bid_amount: number | null;
     } | null = null;
 
     if (viewerUserId) {
@@ -388,6 +410,7 @@ export const taskService = {
           apply_count: app.apply_count,
           alasan_penolakan: app.alasan_penolakan,
           pesan: app.pesan,
+          bid_amount: app.bid_amount ?? null,
         };
       }
     }
@@ -406,6 +429,9 @@ export const taskService = {
       requester_started: task.requester_started,
       max_applicants: rawTask?.max_applicants ?? task.max_applicants ?? 1,
       max_apply_attempts: rawTask?.max_apply_attempts ?? task.max_apply_attempts ?? 3,
+      is_bidding: rawTask?.is_bidding === true,
+      budget_min: rawTask?.budget_min ?? null,
+      budget_max: rawTask?.budget_max ?? null,
       created_at: task.created_at,
       completed_at: task.completed_at,
       accepted_at: task.accepted_at,
@@ -418,17 +444,33 @@ export const taskService = {
         nama_skill: r.skills_master.nama_skill,
         icon: r.skills_master.icon,
       })),
-      applicants: task.applicants.map((a) => ({
-        id_task_applicants: a.id_task_applicants,
-        id_worker: a.id_worker,
-        pesan: a.pesan,
-        status: a.status_applicant.nama_status.toLowerCase(),
-        apply_count: a.apply_count,
-        alasan_penolakan: a.alasan_penolakan,
-        applied_at: a.applied_at,
-        worker_confirmed: confirmedMap.get(a.id_task_applicants) === true,
-        worker: a.worker,
-      })),
+      applicants: (() => {
+        const isRequesterViewer = viewerUserId === task.id_requester;
+        const bidding = rawTask?.is_bidding === true;
+        // Sealed bid: viewer yang bukan pemilik task tidak boleh melihat
+        // penawaran worker lain. Pada task bidding, pelamar yang masih
+        // pending disembunyikan sepenuhnya dari viewer non-requester
+        // (identitas + jumlah penawar adalah informasi sensitif lelang);
+        // hanya worker yang sudah accepted yang ditampilkan (dibutuhkan
+        // untuk tampilan tim setelah kuota terpenuhi).
+        const visibleApplicants = bidding && !isRequesterViewer
+          ? task.applicants.filter(
+              (a) => a.status_applicant.nama_status.toLowerCase() === 'accepted',
+            )
+          : task.applicants;
+        return visibleApplicants.map((a) => ({
+          id_task_applicants: a.id_task_applicants,
+          id_worker: a.id_worker,
+          pesan: bidding && !isRequesterViewer ? null : a.pesan,
+          status: a.status_applicant.nama_status.toLowerCase(),
+          apply_count: a.apply_count,
+          alasan_penolakan: a.alasan_penolakan,
+          applied_at: a.applied_at,
+          worker_confirmed: confirmedMap.get(a.id_task_applicants) === true,
+          bid_amount: bidding && !isRequesterViewer ? null : bidMap.get(a.id_task_applicants) ?? null,
+          worker: a.worker,
+        }));
+      })(),
       reviews: task.reviews.map((r) => ({
         id_reviews: r.id_reviews,
         rating: r.rating,
@@ -443,9 +485,11 @@ export const taskService = {
   },
 
   /**
-   * Worker apply ke task
+   * Worker apply ke task.
+   * Untuk task bidding, worker wajib menyertakan harga penawaran (bidAmount)
+   * yang berada di dalam range budget_min..budget_max requester (sealed bid).
    */
-  async applyToTask(taskId: string, workerId: string, pesan?: string) {
+  async applyToTask(taskId: string, workerId: string, pesan?: string, bidAmount?: number) {
     // Validasi: task harus 'open'
     const task = await prisma.task.findUnique({
       where: { id_tasks: taskId },
@@ -468,16 +512,58 @@ export const taskService = {
     });
 
     const rawTaskConfig = await prisma.$queryRaw<
-      Array<{ max_applicants: number; max_apply_attempts: number }>
+      Array<{
+        max_applicants: number;
+        max_apply_attempts: number;
+        is_bidding: boolean | null;
+        budget_min: number | null;
+        budget_max: number | null;
+      }>
     >`
-      SELECT max_applicants, max_apply_attempts FROM "Task" WHERE id_tasks = ${taskId}
+      SELECT max_applicants, max_apply_attempts, is_bidding, budget_min, budget_max
+      FROM "Task" WHERE id_tasks = ${taskId}
     `;
 
     const maxApplicants = rawTaskConfig[0]?.max_applicants ?? task.max_applicants ?? 1;
     const maxAttempts = rawTaskConfig[0]?.max_apply_attempts ?? task.max_apply_attempts ?? 3;
+    const isBidding = rawTaskConfig[0]?.is_bidding === true;
+    const budgetMin = rawTaskConfig[0]?.budget_min ?? null;
+    const budgetMax = rawTaskConfig[0]?.budget_max ?? null;
 
-    if (!existing && task._count.applicants >= maxApplicants) {
-      throw new Error(`Tugas ini sudah mencapai kuota maksimal (${maxApplicants} pelamar).`);
+    // ─── Validasi bid untuk task bidding ─────────────────────────────────────
+    if (isBidding) {
+      if (typeof bidAmount !== 'number' || !Number.isFinite(bidAmount) || bidAmount <= 0) {
+        throw new Error(
+          'Task ini menggunakan mode bidding — wajib menyertakan harga penawaran.',
+        );
+      }
+      if (budgetMin !== null && bidAmount < budgetMin) {
+        throw new Error(
+          `Harga penawaran minimal ${budgetMin.toLocaleString('id-ID')} poin sesuai budget requester.`,
+        );
+      }
+      if (budgetMax !== null && bidAmount > budgetMax) {
+        throw new Error(
+          `Harga penawaran maksimal ${budgetMax.toLocaleString('id-ID')} poin sesuai budget requester.`,
+        );
+      }
+    } else if (typeof bidAmount === 'number') {
+      throw new Error(
+        'Task ini menggunakan harga tetap — tidak perlu menyertakan harga penawaran.',
+      );
+    }
+
+    // Kuota pelamar: task bidding terbuka untuk banyak penawar (sealed bids),
+    // task harga tetap mengikuti kuota worker. Cap bidding mencegah spam.
+    const BIDDING_APPLICANT_CAP = 25;
+    if (!existing) {
+      if (isBidding) {
+        if (task._count.applicants >= BIDDING_APPLICANT_CAP) {
+          throw new Error(`Task ini sudah menerima jumlah penawaran maksimal (${BIDDING_APPLICANT_CAP} bid).`);
+        }
+      } else if (task._count.applicants >= maxApplicants) {
+        throw new Error(`Tugas ini sudah mencapai kuota maksimal (${maxApplicants} pelamar).`);
+      }
     }
 
     const pendingStatusId = await getApplicantStatusId('pending');
@@ -493,13 +579,14 @@ export const taskService = {
         throw new Error(`Anda telah mencapai batas maksimal percobaan melamar (${maxAttempts} kali) untuk tugas ini.`);
       }
 
-      // Worker melamar kembali (re-apply)
+      // Worker melamar kembali (re-apply) — sekalian memperbarui bid
       const updatedApplicant = await prisma.taskApplicants.update({
         where: { id_task_applicants: existing.id_task_applicants },
         data: {
           id_status_task_applicants: pendingStatusId,
           apply_count: { increment: 1 },
           pesan: pesan ?? null,
+          bid_amount: bidAmount ?? null,
           alasan_penolakan: null,
           applied_at: new Date(),
         },
@@ -515,8 +602,10 @@ export const taskService = {
         await notificationService.createNotification({
           userId: task.id_requester,
           type: 'apply',
-          title: 'Pelamar Melamar Kembali! 🔄',
-          message: `${workerData?.nama_lengkap ?? 'Seseorang'} mengajukan lamaran kembali untuk task "${task.judul_tugas}".`,
+          title: isBidding ? 'Bid Baru Masuk! 🏷️' : 'Pelamar Melamar Kembali! 🔄',
+          message: isBidding
+            ? `${workerData?.nama_lengkap ?? 'Seseorang'} menawar ${bidAmount!.toLocaleString('id-ID')} poin untuk task "${task.judul_tugas}".`
+            : `${workerData?.nama_lengkap ?? 'Seseorang'} mengajukan lamaran kembali untuk task "${task.judul_tugas}".`,
           data: { task_id: taskId, applicant_id: updatedApplicant.id_task_applicants },
         });
       } catch (_) {
@@ -532,6 +621,7 @@ export const taskService = {
         id_worker: workerId,
         id_status_task_applicants: pendingStatusId,
         pesan: pesan ?? null,
+        bid_amount: bidAmount ?? null,
         apply_count: 1,
       },
     });
@@ -546,8 +636,10 @@ export const taskService = {
       await notificationService.createNotification({
         userId: task.id_requester,
         type: 'apply',
-        title: 'Ada Pelamar Baru! 🎉',
-        message: `${workerData?.nama_lengkap ?? 'Seseorang'} melamar task "${task.judul_tugas}".`,
+        title: isBidding ? 'Bid Baru Masuk! 🏷️' : 'Ada Pelamar Baru! 🎉',
+        message: isBidding
+          ? `${workerData?.nama_lengkap ?? 'Seseorang'} menawar ${bidAmount!.toLocaleString('id-ID')} poin untuk task "${task.judul_tugas}".`
+          : `${workerData?.nama_lengkap ?? 'Seseorang'} melamar task "${task.judul_tugas}".`,
         data: { task_id: taskId, applicant_id: applicant.id_task_applicants },
       });
     } catch (_) {
@@ -575,15 +667,111 @@ export const taskService = {
 
     const existing = await prisma.taskApplicants.findFirst({
       where: { id_tasks: taskId, id_worker: workerId },
+      include: { status_applicant: { select: { nama_status: true } } },
     });
 
     if (!existing) throw new Error('Lamaran tidak ditemukan.');
+
+    // Task bidding: penawaran yang sudah diterima tidak boleh ditarik mundur.
+    // Escrow slot tersebut sudah disesuaikan ke nilai bid (selisihnya
+    // di-refund ke requester saat accept), jadi penarikan akan membuat
+    // pembukuan held_balance tidak seimbang saat task dibatalkan.
+    if (
+      task.is_bidding &&
+      existing.status_applicant.nama_status.toLowerCase() === 'accepted'
+    ) {
+      throw new Error(
+        'Penawaran Anda sudah diterima dan dana escrow telah disesuaikan. Hubungi pemberi tugas bila ingin mengundurkan diri.',
+      );
+    }
 
     await prisma.taskApplicants.delete({
       where: { id_task_applicants: existing.id_task_applicants },
     });
 
     return { success: true };
+  },
+
+  /**
+   * Worker mengubah penawaran (bid) miliknya yang masih pending.
+   * Hanya untuk task bidding. Bid baru harus tetap dalam range budget.
+   * Bid yang sudah accepted/rejected tidak bisa diubah.
+   */
+  async updateBid(taskId: string, workerId: string, newBidAmount: number) {
+    const task = await prisma.task.findUnique({
+      where: { id_tasks: taskId },
+      include: { status_task: true },
+    });
+
+    if (!task) throw new Error('Task tidak ditemukan.');
+    if (!task.is_bidding) {
+      throw new Error('Task ini menggunakan harga tetap — tidak ada penawaran yang bisa diubah.');
+    }
+    if (task.status_task.nama_status.toLowerCase() !== 'open') {
+      throw new Error('Task sudah tidak menerima penawaran.');
+    }
+
+    const existing = await prisma.taskApplicants.findFirst({
+      where: { id_tasks: taskId, id_worker: workerId },
+      include: { status_applicant: { select: { nama_status: true } } },
+    });
+    if (!existing) throw new Error('Anda belum melamar task ini.');
+
+    const status = existing.status_applicant.nama_status.toLowerCase();
+    if (status !== 'pending') {
+      throw new Error(
+        status === 'accepted'
+          ? 'Penawaran Anda sudah diterima dan tidak dapat diubah.'
+          : 'Penawaran Anda sudah ditolak dan tidak dapat diubah.',
+      );
+    }
+
+    // Validasi range budget (sealed bid)
+    const rawRange = await prisma.$queryRaw<Array<{ budget_min: number | null; budget_max: number | null }>>`
+      SELECT budget_min, budget_max FROM "Task" WHERE id_tasks = ${taskId}
+    `;
+    const budgetMin = rawRange[0]?.budget_min ?? null;
+    const budgetMax = rawRange[0]?.budget_max ?? null;
+
+    if (!Number.isFinite(newBidAmount) || newBidAmount <= 0) {
+      throw new Error('Harga penawaran tidak valid.');
+    }
+    if (budgetMin !== null && newBidAmount < budgetMin) {
+      throw new Error(`Harga penawaran minimal ${budgetMin.toLocaleString('id-ID')} poin sesuai budget requester.`);
+    }
+    if (budgetMax !== null && newBidAmount > budgetMax) {
+      throw new Error(`Harga penawaran maksimal ${budgetMax.toLocaleString('id-ID')} poin sesuai budget requester.`);
+    }
+
+    // Update bid di bawah lock baris Task — serialisasi dengan transaksi accept.
+    // Tanpa ini, edit bid bisa terjadi tepat saat requester meng-accept:
+    // refund selisih dihitung dari bid lama, tapi payout memakai bid baru
+    // (atau sebaliknya) → pembukuan escrow tidak seimbang.
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT 1 FROM "Task" WHERE id_tasks = ${taskId} FOR UPDATE`;
+
+      // Re-cek status di bawah lock (mungkin baru di-accept paralel)
+      const freshStatus = await tx.$queryRaw<Array<{ nama_status: string }>>`
+        SELECT sta.nama_status FROM "TaskApplicants" ta
+        JOIN "StatusTaskApplicants" sta ON sta.id_status_task_applicants = ta.id_status_task_applicants
+        WHERE ta.id_task_applicants = ${existing.id_task_applicants}
+      `;
+      const statusNow = freshStatus[0]?.nama_status.toLowerCase() ?? status;
+      if (statusNow !== 'pending') {
+        throw new Error(
+          statusNow === 'accepted'
+            ? 'Penawaran Anda baru saja diterima dan tidak dapat diubah.'
+            : 'Penawaran Anda sudah ditolak dan tidak dapat diubah.',
+        );
+      }
+
+      return tx.taskApplicants.update({
+        where: { id_task_applicants: existing.id_task_applicants },
+        data: { bid_amount: newBidAmount },
+      });
+    });
+
+    return { success: true, data: { id_task_applicants: updated.id_task_applicants, bid_amount: updated.bid_amount } };
   },
 
   /**
@@ -610,29 +798,123 @@ export const taskService = {
     if (applicant.task.status_task.nama_status.toLowerCase() !== 'open')
       throw new Error('Task sudah tidak dalam status open.');
 
+    // Guard idempotensi: lamaran yang sudah diputuskan tidak boleh diproses ulang.
+    // Tanpa ini, double-click / request ganda pada "Terima Bid" bisa memicu
+    // refund selisih escrow dua kali (held_balance jebol).
+    const currentApplicantStatus = applicant.status_applicant.nama_status.toLowerCase();
+    if (currentApplicantStatus !== 'pending') {
+      throw new Error(
+        currentApplicantStatus === 'accepted'
+          ? 'Lamaran ini sudah diterima sebelumnya.'
+          : 'Lamaran ini sudah ditolak sebelumnya.',
+      );
+    }
+
     if (action === 'accept') {
       const acceptedStatusId = await getApplicantStatusId('accepted');
       const rejectedStatusId = await getApplicantStatusId('rejected');
       const taskAcceptedStatusId = await getStatusId('accepted');
+      const pendingStatusId = await getApplicantStatusId('pending');
 
       const rawTaskConfig = await prisma.$queryRaw<Array<{ max_applicants: number }>>`
         SELECT max_applicants FROM "Task" WHERE id_tasks = ${applicant.id_tasks}
       `;
       const maxApplicants = rawTaskConfig[0]?.max_applicants ?? applicant.task.max_applicants ?? 1;
 
-      // Update applicant ini ke accepted
-      await prisma.taskApplicants.update({
-        where: { id_task_applicants: applicantId },
-        data: { id_status_task_applicants: acceptedStatusId },
+      // ─── Accept ter-serialisasi: lock baris Task (FOR UPDATE) ──────────────
+      // Semua accept paralel untuk task ini antre di lock yang sama, sehingga:
+      //  • double-click / retry / dua tab pada bid yang sama → cuma 1 yang lolos
+      //    (compare-and-swap pending→accepted), sisanya gagal tanpa efek;
+      //  • dua bid BERBEDA di-accept bersamaan → kuota dicek di bawah lock,
+      //    accept yang melebihi kuota di-rollback total (tanpa refund).
+      // Seluruh mutasi escrow terjadi atomik dalam satu transaksi.
+      const acceptedCount = await prisma.$transaction(async (tx) => {
+        // 1. Kunci baris task — titik serialisasi semua accept paralel
+        await tx.$queryRaw`SELECT 1 FROM "Task" WHERE id_tasks = ${applicant.id_tasks} FOR UPDATE`;
+
+        // 2. Compare-and-swap pending→accepted: hanya 1 request menang per lamaran
+        const casResult = await tx.$executeRaw`
+          UPDATE "TaskApplicants"
+          SET id_status_task_applicants = ${acceptedStatusId}
+          WHERE id_task_applicants = ${applicantId}
+            AND id_status_task_applicants = ${pendingStatusId}
+        `;
+        if (Number(casResult) === 0) {
+          throw new Error('Lamaran ini baru saja diproses oleh request lain. Muat ulang daftar pelamar.');
+        }
+
+        // 3. Cek kuota di bawah lock (count sudah termasuk applicant ini)
+        const countRow = await tx.$queryRaw<Array<{ count: bigint }>>`
+          SELECT COUNT(*)::bigint AS count FROM "TaskApplicants"
+          WHERE id_tasks = ${applicant.id_tasks}
+            AND id_status_task_applicants = ${acceptedStatusId}
+        `;
+        const totalAccepted = Number(countRow[0]?.count ?? 0);
+        if (totalAccepted > maxApplicants) {
+          throw new Error(`Kuota worker sudah penuh (${maxApplicants} worker). Muat ulang daftar pelamar.`);
+        }
+
+        // 4. Bidding escrow (spek C): refund selisih budget_max − bid
+        const rawBiddingConfig = await tx.$queryRaw<
+          Array<{ is_bidding: boolean | null; budget_max: number | null }>
+        >`
+          SELECT is_bidding, budget_max FROM "Task" WHERE id_tasks = ${applicant.id_tasks}
+        `;
+        const biddingCfg = rawBiddingConfig[0];
+
+        const slotHeldAmount =
+          typeof applicant.bid_amount === 'number'
+            ? applicant.bid_amount
+            : applicant.task.kompensasi;
+
+        // Pembukuan hold per slot (dipakai saat task selesai/dibatalkan)
+        await tx.$executeRaw`
+          UPDATE "Task"
+          SET held_slots_json = COALESCE(
+                COALESCE(held_slots_json, '{}')::jsonb
+                || jsonb_build_object(${applicant.id_task_applicants}::text, ${slotHeldAmount}::float8),
+                '{}'::jsonb
+              )::text
+          WHERE id_tasks = ${applicant.id_tasks}
+        `;
+
+        if (biddingCfg?.is_bidding === true && typeof applicant.bid_amount === 'number') {
+          const bidDiff =
+            (biddingCfg.budget_max ?? applicant.task.kompensasi) - applicant.bid_amount;
+          if (bidDiff > 0) {
+            await tx.user.update({
+              where: { id_user: applicant.task.id_requester },
+              data: { held_balance: { decrement: bidDiff } },
+            });
+          }
+        }
+
+        return totalAccepted;
       });
 
-      // Hitung berapa total applicant yang sudah accepted untuk task ini
-      const acceptedCount = await prisma.taskApplicants.count({
-        where: {
-          id_tasks: applicant.id_tasks,
-          status_applicant: { nama_status: { equals: 'accepted', mode: 'insensitive' } },
-        },
-      });
+      // Log transaksi refund selisih bid (best-effort, di luar tx utama)
+      try {
+        const isBiddingTask = applicant.task.is_bidding ?? false;
+        const bidAmountNum = typeof applicant.bid_amount === 'number' ? applicant.bid_amount : null;
+        if (isBiddingTask && bidAmountNum !== null) {
+          const budgetMaxNum =
+            (await prisma.$queryRaw<Array<{ budget_max: number | null }>>`
+              SELECT budget_max FROM "Task" WHERE id_tasks = ${applicant.id_tasks}
+            `)[0]?.budget_max ?? applicant.task.kompensasi;
+          const bidDiffLog = budgetMaxNum - bidAmountNum;
+          if (bidDiffLog > 0) {
+            await prisma.transactions.create({
+              data: {
+                id_user: applicant.task.id_requester,
+                nominal: bidDiffLog,
+                tipe_transaksi: 'MASUK',
+                sub_type: 'refund',
+                deskripsi: `Pengembalian selisih bid (${bidDiffLog.toLocaleString('id-ID')} poin) untuk task: ${applicant.task.judul_tugas}`,
+              },
+            });
+          }
+        }
+      } catch (_) {}
 
       const isQuotaFull = acceptedCount >= maxApplicants;
 
@@ -944,21 +1226,39 @@ export const taskService = {
     if (newStatus === 'completed') {
       updateData.completed_at = new Date();
 
-      // Release escrow ke SETIAP accepted worker
+      // Release escrow ke SETIAP accepted worker.
+      // Task bidding: jumlah per worker diambil dari pembukuan slot (held_slots_json)
+      // karena tiap bid bisa berbeda; task harga tetap fallback ke kompensasi.
+      const rawSlotHeld = await prisma.$queryRaw<Array<{ held_slots_json: string | null }>>`
+        SELECT held_slots_json FROM "Task" WHERE id_tasks = ${taskId}
+      `;
+      const slotHeldMap: Record<string, number> = (() => {
+        try {
+          return JSON.parse(rawSlotHeld[0]?.held_slots_json ?? '{}') as Record<string, number>;
+        } catch {
+          return {};
+        }
+      })();
+
       if (acceptedWorkers.length > 0) {
         for (const workerApp of acceptedWorkers) {
+          const payoutAmount =
+            typeof slotHeldMap[workerApp.id_task_applicants] === 'number'
+              ? slotHeldMap[workerApp.id_task_applicants]
+              : task.kompensasi;
+
           await prisma.$transaction([
             prisma.user.update({
               where: { id_user: task.id_requester },
               data: {
-                total_balance: { decrement: task.kompensasi },
-                held_balance: { decrement: task.kompensasi },
+                total_balance: { decrement: payoutAmount },
+                held_balance: { decrement: payoutAmount },
               },
             }),
             prisma.transactions.create({
               data: {
                 id_user: task.id_requester,
-                nominal: task.kompensasi,
+                nominal: payoutAmount,
                 tipe_transaksi: 'KELUAR',
                 sub_type: 'task_payment',
                 deskripsi: `Pembayaran task ke ${workerApp.worker.nama_lengkap}: ${task.judul_tugas}`,
@@ -967,14 +1267,14 @@ export const taskService = {
             prisma.user.update({
               where: { id_user: workerApp.id_worker },
               data: {
-                total_balance: { increment: task.kompensasi },
+                total_balance: { increment: payoutAmount },
                 total_completed: { increment: 1 },
               },
             }),
             prisma.transactions.create({
               data: {
                 id_user: workerApp.id_worker,
-                nominal: task.kompensasi,
+                nominal: payoutAmount,
                 tipe_transaksi: 'MASUK',
                 sub_type: 'task_earning',
                 deskripsi: `Kompensasi dari task: ${task.judul_tugas}`,
@@ -987,19 +1287,42 @@ export const taskService = {
               userId: workerApp.id_worker,
               type: 'points',
               title: 'Poin Diterima! 💰',
-              message: `Task "${task.judul_tugas}" selesai. ${task.kompensasi.toLocaleString('id-ID')} poin telah masuk ke saldo kamu.`,
+              message: `Task "${task.judul_tugas}" selesai. ${payoutAmount.toLocaleString('id-ID')} poin telah masuk ke saldo kamu.`,
               data: { task_id: taskId },
             });
           } catch (_) {}
         }
       }
     } else if (newStatus === 'cancelled') {
-      // Refund sisa held_balance escrow penuh ke requester (sesuai slot max_applicants)
-      const rawTaskConfig = await prisma.$queryRaw<Array<{ max_applicants: number }>>`
-        SELECT max_applicants FROM "Task" WHERE id_tasks = ${taskId}
+      // Refund escrow ke requester: slot yang sudah diterima dikembalikan sesuai
+      // jumlah hold per slot (bid untuk task bidding), slot kosong sebesar kompensasi.
+      const rawTaskConfig = await prisma.$queryRaw<Array<{ max_applicants: number; held_slots_json: string | null }>>`
+        SELECT max_applicants, held_slots_json FROM "Task" WHERE id_tasks = ${taskId}
       `;
       const maxApplicants = rawTaskConfig[0]?.max_applicants ?? task.max_applicants ?? 1;
-      const totalRefund = maxApplicants * task.kompensasi;
+      const cancelSlotMap: Record<string, number> = (() => {
+        try {
+          return JSON.parse(rawTaskConfig[0]?.held_slots_json ?? '{}') as Record<string, number>;
+        } catch {
+          return {};
+        }
+      })();
+
+      let totalRefund = 0;
+      for (const workerApp of acceptedWorkers) {
+        totalRefund +=
+          typeof cancelSlotMap[workerApp.id_task_applicants] === 'number'
+            ? cancelSlotMap[workerApp.id_task_applicants]
+            : task.kompensasi;
+      }
+      const unfilledSlots = Math.max(0, maxApplicants - acceptedWorkers.length);
+      // Slot kosong hanya di-refund bila cancel terjadi dari status 'open'.
+      // Jika task sudah pernah dimulai (status 'accepted'), slot kosong sudah
+      // di-refund pada action 'start' — refund ulang membuat held_balance
+      // requester negatif (bug uang).
+      if (currentStatus === 'open') {
+        totalRefund += unfilledSlots * task.kompensasi;
+      }
 
       await prisma.user.update({
         where: { id_user: task.id_requester },

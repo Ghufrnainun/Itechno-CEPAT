@@ -25,8 +25,12 @@ export default function CariTugasPage() {
 
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [applyMessage, setApplyMessage] = useState("");
+  const [applyBid, setApplyBid] = useState("");
   const [taskToApply, setTaskToApply] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Task yang sedang dilamar (untuk cek mode bidding + range budget)
+  const taskBeingApplied = tasks.find((t) => t.id_task === taskToApply) ?? null;
 
   useEffect(() => {
     async function loadTasks() {
@@ -56,25 +60,44 @@ export default function CariTugasPage() {
   const handleApply = (taskId: string) => {
     setTaskToApply(taskId);
     setApplyMessage("");
+    setApplyBid("");
     setIsApplyModalOpen(true);
   };
 
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!taskToApply) return;
-    
+
+    // Validasi bid untuk task bidding (sealed bid: wajib dalam range budget requester)
+    let numericBid: number | undefined = undefined;
+    if (taskBeingApplied?.is_bidding) {
+      numericBid = parseFloat(applyBid);
+      const minBid = taskBeingApplied.budget_min ?? 0;
+      const maxBid = taskBeingApplied.budget_max ?? taskBeingApplied.compensation;
+      if (!numericBid || numericBid <= 0) {
+        showToast("Masukkan harga penawaran Anda terlebih dahulu.");
+        return;
+      }
+      if (numericBid < minBid || numericBid > maxBid) {
+        showToast(`Penawaran harus berada di range Rp${minBid.toLocaleString("id-ID")} – Rp${maxBid.toLocaleString("id-ID")}.`);
+        return;
+      }
+    }
+
     setActionLoading(true);
     try {
       const res = await fetch(`/api/tasks/${taskToApply}/apply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pesan: applyMessage })
+        body: JSON.stringify({ pesan: applyMessage.trim() || undefined, bid_amount: numericBid })
       });
       const data = await res.json().catch(() => ({}));
       
       if (res.ok && data.success) {
         setAppliedTaskIds(prev => [...prev, taskToApply]);
-        showToast("Berhasil melamar tugas!");
+        showToast(taskBeingApplied?.is_bidding
+          ? "Penawaran terkirim! Menunggu pilihan pemberi kerja."
+          : "Berhasil melamar tugas!");
         setIsApplyModalOpen(false);
       } else {
         showToast(data.message || "Gagal melamar tugas");
@@ -180,8 +203,39 @@ export default function CariTugasPage() {
       </div>
 
       {/* Modal: Lamar Pekerjaan */}
-      <Modal isOpen={isApplyModalOpen} onClose={() => setIsApplyModalOpen(false)} title="Kirim Lamaran Kerja">
+      <Modal
+        isOpen={isApplyModalOpen}
+        onClose={() => setIsApplyModalOpen(false)}
+        title={taskBeingApplied?.is_bidding ? "Ajukan Penawaran" : "Kirim Lamaran Kerja"}
+      >
         <form onSubmit={handleApplySubmit} className="flex flex-col gap-4 font-sans text-xs">
+          {/* Input Harga Penawaran — hanya untuk task bidding (sealed bid) */}
+          {taskBeingApplied?.is_bidding && (
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="apply-bid-input-cari" className="font-semibold text-on-surface">
+                Harga Penawaran Anda <span className="text-error">*</span>
+              </label>
+              <div className="relative flex items-center">
+                <span className="absolute left-3.5 font-mono font-bold text-on-surface-variant pointer-events-none">Rp</span>
+                <input
+                  id="apply-bid-input-cari"
+                  type="number"
+                  min={taskBeingApplied.budget_min ?? 1000}
+                  step={1000}
+                  inputMode="numeric"
+                  value={applyBid}
+                  onChange={(e) => setApplyBid(e.target.value)}
+                  required
+                  placeholder={`Range: Rp${(taskBeingApplied.budget_min ?? 0).toLocaleString("id-ID")} – Rp${(taskBeingApplied.budget_max ?? taskBeingApplied.compensation).toLocaleString("id-ID")}`}
+                  className="w-full pl-10 pr-4 py-3 text-base sm:text-sm font-mono font-bold bg-surface-container-low text-on-surface rounded-xl border border-card-border focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none"
+                />
+              </div>
+              <p className="text-[10px] text-on-surface-variant leading-relaxed">
+                Penawaran bersifat rahasia (sealed bid) — hanya pemberi tugas yang dapat melihatnya.
+              </p>
+            </div>
+          )}
+
           <div className="flex flex-col gap-1.5">
             <label className="font-semibold text-on-surface">
               Pesan (Opsional)

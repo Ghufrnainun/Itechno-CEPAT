@@ -14,6 +14,9 @@ export const createTaskSchema = z.preprocess((val: any) => {
     skill_requirements: val.skill_requirements ?? val.skills ?? [],
     max_applicants: typeof val.max_applicants === 'number' ? val.max_applicants : typeof val.maxApplicants === 'number' ? val.maxApplicants : parseInt(val.max_applicants || val.maxApplicants || '1', 10),
     max_apply_attempts: typeof val.max_apply_attempts === 'number' ? val.max_apply_attempts : typeof val.maxApplyAttempts === 'number' ? val.maxApplyAttempts : parseInt(val.max_apply_attempts || val.maxApplyAttempts || '3', 10),
+    is_bidding: val.is_bidding ?? val.isBidding ?? false,
+    budget_min: val.budget_min ?? val.budgetMin ?? undefined,
+    budget_max: val.budget_max ?? val.budgetMax ?? undefined,
   };
 }, z.object({
   judul_tugas: z.string().min(5, 'Judul tugas minimal 5 karakter.').max(120, 'Judul tugas maksimal 120 karakter.'),
@@ -27,12 +30,45 @@ export const createTaskSchema = z.preprocess((val: any) => {
   skill_requirements: z.array(z.string()).optional(),
   max_applicants: z.number().int().min(1, 'Batas pelamar minimal 1.').default(1),
   max_apply_attempts: z.number().int().min(1, 'Batas percobaan minimal 1.').default(3),
+  // ─── Bidding (Fase 1) ────────────────────────────────────────────────────
+  is_bidding: z.boolean().default(false),
+  budget_min: z.number().positive('Budget minimal harus lebih dari 0.').optional(),
+  budget_max: z.number().positive('Budget maksimal harus lebih dari 0.').optional(),
+}).superRefine((data, ctx) => {
+  if (!data.is_bidding) return;
+
+  // Mode bidding aktif: range budget wajib terisi & valid
+  if (typeof data.budget_min !== 'number' || typeof data.budget_max !== 'number') {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['budget_min'],
+      message: 'Task bidding wajib memiliki range budget (min & maks).',
+    });
+    return;
+  }
+  if (data.budget_min >= data.budget_max) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['budget_max'],
+      message: 'Budget maksimal harus lebih besar dari budget minimal.',
+    });
+  }
+  // kompensasi adalah plafon escrow — harus sama dengan budget_max
+  if (data.kompensasi !== data.budget_max) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['kompensasi'],
+      message: 'Kompensasi task bidding harus sama dengan budget maksimal (plafon escrow).',
+    });
+  }
 }))
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>
 
 export const applyTaskSchema = z.object({
   pesan: z.string().max(500, 'Pesan maksimal 500 karakter.').optional(),
+  /** Harga penawaran worker — WAJIB untuk task bidding, harus dalam range budget requester */
+  bid_amount: z.number().positive('Harga penawaran harus lebih dari 0.').optional(),
 })
 
 export type ApplyTaskInput = z.infer<typeof applyTaskSchema>

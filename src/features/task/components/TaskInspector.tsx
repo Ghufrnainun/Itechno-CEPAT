@@ -133,10 +133,21 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
           </div>
 
           <div className="flex flex-col gap-0.5 mb-5 p-3.5 bg-surface-container-low rounded-xl border border-card-border">
-            <span className="font-headline text-2xl font-extrabold text-primary font-mono tabular-nums">
-              {formatCurrency(task.compensation)} <span className="text-xs font-normal text-on-surface-variant font-sans">/ worker</span>
-            </span>
-            {task.max_applicants && (
+            {task.is_bidding ? (
+              <>
+                <span className="font-headline text-2xl font-extrabold text-primary font-mono tabular-nums">
+                  {formatCurrency(task.budget_min ?? 0)} – {formatCurrency(task.budget_max ?? task.compensation)} <span className="text-xs font-normal text-on-surface-variant font-sans">/ worker</span>
+                </span>
+                <span className="text-[11px] text-primary font-bold font-sans">
+                  Mode Bidding — ajukan penawaran harga terbaik Anda
+                </span>
+              </>
+            ) : (
+              <span className="font-headline text-2xl font-extrabold text-primary font-mono tabular-nums">
+                {formatCurrency(task.compensation)} <span className="text-xs font-normal text-on-surface-variant font-sans">/ worker</span>
+              </span>
+            )}
+            {task.max_applicants && !task.is_bidding && (
               <span className="text-[11px] text-on-surface-variant font-mono">
                 Total Escrow: {formatCurrency(task.compensation * task.max_applicants)} ({task.max_applicants} worker)
               </span>
@@ -168,7 +179,11 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
         <div className="bg-tertiary-container/30 border border-tertiary/25 rounded-xl p-3.5 flex items-start gap-3 text-tertiary">
           <Lock className="w-4 h-4 shrink-0 mt-0.5" />
           <p className="text-xs leading-relaxed">
-            Dana <span className="font-bold font-mono">{formatCurrency(task.compensation)} / worker</span> ditahan aman di Escrow dan langsung dicairkan setelah hasil kerja disetujui.
+            {task.is_bidding ? (
+              <>Dana pemberi kerja ditahan aman di Escrow (maksimal <span className="font-bold font-mono">{formatCurrency(task.budget_max ?? task.compensation)} / worker</span>). Setelah penawaran Anda diterima, dana dicairkan sesuai harga kesepakatan saat tugas selesai.</>
+            ) : (
+              <>Dana <span className="font-bold font-mono">{formatCurrency(task.compensation)} / worker</span> ditahan aman di Escrow dan langsung dicairkan setelah hasil kerja disetujui.</>
+            )}
           </p>
         </div>
 

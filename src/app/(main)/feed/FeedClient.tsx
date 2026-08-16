@@ -15,7 +15,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useDebounce } from "@/hooks/useDebounce";
 
 import { Modal } from "@/components/ui/Modal";
-import { Plus, Search, SearchX } from "lucide-react";
+import { Plus, Search, SearchX, Gavel } from "lucide-react";
 
 interface FeedClientProps {
   initialTasks: any[];
@@ -44,6 +44,7 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
   // Apply Modal state
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [applyMessage, setApplyMessage] = useState("");
+  const [applyBid, setApplyBid] = useState("");
   const [applyLoading, setApplyLoading] = useState(false);
 
   useEffect(() => {
@@ -160,13 +161,31 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
   const openApplyModal = () => {
     if (!selectedTask) return;
     setApplyMessage("");
+    setApplyBid("");
     setIsApplyModalOpen(true);
   };
 
-  // Submit Apply dengan Pesan
+  // Submit Apply dengan Pesan (+ harga penawaran untuk task bidding)
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTask) return;
+
+    // Validasi bid untuk task bidding (sealed bid: wajib dalam range budget requester)
+    let numericBid: number | undefined = undefined;
+    if (selectedTask.is_bidding) {
+      numericBid = parseFloat(applyBid);
+      const minBid = selectedTask.budget_min ?? 0;
+      const maxBid = selectedTask.budget_max ?? selectedTask.compensation;
+      if (!numericBid || numericBid <= 0) {
+        showToast("Masukkan harga penawaran Anda terlebih dahulu.");
+        return;
+      }
+      if (numericBid < minBid || numericBid > maxBid) {
+        showToast(`Penawaran harus berada di range ${formatCurrency(minBid)} – ${formatCurrency(maxBid)}.`);
+        return;
+      }
+    }
+
     setApplyLoading(true);
 
     try {
@@ -176,6 +195,7 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
         body: JSON.stringify({
           id_tasks: selectedTask.id_task,
           pesan: applyMessage.trim() || undefined,
+          bid_amount: numericBid,
         })
       });
       const data = await res.json();
@@ -188,7 +208,10 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
         }));
         setIsApplyModalOpen(false);
         setApplyMessage("");
-        showToast("Berhasil melamar tugas! Menunggu persetujuan pemberi kerja.");
+        setApplyBid("");
+        showToast(selectedTask?.is_bidding
+          ? "Penawaran terkirim! Menunggu pilihan pemberi kerja."
+          : "Berhasil melamar tugas! Menunggu persetujuan pemberi kerja.");
       } else {
         showToast(data.message || "Gagal melamar tugas");
       }
@@ -353,9 +376,42 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
           {selectedTask && (
             <div className="p-3 bg-surface-container-low border border-card-border rounded-xl flex flex-col gap-1">
               <span className="font-headline font-bold text-sm text-on-surface">{selectedTask.title}</span>
-              <span className="font-mono font-bold text-primary tabular-nums">
-                {formatCurrency(selectedTask.compensation)} / worker
-              </span>
+              {selectedTask.is_bidding ? (
+                <span className="font-mono font-bold text-primary tabular-nums flex items-center gap-1.5">
+                  <Gavel className="w-3.5 h-3.5" />
+                  {formatCurrency(selectedTask.budget_min ?? 0)} – {formatCurrency(selectedTask.budget_max ?? selectedTask.compensation)} (bidding)
+                </span>
+              ) : (
+                <span className="font-mono font-bold text-primary tabular-nums">
+                  {formatCurrency(selectedTask.compensation)} / worker
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Input Harga Penawaran — hanya untuk task bidding (sealed bid) */}
+          {selectedTask?.is_bidding && (
+            <div className="flex flex-col gap-1.5">
+              <label className="font-semibold text-on-surface">
+                Harga Penawaran Anda <span className="text-error">*</span>
+              </label>
+              <div className="relative flex items-center">
+                <span className="absolute left-3.5 font-mono font-bold text-on-surface-variant text-xs pointer-events-none">Rp</span>
+                <input
+                  type="number"
+                  min={selectedTask.budget_min ?? 1000}
+                  max={selectedTask.budget_max ?? undefined}
+                  step={1000}
+                  required
+                  className="w-full pl-11 pr-3 py-2.5 text-xs font-mono font-bold bg-surface-container-low border border-card-border rounded-xl text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[44px]"
+                  placeholder={`Range: ${formatCurrency(selectedTask.budget_min ?? 0)} – ${formatCurrency(selectedTask.budget_max ?? selectedTask.compensation)}`}
+                  value={applyBid}
+                  onChange={(e) => setApplyBid(e.target.value)}
+                />
+              </div>
+              <p className="text-[10px] text-on-surface-variant leading-relaxed">
+                Penawaran bersifat rahasia (sealed bid) — hanya pemberi kerja yang dapat melihatnya.
+              </p>
             </div>
           )}
 
