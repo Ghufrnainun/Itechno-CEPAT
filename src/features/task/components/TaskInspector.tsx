@@ -4,6 +4,7 @@ import { formatCurrency, formatDistance } from "@/lib/utils/format";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
+import { Avatar } from "@/components/ui/Avatar";
 import { useToast } from "@/components/ui/Toast";
 import { renderIcon } from "@/lib/icon-map";
 import {
@@ -26,7 +27,8 @@ interface TaskInspectorProps {
     distance?: number;
     status?: string;
     requester_name?: string;
-    requester?: { nama_lengkap?: string };
+    requester_avatar?: string | null;
+    requester?: { nama_lengkap?: string; avatar_url?: string | null };
     max_applicants?: number;
     max_apply_attempts?: number;
     applicant_count?: number;
@@ -110,9 +112,12 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
           <h2 className="font-headline font-bold text-xl text-on-surface leading-snug mb-3">{task.title}</h2>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0 uppercase border border-primary/20">
-                {requesterName.charAt(0)}
-              </div>
+              <Avatar
+                src={task.requester_avatar || task.requester?.avatar_url}
+                name={requesterName}
+                size="lg"
+                shape="rounded"
+              />
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-xs text-on-surface">

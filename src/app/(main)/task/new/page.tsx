@@ -464,7 +464,7 @@ export default function NewTaskPage() {
         </div>
 
         {/* ──── Form & Map Grid (7 cols left, 5 cols right) ──── */}
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             {/* ════════ LEFT COLUMN: Task Specifications (7 Columns) ════════ */}

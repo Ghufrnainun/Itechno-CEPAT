@@ -57,7 +57,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             required={required}
             className={cn(
-              "w-full px-3.5 py-2.5 text-xs sm:text-sm font-sans bg-transparent text-on-surface placeholder:text-on-surface-variant/40 rounded-xl border transition-all duration-150 shadow-2xs focus-visible:outline-none min-h-[42px]",
+              "w-full px-3.5 py-2.5 text-xs sm:text-sm font-sans bg-transparent text-on-surface placeholder:text-on-surface-variant/40 rounded-lg border transition-all duration-150 shadow-2xs focus-visible:outline-none min-h-[42px]",
+              type === "number" && "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
               activeIcon && "pl-10",
               rightIcon && "pr-10",
               error
@@ -263,7 +264,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
             disabled={disabled}
             onClick={() => !disabled && setIsOpen(!isOpen)}
             className={cn(
-              "w-full flex items-center justify-between px-3.5 py-2.5 text-xs sm:text-sm font-sans bg-surface-container-low text-on-surface rounded-xl border transition-all duration-150 shadow-2xs focus-visible:outline-none cursor-pointer min-h-[42px]",
+              "w-full flex items-center justify-between px-3.5 py-2.5 text-xs sm:text-sm font-sans bg-surface-container-low text-on-surface rounded-lg border transition-all duration-150 shadow-2xs focus-visible:outline-none cursor-pointer min-h-[42px]",
               icon && "pl-10",
               error
                 ? "border-error focus:border-error focus:ring-2 focus:ring-error/20"
@@ -288,7 +289,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           {isOpen && (
             <div
               role="listbox"
-              className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white border border-card-border rounded-xl shadow-xl py-1 overflow-hidden font-sans text-xs sm:text-sm animate-in fade-in-50 zoom-in-95 duration-100"
+              className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white border border-card-border rounded-lg shadow-xl py-1 overflow-hidden font-sans text-xs sm:text-sm animate-in fade-in-50 zoom-in-95 duration-100"
             >
               <div className="max-h-60 overflow-y-auto divide-y divide-card-border/30 custom-scrollbar">
                 {extractedOptions.map((opt, idx) => {
@@ -364,7 +365,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           required={required}
           className={cn(
-            "w-full px-3.5 py-2.5 text-xs sm:text-sm font-sans bg-transparent text-on-surface placeholder:text-on-surface-variant/40 rounded-xl border transition-all duration-150 shadow-2xs focus-visible:outline-none resize-none",
+            "w-full px-3.5 py-2.5 text-xs sm:text-sm font-sans bg-transparent text-on-surface placeholder:text-on-surface-variant/40 rounded-lg border transition-all duration-150 shadow-2xs focus-visible:outline-none resize-none",
             error
               ? "border-error focus:border-error focus:ring-2 focus:ring-error/20"
               : "border-card-border/90 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20",

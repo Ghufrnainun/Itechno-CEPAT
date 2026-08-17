@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { EscrowBanner } from "@/components/ui/EscrowBanner";
 import { Modal } from "@/components/ui/Modal";
+import { Avatar } from "@/components/ui/Avatar";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
@@ -120,6 +121,7 @@ export default function TaskDetailPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [applyMessage, setApplyMessage] = useState("");
   const [applyBid, setApplyBid] = useState("");
+  const [bidError, setBidError] = useState("");
   const [rating, setRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
 
@@ -138,8 +140,9 @@ export default function TaskDetailPage() {
       } else {
         showToast(data.message || "Task tidak ditemukan.");
       }
-    } catch {
-      showToast("Gagal memuat detail task.");
+    } catch (e) {
+      showToast("Gagal memuat task.");
+      setTask(null);
     } finally {
       setLoading(false);
     }
@@ -154,6 +157,7 @@ export default function TaskDetailPage() {
   const isEditingPendingBid = task?.is_bidding === true && task?.viewer_application?.status === "pending";
 
   const openApplyOrEditModal = () => {
+    setBidError("");
     if (isEditingPendingBid) {
       setApplyBid(task?.viewer_application?.bid_amount ? String(task.viewer_application.bid_amount) : "");
       setApplyMessage(task?.viewer_application?.pesan ?? "");
@@ -166,6 +170,7 @@ export default function TaskDetailPage() {
 
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setBidError("");
 
     // Validasi bid untuk task bidding (sealed bid, wajib dalam range budget)
     let numericBid: number | undefined = undefined;
@@ -173,12 +178,16 @@ export default function TaskDetailPage() {
       numericBid = parseFloat(applyBid);
       const minBid = task.budget_min ?? 0;
       const maxBid = task.budget_max ?? task.kompensasi;
-      if (!numericBid || numericBid <= 0) {
-        showToast("Masukkan harga penawaran Anda terlebih dahulu.");
+      if (!numericBid || isNaN(numericBid) || numericBid <= 0) {
+        setBidError("Masukkan harga penawaran Anda terlebih dahulu.");
         return;
       }
-      if (numericBid < minBid || numericBid > maxBid) {
-        showToast(`Penawaran harus berada di range ${formatCurrency(minBid)} – ${formatCurrency(maxBid)}.`);
+      if (numericBid < minBid) {
+        setBidError(`Penawaran minimal ${formatCurrency(minBid)}.`);
+        return;
+      }
+      if (numericBid > maxBid) {
+        setBidError(`Penawaran maksimal ${formatCurrency(maxBid)}.`);
         return;
       }
     }
@@ -539,9 +548,11 @@ export default function TaskDetailPage() {
 
             {/* Requester info */}
             <div className="flex items-center gap-sm text-on-surface-variant">
-              <div className="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-sm shrink-0">
-                {task.requester.nama_lengkap.charAt(0)}
-              </div>
+              <Avatar
+                src={task.requester.avatar_url}
+                name={task.requester.nama_lengkap}
+                size="md"
+              />
               <div>
                 <p className="font-label-sm text-label-sm font-semibold text-on-surface">{task.requester.nama_lengkap}</p>
                 <p className="font-body-sm text-[11px] text-on-surface-variant">
@@ -659,9 +670,12 @@ export default function TaskDetailPage() {
                     <div key={app.id_task_applicants} className="py-3.5 flex flex-col gap-2.5">
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-xs font-mono">
-                            {app.worker.nama_lengkap.charAt(0)}
-                          </div>
+                          <Avatar
+                            src={app.worker.avatar_url}
+                            name={app.worker.nama_lengkap}
+                            size="lg"
+                            shape="rounded"
+                          />
                           <div>
                             <h4 className="font-headline text-xs font-bold text-on-surface">
                               {app.worker.nama_lengkap}
@@ -759,9 +773,11 @@ export default function TaskDetailPage() {
                       <div key={r.id_reviews} className="p-3.5 bg-surface-container-low border border-card-border/60 rounded-lg flex flex-col gap-1.5">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs font-mono">
-                              {r.rater.nama_lengkap.charAt(0)}
-                            </div>
+                            <Avatar
+                              src={r.rater.avatar_url}
+                              name={r.rater.nama_lengkap}
+                              size="sm"
+                            />
                             <div>
                               <span className="font-headline text-xs font-bold text-on-surface">{r.rater.nama_lengkap}</span>
                               {r.ratee && (
@@ -810,9 +826,12 @@ export default function TaskDetailPage() {
                       <div key={r.id_reviews} className="p-3.5 bg-surface-container-low border border-card-border/60 rounded-lg flex flex-col gap-1.5">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-full bg-secondary text-on-secondary flex items-center justify-center font-bold text-xs font-mono">
-                              {r.rater.nama_lengkap.charAt(0)}
-                            </div>
+                            <Avatar
+                              src={r.rater.avatar_url}
+                              name={r.rater.nama_lengkap}
+                              size="sm"
+                              className="bg-secondary text-on-secondary"
+                            />
                             <div>
                               <span className="font-headline text-xs font-bold text-on-surface">{r.rater.nama_lengkap}</span>
                               {r.ratee && (
@@ -1148,7 +1167,7 @@ export default function TaskDetailPage() {
 
       {/* Modal: Lamar Pekerjaan */}
       <Modal isOpen={isApplyModalOpen} onClose={() => setIsApplyModalOpen(false)} title={isEditingPendingBid ? "Ubah Penawaran" : task?.is_bidding ? "Ajukan Penawaran" : "Kirim Lamaran Kerja"}>
-        <form onSubmit={handleApplySubmit} className="flex flex-col gap-4 font-sans text-xs">
+        <form onSubmit={handleApplySubmit} noValidate className="flex flex-col gap-4 font-sans text-xs">
           {/* Input Harga Penawaran — hanya untuk task bidding (sealed bid) */}
           {task?.is_bidding && (
             <div className="flex flex-col gap-1.5">
@@ -1159,19 +1178,31 @@ export default function TaskDetailPage() {
                 <span className="absolute left-3.5 font-mono font-bold text-on-surface-variant text-xs pointer-events-none">Rp</span>
                 <input
                   type="number"
-                  min={task.budget_min ?? 1000}
-                  max={task.budget_max ?? undefined}
-                  step={1000}
-                  required
-                  className="w-full pl-11 pr-3 py-2.5 text-xs font-mono font-bold bg-surface-container-low border border-card-border rounded-xl text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[44px]"
+                  inputMode="numeric"
+                  className={cn(
+                    "w-full pl-11 pr-3 py-2.5 text-xs font-mono font-bold bg-surface-container-low border rounded-lg text-on-surface focus:ring-2 focus:bg-surface-container-lowest focus:outline-none min-h-[42px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors",
+                    bidError
+                      ? "border-error focus:border-error focus:ring-error/20"
+                      : "border-card-border focus:border-primary focus:ring-primary/20"
+                  )}
                   placeholder={`Range: ${formatCurrency(task.budget_min ?? 0)} – ${formatCurrency(task.budget_max ?? task.kompensasi)}`}
                   value={applyBid}
-                  onChange={(e) => setApplyBid(e.target.value)}
+                  onChange={(e) => {
+                    setApplyBid(e.target.value);
+                    if (bidError) setBidError("");
+                  }}
                 />
               </div>
-              <p className="text-[10px] text-on-surface-variant leading-relaxed">
-                Penawaran bersifat rahasia (sealed bid) — hanya pemberi tugas yang dapat melihatnya.
-              </p>
+              {bidError ? (
+                <p className="text-[11px] font-medium text-error flex items-center gap-1.5 mt-0.5 animate-fadeIn">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{bidError}</span>
+                </p>
+              ) : (
+                <p className="text-[10px] text-on-surface-variant leading-relaxed">
+                  Penawaran bersifat rahasia (sealed bid) — hanya pemberi tugas yang dapat melihatnya.
+                </p>
+              )}
             </div>
           )}
 
@@ -1181,7 +1212,7 @@ export default function TaskDetailPage() {
                 Pesan Singkat untuk Pemberi Kerja (opsional)
               </label>
               <textarea
-                className="w-full bg-surface-container-low border border-card-border rounded-xl p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[100px] custom-scrollbar"
+                className="w-full bg-surface-container-low border border-card-border rounded-lg p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[100px] custom-scrollbar"
                 placeholder="Ceritakan keahlianmu dan mengapa kamu cocok untuk tugas ini."
                 value={applyMessage}
                 onChange={(e) => setApplyMessage(e.target.value)}
@@ -1216,7 +1247,7 @@ export default function TaskDetailPage() {
             : "Berikan Ulasan Rating"
         }
       >
-        <form onSubmit={handleRatingSubmit} className="flex flex-col gap-4 font-sans text-xs">
+        <form onSubmit={handleRatingSubmit} noValidate className="flex flex-col gap-4 font-sans text-xs">
           <div className="flex flex-col items-center gap-2">
             <span className="font-semibold text-on-surface text-center">
               {role === "requester" && currentRatingTarget
@@ -1249,7 +1280,7 @@ export default function TaskDetailPage() {
               Komentar / Masukan (opsional)
             </label>
             <textarea
-              className="w-full bg-surface-container-low border border-card-border rounded-xl p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[90px] custom-scrollbar"
+              className="w-full bg-surface-container-low border border-card-border rounded-lg p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[90px] custom-scrollbar"
               placeholder="Berikan komentar singkat mengenai hasil kerja / komunikasi..."
               value={reviewComment}
               onChange={(e) => setReviewComment(e.target.value)}
@@ -1267,13 +1298,13 @@ export default function TaskDetailPage() {
 
       {/* Modal: Tolak Pelamar (Opsional dengan Alasan Penolakan) */}
       <Modal isOpen={isRejectModalOpen} onClose={() => setIsRejectModalOpen(false)} title="Tolak Pelamar Kerja">
-        <form onSubmit={handleRejectSubmit} className="flex flex-col gap-4 font-sans text-xs">
+        <form onSubmit={handleRejectSubmit} noValidate className="flex flex-col gap-4 font-sans text-xs">
           <div className="flex flex-col gap-1.5">
             <label className="font-semibold text-on-surface">
               Alasan Penolakan (Opsional)
             </label>
             <textarea
-              className="w-full bg-surface-container-low border border-card-border rounded-xl p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[100px] custom-scrollbar"
+              className="w-full bg-surface-container-low border border-card-border rounded-lg p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[100px] custom-scrollbar"
               placeholder="Berikan catatan / alasan penolakan (misal: kualifikasi belum sesuai, lokasi terlalu jauh, dll)..."
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
