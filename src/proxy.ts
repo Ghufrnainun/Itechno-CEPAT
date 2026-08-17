@@ -140,7 +140,7 @@ export async function proxy(request: NextRequest) {
           const loginUrl = new URL('/login', request.url)
           loginUrl.searchParams.set('banned', 'true')
           loginUrl.searchParams.set('type', type)
-          loginUrl.searchParams.set('reason', dbUser.ban_reason ?? 'Akun Anda ditangguhkan oleh admin.')
+          loginUrl.searchParams.set('reason', dbUser.ban_reason || '')
           if (dbUser.banned_until) loginUrl.searchParams.set('until', dbUser.banned_until.toISOString())
 
           const redirectResponse = NextResponse.redirect(loginUrl)

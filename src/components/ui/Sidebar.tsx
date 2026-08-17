@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useUnreadChat } from "@/hooks/useUnreadChat";
 import {
   Menu,
   MenuSquare,
@@ -43,6 +44,7 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { unreadCount } = useNotifications();
+  const { unreadCount: chatUnreadCount } = useUnreadChat();
   const [loggingOut, setLoggingOut] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -222,10 +224,21 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
               href="/chat"
               title={!isExpanded ? "Chat" : undefined}
               aria-current={pathname === "/chat" ? "page" : undefined}
-              className={cn("sidebar-link flex items-center gap-3", pathname === "/chat" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+              className={cn("sidebar-link flex items-center gap-3", pathname === "/chat" && "active", isExpanded ? "justify-between" : "justify-center w-10 h-10 rounded-lg p-0 relative")}
             >
-              <MessageSquare className="w-4 h-4 shrink-0" />
-              {isExpanded && "Chat"}
+              <div className="flex items-center gap-3">
+                <MessageSquare className="w-4 h-4 shrink-0" />
+                {isExpanded && "Chat"}
+              </div>
+              {chatUnreadCount > 0 && (
+                <span className={cn(
+                  isExpanded
+                    ? "bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono tabular-nums"
+                    : "absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full ring-2 ring-surface-container-lowest"
+                )}>
+                  {isExpanded ? chatUnreadCount : ""}
+                </span>
+              )}
             </Link>
           </>
         ) : (
@@ -254,10 +267,21 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
               href="/chat"
               title={!isExpanded ? "Chat" : undefined}
               aria-current={pathname === "/chat" ? "page" : undefined}
-              className={cn("sidebar-link flex items-center gap-3", pathname === "/chat" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+              className={cn("sidebar-link flex items-center gap-3", pathname === "/chat" && "active", isExpanded ? "justify-between" : "justify-center w-10 h-10 rounded-lg p-0 relative")}
             >
-              <MessageSquare className="w-4 h-4 shrink-0" />
-              {isExpanded && "Chat"}
+              <div className="flex items-center gap-3">
+                <MessageSquare className="w-4 h-4 shrink-0" />
+                {isExpanded && "Chat"}
+              </div>
+              {chatUnreadCount > 0 && (
+                <span className={cn(
+                  isExpanded
+                    ? "bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono tabular-nums"
+                    : "absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full ring-2 ring-surface-container-lowest"
+                )}>
+                  {isExpanded ? chatUnreadCount : ""}
+                </span>
+              )}
             </Link>
           </>
         )}

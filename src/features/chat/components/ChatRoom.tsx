@@ -122,7 +122,13 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
         if (data.success) {
           setMessages(data.data);
           setTimeout(scrollToBottom, 100);
-          fetch(`/api/chat/${roomId}`, { method: 'PUT' }).catch(console.error);
+          fetch(`/api/chat/${roomId}`, { method: 'PUT' })
+            .then(() => {
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new Event('chat-unread-updated'));
+              }
+            })
+            .catch(console.error);
         }
       } catch (error) {
         console.error("Gagal mengambil pesan:", error);
@@ -171,7 +177,13 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
           setTimeout(scrollToBottom, 100);
 
           if (newMessageRaw.id_sender !== currentUserId) {
-            fetch(`/api/chat/${roomId}`, { method: 'PUT' }).catch(console.error);
+            fetch(`/api/chat/${roomId}`, { method: 'PUT' })
+              .then(() => {
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new Event('chat-unread-updated'));
+                }
+              })
+              .catch(console.error);
           }
           
           if (onMessageAdded) onMessageAdded();

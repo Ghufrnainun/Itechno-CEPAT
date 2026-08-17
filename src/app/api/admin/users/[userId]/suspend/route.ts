@@ -93,13 +93,12 @@ export async function POST(
       },
     })
 
-    // 2. Pastikan Supabase Auth tidak memblokir OAuth exchange sebelum app callback membaca detail ban
+    // 2. Pastikan Supabase Auth tidak memblokir OAuth code exchange sebelum app callback membaca detail ban dari database
     if (user.auth_id) {
-      const supabaseAdmin = createAdminClient()
       try {
         const supabaseAdmin = createAdminClient()
         await supabaseAdmin.auth.admin.updateUserById(user.auth_id, {
-          ban_duration: supabaseBanDuration,
+          ban_duration: 'none',
         })
       } catch (e) {
         console.error('[suspend] Supabase ban update error:', e)

@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
             message: "Akun Anda telah ditangguhkan.",
             ban_details: {
               type: dbUser.ban_type ?? "PERMANENT",
-              reason: dbUser.ban_reason ?? "Akun Anda ditangguhkan oleh admin.",
+              reason: dbUser.ban_reason || "",
               banned_at: dbUser.banned_at ? dbUser.banned_at.toISOString() : null,
               banned_until: dbUser.banned_until ? dbUser.banned_until.toISOString() : null,
             },

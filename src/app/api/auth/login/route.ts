@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
             message: 'Akun Anda telah ditangguhkan.',
             ban_details: {
               type: userProfile.ban_type ?? 'PERMANENT',
-              reason: userProfile.ban_reason ?? 'Tidak ada alasan khusus.',
+              reason: userProfile.ban_reason || '',
               banned_at: userProfile.banned_at ? userProfile.banned_at.toISOString() : null,
               banned_until: userProfile.banned_until ? userProfile.banned_until.toISOString() : null,
             },

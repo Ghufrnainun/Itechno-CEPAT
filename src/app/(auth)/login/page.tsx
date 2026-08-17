@@ -58,8 +58,8 @@ function LoginContent() {
   React.useEffect(() => {
     if (isBannedParam === "true") {
       setBanDetails({
-        type: (banTypeParam as "TEMPORARY" | "PERMANENT") || "PERMANENT",
-        reason: safeDecode(banReasonParam) ?? "Akun Anda ditangguhkan oleh admin.",
+        type: (banTypeParam as "TEMPORARY" | "PERMANENT") === "TEMPORARY" ? "TEMPORARY" : "PERMANENT",
+        reason: safeDecode(banReasonParam) || "",
         banned_until: safeDecode(banUntilParam),
       });
     }
@@ -174,11 +174,15 @@ function LoginContent() {
               <div>
                 <span className="font-semibold text-on-surface-variant block mb-1">Alasan:</span>
                 <p className="text-on-surface bg-surface-container-lowest p-2.5 rounded-lg border border-card-border">
-                  {banDetails.reason}
+                  {banDetails.reason ? (
+                    banDetails.reason
+                  ) : (
+                    <span className="italic text-on-surface-variant/70">(Tidak ada rincian alasan yang dicantumkan)</span>
+                  )}
                 </p>
               </div>
 
-              {banDetails.banned_until && (
+              {banDetails.type === "TEMPORARY" && banDetails.banned_until && (
                 <div className="flex items-center justify-between text-on-surface-variant">
                   <span>Berlaku Hingga:</span>
                   <span className="font-mono font-bold text-on-surface">
