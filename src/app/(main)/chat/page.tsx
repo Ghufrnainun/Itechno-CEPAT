@@ -143,7 +143,10 @@ function ChatContent() {
                   : selectedRoomInfo.requester.id_user,
                 otherUserAvatarUrl: selectedRoomInfo.requester.id_user === currentUserId 
                   ? selectedRoomInfo.worker.avatar_url 
-                  : selectedRoomInfo.requester.avatar_url
+                  : selectedRoomInfo.requester.avatar_url,
+                otherUserLastSeen: selectedRoomInfo.requester.id_user === currentUserId 
+                  ? selectedRoomInfo.worker.last_seen_at 
+                  : selectedRoomInfo.requester.last_seen_at
               }}
               onMessageAdded={fetchRooms}
             />

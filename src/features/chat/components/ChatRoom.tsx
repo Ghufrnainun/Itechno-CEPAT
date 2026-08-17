@@ -43,6 +43,7 @@ interface ChatRoomProps {
     otherUserName: string;
     otherUserId: string;
     otherUserAvatarUrl?: string | null;
+    otherUserLastSeen?: string | Date | null;
   };
   onMessageAdded?: () => void;
 }
@@ -53,6 +54,10 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
   const [isDragging, setIsDragging] = useState(false);
   const [draggedFile, setDraggedFile] = useState<File | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(false);
+  const [lastSeenTimestamp, setLastSeenTimestamp] = useState<string | Date | null>(roomInfo.otherUserLastSeen || null);
+  const [lastSeenFormatted, setLastSeenFormatted] = useState('');
+  const [tick, setTick] = useState(0);
   
   // Search state
   const [isSearchSidebarOpen, setIsSearchSidebarOpen] = useState(false);
@@ -115,6 +120,64 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
     : [];
 
   useEffect(() => {
+    // Tick every 30 seconds to recalculate relative time
+    const interval = setInterval(() => {
+      setTick(t => t + 1);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    // Poll the user API every 2 minutes to get fresh last_seen_at
+    if (isOnline) return; // No need to poll if they are currently online
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/users/${roomInfo.otherUserId}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data?.last_seen_at) {
+            setLastSeenTimestamp(json.data.last_seen_at);
+          }
+        }
+      } catch (e) {}
+    }, 120000); // 2 minutes
+    return () => clearInterval(pollInterval);
+  }, [roomInfo.otherUserId, isOnline]);
+
+  useEffect(() => {
+    setLastSeenTimestamp(roomInfo.otherUserLastSeen || null);
+  }, [roomInfo.otherUserLastSeen, roomInfo.otherUserId]);
+
+  useEffect(() => {
+    if (!lastSeenTimestamp) {
+      setLastSeenFormatted('');
+      return;
+    }
+    const lastSeenDate = new Date(lastSeenTimestamp);
+    const now = new Date();
+    
+    // Formatting Last Seen
+    const diffMs = Math.max(0, now.getTime() - lastSeenDate.getTime());
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    
+    if (diffMins < 1) {
+      setLastSeenFormatted('Terakhir dilihat baru saja');
+    } else if (diffMins < 60) {
+      setLastSeenFormatted(`Terakhir dilihat ${diffMins} menit yang lalu`);
+    } else if (diffHours < 24) {
+      setLastSeenFormatted(`Terakhir dilihat ${diffHours} jam yang lalu`);
+    } else {
+      const isYesterday = new Date(now.setDate(now.getDate() - 1)).toDateString() === lastSeenDate.toDateString();
+      if (isYesterday) {
+        setLastSeenFormatted(`Terakhir dilihat kemarin pukul ${lastSeenDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
+      } else {
+        setLastSeenFormatted(`Terakhir dilihat pada ${lastSeenDate.toLocaleDateString()} ${lastSeenDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
+      }
+    }
+  }, [lastSeenTimestamp, tick]);
+
+  useEffect(() => {
     const fetchMessages = async () => {
       try {
         const res = await fetch(`/api/chat/${roomId}`);
@@ -140,7 +203,18 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
     fetchMessages();
 
     const channel = supabase
-      .channel(`room:${roomId}`)
+      .channel(`room_${roomId}`, {
+        config: {
+          presence: {
+            key: currentUserId,
+          },
+        },
+      })
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const isOtherUserOnline = Object.keys(state).includes(roomInfo.otherUserId);
+        setIsOnline(isOtherUserOnline);
+      })
       .on(
         'postgres_changes',
         {
@@ -221,7 +295,10 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
           if (onMessageAdded) onMessageAdded();
         }
       )
-      .subscribe((status, err) => {
+      .subscribe(async (status, err) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ online_at: new Date().toISOString() });
+        }
         if (err) console.error('[Realtime] Subscription error:', err);
       });
 
@@ -425,10 +502,20 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-headline font-bold text-xs text-on-surface truncate hover:text-primary transition-colors">{roomInfo.otherUserName}</h3>
-                <span className="text-[11px] text-primary flex items-center gap-1 font-mono">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-                  Online
-                </span>
+                {isOnline ? (
+                  <span className="text-[11px] text-primary flex items-center gap-1 font-mono">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                    Online
+                  </span>
+                ) : lastSeenFormatted ? (
+                  <span className="text-[11px] text-on-surface-variant flex items-center gap-1 font-mono truncate">
+                    {lastSeenFormatted}
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-on-surface-variant flex items-center gap-1 font-mono truncate">
+                    Offline
+                  </span>
+                )}
               </div>
             </Link>
             
@@ -519,13 +606,15 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
                         ? 'bg-primary/20 border border-primary text-on-surface'
                         : highlightedMessageId === msg.id_message 
                         ? 'bg-amber-500/20 border border-amber-500/40 text-on-surface' 
-                        : isMe 
-                          ? 'bg-primary text-on-primary rounded-tr-xs border border-primary/20' 
-                          : 'bg-surface-container-lowest text-on-surface rounded-tl-xs border border-card-border'
+                        : msg.is_deleted_for_everyone
+                          ? `bg-transparent border border-card-border text-on-surface-variant/70 italic ${isMe ? 'rounded-tr-xs' : 'rounded-tl-xs'}`
+                          : isMe 
+                            ? 'bg-primary text-on-primary rounded-tr-xs border border-primary/20' 
+                            : 'bg-surface-container-lowest text-on-surface rounded-tl-xs border border-card-border'
                     }`}
                   >
                     {msg.is_deleted_for_everyone ? (
-                      <div className="flex items-center gap-1.5 italic text-on-surface-variant/80 text-xs">
+                      <div className="flex items-center gap-1.5 text-xs">
                         <Ban className="w-3.5 h-3.5 shrink-0" />
                         <p>Pesan ini telah dihapus</p>
                       </div>
