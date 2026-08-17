@@ -70,6 +70,9 @@ export function ChatList({ rooms, selectedRoomId, currentUserId, onSelectRoom, i
         if (onActionComplete) {
           onActionComplete();
         }
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('chat-unread-updated'));
+        }
       }
     } catch (e) {
       console.error(e);

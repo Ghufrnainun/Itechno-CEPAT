@@ -107,7 +107,7 @@ export default function MainAppLayout({
           const json = await res.json().catch(() => ({}));
           if (json.is_banned && json.ban_details) {
             const type = json.ban_details.type || 'PERMANENT';
-            const reason = encodeURIComponent(json.ban_details.reason || 'Akun Anda ditangguhkan oleh admin.');
+            const reason = encodeURIComponent(json.ban_details.reason || '');
             const until = json.ban_details.banned_until ? encodeURIComponent(json.ban_details.banned_until) : '';
             window.location.href = `/login?banned=true&type=${type}&reason=${reason}&until=${until}`;
             return;
