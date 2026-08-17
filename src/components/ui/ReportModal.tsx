@@ -18,11 +18,26 @@ interface ReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  defaultCategory?: string;
+  defaultSubject?: string;
+  taskId?: string;
+  taskTitle?: string;
 }
 
-export function ReportModal({ isOpen, onClose, onSuccess }: ReportModalProps) {
-  const [kategori, setKategori] = useState('Kendala Teknis / Bug');
-  const [subjek, setSubjek] = useState('');
+export function ReportModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  defaultCategory = 'Kendala Teknis / Bug',
+  defaultSubject = '',
+  taskId,
+  taskTitle,
+}: ReportModalProps) {
+  const initialCategory = taskId ? 'Pelanggaran Pengguna / Task' : defaultCategory;
+  const initialSubject = defaultSubject || (taskTitle ? `[Pelanggaran Task] ${taskTitle}` : '');
+
+  const [kategori, setKategori] = useState(initialCategory);
+  const [subjek, setSubjek] = useState(initialSubject);
   const [deskripsi, setDeskripsi] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -40,13 +55,17 @@ export function ReportModal({ isOpen, onClose, onSuccess }: ReportModalProps) {
     setSuccessMsg(null);
 
     try {
+      const finalDescription = taskId
+        ? `[Terkait Task: ${taskTitle || taskId} (ID: ${taskId})]\n\n${deskripsi.trim()}`
+        : deskripsi.trim();
+
       const res = await fetch('/api/reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           kategori,
           subjek: subjek.trim(),
-          deskripsi: deskripsi.trim(),
+          deskripsi: finalDescription,
         }),
       });
 

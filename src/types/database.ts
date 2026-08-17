@@ -51,6 +51,8 @@ export interface Task {
   duration_estimate: string;
   created_at: string;
   updated_at: string;
+  scheduled_at?: string | null;
+  scheduled_end?: string | null;
   skills?: { id_skill: string; nama_skill: string; icon?: string | null }[];
 }
 

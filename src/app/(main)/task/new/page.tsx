@@ -22,6 +22,8 @@ import {
   Wallet,
   CheckCircle2,
   ChevronDown,
+  Calendar,
+  Clock,
 } from "lucide-react";
 
 // Preset Task Templates with clean professional labels (no raw emojis)
@@ -117,6 +119,11 @@ export default function NewTaskPage() {
   const [lng, setLng] = useState<number | null>(null);
   const [locationAddress, setLocationAddress] = useState<string>("");
   const [addressLoading, setAddressLoading] = useState(false);
+
+  // Scheduling State
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("09:00");
 
   // Search & Map State
   const [searchLocation, setSearchLocation] = useState("");
@@ -296,6 +303,28 @@ export default function NewTaskPage() {
   const isBalanceInsufficient = userProfile !== null && userBalance < totalEscrow;
   const remainingBalanceAfterPost = Math.max(0, userBalance - totalEscrow);
 
+  // Schedule Calculation
+  const calculatedSchedule = useMemo(() => {
+    if (!isScheduled || !scheduledDate) return null;
+    try {
+      const [hours, minutes] = (scheduledTime || "09:00").split(":").map(Number);
+      const [year, month, day] = scheduledDate.split("-").map(Number);
+      const startDate = new Date(year, month - 1, day, hours || 9, minutes || 0, 0, 0);
+
+      const durHours = parseFloat(duration) || 1;
+      const endDate = new Date(startDate.getTime() + durHours * 60 * 60 * 1000);
+
+      return {
+        start: startDate,
+        end: endDate,
+        startIso: startDate.toISOString(),
+        endIso: endDate.toISOString(),
+      };
+    } catch {
+      return null;
+    }
+  }, [isScheduled, scheduledDate, scheduledTime, duration]);
+
   // Filter skills for dropdown
   const filteredSkills = useMemo(() => {
     if (!skillSearchQuery.trim()) return skills;
@@ -324,6 +353,17 @@ export default function NewTaskPage() {
       return;
     }
 
+    if (isScheduled) {
+      if (!scheduledDate) {
+        showToast("Silakan tentukan tanggal pelaksanaan tugas.");
+        return;
+      }
+      if (calculatedSchedule && calculatedSchedule.start.getTime() < Date.now() - 5 * 60 * 1000) {
+        showToast("Jadwal pelaksanaan tugas harus berada di masa mendatang.");
+        return;
+      }
+    }
+
     if (isBalanceInsufficient) {
       showToast("Saldo Anda tidak mencukupi untuk mengunci dana Escrow.");
       return;
@@ -343,6 +383,8 @@ export default function NewTaskPage() {
         max_apply_attempts: parseInt(maxApplyAttempts, 10) || 3,
         latitude: lat,
         longitude: lng,
+        scheduled_at: calculatedSchedule ? calculatedSchedule.startIso : undefined,
+        scheduled_end: calculatedSchedule ? calculatedSchedule.endIso : undefined,
       };
 
       if (selectedSkills && selectedSkills.length > 0) {
@@ -888,6 +930,102 @@ export default function NewTaskPage() {
                       </div>
                     </div>
 
+                  </div>
+
+                  {/* Section 2.5: Penjadwalan Tugas (Scheduling Section) */}
+                  <div className="pt-2 border-t border-card-border/60 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-primary" />
+                        <div>
+                          <label htmlFor="scheduling-toggle" className="text-xs font-semibold text-on-surface block cursor-pointer">
+                            Jadwalkan Waktu Tugas
+                          </label>
+                          <span className="text-[11px] text-on-surface-variant">
+                            Tentukan tanggal &amp; jam spesifik tugas harus dikerjakan
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Custom Toggle Switch */}
+                      <button
+                        id="scheduling-toggle"
+                        type="button"
+                        role="switch"
+                        aria-checked={isScheduled}
+                        onClick={() => setIsScheduled(!isScheduled)}
+                        className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
+                          isScheduled ? "bg-primary" : "bg-card-border"
+                        }`}
+                      >
+                        <div
+                          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                            isScheduled ? "translate-x-5" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Collapsible Scheduling Controls */}
+                    {isScheduled && (
+                      <div className="p-4 rounded-2xl bg-surface-container-low border border-card-border/90 flex flex-col gap-3 animate-in fade-in-50 duration-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          
+                          {/* Date Picker */}
+                          <div className="flex flex-col gap-1.5">
+                            <label htmlFor="scheduled-date" className="text-xs font-semibold text-on-surface flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-primary" />
+                              Tanggal Pelaksanaan <span className="text-error">*</span>
+                            </label>
+                            <input
+                              id="scheduled-date"
+                              type="date"
+                              min={new Date().toISOString().split("T")[0]}
+                              value={scheduledDate}
+                              onChange={(e) => setScheduledDate(e.target.value)}
+                              required={isScheduled}
+                              className="w-full px-3.5 py-2.5 text-xs sm:text-sm font-sans bg-surface-container-lowest text-on-surface rounded-xl border border-card-border/90 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none min-h-[42px]"
+                            />
+                          </div>
+
+                          {/* Time Picker */}
+                          <div className="flex flex-col gap-1.5">
+                            <label htmlFor="scheduled-time" className="text-xs font-semibold text-on-surface flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-primary" />
+                              Jam Mulai <span className="text-error">*</span>
+                            </label>
+                            <input
+                              id="scheduled-time"
+                              type="time"
+                              value={scheduledTime}
+                              onChange={(e) => setScheduledTime(e.target.value)}
+                              required={isScheduled}
+                              className="w-full px-3.5 py-2.5 text-xs sm:text-sm font-sans bg-surface-container-lowest text-on-surface rounded-xl border border-card-border/90 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none min-h-[42px]"
+                            />
+                          </div>
+
+                        </div>
+
+                        {/* Calculated Estimated Completion Banner */}
+                        {calculatedSchedule && (
+                          <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                              <span className="text-on-surface font-medium">
+                                Estimasi Selesai:
+                              </span>
+                            </div>
+                            <span className="font-mono font-bold text-primary">
+                              {calculatedSchedule.end.toLocaleTimeString("id-ID", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}{" "}
+                              WIB ({duration} Jam)
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

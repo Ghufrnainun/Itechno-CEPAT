@@ -14,6 +14,8 @@ export const createTaskSchema = z.preprocess((val: any) => {
     skill_requirements: val.skill_requirements ?? val.skills ?? [],
     max_applicants: typeof val.max_applicants === 'number' ? val.max_applicants : typeof val.maxApplicants === 'number' ? val.maxApplicants : parseInt(val.max_applicants || val.maxApplicants || '1', 10),
     max_apply_attempts: typeof val.max_apply_attempts === 'number' ? val.max_apply_attempts : typeof val.maxApplyAttempts === 'number' ? val.maxApplyAttempts : parseInt(val.max_apply_attempts || val.maxApplyAttempts || '3', 10),
+    scheduled_at: val.scheduled_at ?? val.scheduledAt ?? undefined,
+    scheduled_end: val.scheduled_end ?? val.scheduledEnd ?? undefined,
   };
 }, z.object({
   judul_tugas: z.string().min(5, 'Judul tugas minimal 5 karakter.').max(120, 'Judul tugas maksimal 120 karakter.'),
@@ -27,6 +29,8 @@ export const createTaskSchema = z.preprocess((val: any) => {
   skill_requirements: z.array(z.string()).optional(),
   max_applicants: z.number().int().min(1, 'Batas pelamar minimal 1.').default(1),
   max_apply_attempts: z.number().int().min(1, 'Batas percobaan minimal 1.').default(3),
+  scheduled_at: z.string().optional().nullable(),
+  scheduled_end: z.string().optional().nullable(),
 }))
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>
