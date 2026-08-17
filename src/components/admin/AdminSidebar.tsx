@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Tags,
   Flag,
+  ShieldAlert,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
@@ -39,6 +40,7 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
     { label: 'Overview', href: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'User Management', href: '/admin/users', icon: Users },
     { label: 'Task Management', href: '/admin/tasks', icon: ClipboardList },
+    { label: 'Pusat Sengketa', href: '/admin/disputes', icon: ShieldAlert },
     { label: 'Category & Skills', href: '/admin/categories', icon: Tags },
     { label: 'Laporan User', href: '/admin/reports', icon: Flag },
   ];

@@ -24,6 +24,8 @@ import {
   ChevronRight,
   ClipboardList,
   Flag,
+  Calendar,
+  ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ReportModal } from "@/components/ui/ReportModal";
@@ -188,6 +190,16 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
           {isExpanded && "Dashboard"}
         </Link>
 
+        <Link
+          href="/schedule"
+          title={!isExpanded ? "Jadwal" : undefined}
+          aria-current={pathname === "/schedule" ? "page" : undefined}
+          className={cn("sidebar-link flex items-center gap-3", pathname === "/schedule" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+        >
+          <Calendar className="w-4 h-4 shrink-0" />
+          {isExpanded && "Jadwal"}
+        </Link>
+
         {role === "worker" ? (
           <>
             <Link
@@ -315,6 +327,16 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
         >
           <Wallet className="w-4 h-4 shrink-0" />
           {isExpanded && "Dompet Poin"}
+        </Link>
+
+        <Link
+          href="/disputes"
+          title={!isExpanded ? "Pusat Sengketa" : undefined}
+          aria-current={pathname.startsWith("/disputes") ? "page" : undefined}
+          className={cn("sidebar-link flex items-center gap-3", pathname.startsWith("/disputes") && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+        >
+          <ShieldAlert className="w-4 h-4 shrink-0 text-amber-600" />
+          {isExpanded && "Pusat Sengketa"}
         </Link>
 
         <Link

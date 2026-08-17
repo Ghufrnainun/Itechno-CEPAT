@@ -27,8 +27,13 @@ import {
   XCircle,
   CheckCircle2,
   Clock,
+  Calendar,
+  ShieldAlert,
   Loader2,
+  Flag,
 } from "lucide-react";
+import { DisputeModal } from "@/components/ui/DisputeModal";
+import { ReportModal } from "@/components/ui/ReportModal";
 import { cn } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -65,6 +70,8 @@ interface TaskDetail {
   max_apply_attempts: number;
   created_at: string;
   completed_at: string | null;
+  scheduled_at?: string | null;
+  scheduled_end?: string | null;
   latitude: number | null;
   longitude: number | null;
   id_requester: string;
@@ -107,12 +114,14 @@ export default function TaskDetailPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+  const [applyMessage, setApplyMessage] = useState("");
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [ratingTargetIndex, setRatingTargetIndex] = useState(0); // index dalam antrian rating
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [selectedApplicantToReject, setSelectedApplicantToReject] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
-  const [applyMessage, setApplyMessage] = useState("");
   const [rating, setRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
 
@@ -436,6 +445,7 @@ export default function TaskDetailPage() {
   }
 
   const taskStatus = task.status;
+  const isRequester = role === "requester";
   const taskForMap = task.latitude && task.longitude
     ? [{ id_task: task.id_tasks, title: task.judul_tugas, latitude: task.latitude, longitude: task.longitude, compensation: task.kompensasi, status: task.status, description: task.deskripsi_tugas, duration_estimate: task.estimasi_waktu ?? "", created_at: task.created_at, updated_at: task.created_at, id_requester: task.id_requester }]
     : [];
@@ -443,19 +453,31 @@ export default function TaskDetailPage() {
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 font-sans flex flex-col gap-6 bg-surface">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => router.back()}
-          className="w-10 h-10 rounded-xl hover:bg-surface-container-low flex items-center justify-center border border-card-border cursor-pointer transition-colors duration-150 text-on-surface-variant hover:text-on-surface"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <span className="font-mono text-xs text-on-surface-variant uppercase tracking-wider font-semibold">
-            Detail Pekerjaan
-          </span>
-          <h1 className="font-headline text-2xl text-on-surface font-extrabold tracking-tight">{task.judul_tugas}</h1>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.back()}
+            className="w-10 h-10 rounded-xl hover:bg-surface-container-low flex items-center justify-center border border-card-border cursor-pointer transition-colors duration-150 text-on-surface-variant hover:text-on-surface"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <span className="font-mono text-xs text-on-surface-variant uppercase tracking-wider font-semibold">
+              Detail Pekerjaan
+            </span>
+            <h1 className="font-headline text-2xl text-on-surface font-extrabold tracking-tight">{task.judul_tugas}</h1>
+          </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setIsReportModalOpen(true)}
+          title="Laporkan Pelanggaran Tugas ke Admin"
+          className="px-3 py-1.5 rounded-xl border border-card-border hover:border-error/40 bg-surface-container-lowest hover:bg-error-container/20 text-xs font-semibold text-on-surface-variant hover:text-error transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+        >
+          <Flag className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Laporkan Task</span>
+        </button>
       </div>
 
       <EscrowBanner />
@@ -496,6 +518,49 @@ export default function TaskDetailPage() {
                 {task.deskripsi_tugas}
               </p>
             </div>
+
+            {/* Scheduled Time Banner */}
+            {task.scheduled_at && (
+              <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold text-primary block uppercase tracking-wider">
+                      Jadwal Pelaksanaan Tugas
+                    </span>
+                    <span className="font-medium text-on-surface text-xs sm:text-sm">
+                      {new Date(task.scheduled_at).toLocaleDateString("id-ID", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                      {" • "}
+                      {new Date(task.scheduled_at).toLocaleTimeString("id-ID", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}{" "}
+                      WIB
+                      {task.scheduled_end && (
+                        <>
+                          {" - "}
+                          {new Date(task.scheduled_end).toLocaleTimeString("id-ID", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}{" "}
+                          WIB
+                        </>
+                      )}
+                    </span>
+                  </div>
+                </div>
+                <span className="self-start sm:self-center px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold shrink-0">
+                  📅 Terjadwal
+                </span>
+              </div>
+            )}
 
             {task.requirements.length > 0 && (
               <div className="flex flex-wrap gap-xs">
@@ -556,7 +621,7 @@ export default function TaskDetailPage() {
           </div>
 
           {/* Daftar Pelamar (Requester Only & Open Status) */}
-          {role === "requester" && taskStatus === "open" && (
+          {isRequester && taskStatus === "open" && (
             <div className="flex flex-col gap-sm bg-white border border-outline-variant rounded-xl p-md md:p-lg">
               <div className="flex justify-between items-center border-b border-outline-variant/50 pb-sm">
                 <h3 className="font-body-md text-body-md font-extrabold text-on-surface">
@@ -924,13 +989,34 @@ export default function TaskDetailPage() {
                         Anda sudah konfirmasi. Menunggu konfirmasi dari pihak lain...
                       </div>
                     )}
+
+                    <Button
+                      type="button"
+                      onClick={() => setIsDisputeModalOpen(true)}
+                      variant="ghost"
+                      className="w-full text-xs text-amber-600 hover:bg-amber-500/10 border border-amber-500/30 flex items-center justify-center gap-1.5 py-2 cursor-pointer"
+                    >
+                      <ShieldAlert className="w-3.5 h-3.5" />
+                      <span>Laporkan Kendala / Ajukan Sengketa</span>
+                    </Button>
                   </div>
                 );
               })()}
 
               {taskStatus === "in_progress" && (
-                <div className="p-3 text-center border border-card-border rounded-lg bg-surface-container-low text-primary font-sans text-xs font-semibold">
-                  Tugas Sedang Dikerjakan. Menunggu Konfirmasi Selesai dari Requester.
+                <div className="flex flex-col gap-2">
+                  <div className="p-3 text-center border border-card-border rounded-lg bg-surface-container-low text-primary font-sans text-xs font-semibold">
+                    Tugas Sedang Dikerjakan. Menunggu Konfirmasi Selesai dari Requester.
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => setIsDisputeModalOpen(true)}
+                    variant="ghost"
+                    className="w-full text-xs text-amber-600 hover:bg-amber-500/10 border border-amber-500/30 flex items-center justify-center gap-1.5 py-2 cursor-pointer"
+                  >
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    <span>Laporkan Eksploitasi / Ajukan Sengketa</span>
+                  </Button>
                 </div>
               )}
               {taskStatus === "completed" && (
@@ -1011,13 +1097,34 @@ export default function TaskDetailPage() {
                         Anda sudah konfirmasi. Menunggu konfirmasi dari Worker...
                       </div>
                     )}
+
+                    <Button
+                      type="button"
+                      onClick={() => setIsDisputeModalOpen(true)}
+                      variant="ghost"
+                      className="w-full text-xs text-amber-600 hover:bg-amber-500/10 border border-amber-500/30 flex items-center justify-center gap-1.5 py-2 cursor-pointer"
+                    >
+                      <ShieldAlert className="w-3.5 h-3.5" />
+                      <span>Laporkan Kendala / Ajukan Sengketa</span>
+                    </Button>
                   </div>
                 );
               })()}
               {taskStatus === "in_progress" && (
-                <Button onClick={handleConfirmCompletion} className="w-full py-3" variant="primary" disabled={actionLoading}>
-                  Konfirmasi Selesai &amp; Cairkan Poin
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button onClick={handleConfirmCompletion} className="w-full py-3" variant="primary" disabled={actionLoading}>
+                    Konfirmasi Selesai &amp; Cairkan Poin
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setIsDisputeModalOpen(true)}
+                    variant="ghost"
+                    className="w-full text-xs text-amber-600 hover:bg-amber-500/10 border border-amber-500/30 flex items-center justify-center gap-1.5 py-2 cursor-pointer"
+                  >
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    <span>Laporkan Kendala / Ajukan Sengketa</span>
+                  </Button>
+                </div>
               )}
               {taskStatus === "completed" && (() => {
                 const unratedWorkers = getRatingTargets();
@@ -1092,7 +1199,7 @@ export default function TaskDetailPage() {
         isOpen={isRatingModalOpen}
         onClose={() => setIsRatingModalOpen(false)}
         title={
-          role === "requester" && currentRatingTarget
+          isRequester && currentRatingTarget
             ? `Berikan Ulasan: ${currentRatingTarget.worker.nama_lengkap}`
             : "Berikan Ulasan Rating"
         }
@@ -1100,9 +1207,9 @@ export default function TaskDetailPage() {
         <form onSubmit={handleRatingSubmit} className="flex flex-col gap-4 font-sans text-xs">
           <div className="flex flex-col items-center gap-2">
             <span className="font-semibold text-on-surface text-center">
-              {role === "requester" && currentRatingTarget
+              {isRequester && currentRatingTarget
                 ? `Berapa bintang untuk ${currentRatingTarget.worker.nama_lengkap}?`
-                : role === "worker" && task
+                : !isRequester && task
                 ? `Berapa bintang untuk ${task.requester.nama_lengkap}?`
                 : "Berapa bintang yang Anda berikan?"}
             </span>
@@ -1183,6 +1290,26 @@ export default function TaskDetailPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Modal: Ajukan Mediasi Sengketa */}
+      <DisputeModal
+        isOpen={isDisputeModalOpen}
+        onClose={() => setIsDisputeModalOpen(false)}
+        taskId={task.id_tasks}
+        taskTitle={task.judul_tugas}
+        counterpartName={
+          role === "requester"
+            ? task.applicants.find((a) => a.status === "accepted")?.worker?.nama_lengkap
+            : task.requester?.nama_lengkap
+        }
+      />
+
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        taskId={task.id_tasks}
+        taskTitle={task.judul_tugas}
+      />
     </div>
   );
 }
