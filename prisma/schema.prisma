@@ -58,6 +58,7 @@ model User {
   email                   String           @unique
   auth_id                 String?          @unique @db.Uuid
   fcm_token               String?
+  last_seen_at            DateTime?
   is_banned               Boolean          @default(false)
   ban_type                String?
   ban_reason              String?
@@ -76,6 +77,8 @@ model User {
   payment_transactions    PaymentTransaction[]
   admin_sessions          AdminSession[]
   user_reports            UserReport[]
+  disputes_reported       Dispute[]        @relation("DisputeReporter")
+  disputes_received       Dispute[]        @relation("DisputeRespondent")
   role                    Role             @relation(fields: [id_role], references: [id_role])
 }
 
@@ -89,6 +92,8 @@ model Task {
   created_at      DateTime                  @default(now())
   completed_at    DateTime?
   accepted_at     DateTime?
+  scheduled_at    DateTime?
+  scheduled_end   DateTime?
   lokasi_geo        Unsupported("geography")?
   kompensasi        Float                     @default(0.0)
   id_category       String
@@ -106,6 +111,7 @@ model Task {
   held_slots_json   String?
   chat_rooms        ChatRoom[]
   reviews         Reviews[]
+  disputes        Dispute[]
   kategori        TaskCategory              @relation(fields: [id_category], references: [id_category])
   requester       User                      @relation("RequesterTasks", fields: [id_requester], references: [id_user], onDelete: Cascade)
   status_task     StatusTask                @relation(fields: [id_status_task], references: [id_status_task])
@@ -285,5 +291,53 @@ model UserReport {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
   user        User     @relation(fields: [user_id], references: [id_user], onDelete: Cascade)
+}
+
+enum DisputeStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED_FAVOR_WORKER
+  RESOLVED_FAVOR_REQUESTER
+  CLOSED
+}
+
+model Dispute {
+  id_dispute    String           @id @default(uuid())
+  id_task       String
+  id_reporter   String
+  id_respondent String
+  reason        String
+  description   String
+  status        DisputeStatus    @default(OPEN)
+  resolution    String?
+  resolved_by   String?
+  resolved_at   DateTime?
+  created_at    DateTime         @default(now())
+  updated_at    DateTime         @updatedAt
+  task          Task             @relation(fields: [id_task], references: [id_tasks], onDelete: Cascade)
+  reporter      User             @relation("DisputeReporter", fields: [id_reporter], references: [id_user], onDelete: Cascade)
+  respondent    User             @relation("DisputeRespondent", fields: [id_respondent], references: [id_user], onDelete: Cascade)
+  evidences     DisputeEvidence[]
+  messages      DisputeMessage[]
+}
+
+model DisputeEvidence {
+  id_evidence   String   @id @default(uuid())
+  id_dispute    String
+  id_user       String
+  type          String
+  content       String
+  created_at    DateTime @default(now())
+  dispute       Dispute  @relation(fields: [id_dispute], references: [id_dispute], onDelete: Cascade)
+}
+
+model DisputeMessage {
+  id_message    String   @id @default(uuid())
+  id_dispute    String
+  id_sender     String
+  message       String
+  is_admin      Boolean  @default(false)
+  created_at    DateTime @default(now())
+  dispute       Dispute  @relation(fields: [id_dispute], references: [id_dispute], onDelete: Cascade)
 }
 

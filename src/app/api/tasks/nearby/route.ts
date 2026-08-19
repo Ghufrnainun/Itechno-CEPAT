@@ -26,18 +26,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // TODO: Enable Supabase Auth verification when required by business logic
-    /*
     const supabase = await createClient()
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !authUser) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized access.' },
-        { status: 401 }
-      )
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    
+    let userId = null;
+    if (authUser?.email) {
+      const dbUser = await prisma.user.findUnique({
+        where: { email: authUser.email },
+        select: { id_user: true }
+      });
+      if (dbUser) userId = dbUser.id_user;
     }
-    */
 
     // Validate and parse incoming query parameters
     const url = new URL(request.url)
@@ -75,6 +74,7 @@ export async function GET(request: NextRequest) {
       LEFT JOIN "TaskCategory" c ON t.id_category = c.id_category
       WHERE 
         st.nama_status = 'OPEN'
+        ${userId ? `AND t.id_requester != '${userId}'` : ''}
         AND ST_DWithin(
           t.lokasi_geo, 
           ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography, 

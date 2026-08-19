@@ -1,7 +1,20 @@
 import { prisma } from "@/lib/prisma";
+import { createClient } from "@/lib/supabase/server";
 import FeedClient from "./FeedClient";
 
 export default async function FeedPage() {
+  const supabase = await createClient();
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+
+  let userId = null;
+  if (authUser?.email) {
+    const dbUser = await prisma.user.findUnique({
+      where: { email: authUser.email },
+      select: { id_user: true }
+    });
+    if (dbUser) userId = dbUser.id_user;
+  }
+
   // Fetch initial categories
   const categories = await prisma.taskCategory.findMany({
     select: {
@@ -51,6 +64,7 @@ export default async function FeedPage() {
       LEFT JOIN "User" u ON t.id_requester = u.id_user
       WHERE 
         st.nama_status = 'OPEN'
+        ${userId ? `AND t.id_requester != '${userId}'` : ''}
       ORDER BY t.created_at DESC
       LIMIT 10
   `);

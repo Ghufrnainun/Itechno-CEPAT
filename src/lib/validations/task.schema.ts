@@ -17,6 +17,8 @@ export const createTaskSchema = z.preprocess((val: any) => {
     is_bidding: val.is_bidding ?? val.isBidding ?? false,
     budget_min: val.budget_min ?? val.budgetMin ?? undefined,
     budget_max: val.budget_max ?? val.budgetMax ?? undefined,
+    scheduled_at: val.scheduled_at ?? val.scheduledAt ?? undefined,
+    scheduled_end: val.scheduled_end ?? val.scheduledEnd ?? undefined,
   };
 }, z.object({
   judul_tugas: z.string().min(5, 'Judul tugas minimal 5 karakter.').max(120, 'Judul tugas maksimal 120 karakter.'),
@@ -34,6 +36,8 @@ export const createTaskSchema = z.preprocess((val: any) => {
   is_bidding: z.boolean().default(false),
   budget_min: z.number().positive('Budget minimal harus lebih dari 0.').optional(),
   budget_max: z.number().positive('Budget maksimal harus lebih dari 0.').optional(),
+  scheduled_at: z.string().optional().nullable(),
+  scheduled_end: z.string().optional().nullable(),
 }).superRefine((data, ctx) => {
   if (!data.is_bidding) return;
 

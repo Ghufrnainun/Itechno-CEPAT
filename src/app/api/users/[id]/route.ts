@@ -40,10 +40,12 @@ export async function GET(
     const { data: { user: authUser } } = await supabase.auth.getUser();
     const adminAuth = await verifyAdminToken(request);
 
-    const isOwner = authUser?.id === dbUser.id_user || authUser?.email === dbUser.email;
     const isAdmin = adminAuth.valid;
+    const isOwner = authUser?.id === dbUser.id_user || authUser?.email === dbUser.email;
 
-    if (!isOwner && !isAdmin) {
+    // Hide PII only if the user is completely unauthenticated (not logged in)
+    // Logged-in users can see contact info so they can communicate
+    if (!authUser && !isAdmin) {
       dbUser.email = "[Disembunyikan]";
       dbUser.no_telpon = "[Disembunyikan]";
       dbUser.alamat = "[Disembunyikan]";

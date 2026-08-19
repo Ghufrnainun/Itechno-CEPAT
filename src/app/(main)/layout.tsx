@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/ui/Sidebar";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { ToastProvider } from "@/components/ui/Toast";
 import { useFCM } from "@/hooks/useFCM";
+import { usePresencePing } from "@/hooks/usePresencePing";
 import { BellRing } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
@@ -94,6 +95,9 @@ export default function MainAppLayout({
   const [role, setRoleState] = useState<Role>("worker");
   const [user, setUser] = useState<UserProfileData | null>(null);
 
+  // Initialize online presence pinging
+  usePresencePing(60000); // 1 minute interval
+
   useEffect(() => {
     const saved = localStorage.getItem("cepat_role") as Role;
     if (saved === "worker" || saved === "requester") {
@@ -107,7 +111,7 @@ export default function MainAppLayout({
           const json = await res.json().catch(() => ({}));
           if (json.is_banned && json.ban_details) {
             const type = json.ban_details.type || 'PERMANENT';
-            const reason = encodeURIComponent(json.ban_details.reason || 'Akun Anda ditangguhkan oleh admin.');
+            const reason = encodeURIComponent(json.ban_details.reason || '');
             const until = json.ban_details.banned_until ? encodeURIComponent(json.ban_details.banned_until) : '';
             window.location.href = `/login?banned=true&type=${type}&reason=${reason}&until=${until}`;
             return;

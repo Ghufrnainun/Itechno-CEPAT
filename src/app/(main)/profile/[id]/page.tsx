@@ -41,9 +41,8 @@ export default async function ProfilePage({
 
     if (dbUser) {
       // PII Protection
-      const isOwner = authUser?.id === dbUser.id_user || authUser?.email === dbUser.email;
-      
-      if (!isOwner) {
+      // Hide PII only if the user is completely unauthenticated (not logged in)
+      if (!authUser) {
         dbUser.email = "[Disembunyikan]";
         dbUser.no_telpon = "[Disembunyikan]";
         dbUser.alamat = "[Disembunyikan]";

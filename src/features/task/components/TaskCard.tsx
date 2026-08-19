@@ -1,9 +1,12 @@
-import React from "react";
+'use client';
+
+import React, { useState } from "react";
 import Link from "next/link";
 import { Task } from "@/types/database";
 import { SdgBadge } from "@/components/ui/SdgBadge";
 import { formatCurrency, formatDistance } from "@/lib/utils/format";
-import { Navigation, Gavel } from "lucide-react";
+import { Navigation, Gavel, Calendar, Flag } from "lucide-react";
+import { ReportModal } from "@/components/ui/ReportModal";
 import { cn } from "@/lib/utils";
 
 interface TaskCardProps {
@@ -14,6 +17,8 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, isSelected = false, onClick, className }: TaskCardProps) {
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
   const cardBody = (
     <div
       onClick={onClick}
@@ -42,14 +47,29 @@ export function TaskCard({ task, isSelected = false, onClick, className }: TaskC
             </span>
           )}
         </h3>
-        {task.distance !== undefined && (
-          <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full shrink-0">
-            <Navigation className="w-3 h-3 text-primary fill-primary/20" />
-            <span className="font-mono text-xs font-semibold text-primary tabular-nums">
-              {formatDistance(task.distance)}
-            </span>
-          </div>
-        )}
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setIsReportModalOpen(true);
+            }}
+            title="Laporkan Tugas"
+            aria-label="Laporkan Tugas"
+            className="p-1 rounded-lg text-on-surface-variant/50 hover:text-error hover:bg-error-container/20 transition-colors cursor-pointer"
+          >
+            <Flag className="w-3.5 h-3.5" />
+          </button>
+          {task.distance !== undefined && (
+            <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full shrink-0">
+              <Navigation className="w-3 h-3 text-primary fill-primary/20" />
+              <span className="font-mono text-xs font-semibold text-primary tabular-nums">
+                {formatDistance(task.distance)}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       <p className="font-body-sm text-xs text-on-surface-variant mb-3 line-clamp-2 leading-relaxed">
@@ -63,7 +83,13 @@ export function TaskCard({ task, isSelected = false, onClick, className }: TaskC
             : formatCurrency(task.compensation)}
         </span>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+          {task.scheduled_at && (
+            <span className="inline-flex items-center gap-1 font-mono text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded-md font-medium">
+              <Calendar className="w-2.5 h-2.5" />
+              {new Date(task.scheduled_at).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+            </span>
+          )}
           {task.duration_estimate && (
             <span className="font-mono text-[10px] text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-md uppercase font-medium">
               {task.duration_estimate}
@@ -75,13 +101,22 @@ export function TaskCard({ task, isSelected = false, onClick, className }: TaskC
     </div>
   );
 
-  if (onClick) {
-    return cardBody;
-  }
-
   return (
-    <Link href={`/task/${task.id_task}`} className="block w-full text-left">
-      {cardBody}
-    </Link>
+    <>
+      {onClick ? (
+        cardBody
+      ) : (
+        <Link href={`/task/${task.id_task}`} className="block w-full text-left">
+          {cardBody}
+        </Link>
+      )}
+
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        taskId={task.id_task}
+        taskTitle={task.title}
+      />
+    </>
   );
 }

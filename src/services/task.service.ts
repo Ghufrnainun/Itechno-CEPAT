@@ -97,6 +97,9 @@ export const taskService = {
     const maxApplicantsNum = max_applicants ?? 1;
     const totalEscrow = kompensasi * maxApplicantsNum;
 
+    const scheduledAtDate = params.scheduled_at ? new Date(params.scheduled_at) : null;
+    const scheduledEndDate = params.scheduled_end ? new Date(params.scheduled_end) : null;
+
     // Cek saldo ketersediaan Requester
     const requester = await prisma.user.findUnique({
       where: { id_user: requesterId },
@@ -119,7 +122,8 @@ export const taskService = {
         id_tasks, id_requester, id_status_task,
         judul_tugas, deskripsi_tugas, estimasi_waktu, kompensasi,
         lokasi_geo, created_at, id_category, max_applicants, max_apply_attempts,
-        is_bidding, budget_min, budget_max
+        is_bidding, budget_min, budget_max,
+        scheduled_at, scheduled_end
       ) VALUES (
         gen_random_uuid(),
         ${requesterId},
@@ -135,7 +139,9 @@ export const taskService = {
         ${max_apply_attempts},
         ${is_bidding},
         ${budget_min ?? null},
-        ${budget_max ?? null}
+        ${budget_max ?? null},
+        ${scheduledAtDate},
+        ${scheduledEndDate}
       )
       RETURNING id_tasks
     `;
@@ -345,6 +351,8 @@ export const taskService = {
         is_bidding: boolean | null;
         budget_min: number | null;
         budget_max: number | null;
+        scheduled_at: Date | null;
+        scheduled_end: Date | null;
       }>
     >`
       SELECT
@@ -355,7 +363,9 @@ export const taskService = {
         estimasi_waktu,
         is_bidding,
         budget_min,
-        budget_max
+        budget_max,
+        scheduled_at,
+        scheduled_end
       FROM "Task"
       WHERE id_tasks = ${taskId}
     `;
@@ -435,6 +445,8 @@ export const taskService = {
       created_at: task.created_at,
       completed_at: task.completed_at,
       accepted_at: task.accepted_at,
+      scheduled_at: rawTask?.scheduled_at ?? (task as any).scheduled_at ?? null,
+      scheduled_end: rawTask?.scheduled_end ?? (task as any).scheduled_end ?? null,
       latitude: geo.latitude,
       longitude: geo.longitude,
       id_requester: task.id_requester,
@@ -1463,4 +1475,101 @@ export const taskService = {
       }));
     }
   },
+
+  /**
+   * Mengambil daftar tugas yang memiliki jadwal (scheduled_at).
+   * Mendukung filter berdasarkan role (worker, requester, all) dan bulan/tahun.
+   */
+  async getScheduledTasks(
+    userId: string,
+    options?: {
+      month?: number;
+      year?: number;
+      role?: 'worker' | 'requester' | 'all';
+    }
+  ) {
+    const { month, year, role = 'all' } = options || {};
+
+    let dateFilter: { gte?: Date; lte?: Date } | undefined = undefined;
+    if (year && month) {
+      const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0));
+      const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+      dateFilter = { gte: startDate, lte: endDate };
+    } else if (year) {
+      const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0));
+      const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+      dateFilter = { gte: startDate, lte: endDate };
+    }
+
+    const whereConditions: any[] = [
+      { scheduled_at: { not: null } },
+      ...(dateFilter ? [{ scheduled_at: dateFilter }] : []),
+    ];
+
+    if (role === 'requester') {
+      whereConditions.push({ id_requester: userId });
+    } else if (role === 'worker') {
+      whereConditions.push({
+        applicants: {
+          some: {
+            id_worker: userId,
+            status_applicant: { nama_status: { equals: 'accepted', mode: 'insensitive' } },
+          },
+        },
+      });
+    } else {
+      whereConditions.push({
+        OR: [
+          { id_requester: userId },
+          {
+            applicants: {
+              some: {
+                id_worker: userId,
+                status_applicant: { nama_status: { equals: 'accepted', mode: 'insensitive' } },
+              },
+            },
+          },
+        ],
+      });
+    }
+
+    const tasks = await prisma.task.findMany({
+      where: { AND: whereConditions },
+      include: {
+        status_task: { select: { nama_status: true } },
+        kategori: { select: { id_category: true, nama_kategori: true, icon: true } },
+        requester: { select: { id_user: true, nama_lengkap: true, avatar_url: true } },
+        applicants: {
+          where: {
+            status_applicant: { nama_status: { equals: 'accepted', mode: 'insensitive' } },
+          },
+          include: {
+            worker: { select: { id_user: true, nama_lengkap: true, avatar_url: true } },
+          },
+          take: 1,
+        },
+      },
+      orderBy: { scheduled_at: 'asc' },
+    });
+
+    return tasks.map((t) => {
+      const isRequester = t.id_requester === userId;
+      const acceptedApplicant = t.applicants[0];
+      return {
+        id_tasks: t.id_tasks,
+        judul_tugas: t.judul_tugas,
+        deskripsi_tugas: t.deskripsi_tugas,
+        estimasi_waktu: t.estimasi_waktu,
+        kompensasi: t.kompensasi,
+        status: getFrontendStatusName(t.status_task.nama_status),
+        scheduled_at: t.scheduled_at,
+        scheduled_end: t.scheduled_end,
+        kategori: t.kategori,
+        requester: t.requester,
+        worker: acceptedApplicant?.worker || null,
+        user_role: isRequester ? 'requester' : 'worker',
+      };
+    });
+  },
 };
+

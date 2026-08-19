@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 import { z } from 'zod'
@@ -37,6 +38,17 @@ export async function GET(request: NextRequest) {
         { success: false, message: 'Parameter query tidak valid.', errors: parsed.error.format() },
         { status: 400 }
       )
+    }
+
+    const supabase = await createClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    let userId = null;
+    if (authUser?.email) {
+      const dbUser = await prisma.user.findUnique({
+        where: { email: authUser.email },
+        select: { id_user: true }
+      });
+      if (dbUser) userId = dbUser.id_user;
     }
 
     const { lat, lng, radius, q, id_category, sort, page, limit } = parsed.data
@@ -78,6 +90,8 @@ export async function GET(request: NextRequest) {
         t.budget_min,
         t.budget_max,
         t.created_at,
+        t.scheduled_at,
+        t.scheduled_end,
         ST_Y(t.lokasi_geo::geometry) as latitude,
         ST_X(t.lokasi_geo::geometry) as longitude,
         c.nama_kategori as category_name,
@@ -107,6 +121,7 @@ export async function GET(request: NextRequest) {
       LEFT JOIN "User" u ON t.id_requester = u.id_user
       WHERE 
         st.nama_status = 'OPEN'
+        ${userId ? `AND t.id_requester != '${userId}'` : ''}
         ${distanceCondition}
         AND (
           ${q ? 'true' : 'false'} = false OR 
