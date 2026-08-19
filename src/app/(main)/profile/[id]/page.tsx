@@ -36,6 +36,12 @@ export default async function ProfilePage({
             skills_master: true,
           },
         },
+        user_badges: {
+          include: {
+            badge: true,
+          },
+        },
+        user_streak: true,
       },
     });
 

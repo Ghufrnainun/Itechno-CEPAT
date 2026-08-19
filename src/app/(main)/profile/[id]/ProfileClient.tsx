@@ -8,6 +8,7 @@ import { SdgBadge } from "@/components/ui/SdgBadge";
 import { Button } from "@/components/ui/Button";
 import { RatingStars } from "@/components/ui/RatingStars";
 import { Modal } from "@/components/ui/Modal";
+import { BadgeDisplay, BadgeProps } from "@/components/ui/BadgeDisplay";
 import { Tabs, TabsList, TabsTrigger } from "@/components/motion/tabs";
 import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -25,6 +26,7 @@ import {
   Award,
   ExternalLink,
   Globe,
+  Trophy,
   Plus,
   Trash2,
   Loader2,
@@ -56,6 +58,14 @@ export interface UserSkill {
   nama_skill: string;
   deskripsi_pengalaman: string | null;
   certificate_url: string | null;
+}
+
+export interface PortfolioItem {
+  id_portfolio: string;
+  title: string;
+  description: string | null;
+  image_url: string;
+  created_at: string;
 }
 
 interface ProfileClientProps {
@@ -90,8 +100,23 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
   const [rating, setRating] = useState(initialData?.rating_avg || 0);
   const [completedCount, setCompletedCount] = useState(initialData?.total_completed || 0);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialData?.avatar_url || null);
+  
+  // Gamification states
+  const [xp, setXp] = useState(initialData?.xp || 0);
+  const [level, setLevel] = useState(initialData?.level || 1);
+  const [badges, setBadges] = useState<{ badge: BadgeProps }[]>(initialData?.user_badges || []);
+  const [streak, setStreak] = useState(initialData?.user_streak?.current_streak || 0);
+  const [tagline, setTagline] = useState(initialData?.tagline || "");
+  const [isVerified, setIsVerified] = useState(initialData?.is_verified || false);
+
   const [hasApiData, setHasApiData] = useState(!!initialData);
-  const [activeTab, setActiveTab] = useState<"overview" | "reviews" | "sdg">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "reviews" | "sdg" | "portfolio">("overview");
+
+  // Portfolio state
+  const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
+  const [loadingPortfolio, setLoadingPortfolio] = useState(true);
+  const [isAddPortfolioOpen, setIsAddPortfolioOpen] = useState(false);
+  const [previewPortfolio, setPreviewPortfolio] = useState<PortfolioItem | null>(null);
 
   // Edit profile modal states
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -100,10 +125,19 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
   const [editBio, setEditBio] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editAlamat, setEditAlamat] = useState("");
+  const [editTagline, setEditTagline] = useState("");
   const [editSkills, setEditSkills] = useState<UserSkill[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Add Portfolio states
+  const [newPortfolioTitle, setNewPortfolioTitle] = useState("");
+  const [newPortfolioDesc, setNewPortfolioDesc] = useState("");
+  const [newPortfolioFile, setNewPortfolioFile] = useState<File | null>(null);
+  const [isSubmittingPortfolio, setIsSubmittingPortfolio] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isDeletingPortfolio, setIsDeletingPortfolio] = useState(false);
 
   // Reviews from API
   const [reviews, setReviews] = useState<ReviewData[]>([]);
@@ -147,6 +181,12 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
           setCompletedCount(u.total_completed || 0);
           setAvatarUrl(u.avatar_url || null);
           setRoleName(u.role?.nama_role || "Worker");
+          setXp(u.xp || 0);
+          setLevel(u.level || 1);
+          setBadges(u.user_badges || []);
+          setStreak(u.user_streak?.current_streak || 0);
+          setTagline(u.tagline || "");
+          setIsVerified(u.is_verified || false);
           setSkills(u.skills_user?.map((su: any) => ({
             id_skill_master: su.skills_master?.id_skill_master || su.id_skills_master,
             nama_skill: su.skills_master?.nama_skill || su.nama_skill || "Keahlian",
@@ -193,6 +233,28 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
 
     loadReviews();
   }, [userId, isCurrentUser]);
+
+  // Load Portfolio
+  useEffect(() => {
+    async function loadPortfolio() {
+      try {
+        setLoadingPortfolio(true);
+        const targetId = isCurrentUser && user?.id_user ? user.id_user : userId;
+        if (targetId === "me") return; // Need actual ID for DB
+        const res = await fetch(`/api/portfolio?user_id=${targetId}`);
+        if (!res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        if (data.success && Array.isArray(data.data)) {
+          setPortfolio(data.data);
+        }
+      } catch (err) {
+        console.error("Gagal load portfolio:", err);
+      } finally {
+        setLoadingPortfolio(false);
+      }
+    }
+    loadPortfolio();
+  }, [userId, isCurrentUser, user?.id_user]);
 
   // Calculate Rating Distribution
   const ratingStats = useMemo(() => {
@@ -254,8 +316,80 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
     setEditBio(bio);
     setEditPhone(phone === "-" ? "" : phone);
     setEditAlamat(alamat === "-" ? "" : alamat);
+    setEditTagline(tagline);
     setEditSkills([...skills]);
     setIsEditOpen(true);
+  };
+
+  const handleAddPortfolio = async () => {
+    if (!newPortfolioTitle || !newPortfolioFile) {
+      showFeedback("Judul dan gambar wajib diisi!");
+      return;
+    }
+    try {
+      setIsSubmittingPortfolio(true);
+      // Upload image
+      const formData = new FormData();
+      formData.append("file", newPortfolioFile);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+      const uploadData = await uploadRes.json();
+      
+      if (!uploadRes.ok || !uploadData.success) {
+        showFeedback("Gagal mengupload gambar.");
+        setIsSubmittingPortfolio(false);
+        return;
+      }
+      
+      // Save portfolio
+      const res = await fetch("/api/portfolio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newPortfolioTitle,
+          description: newPortfolioDesc,
+          image_url: uploadData.url,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setPortfolio([data.data, ...portfolio]);
+        setIsAddPortfolioOpen(false);
+        setNewPortfolioTitle("");
+        setNewPortfolioDesc("");
+        setNewPortfolioFile(null);
+        showFeedback("Portofolio berhasil ditambahkan!");
+      } else {
+        showFeedback("Gagal menambahkan portofolio.");
+      }
+    } catch (e) {
+      showFeedback("Terjadi kesalahan.");
+    } finally {
+      setIsSubmittingPortfolio(false);
+    }
+  };
+
+  const handleDeletePortfolio = (id: string) => {
+    setDeleteConfirmId(id);
+  };
+
+  const executeDeletePortfolio = async () => {
+    if (!deleteConfirmId) return;
+    setIsDeletingPortfolio(true);
+    try {
+      const res = await fetch(`/api/portfolio?id=${deleteConfirmId}`, { method: "DELETE" });
+      if (res.ok) {
+        setPortfolio(portfolio.filter(p => p.id_portfolio !== deleteConfirmId));
+        setPreviewPortfolio(null);
+        showFeedback("Portofolio dihapus.");
+      } else {
+        showFeedback("Gagal menghapus portofolio.");
+      }
+    } catch (e) {
+      showFeedback("Terjadi kesalahan sistem.");
+    } finally {
+      setIsDeletingPortfolio(false);
+      setDeleteConfirmId(null);
+    }
   };
 
   const handleSaveEdit = async () => {
@@ -270,6 +404,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
           bio: editBio,
           no_telpon: editPhone,
           alamat: editAlamat,
+          tagline: editTagline,
         }),
       });
 
@@ -286,6 +421,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
         setBio(editBio);
         setPhone(editPhone || "-");
         setAlamat(editAlamat || "-");
+        setTagline(editTagline || "");
         setSkills(editSkills);
         setIsEditOpen(false);
         showFeedback("Profil berhasil diperbarui!");
@@ -318,7 +454,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-on-surface text-surface px-4 py-2 rounded-xl text-xs font-semibold shadow-lg border border-white/10 flex items-center gap-2"
+            className="fixed top-5 left-1/2 -translate-x-1/2 z-[100000] bg-on-surface text-surface px-4 py-2 rounded-xl text-xs font-semibold shadow-lg border border-white/10 flex items-center gap-2"
           >
             <CheckCircle2 className="w-4 h-4 text-primary" />
             <span>{toastMessage}</span>
@@ -401,16 +537,32 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                 <h1 className="font-headline text-2xl sm:text-3xl font-extrabold text-on-surface tracking-tight">
                   {name}
                 </h1>
-                <CheckCircle2 className="w-5 h-5 text-primary fill-primary/20 shrink-0" />
+                {isVerified && (
+                  <div title="Verified Account">
+                    <CheckCircle2 className="w-5 h-5 text-primary fill-primary/20 shrink-0" />
+                  </div>
+                )}
                 <span className="px-2.5 py-0.5 rounded-full bg-secondary-container/40 text-secondary text-[10px] font-mono font-bold uppercase tracking-wider border border-secondary/20">
                   {roleName}
                 </span>
               </div>
 
-              <p className="text-on-surface-variant font-medium mt-1 flex items-center gap-1.5 text-xs sm:text-sm">
-                <GraduationCap className="w-4 h-4 text-primary shrink-0" />
-                <span>{univ || "Mahasiswa Aktif"}</span>
-              </p>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-1 text-xs sm:text-sm">
+                <p className="text-on-surface-variant font-medium flex items-center gap-1.5">
+                  <GraduationCap className="w-4 h-4 text-primary shrink-0" />
+                  <span>{univ || "Mahasiswa Aktif"}</span>
+                </p>
+                
+                {tagline && (
+                  <>
+                    <span className="hidden sm:inline-block w-1 h-1 rounded-full bg-on-surface-variant/40 shrink-0" />
+                    <p className="text-on-surface-variant font-medium flex items-center gap-1.5">
+                      <Briefcase className="w-4 h-4 text-primary shrink-0" />
+                      <span>{tagline}</span>
+                    </p>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
@@ -579,10 +731,14 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
             onValueChange={(v) => setActiveTab(v as "overview" | "reviews" | "sdg")}
             variant="pill"
           >
-            <TabsList className="w-fit flex-nowrap">
+            <TabsList className="w-fit flex-nowrap overflow-x-auto">
               <TabsTrigger value="overview">
                 <User className="w-3.5 h-3.5 shrink-0 text-primary" />
                 <span>Tentang &amp; Keahlian</span>
+              </TabsTrigger>
+              <TabsTrigger value="portfolio">
+                <Briefcase className="w-3.5 h-3.5 shrink-0 text-primary" />
+                <span>Portfolio</span>
               </TabsTrigger>
               <TabsTrigger value="reviews">
                 <MessageSquare className="w-3.5 h-3.5 shrink-0 text-primary" />
@@ -670,14 +826,48 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                       })}
                     </div>
                   ) : (
-                    <div className="py-8 flex flex-col items-center justify-center text-center gap-2 bg-surface-container-low/50 rounded-xl border border-card-border/60 border-dashed">
-                      <Award className="w-8 h-8 text-on-surface-variant/40" />
-                      <p className="text-xs text-on-surface-variant font-medium">Belum ada keahlian yang ditambahkan.</p>
-                      {isCurrentUser && (
-                        <Button variant="secondary" size="sm" onClick={handleOpenEdit} className="mt-1">
-                          Tambah Keahlian Sekarang
-                        </Button>
-                      )}
+                    <div className="text-center py-6 bg-surface-container-low rounded-xl border border-dashed border-card-border">
+                      <p className="text-[11px] text-on-surface-variant font-medium">Belum ada keahlian yang ditambahkan.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Achievement / Gamification Section */}
+                <div className="bg-surface-container-lowest rounded-xl p-5 sm:p-6 shadow-xs border border-card-border">
+                  <h3 className="font-headline text-sm font-bold text-on-surface mb-4 flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-primary" />
+                    Pencapaian & Peringkat
+                  </h3>
+                  
+                  <div className="flex items-center justify-between mb-4 bg-primary/5 p-4 rounded-xl border border-primary/10">
+                    <div>
+                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Level Saat Ini</p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-black text-primary font-mono">{level}</span>
+                        <span className="text-sm font-bold text-on-surface">{xp} XP</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Login Beruntun</p>
+                      <div className="flex items-center justify-end gap-1.5 text-amber-500">
+                        <Star className="w-4 h-4 fill-amber-500" />
+                        <span className="text-lg font-black font-mono">{streak} Hari</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <h4 className="font-headline text-xs font-bold text-on-surface mb-3 flex items-center gap-2">
+                    Lencana Terkumpul ({badges.length})
+                  </h4>
+                  {badges.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {badges.map((b, i) => (
+                        <BadgeDisplay key={i} badge={b.badge} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 bg-surface-container-low rounded-xl border border-dashed border-card-border">
+                      <p className="text-[11px] text-on-surface-variant font-medium">Belum ada lencana yang diraih.</p>
                     </div>
                   )}
                 </div>
@@ -730,6 +920,59 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                   </div>
                 </div>
               </div>
+            </motion.div>
+          )}
+
+          {activeTab === "portfolio" && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col gap-6"
+            >
+              {isCurrentUser && (
+                <div className="flex justify-end">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={<Plus className="w-4 h-4" />}
+                    onClick={() => setIsAddPortfolioOpen(true)}
+                  >
+                    Tambah Portofolio
+                  </Button>
+                </div>
+              )}
+
+              {loadingPortfolio ? (
+                <div className="flex justify-center p-8">
+                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                </div>
+              ) : portfolio.length > 0 ? (
+                <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
+                  {portfolio.map((item) => (
+                    <div 
+                      key={item.id_portfolio} 
+                      className="break-inside-avoid relative group rounded-xl overflow-hidden cursor-pointer border border-card-border shadow-sm hover:shadow-md transition-all"
+                      onClick={() => setPreviewPortfolio(item)}
+                    >
+                      <img src={item.image_url} alt={item.title} className="w-full object-cover bg-surface-variant" />
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <h4 className="text-white font-bold text-sm truncate">{item.title}</h4>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-surface-container-lowest rounded-xl border border-dashed border-card-border">
+                  <Briefcase className="w-12 h-12 text-on-surface-variant/30 mx-auto mb-3" />
+                  <h3 className="text-sm font-bold text-on-surface mb-1">Belum Ada Portofolio</h3>
+                  <p className="text-xs text-on-surface-variant max-w-sm mx-auto">
+                    {isCurrentUser 
+                      ? "Unggah hasil karya atau bukti pekerjaan Anda untuk menarik perhatian pemberi tugas." 
+                      : "Pekerja ini belum mengunggah portofolio apapun."}
+                  </p>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -889,6 +1132,17 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
           </div>
 
           <div className="flex flex-col gap-1">
+            <label className="font-bold text-on-surface">Tagline / Pekerjaan Utama</label>
+            <input
+              type="text"
+              value={editTagline}
+              onChange={(e) => setEditTagline(e.target.value)}
+              className="w-full bg-surface-container-low border border-card-border rounded-lg p-2.5 text-xs text-on-surface focus:border-primary focus:bg-surface-container-lowest focus:outline-none min-h-[40px]"
+              placeholder="Contoh: Frontend Developer & UI Designer"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
             <label className="font-bold text-on-surface">Pendidikan Terakhir / Universitas</label>
             <input
               type="text"
@@ -1041,6 +1295,107 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
           <Button variant="primary" size="md" onClick={handleSaveEdit} disabled={isSaving}>
             {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
           </Button>
+        </div>
+      </Modal>
+
+      {/* ADD PORTFOLIO MODAL */}
+      <Modal isOpen={isAddPortfolioOpen} onClose={() => setIsAddPortfolioOpen(false)} title="Tambah Portofolio">
+        <div className="flex flex-col gap-4 max-h-[72dvh] overflow-y-auto custom-scrollbar font-sans text-xs">
+          <div className="flex flex-col gap-1">
+            <label className="font-bold text-on-surface">Judul Proyek</label>
+            <input
+              type="text"
+              value={newPortfolioTitle}
+              onChange={(e) => setNewPortfolioTitle(e.target.value)}
+              className="w-full bg-surface-container-low border border-card-border rounded-lg p-2.5 text-on-surface focus:border-primary focus:outline-none min-h-[40px]"
+              placeholder="Contoh: Pembuatan Website Perusahaan"
+            />
+          </div>
+          
+          <div className="flex flex-col gap-1">
+            <label className="font-bold text-on-surface">Deskripsi</label>
+            <textarea
+              value={newPortfolioDesc}
+              onChange={(e) => setNewPortfolioDesc(e.target.value)}
+              className="w-full bg-surface-container-low border border-card-border rounded-lg p-2.5 text-on-surface focus:border-primary focus:outline-none min-h-[75px]"
+              placeholder="Ceritakan peran Anda dan tantangan yang diselesaikan..."
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="font-bold text-on-surface">Unggah Gambar</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setNewPortfolioFile(e.target.files?.[0] || null)}
+              className="w-full bg-surface-container-low border border-card-border rounded-lg p-2 text-on-surface file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2.5 mt-4 pt-3 border-t border-card-border">
+          <Button variant="secondary" size="md" onClick={() => setIsAddPortfolioOpen(false)}>
+            Batal
+          </Button>
+          <Button variant="primary" size="md" onClick={handleAddPortfolio} disabled={isSubmittingPortfolio}>
+            {isSubmittingPortfolio ? "Mengunggah..." : "Tambahkan"}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* PORTFOLIO PREVIEW MODAL */}
+      <Modal isOpen={!!previewPortfolio} onClose={() => setPreviewPortfolio(null)} title="Detail Portofolio">
+        {previewPortfolio && (
+          <div className="flex flex-col gap-4 font-sans text-xs">
+            <img src={previewPortfolio.image_url} alt={previewPortfolio.title} className="w-full rounded-lg max-h-96 object-contain bg-surface-container-lowest" />
+            <div>
+              <h3 className="font-headline font-bold text-lg text-on-surface mb-1">{previewPortfolio.title}</h3>
+              <p className="text-on-surface-variant font-medium text-xs mb-3">
+                Diunggah pada {new Date(previewPortfolio.created_at).toLocaleDateString('id-ID')}
+              </p>
+              <p className="text-on-surface leading-relaxed whitespace-pre-wrap">
+                {previewPortfolio.description || "Tidak ada deskripsi."}
+              </p>
+            </div>
+            
+            {isCurrentUser && (
+              <div className="flex justify-end pt-3 mt-2 border-t border-card-border">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-error border-error/30 hover:bg-error/10 hover:border-error hover:text-error"
+                  icon={<Trash2 className="w-3.5 h-3.5" />}
+                  onClick={() => handleDeletePortfolio(previewPortfolio.id_portfolio)}
+                >
+                  Hapus Portofolio
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* CONFIRM DELETE MODAL */}
+      <Modal isOpen={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)} title="Hapus Portofolio?">
+        <div className="flex flex-col gap-4 font-sans text-sm text-on-surface">
+          <p>
+            Apakah Anda yakin ingin menghapus karya portofolio ini? 
+            Data yang telah dihapus tidak dapat dikembalikan.
+          </p>
+          <div className="flex items-center justify-end gap-2.5 mt-2 pt-4 border-t border-card-border">
+            <Button variant="secondary" size="md" onClick={() => setDeleteConfirmId(null)} disabled={isDeletingPortfolio}>
+              Batal
+            </Button>
+            <Button 
+              variant="outline" 
+              size="md" 
+              onClick={executeDeletePortfolio} 
+              disabled={isDeletingPortfolio}
+              className="bg-error text-on-error border-error hover:bg-error/90 hover:text-on-error"
+            >
+              {isDeletingPortfolio ? "Menghapus..." : "Ya, Hapus"}
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>

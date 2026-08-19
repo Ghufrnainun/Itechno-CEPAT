@@ -20,6 +20,7 @@ import {
   Wallet,
   User,
   LogOut,
+  Trophy,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
@@ -188,6 +189,16 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
         >
           <Home className="w-4 h-4 shrink-0" />
           {isExpanded && "Dashboard"}
+        </Link>
+
+        <Link
+          href="/leaderboard"
+          title={!isExpanded ? "Peringkat" : undefined}
+          aria-current={pathname === "/leaderboard" ? "page" : undefined}
+          className={cn("sidebar-link flex items-center gap-3", pathname === "/leaderboard" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+        >
+          <Trophy className="w-4 h-4 shrink-0" />
+          {isExpanded && "Peringkat"}
         </Link>
 
         <Link
