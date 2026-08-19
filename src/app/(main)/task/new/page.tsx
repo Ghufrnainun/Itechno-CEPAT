@@ -22,6 +22,7 @@ import {
   Wallet,
   CheckCircle2,
   ChevronDown,
+  Gavel,
   Calendar,
   Clock,
 } from "lucide-react";
@@ -115,6 +116,10 @@ export default function NewTaskPage() {
   const [compensation, setCompensation] = useState("75000");
   const [maxApplicants, setMaxApplicants] = useState("1");
   const [maxApplyAttempts, setMaxApplyAttempts] = useState("3");
+  // ─── Bidding state ─────────────────────────────────────────────────────────
+  const [isBidding, setIsBidding] = useState(false);
+  const [budgetMin, setBudgetMin] = useState("");
+  const [budgetMax, setBudgetMax] = useState("");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [locationAddress, setLocationAddress] = useState<string>("");
@@ -298,7 +303,11 @@ export default function NewTaskPage() {
   // Financial Escrow Calculations
   const numericCompensation = parseFloat(compensation) || 0;
   const numericApplicants = parseInt(maxApplicants, 10) || 1;
-  const totalEscrow = numericCompensation * numericApplicants;
+  const numericBudgetMin = parseFloat(budgetMin) || 0;
+  const numericBudgetMax = parseFloat(budgetMax) || 0;
+  // Mode bidding: kompensasi = budget_max (plafon escrow per slot)
+  const effectiveCompensation = isBidding ? numericBudgetMax : numericCompensation;
+  const totalEscrow = effectiveCompensation * numericApplicants;
   const userBalance = userProfile?.total_balance || 0;
   const isBalanceInsufficient = userProfile !== null && userBalance < totalEscrow;
   const remainingBalanceAfterPost = Math.max(0, userBalance - totalEscrow);
@@ -348,7 +357,18 @@ export default function NewTaskPage() {
       showToast("Silakan tentukan titik lokasi tugas pada peta.");
       return;
     }
-    if (numericCompensation < 1000) {
+
+    // ─── Validasi mode harga ────────────────────────────────────────────────
+    if (isBidding) {
+      if (numericBudgetMin < 1000 || numericBudgetMax < 1000) {
+        showToast("Budget bidding minimal adalah Rp1.000.");
+        return;
+      }
+      if (numericBudgetMin >= numericBudgetMax) {
+        showToast("Budget maksimal harus lebih besar dari budget minimal.");
+        return;
+      }
+    } else if (numericCompensation < 1000) {
       showToast("Kompensasi minimal adalah Rp1.000.");
       return;
     }
@@ -378,14 +398,20 @@ export default function NewTaskPage() {
         estimasi_waktu: duration.toLowerCase().includes("jam")
           ? duration
           : `${parseFloat(duration) || 1} Jam`,
-        kompensasi: numericCompensation,
+        kompensasi: isBidding ? numericBudgetMax : numericCompensation,
         max_applicants: numericApplicants,
         max_apply_attempts: parseInt(maxApplyAttempts, 10) || 3,
         latitude: lat,
         longitude: lng,
+        is_bidding: isBidding,
         scheduled_at: calculatedSchedule ? calculatedSchedule.startIso : undefined,
         scheduled_end: calculatedSchedule ? calculatedSchedule.endIso : undefined,
       };
+
+      if (isBidding) {
+        payload.budget_min = numericBudgetMin;
+        payload.budget_max = numericBudgetMax;
+      }
 
       if (selectedSkills && selectedSkills.length > 0) {
         payload.skill_requirements = selectedSkills;
@@ -480,7 +506,7 @@ export default function NewTaskPage() {
         </div>
 
         {/* ──── Form & Map Grid (7 cols left, 5 cols right) ──── */}
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             {/* ════════ LEFT COLUMN: Task Specifications (7 Columns) ════════ */}
@@ -756,50 +782,158 @@ export default function NewTaskPage() {
                     </p>
                   </div>
 
-                  {/* Kompensasi Section with Quick Presets */}
+                  {/* Mode Harga: Fixed Price vs Bidding */}
                   <div className="flex flex-col gap-2">
-                    <label htmlFor="compensation-input" className="text-xs font-semibold text-on-surface">
-                      Kompensasi per Worker <span className="text-error">*</span>
+                    <label className="text-xs font-semibold text-on-surface">
+                      Mode Pembayaran <span className="text-error">*</span>
                     </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setIsBidding(false)}
+                        aria-pressed={!isBidding}
+                        className={`p-3.5 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer min-h-[72px] ${
+                          !isBidding
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                            : "border-card-border/90 bg-surface-container-low hover:border-primary/40"
+                        }`}
+                      >
+                        <span className={`flex items-center gap-2 text-xs font-bold ${!isBidding ? "text-primary" : "text-on-surface"}`}>
+                          <CheckCircle2 className="w-4 h-4" />
+                          Harga Tetap
+                        </span>
+                        <span className="text-[11px] text-on-surface-variant leading-snug">
+                          Tentukan kompensasi pasti per worker
+                        </span>
+                      </button>
 
-                    <div className="relative flex items-center">
-                      <span className="absolute left-4 font-mono font-bold text-on-surface-variant text-sm pointer-events-none">
-                        Rp
-                      </span>
-                      <input
-                        id="compensation-input"
-                        type="number"
-                        min={1000}
-                        step={1000}
-                        placeholder="Contoh: 75000"
-                        value={compensation}
-                        onChange={(e) => setCompensation(e.target.value)}
-                        required
-                        className="w-full pl-12 pr-4 py-3 text-sm sm:text-base font-mono font-bold bg-surface-container-low text-on-surface rounded-xl border border-card-border/90 transition-all duration-150 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:outline-none min-h-[46px]"
-                      />
+                      <button
+                        type="button"
+                        onClick={() => setIsBidding(true)}
+                        aria-pressed={isBidding}
+                        className={`p-3.5 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer min-h-[72px] ${
+                          isBidding
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                            : "border-card-border/90 bg-surface-container-low hover:border-primary/40"
+                        }`}
+                      >
+                        <span className={`flex items-center gap-2 text-xs font-bold ${isBidding ? "text-primary" : "text-on-surface"}`}>
+                          <Gavel className="w-4 h-4" />
+                          Bidding (Lelang Harga)
+                        </span>
+                        <span className="text-[11px] text-on-surface-variant leading-snug">
+                          Worker menawarkan harga dalam range budget Anda
+                        </span>
+                      </button>
                     </div>
-
-                    {/* Quick Compensation Chips */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto pt-1 pb-0.5 custom-scrollbar -mx-1 px-1">
-                      <span className="text-[10px] uppercase font-bold text-on-surface-variant/70 tracking-wider shrink-0 mr-1">
-                        Preset:
-                      </span>
-                      {COMPENSATION_PRESETS.map((val) => (
-                        <button
-                          key={val}
-                          type="button"
-                          onClick={() => setCompensation(val.toString())}
-                          className={`px-3 py-1.5 sm:py-1 rounded-lg text-xs font-mono font-medium transition-all cursor-pointer border whitespace-nowrap min-h-[36px] sm:min-h-[32px] ${
-                            numericCompensation === val
-                              ? "bg-primary/10 text-primary border-primary/40 font-bold"
-                              : "bg-surface-container-low text-on-surface-variant border-card-border hover:border-outline-variant hover:text-on-surface"
-                          }`}
-                        >
-                          {formatCurrency(val)}
-                        </button>
-                      ))}
-                    </div>
+                    <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                      {isBidding
+                        ? "Mode bidding dikunci setelah tugas diposting. Dana dikunci sebesar budget maksimal; selisihnya dikembalikan otomatis saat Anda menerima penawaran."
+                        : "Mode harga tetap dikunci setelah tugas diposting."}
+                    </p>
                   </div>
+
+                  {/* Input Harga — berubah sesuai mode */}
+                  {isBidding ? (
+                    <div className="flex flex-col gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-1.5">
+                          <label htmlFor="budget-min-input" className="text-xs font-semibold text-on-surface">
+                            Budget Minimal <span className="text-error">*</span>
+                          </label>
+                          <div className="relative flex items-center">
+                            <span className="absolute left-4 font-mono font-bold text-on-surface-variant text-sm pointer-events-none">
+                              Rp
+                            </span>
+                            <input
+                              id="budget-min-input"
+                              type="number"
+                              min={1000}
+                              step={1000}
+                              placeholder="Contoh: 40000"
+                              value={budgetMin}
+                              onChange={(e) => setBudgetMin(e.target.value)}
+                              required
+                              className="w-full pl-12 pr-4 py-3 text-sm sm:text-base font-mono font-bold bg-surface-container-low text-on-surface rounded-xl border border-card-border/90 transition-all duration-150 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:outline-none min-h-[46px]"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                          <label htmlFor="budget-max-input" className="text-xs font-semibold text-on-surface">
+                            Budget Maksimal <span className="text-error">*</span>
+                          </label>
+                          <div className="relative flex items-center">
+                            <span className="absolute left-4 font-mono font-bold text-on-surface-variant text-sm pointer-events-none">
+                              Rp
+                            </span>
+                            <input
+                              id="budget-max-input"
+                              type="number"
+                              min={1000}
+                              step={1000}
+                              placeholder="Contoh: 75000"
+                              value={budgetMax}
+                              onChange={(e) => setBudgetMax(e.target.value)}
+                              required
+                              className="w-full pl-12 pr-4 py-3 text-sm sm:text-base font-mono font-bold bg-surface-container-low text-on-surface rounded-xl border border-card-border/90 transition-all duration-150 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:outline-none min-h-[46px]"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                        Penawaran worker hanya diterima dalam range{" "}
+                        <span className="font-mono font-bold text-on-surface">
+                          {formatCurrency(numericBudgetMin)} – {formatCurrency(numericBudgetMax)}
+                        </span>
+                        . Escrow dikunci di angka maksimal.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <label htmlFor="compensation-input" className="text-xs font-semibold text-on-surface">
+                        Kompensasi per Worker <span className="text-error">*</span>
+                      </label>
+
+                      <div className="relative flex items-center">
+                        <span className="absolute left-4 font-mono font-bold text-on-surface-variant text-sm pointer-events-none">
+                          Rp
+                        </span>
+                        <input
+                          id="compensation-input"
+                          type="number"
+                          min={1000}
+                          step={1000}
+                          placeholder="Contoh: 75000"
+                          value={compensation}
+                          onChange={(e) => setCompensation(e.target.value)}
+                          required={!isBidding}
+                          className="w-full pl-12 pr-4 py-3 text-sm sm:text-base font-mono font-bold bg-surface-container-low text-on-surface rounded-xl border border-card-border/90 transition-all duration-150 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:outline-none min-h-[46px]"
+                        />
+                      </div>
+
+                      {/* Quick Compensation Chips */}
+                      <div className="flex items-center gap-1.5 overflow-x-auto pt-1 pb-0.5 custom-scrollbar -mx-1 px-1">
+                        <span className="text-[10px] uppercase font-bold text-on-surface-variant/70 tracking-wider shrink-0 mr-1">
+                          Preset:
+                        </span>
+                        {COMPENSATION_PRESETS.map((val) => (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => setCompensation(val.toString())}
+                            className={`px-3 py-1.5 sm:py-1 rounded-lg text-xs font-mono font-medium transition-all cursor-pointer border whitespace-nowrap min-h-[36px] sm:min-h-[32px] ${
+                              numericCompensation === val
+                                ? "bg-primary/10 text-primary border-primary/40 font-bold"
+                                : "bg-surface-container-low text-on-surface-variant border-card-border hover:border-outline-variant hover:text-on-surface"
+                            }`}
+                          >
+                            {formatCurrency(val)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Estimasi Durasi Section */}
                   <div className="flex flex-col gap-2">
@@ -1147,12 +1281,35 @@ export default function NewTaskPage() {
 
                   {/* Financial Math Ledger */}
                   <div className="flex flex-col gap-2.5 text-xs font-sans">
-                    <div className="flex items-center justify-between text-on-surface-variant">
-                      <span>Kompensasi per Worker</span>
-                      <span className="font-mono font-medium text-on-surface">
-                        {formatCurrency(numericCompensation)}
-                      </span>
-                    </div>
+                    {isBidding ? (
+                      <>
+                        <div className="flex items-center justify-between text-on-surface-variant">
+                          <span>Mode Pembayaran</span>
+                          <span className="font-mono font-medium text-primary flex items-center gap-1">
+                            <Gavel className="w-3.5 h-3.5" /> Bidding
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-on-surface-variant">
+                          <span>Range Penawaran</span>
+                          <span className="font-mono font-medium text-on-surface">
+                            {formatCurrency(numericBudgetMin)} – {formatCurrency(numericBudgetMax)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-on-surface-variant">
+                          <span>Dikunci per Slot (Budget Maks)</span>
+                          <span className="font-mono font-medium text-on-surface">
+                            {formatCurrency(numericBudgetMax)}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-between text-on-surface-variant">
+                        <span>Kompensasi per Worker</span>
+                        <span className="font-mono font-medium text-on-surface">
+                          {formatCurrency(numericCompensation)}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="flex items-center justify-between text-on-surface-variant">
                       <span>Jumlah Kuota Worker</span>

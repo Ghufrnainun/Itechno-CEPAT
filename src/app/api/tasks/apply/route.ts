@@ -7,6 +7,7 @@ import { taskService } from '@/services/task.service'
 const applySchema = z.object({
   id_tasks: z.string().uuid('ID Task tidak valid'),
   pesan: z.string().optional(),
+  bid_amount: z.number().positive('Harga penawaran harus lebih dari 0.').optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { id_tasks, pesan } = parsed.data
+    const { id_tasks, pesan, bid_amount } = parsed.data
 
     // 3. Retrieve user profile mapping
     const dbUser = await prisma.user.findUnique({
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Apply via taskService (includes validation + notification to requester)
-    const newApplication = await taskService.applyToTask(id_tasks, dbUser.id_user, pesan)
+    const newApplication = await taskService.applyToTask(id_tasks, dbUser.id_user, pesan, bid_amount)
 
     return NextResponse.json({
       success: true,

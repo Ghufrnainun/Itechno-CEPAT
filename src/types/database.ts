@@ -51,6 +51,10 @@ export interface Task {
   duration_estimate: string;
   created_at: string;
   updated_at: string;
+  /** Mode bidding aktif — worker melamar dengan harga penawaran */
+  is_bidding?: boolean;
+  budget_min?: number | null;
+  budget_max?: number | null;
   scheduled_at?: string | null;
   scheduled_end?: string | null;
   skills?: { id_skill: string; nama_skill: string; icon?: string | null }[];

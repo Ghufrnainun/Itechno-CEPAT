@@ -24,7 +24,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyle =
-      "group relative inline-flex items-center justify-center font-sans font-semibold rounded-xl " +
+      "group relative inline-flex items-center justify-center font-sans font-semibold rounded-lg " +
       "transition-[background-color,color,border-color,transform,box-shadow] duration-150 ease-out " +
       "active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 " +
       "disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none disabled:active:scale-100 " +
@@ -36,14 +36,14 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         sizeStyle = "text-xs px-3 py-1.5 min-h-[44px] md:min-h-[36px] gap-1.5 rounded-lg";
         break;
       case "lg":
-        sizeStyle = "text-base px-6 py-3 min-h-[48px] gap-2.5 rounded-xl";
+        sizeStyle = "text-base px-6 py-3 min-h-[48px] gap-2.5 rounded-lg";
         break;
       case "icon":
-        sizeStyle = "w-10 h-10 p-0 min-h-[40px] min-w-[40px] shrink-0 rounded-xl";
+        sizeStyle = "w-10 h-10 p-0 min-h-[40px] min-w-[40px] shrink-0 rounded-lg";
         break;
       case "md":
       default:
-        sizeStyle = "text-sm px-4 py-2.5 min-h-[42px] gap-2 rounded-xl";
+        sizeStyle = "text-sm px-4 py-2.5 min-h-[42px] gap-2 rounded-lg";
         break;
     }
 

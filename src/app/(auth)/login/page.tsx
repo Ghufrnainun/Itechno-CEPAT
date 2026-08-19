@@ -341,7 +341,7 @@ function LoginContent() {
           )}
 
           {/* Form */}
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} noValidate className="space-y-4">
             <Input
               label="Email atau Username"
               type="text"

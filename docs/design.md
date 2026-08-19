@@ -72,17 +72,17 @@ typography:
     fontWeight: '600'
     lineHeight: 28px
   body-lg:
-    fontFamily: Inter
+    fontFamily: Plus Jakarta Sans
     fontSize: 18px
     fontWeight: '400'
     lineHeight: 28px
   body-md:
-    fontFamily: Inter
+    fontFamily: Plus Jakarta Sans
     fontSize: 16px
     fontWeight: '400'
     lineHeight: 24px
   body-sm:
-    fontFamily: Inter
+    fontFamily: Plus Jakarta Sans
     fontSize: 14px
     fontWeight: '400'
     lineHeight: 20px
@@ -146,7 +146,7 @@ The palette is rooted in a "Nature-Tech" hybrid, utilizing deep teals and soft g
 This design system employs a three-font strategy to differentiate between intent, narrative, and data.
 
 - **Headings (Outfit):** A geometric sans-serif that provides a modern, approachable face for the marketplace.
-- **Body (Inter):** Highly legible and neutral, used for all descriptions, task requirements, and general interface text.
+- **Body & Interface (Plus Jakarta Sans):** Modern, clean geometric grotesque typography with exceptional legibility across all screen sizes. Used for descriptions, inputs, navigation, badges, and general interface text.
 - **Data (JetBrains Mono):** Used specifically for distances (e.g., "1.2 km"), price points, timestamps, and ID numbers. This creates a clear visual distinction between "what to do" and "the metrics of the task."
 
 ## Layout & Spacing
@@ -208,21 +208,30 @@ The design system uses a **Trust-Oriented Moderate Rounding** strategy (`rounded
 - **Grid Layout:** 12-column responsive Bento Grid with varying card spans (Featured Saldo, Rating, Task Selesai, Escrow Holdings).
 - **Map Radar:** Promoted interactive Leaflet map widget with live task counter overlay and 2km radius indicator.
 
-### Task Cards
-- White background, `#DDE7E1` border.
+### Task Cards & Bidding Visuals
+- White background, `#DDE7E1` border, 8px radius (`rounded-lg`).
 - Header contains the Task Title (Outfit) and Distance (JetBrains Mono).
-- Footer contains the Price (JetBrains Mono) and the SDG 8 badge.
+- **Mode Bidding Badge:** Gavel icon with amber/secondary pill tag and range pricing display (`Rp Min – Rp Max`).
+- Footer contains the Price / Budget Range (JetBrains Mono) and the SDG 8 badge.
 
 ### Badges & Chips
 - **SDG 8 Badge:** Uses a specialized Icon + "Decent Work" text in a small, muted pill.
+- **Bidding Chip:** Secondary/Amber pill with Gavel icon indicating open auction/negotiation.
 - **Status Pills:** 
   - *Success:* Lime text on a 10% opacity Lime background.
   - *Escrow:* Amber text on a 10% opacity Amber background.
 
-### Input Fields
-- 1px border (`#DDE7E1`), White background.
-- Label in Inter (Body-sm, Text-muted).
-- On focus, border changes to Teal (#0F766E).
+### Input Fields & Form Validation
+- Standardized 8px corner radius (`rounded-lg`) across `Input`, `Select`, `Textarea`, and `Button`.
+- 1px border (`#DDE7E1`), White background, focus teal ring (`#0F766E`).
+- **No Native HTML5 Tooltips:** Form elements enforce `noValidate` to suppress browser popovers.
+- **Inline Custom Alerts:** Error feedback ditampilkan secara inline dengan teks Bahasa Indonesia, border merah (`border-error`), dan ikon `AlertCircle`.
+- **Number Inputs:** Native browser stepper spinners dinonaktifkan (`[appearance:textfield]`).
+
+### Avatar Component (`Avatar.tsx`)
+- Standardized user profile image component supporting sizes `xs` (20px), `sm` (28px), `md` (32px), `lg` (40px), `xl` (48px).
+- Otomatis merender `avatar_url` dengan `next/image` (`object-cover`).
+- Memiliki *graceful fallback* ke inisial nama jika `avatar_url` bernilai null atau gagal dimuat (`onError`).
 
 ### Trust Signals
 - **Verified Badge:** Small Teal checkmark next to user names.

@@ -243,7 +243,7 @@ function RegisterContent() {
           )}
 
           {/* Form */}
-          <form onSubmit={handleRegister} className="space-y-4">
+          <form onSubmit={handleRegister} noValidate className="space-y-4">
             {/* Role Selection */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">

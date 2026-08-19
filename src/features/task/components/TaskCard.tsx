@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Task } from "@/types/database";
 import { SdgBadge } from "@/components/ui/SdgBadge";
 import { formatCurrency, formatDistance } from "@/lib/utils/format";
-import { Navigation, Calendar, Flag } from "lucide-react";
+import { Navigation, Gavel, Calendar, Flag } from "lucide-react";
 import { ReportModal } from "@/components/ui/ReportModal";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +41,11 @@ export function TaskCard({ task, isSelected = false, onClick, className }: TaskC
       <div className="flex justify-between items-start mb-1.5 gap-2">
         <h3 className="font-headline text-base font-bold text-on-surface leading-snug text-balance">
           {task.title}
+          {task.is_bidding && (
+            <span className="inline-flex items-center gap-1 align-middle ml-2 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wide bg-primary/10 text-primary border border-primary/25">
+              <Gavel className="w-2.5 h-2.5" /> Bid
+            </span>
+          )}
         </h3>
         <div className="flex items-center gap-1 shrink-0">
           <button
@@ -73,7 +78,9 @@ export function TaskCard({ task, isSelected = false, onClick, className }: TaskC
 
       <div className="flex justify-between items-end border-t border-card-border/60 pt-2.5 mt-auto">
         <span className="font-mono text-sm text-on-surface font-extrabold tabular-nums">
-          {formatCurrency(task.compensation)}
+          {task.is_bidding
+            ? `${formatCurrency(task.budget_min ?? 0)}–${formatCurrency(task.budget_max ?? task.compensation)}`
+            : formatCurrency(task.compensation)}
         </span>
 
         <div className="flex items-center gap-1.5 flex-wrap justify-end">
