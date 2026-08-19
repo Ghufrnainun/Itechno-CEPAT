@@ -64,6 +64,12 @@ model User {
   ban_reason              String?
   banned_at               DateTime?
   banned_until            DateTime?
+  xp                      Int              @default(0)
+  level                   Int              @default(1)
+  tagline                 String?
+  is_verified             Boolean          @default(false)
+  user_badges             UserBadge[]
+  user_streak             UserStreak?
   chat_rooms_as_requester ChatRoom[]       @relation("RequesterChats")
   chat_rooms_as_worker    ChatRoom[]       @relation("WorkerChats")
   messages_sent           Message[]        @relation("UserMessages")
@@ -75,6 +81,7 @@ model User {
   task_applications       TaskApplicants[] @relation("WorkerApplications")
   transactions            Transactions[]
   payment_transactions    PaymentTransaction[]
+  portfolio_items         PortfolioItem[]
   admin_sessions          AdminSession[]
   user_reports            UserReport[]
   disputes_reported       Dispute[]        @relation("DisputeReporter")
@@ -101,6 +108,9 @@ model Task {
   requester_started Boolean                   @default(false)
   max_applicants    Int                       @default(1)
   max_apply_attempts Int                      @default(3)
+  is_bidding        Boolean                   @default(false)
+  budget_min        Float?
+  budget_max        Float?
   chat_rooms        ChatRoom[]
   reviews         Reviews[]
   disputes        Dispute[]
@@ -120,6 +130,17 @@ model Transactions {
   deskripsi       String?
   created_at      DateTime            @default(now())
   user            User                @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+}
+
+model PortfolioItem {
+  id_portfolio  String   @id @default(uuid())
+  id_user       String
+  title         String
+  description   String?
+  image_url     String
+  related_task  String?  // optional link ke id_tasks
+  created_at    DateTime @default(now())
+  user          User     @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
 }
 
 model SkillsUser {
@@ -165,6 +186,7 @@ model TaskApplicants {
   alasan_penolakan          String?
   pesan                     String?
   worker_confirmed          Boolean              @default(false)
+  bid_amount                Float?
   status_applicant          StatusTaskApplicants @relation(fields: [id_status_task_applicants], references: [id_status_task_applicants])
   task                      Task                 @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)
   worker                    User                 @relation("WorkerApplications", fields: [id_worker], references: [id_user], onDelete: Cascade)
@@ -201,17 +223,49 @@ model ChatRoom {
 }
 
 model Message {
-  id_message                String   @id @default(uuid())
-  id_chat_room              String
-  id_sender                 String
-  teks_pesan                String?
-  image_url                 String?
-  is_read                   Boolean  @default(false)
-  deleted_by                String[] @default([])
-  is_deleted_for_everyone   Boolean  @default(false)
-  created_at                DateTime @default(now())
-  chat_room                 ChatRoom @relation(fields: [id_chat_room], references: [id_chat_room], onDelete: Cascade)
-  sender                    User     @relation("UserMessages", fields: [id_sender], references: [id_user], onDelete: Cascade)
+  id_message              String   @id @default(uuid())
+  id_chat_room            String
+  id_sender               String
+  teks_pesan              String?
+  image_url               String?
+  is_read                 Boolean  @default(false)
+  is_deleted_for_everyone Boolean  @default(false)
+  deleted_by              String[] @default([])
+  created_at              DateTime @default(now())
+  chat_room               ChatRoom @relation(fields: [id_chat_room], references: [id_chat_room], onDelete: Cascade)
+  sender                  User     @relation("UserMessages", fields: [id_sender], references: [id_user], onDelete: Cascade)
+}
+
+model Badge {
+  id_badge      String       @id @default(uuid())
+  kode_badge    String       @unique
+  nama_badge    String
+  deskripsi     String
+  icon_url      String?
+  criteria_type String
+  criteria_val  Int
+  created_at    DateTime     @default(now())
+  user_badges   UserBadge[]
+}
+
+model UserBadge {
+  id_user_badge String   @id @default(uuid())
+  id_user       String
+  id_badge      String
+  earned_at     DateTime @default(now())
+  user          User     @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+  badge         Badge    @relation(fields: [id_badge], references: [id_badge], onDelete: Cascade)
+
+  @@unique([id_user, id_badge])
+}
+
+model UserStreak {
+  id_streak          String    @id @default(uuid())
+  id_user            String    @unique
+  current_streak     Int       @default(0)
+  longest_streak     Int       @default(0)
+  last_activity_date DateTime?
+  user               User      @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
 }
 
 model PaymentTransaction {

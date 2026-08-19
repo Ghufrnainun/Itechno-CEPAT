@@ -116,7 +116,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { nama_lengkap, bio, pendidikan_terakhir, no_telpon, alamat, role, skills, avatar_url } = body;
+    const { nama_lengkap, bio, pendidikan_terakhir, no_telpon, alamat, role, skills, avatar_url, tagline } = body;
 
     // Find role ID if provided
     let roleId: string | undefined = undefined;
@@ -134,12 +134,13 @@ export async function PUT(request: NextRequest) {
       where: { email: authUser.email },
       data: {
         ...(nama_lengkap && { nama_lengkap }),
-        ...(bio && { bio }),
-        ...(pendidikan_terakhir && { pendidikan_terakhir }),
-        ...(no_telpon && { no_telpon }),
-        ...(alamat && { alamat }),
+        ...(bio !== undefined && { bio }),
+        ...(pendidikan_terakhir !== undefined && { pendidikan_terakhir }),
+        ...(no_telpon !== undefined && { no_telpon }),
+        ...(alamat !== undefined && { alamat }),
         ...(roleId && { id_role: roleId }),
         ...(avatar_url && { avatar_url }),
+        ...(tagline !== undefined && { tagline }),
       },
     });
 

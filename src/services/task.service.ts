@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { CreateTaskInput } from '@/lib/validations/task.schema';
 import { notificationService } from '@/services/notification.service';
+import { GamificationService } from '@/services/gamification.service';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -1003,6 +1004,15 @@ export const taskService = {
               data: { task_id: taskId },
             });
           } catch (_) {}
+
+          // Gamification Hooks
+          try {
+            await GamificationService.addXP(workerApp.id_worker, 50);
+            await GamificationService.updateStreak(workerApp.id_worker);
+            await GamificationService.checkAndAwardBadges(workerApp.id_worker);
+          } catch (e) {
+            console.error("Gamification hook failed", e);
+          }
         }
       }
     } else if (newStatus === 'cancelled') {
