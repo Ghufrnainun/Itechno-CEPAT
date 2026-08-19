@@ -37,14 +37,16 @@ export async function GET(request: NextRequest) {
           select: {
             id_user: true,
             nama_lengkap: true,
-            avatar_url: true
+            avatar_url: true,
+            last_seen_at: true
           }
         },
         worker: {
           select: {
             id_user: true,
             nama_lengkap: true,
-            avatar_url: true
+            avatar_url: true,
+            last_seen_at: true
           }
         },
         messages: {

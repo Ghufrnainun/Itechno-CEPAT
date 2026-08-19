@@ -58,6 +58,7 @@ model User {
   email                   String           @unique
   auth_id                 String?          @unique @db.Uuid
   fcm_token               String?
+  last_seen_at            DateTime?
   is_banned               Boolean          @default(false)
   ban_type                String?
   ban_reason              String?
