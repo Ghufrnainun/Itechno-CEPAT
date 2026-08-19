@@ -58,7 +58,7 @@
 
 | Package             | Versi   | Peruntukan                                      |
 | ------------------- | ------- | ----------------------------------------------- |
-| `@next/font`        | built-in| Google Fonts optimization (Inter)               |
+| `next/font/google`  | built-in| Google Fonts optimization (`Plus Jakarta Sans`, `Outfit`, `JetBrains Mono`) |
 
 ---
 

@@ -72,17 +72,17 @@ typography:
     fontWeight: '600'
     lineHeight: 28px
   body-lg:
-    fontFamily: Inter
+    fontFamily: Plus Jakarta Sans
     fontSize: 18px
     fontWeight: '400'
     lineHeight: 28px
   body-md:
-    fontFamily: Inter
+    fontFamily: Plus Jakarta Sans
     fontSize: 16px
     fontWeight: '400'
     lineHeight: 24px
   body-sm:
-    fontFamily: Inter
+    fontFamily: Plus Jakarta Sans
     fontSize: 14px
     fontWeight: '400'
     lineHeight: 20px
@@ -146,7 +146,7 @@ The palette is rooted in a "Nature-Tech" hybrid, utilizing deep teals and soft g
 This design system employs a three-font strategy to differentiate between intent, narrative, and data.
 
 - **Headings (Outfit):** A geometric sans-serif that provides a modern, approachable face for the marketplace.
-- **Body (Inter):** Highly legible and neutral, used for all descriptions, task requirements, and general interface text.
+- **Body & Interface (Plus Jakarta Sans):** Modern, clean geometric grotesque typography with exceptional legibility across all screen sizes. Used for descriptions, inputs, navigation, badges, and general interface text.
 - **Data (JetBrains Mono):** Used specifically for distances (e.g., "1.2 km"), price points, timestamps, and ID numbers. This creates a clear visual distinction between "what to do" and "the metrics of the task."
 
 ## Layout & Spacing
