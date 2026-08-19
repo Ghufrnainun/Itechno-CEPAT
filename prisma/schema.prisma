@@ -108,9 +108,20 @@ model Task {
   requester_started Boolean                   @default(false)
   max_applicants    Int                       @default(1)
   max_apply_attempts Int                      @default(3)
+<<<<<<< HEAD
   is_bidding        Boolean                   @default(false)
   budget_min        Float?
   budget_max        Float?
+=======
+  /// Mode bidding: worker melamar dengan harga penawaran. kompensasi = budget_max (plafon escrow).
+  /// Dikunci setelah task diposting (tidak bisa diubah).
+  is_bidding        Boolean                   @default(false)
+  budget_min        Float?
+  budget_max        Float?
+  /// JSON map { id_task_applicants: jumlah_held } — pembukuan escrow per slot worker.
+  /// Untuk task bidding tiap slot bisa punya nilai hold berbeda (sesuai bid yang diterima).
+  held_slots_json   String?
+>>>>>>> 4eb2515f8b98c21300abfacc58b98128d0182ee0
   chat_rooms        ChatRoom[]
   reviews         Reviews[]
   disputes        Dispute[]
@@ -186,6 +197,10 @@ model TaskApplicants {
   alasan_penolakan          String?
   pesan                     String?
   worker_confirmed          Boolean              @default(false)
+<<<<<<< HEAD
+=======
+  /// Harga penawaran worker untuk task bidding (null = task harga tetap).
+>>>>>>> 4eb2515f8b98c21300abfacc58b98128d0182ee0
   bid_amount                Float?
   status_applicant          StatusTaskApplicants @relation(fields: [id_status_task_applicants], references: [id_status_task_applicants])
   task                      Task                 @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { EscrowBanner } from "@/components/ui/EscrowBanner";
 import { Modal } from "@/components/ui/Modal";
+import { Avatar } from "@/components/ui/Avatar";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
@@ -30,6 +31,7 @@ import {
   Calendar,
   ShieldAlert,
   Loader2,
+  Gavel,
   Flag,
 } from "lucide-react";
 import { DisputeModal } from "@/components/ui/DisputeModal";
@@ -47,6 +49,7 @@ interface TaskApplicant {
   alasan_penolakan: string | null;
   applied_at: string;
   worker_confirmed: boolean;
+  bid_amount: number | null;
   worker: {
     id_user: string;
     nama_lengkap: string;
@@ -63,6 +66,9 @@ interface TaskDetail {
   deskripsi_tugas: string;
   estimasi_waktu: string | null;
   kompensasi: number;
+  is_bidding: boolean;
+  budget_min: number | null;
+  budget_max: number | null;
   status: TaskStatus;
   worker_started: boolean;
   requester_started: boolean;
@@ -99,6 +105,7 @@ interface TaskDetail {
     apply_count: number;
     alasan_penolakan: string | null;
     pesan: string | null;
+    bid_amount: number | null;
   } | null;
 }
 
@@ -122,6 +129,8 @@ export default function TaskDetailPage() {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [selectedApplicantToReject, setSelectedApplicantToReject] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [applyBid, setApplyBid] = useState("");
+  const [bidError, setBidError] = useState("");
   const [rating, setRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
 
@@ -140,8 +149,9 @@ export default function TaskDetailPage() {
       } else {
         showToast(data.message || "Task tidak ditemukan.");
       }
-    } catch {
-      showToast("Gagal memuat detail task.");
+    } catch (e) {
+      showToast("Gagal memuat task.");
+      setTask(null);
     } finally {
       setLoading(false);
     }
@@ -152,20 +162,66 @@ export default function TaskDetailPage() {
   }, [fetchTask]);
 
   // ── Worker: Apply ──────────────────────────────────────────────────────────
+  // Mode edit: task bidding + lamaran masih pending → PATCH perbarui bid
+  const isEditingPendingBid = task?.is_bidding === true && task?.viewer_application?.status === "pending";
+
+  const openApplyOrEditModal = () => {
+    setBidError("");
+    if (isEditingPendingBid) {
+      setApplyBid(task?.viewer_application?.bid_amount ? String(task.viewer_application.bid_amount) : "");
+      setApplyMessage(task?.viewer_application?.pesan ?? "");
+    } else {
+      setApplyBid("");
+      setApplyMessage("");
+    }
+    setIsApplyModalOpen(true);
+  };
+
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setBidError("");
+
+    // Validasi bid untuk task bidding (sealed bid, wajib dalam range budget)
+    let numericBid: number | undefined = undefined;
+    if (task?.is_bidding) {
+      numericBid = parseFloat(applyBid);
+      const minBid = task.budget_min ?? 0;
+      const maxBid = task.budget_max ?? task.kompensasi;
+      if (!numericBid || isNaN(numericBid) || numericBid <= 0) {
+        setBidError("Masukkan harga penawaran Anda terlebih dahulu.");
+        return;
+      }
+      if (numericBid < minBid) {
+        setBidError(`Penawaran minimal ${formatCurrency(minBid)}.`);
+        return;
+      }
+      if (numericBid > maxBid) {
+        setBidError(`Penawaran maksimal ${formatCurrency(maxBid)}.`);
+        return;
+      }
+    }
+
     setActionLoading(true);
     try {
       const res = await fetch(`/api/tasks/${id}/apply`, {
-        method: "POST",
+        method: isEditingPendingBid ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pesan: applyMessage }),
+        body: JSON.stringify(
+          isEditingPendingBid
+            ? { bid_amount: numericBid }
+            : { pesan: applyMessage, bid_amount: numericBid }
+        ),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
         setIsApplyModalOpen(false);
         setApplyMessage("");
-        showToast("Berhasil melamar pekerjaan! Menunggu persetujuan pemberi kerja.");
+        setApplyBid("");
+        showToast(isEditingPendingBid
+          ? "Penawaran berhasil diperbarui!"
+          : task?.is_bidding
+            ? "Penawaran terkirim! Menunggu pilihan pemberi kerja."
+            : "Berhasil melamar pekerjaan! Menunggu persetujuan pemberi kerja.");
         fetchTask(); // refresh task data
       } else {
         showToast(data.message || "Gagal mengirim lamaran.");
@@ -489,21 +545,36 @@ export default function TaskDetailPage() {
           <div className="bg-white border border-outline-variant rounded-xl p-md md:p-lg flex flex-col gap-md">
             <div className="flex justify-between items-center pb-sm border-b border-outline-variant/50">
               <div className="flex flex-col">
-                <span className="font-label-md text-label-md font-bold text-primary font-mono text-[18px]">
-                  {formatCurrency(task.kompensasi)} <span className="text-xs font-normal text-on-surface-variant font-sans">/ worker</span>
-                </span>
-                <span className="font-label-sm text-[11px] text-on-surface-variant font-mono">
-                  Total Escrow: {formatCurrency(task.kompensasi * (task.max_applicants ?? 1))} ({task.max_applicants ?? 1} worker)
-                </span>
+                {task.is_bidding ? (
+                  <>
+                    <span className="font-label-md text-label-md font-bold text-primary font-mono text-[18px]">
+                      {formatCurrency(task.budget_min ?? 0)} – {formatCurrency(task.budget_max ?? task.kompensasi)} <span className="text-xs font-normal text-on-surface-variant font-sans">/ worker</span>
+                    </span>
+                    <span className="font-label-sm text-[11px] text-primary font-bold font-sans">
+                      Mode Bidding — penawaran terbaik dipilih pemberi tugas
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-label-md text-label-md font-bold text-primary font-mono text-[18px]">
+                      {formatCurrency(task.kompensasi)} <span className="text-xs font-normal text-on-surface-variant font-sans">/ worker</span>
+                    </span>
+                    <span className="font-label-sm text-[11px] text-on-surface-variant font-mono">
+                      Total Escrow: {formatCurrency(task.kompensasi * (task.max_applicants ?? 1))} ({task.max_applicants ?? 1} worker)
+                    </span>
+                  </>
+                )}
               </div>
               <Badge status={taskStatus} />
             </div>
 
             {/* Requester info */}
             <div className="flex items-center gap-sm text-on-surface-variant">
-              <div className="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-sm shrink-0">
-                {task.requester.nama_lengkap.charAt(0)}
-              </div>
+              <Avatar
+                src={task.requester.avatar_url}
+                name={task.requester.nama_lengkap}
+                size="md"
+              />
               <div>
                 <p className="font-label-sm text-label-sm font-semibold text-on-surface">{task.requester.nama_lengkap}</p>
                 <p className="font-body-sm text-[11px] text-on-surface-variant">
@@ -664,9 +735,12 @@ export default function TaskDetailPage() {
                     <div key={app.id_task_applicants} className="py-3.5 flex flex-col gap-2.5">
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-xs font-mono">
-                            {app.worker.nama_lengkap.charAt(0)}
-                          </div>
+                          <Avatar
+                            src={app.worker.avatar_url}
+                            name={app.worker.nama_lengkap}
+                            size="lg"
+                            shape="rounded"
+                          />
                           <div>
                             <h4 className="font-headline text-xs font-bold text-on-surface">
                               {app.worker.nama_lengkap}
@@ -679,6 +753,16 @@ export default function TaskDetailPage() {
                         </div>
                         <Badge status={app.status === "accepted" ? "accepted" : app.status === "rejected" ? "rejected" : "open"} />
                       </div>
+
+                      {/* Harga penawaran (task bidding) — hanya requester yang melihat halaman ini */}
+                      {task.is_bidding && app.bid_amount != null && (
+                        <div className="flex items-center justify-between p-2.5 rounded-lg bg-primary/5 border border-primary/20">
+                          <span className="font-sans text-[11px] font-bold text-on-surface-variant uppercase tracking-wide">Penawaran</span>
+                          <span className="font-mono text-xs font-extrabold text-primary tabular-nums">
+                            {formatCurrency(app.bid_amount)}
+                          </span>
+                        </div>
+                      )}
 
                       {app.pesan && (
                         <p className="font-body-sm text-xs text-on-surface-variant bg-surface-container-low p-2.5 rounded-lg border border-card-border/50 italic leading-relaxed">
@@ -713,7 +797,9 @@ export default function TaskDetailPage() {
                               className="py-1 px-3 text-xs font-bold"
                               disabled={actionLoading}
                             >
-                              Terima Worker
+                              {task.is_bidding && app.bid_amount != null
+                                ? `Terima Bid ${formatCurrency(app.bid_amount)}`
+                                : "Terima Worker"}
                             </Button>
                           </div>
                         </div>
@@ -752,9 +838,11 @@ export default function TaskDetailPage() {
                       <div key={r.id_reviews} className="p-3.5 bg-surface-container-low border border-card-border/60 rounded-lg flex flex-col gap-1.5">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs font-mono">
-                              {r.rater.nama_lengkap.charAt(0)}
-                            </div>
+                            <Avatar
+                              src={r.rater.avatar_url}
+                              name={r.rater.nama_lengkap}
+                              size="sm"
+                            />
                             <div>
                               <span className="font-headline text-xs font-bold text-on-surface">{r.rater.nama_lengkap}</span>
                               {r.ratee && (
@@ -803,9 +891,12 @@ export default function TaskDetailPage() {
                       <div key={r.id_reviews} className="p-3.5 bg-surface-container-low border border-card-border/60 rounded-lg flex flex-col gap-1.5">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-full bg-secondary text-on-secondary flex items-center justify-center font-bold text-xs font-mono">
-                              {r.rater.nama_lengkap.charAt(0)}
-                            </div>
+                            <Avatar
+                              src={r.rater.avatar_url}
+                              name={r.rater.nama_lengkap}
+                              size="sm"
+                              className="bg-secondary text-on-secondary"
+                            />
                             <div>
                               <span className="font-headline text-xs font-bold text-on-surface">{r.rater.nama_lengkap}</span>
                               {r.ratee && (
@@ -905,13 +996,32 @@ export default function TaskDetailPage() {
                     )
                   ) : (
                     <>
+                      {/* Kartu info penawaran aktif (task bidding, masih pending) */}
+                      {isEditingPendingBid && (
+                        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex flex-col gap-1.5 mb-1">
+                          <div className="flex items-center gap-1.5 text-primary font-bold text-xs">
+                            <Gavel className="w-4 h-4 shrink-0" />
+                            Penawaran Anda Terkirim
+                          </div>
+                          <span className="font-mono text-lg font-bold text-on-surface tabular-nums">
+                            {formatCurrency(task.viewer_application?.bid_amount ?? 0)}
+                          </span>
+                          <p className="font-body-sm text-[11px] text-on-surface-variant leading-relaxed">
+                            Penawaran bersifat rahasia (sealed bid). Anda masih bisa mengubah atau membatalkannya selama belum dipilih oleh pemberi tugas.
+                          </p>
+                        </div>
+                      )}
                       <Button
-                        onClick={() => setIsApplyModalOpen(true)}
-                        disabled={task.has_applied || actionLoading}
+                        onClick={openApplyOrEditModal}
+                        disabled={(task.has_applied && !isEditingPendingBid) || actionLoading}
                         className="w-full py-3"
                         variant="primary"
                       >
-                        {task.has_applied ? "Sudah Dilamar" : "Lamar Pekerjaan Ini"}
+                        {isEditingPendingBid
+                          ? "Ubah Penawaran"
+                          : task.has_applied
+                            ? "Sudah Dilamar"
+                            : "Lamar Pekerjaan Ini"}
                       </Button>
                       {task.has_applied && (
                         <Button
@@ -920,7 +1030,7 @@ export default function TaskDetailPage() {
                           className="w-full py-2"
                           variant="ghost"
                         >
-                          Batalkan Lamaran
+                          {task.is_bidding ? "Batalkan Penawaran" : "Batalkan Lamaran"}
                         </Button>
                       )}
                     </>
@@ -1163,20 +1273,60 @@ export default function TaskDetailPage() {
 
 
       {/* Modal: Lamar Pekerjaan */}
-      <Modal isOpen={isApplyModalOpen} onClose={() => setIsApplyModalOpen(false)} title="Kirim Lamaran Kerja">
-        <form onSubmit={handleApplySubmit} className="flex flex-col gap-4 font-sans text-xs">
-          <div className="flex flex-col gap-1.5">
-            <label className="font-semibold text-on-surface">
-              Pesan Singkat untuk Pemberi Kerja (opsional)
-            </label>
-            <textarea
-              className="w-full bg-surface-container-low border border-card-border rounded-xl p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[100px] custom-scrollbar"
-              placeholder="Ceritakan keahlianmu dan mengapa kamu cocok untuk tugas ini."
-              value={applyMessage}
-              onChange={(e) => setApplyMessage(e.target.value)}
-              maxLength={500}
-            />
-          </div>
+      <Modal isOpen={isApplyModalOpen} onClose={() => setIsApplyModalOpen(false)} title={isEditingPendingBid ? "Ubah Penawaran" : task?.is_bidding ? "Ajukan Penawaran" : "Kirim Lamaran Kerja"}>
+        <form onSubmit={handleApplySubmit} noValidate className="flex flex-col gap-4 font-sans text-xs">
+          {/* Input Harga Penawaran — hanya untuk task bidding (sealed bid) */}
+          {task?.is_bidding && (
+            <div className="flex flex-col gap-1.5">
+              <label className="font-semibold text-on-surface">
+                Harga Penawaran Anda <span className="text-error">*</span>
+              </label>
+              <div className="relative flex items-center">
+                <span className="absolute left-3.5 font-mono font-bold text-on-surface-variant text-xs pointer-events-none">Rp</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  className={cn(
+                    "w-full pl-11 pr-3 py-2.5 text-xs font-mono font-bold bg-surface-container-low border rounded-lg text-on-surface focus:ring-2 focus:bg-surface-container-lowest focus:outline-none min-h-[42px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors",
+                    bidError
+                      ? "border-error focus:border-error focus:ring-error/20"
+                      : "border-card-border focus:border-primary focus:ring-primary/20"
+                  )}
+                  placeholder={`Range: ${formatCurrency(task.budget_min ?? 0)} – ${formatCurrency(task.budget_max ?? task.kompensasi)}`}
+                  value={applyBid}
+                  onChange={(e) => {
+                    setApplyBid(e.target.value);
+                    if (bidError) setBidError("");
+                  }}
+                />
+              </div>
+              {bidError ? (
+                <p className="text-[11px] font-medium text-error flex items-center gap-1.5 mt-0.5 animate-fadeIn">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{bidError}</span>
+                </p>
+              ) : (
+                <p className="text-[10px] text-on-surface-variant leading-relaxed">
+                  Penawaran bersifat rahasia (sealed bid) — hanya pemberi tugas yang dapat melihatnya.
+                </p>
+              )}
+            </div>
+          )}
+
+          {!isEditingPendingBid && (
+            <div className="flex flex-col gap-1.5">
+              <label className="font-semibold text-on-surface">
+                Pesan Singkat untuk Pemberi Kerja (opsional)
+              </label>
+              <textarea
+                className="w-full bg-surface-container-low border border-card-border rounded-lg p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[100px] custom-scrollbar"
+                placeholder="Ceritakan keahlianmu dan mengapa kamu cocok untuk tugas ini."
+                value={applyMessage}
+                onChange={(e) => setApplyMessage(e.target.value)}
+                maxLength={500}
+              />
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 border-t border-card-border pt-3 mt-1">
             <Button
@@ -1188,7 +1338,7 @@ export default function TaskDetailPage() {
               Batal
             </Button>
             <Button type="submit" size="sm" disabled={actionLoading}>
-              {actionLoading ? "Mengirim..." : "Kirim Lamaran"}
+              {actionLoading ? "Memproses..." : isEditingPendingBid ? "Perbarui Penawaran" : task?.is_bidding ? "Kirim Penawaran" : "Kirim Lamaran"}
             </Button>
           </div>
         </form>
@@ -1204,7 +1354,7 @@ export default function TaskDetailPage() {
             : "Berikan Ulasan Rating"
         }
       >
-        <form onSubmit={handleRatingSubmit} className="flex flex-col gap-4 font-sans text-xs">
+        <form onSubmit={handleRatingSubmit} noValidate className="flex flex-col gap-4 font-sans text-xs">
           <div className="flex flex-col items-center gap-2">
             <span className="font-semibold text-on-surface text-center">
               {isRequester && currentRatingTarget
@@ -1237,7 +1387,7 @@ export default function TaskDetailPage() {
               Komentar / Masukan (opsional)
             </label>
             <textarea
-              className="w-full bg-surface-container-low border border-card-border rounded-xl p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[90px] custom-scrollbar"
+              className="w-full bg-surface-container-low border border-card-border rounded-lg p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[90px] custom-scrollbar"
               placeholder="Berikan komentar singkat mengenai hasil kerja / komunikasi..."
               value={reviewComment}
               onChange={(e) => setReviewComment(e.target.value)}
@@ -1255,13 +1405,13 @@ export default function TaskDetailPage() {
 
       {/* Modal: Tolak Pelamar (Opsional dengan Alasan Penolakan) */}
       <Modal isOpen={isRejectModalOpen} onClose={() => setIsRejectModalOpen(false)} title="Tolak Pelamar Kerja">
-        <form onSubmit={handleRejectSubmit} className="flex flex-col gap-4 font-sans text-xs">
+        <form onSubmit={handleRejectSubmit} noValidate className="flex flex-col gap-4 font-sans text-xs">
           <div className="flex flex-col gap-1.5">
             <label className="font-semibold text-on-surface">
               Alasan Penolakan (Opsional)
             </label>
             <textarea
-              className="w-full bg-surface-container-low border border-card-border rounded-xl p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[100px] custom-scrollbar"
+              className="w-full bg-surface-container-low border border-card-border rounded-lg p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[100px] custom-scrollbar"
               placeholder="Berikan catatan / alasan penolakan (misal: kualifikasi belum sesuai, lokasi terlalu jauh, dll)..."
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}

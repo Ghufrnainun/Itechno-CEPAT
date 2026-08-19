@@ -331,11 +331,20 @@ CREATE TABLE tasks (
   id_tasks          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   id_requester       UUID NOT NULL REFERENCES "user"(id_user) ON DELETE CASCADE,
   id_status_task      UUID NOT NULL REFERENCES status_task(id_status_task),
+  id_category        UUID NOT NULL REFERENCES task_category(id_category),
   judul_tugas         TEXT NOT NULL,
   deskripsi_tugas      TEXT NOT NULL,
   estimasi_waktu       INTEGER NOT NULL,     -- menit
-  kompensasi          DECIMAL(12,2) NOT NULL,  -- jumlah imbalan (poin/saldo)
-  lokasi_geo          GEOGRAPHY(POINT, 4326) NOT NULL,
+  kompensasi          DOUBLE PRECISION NOT NULL DEFAULT 0.0, -- jumlah imbalan / budget_max jika bidding
+  lokasi_geo          GEOGRAPHY(POINT, 4326),
+  max_applicants      INTEGER NOT NULL DEFAULT 1,     -- kuota worker yang dibutuhkan
+  max_apply_attempts  INTEGER NOT NULL DEFAULT 3,     -- batas maksimal percobaan melamar per worker
+  is_bidding          BOOLEAN NOT NULL DEFAULT false, -- mode bidding (penawaran harga)
+  budget_min          DOUBLE PRECISION,               -- batas bawah penawaran worker
+  budget_max          DOUBLE PRECISION,               -- batas atas penawaran worker (plafon escrow)
+  held_slots_json     TEXT,                           -- JSON map { id_task_applicants: jumlah_held } untuk escrow per-slot
+  worker_started      BOOLEAN NOT NULL DEFAULT false,
+  requester_started   BOOLEAN NOT NULL DEFAULT false,
   created_at          TIMESTAMPTZ DEFAULT NOW(),
   accepted_at         TIMESTAMPTZ,
   completed_at        TIMESTAMPTZ
@@ -344,9 +353,12 @@ CREATE TABLE tasks (
 CREATE INDEX idx_tasks_location ON tasks USING GIST (lokasi_geo);
 CREATE INDEX idx_tasks_requester ON tasks (id_requester);
 CREATE INDEX idx_tasks_status ON tasks (id_status_task);
+CREATE INDEX idx_task_bidding ON tasks (is_bidding);
 ```
 
-> `kompensasi` sudah masuk ERD terbaru — insert task sekarang wajib menyertakan nilai ini. Saat task `completed`, nilai ini yang dipindah lewat `transactions` dari saldo requester ke worker.
+> **Catatan Escrow & Bidding**: 
+> - Untuk task biasa (fixed price): `kompensasi` adalah harga pasti per worker. Escrow hold = `kompensasi * max_applicants`.
+> - Untuk task bidding (`is_bidding = true`): `kompensasi` = `budget_max` (plafon escrow). Escrow hold awal = `budget_max * max_applicants`. Saat requester menerima worker dengan tawaran `bid_amount`, selisih `(budget_max - bid_amount)` otomatis di-*refund* ke dompet requester seketika (Model C Escrow), dan pembukuan per-slot dicatat di `held_slots_json`.
 
 ### 3.7 `task_requirements`
 
@@ -379,11 +391,17 @@ CREATE TABLE task_applicants (
   id_status_task_applicants     UUID NOT NULL REFERENCES status_task_applicants(id_status_task_applicants),
   id_worker                    UUID NOT NULL REFERENCES "user"(id_user) ON DELETE CASCADE,
   id_tasks                     UUID NOT NULL REFERENCES tasks(id_tasks) ON DELETE CASCADE,
-  pesan                        TEXT,                            -- pesan singkat saat melamar
+  pesan                        TEXT,                            -- pesan singkat / pitch saat melamar
+  bid_amount                   DOUBLE PRECISION,               -- harga penawaran sealed-bid (null jika fixed-price)
+  apply_count                  INTEGER NOT NULL DEFAULT 1,     -- hitungan percobaan lamaran
+  alasan_penolakan             TEXT,                            -- catatan penolakan jika lamaran di-reject
+  worker_confirmed             BOOLEAN NOT NULL DEFAULT false,
   applied_at                   TIMESTAMPTZ DEFAULT NOW(),
 
-  UNIQUE(id_tasks, id_worker)   -- satu worker hanya bisa apply sekali per task
+  UNIQUE(id_tasks, id_worker)   -- satu worker tercatat satu record aktif per task
 );
+
+CREATE INDEX idx_task_applicants_bid ON task_applicants (id_tasks, bid_amount);
 ```
 
 ### 3.10 `reviews`

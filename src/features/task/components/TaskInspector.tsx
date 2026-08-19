@@ -4,6 +4,7 @@ import { formatCurrency, formatDistance } from "@/lib/utils/format";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
+import { Avatar } from "@/components/ui/Avatar";
 import { useToast } from "@/components/ui/Toast";
 import { renderIcon } from "@/lib/icon-map";
 import { ReportModal } from "@/components/ui/ReportModal";
@@ -29,7 +30,8 @@ interface TaskInspectorProps {
     distance?: number;
     status?: string;
     requester_name?: string;
-    requester?: { nama_lengkap?: string };
+    requester_avatar?: string | null;
+    requester?: { nama_lengkap?: string; avatar_url?: string | null };
     max_applicants?: number;
     max_apply_attempts?: number;
     applicant_count?: number;
@@ -116,135 +118,168 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
           </div>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
-          {/* Header Info */}
-          <div>
-            <h2 className="font-headline font-bold text-xl text-on-surface leading-snug mb-3">{task.title}</h2>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0 uppercase border border-primary/20">
-                  {requesterName.charAt(0)}
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-xs text-on-surface">
-                      {requesterName}
-                    </span>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-primary fill-primary/10" />
-                  </div>
-                  <div className="flex items-center gap-1.5 text-on-surface-variant text-[11px]">
-                    <span className="flex items-center gap-1 text-amber-600 font-bold">
-                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                      4.8
-                    </span>
-                    <span>•</span>
-                    <span>Pemberi Kerja</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="text-right">
-                <div className="font-mono text-xl font-bold text-primary">
-                  {formatCurrency(task.compensation)}
-                </div>
-                <div className="text-[10px] text-on-surface-variant uppercase font-mono">
-                  Sistem Escrow Terlindungi
-                </div>
-              </div>
-            </div>
-
-            {/* Badges / Metrics Row */}
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-card-border/60">
-              {task.distance !== undefined && (
-                <div className="flex items-center gap-2 p-2.5 bg-surface-container-low rounded-xl border border-card-border/40">
-                  <MapPin className="w-4 h-4 text-primary shrink-0" />
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[10px] text-on-surface-variant font-mono">Jarak</span>
-                    <span className="text-xs font-bold text-on-surface font-mono truncate">{formatDistance(task.distance)}</span>
-                  </div>
-                </div>
-              )}
-              {task.duration_estimate && (
-                <div className="flex items-center gap-2 p-2.5 bg-surface-container-low rounded-xl border border-card-border/40">
-                  <Clock className="w-4 h-4 text-primary shrink-0" />
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[10px] text-on-surface-variant font-mono">Estimasi</span>
-                    <span className="text-xs font-bold text-on-surface truncate">{task.duration_estimate}</span>
-                  </div>
-                </div>
-              )}
-              {task.scheduled_at && (
-                <div className="flex items-center gap-2 p-2.5 bg-primary/5 rounded-xl border border-primary/20 col-span-2">
-                  <Calendar className="w-4 h-4 text-primary shrink-0" />
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[10px] text-primary font-bold font-mono uppercase">Jadwal Tugas</span>
-                    <span className="text-xs font-bold text-on-surface">
-                      {new Date(task.scheduled_at).toLocaleDateString("id-ID", {
-                        weekday: "long",
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <h3 className="font-headline font-bold text-sm text-on-surface">Deskripsi Pekerjaan</h3>
-            <p className="text-xs text-on-surface-variant leading-relaxed whitespace-pre-line bg-surface-container-low p-4 rounded-xl border border-card-border/60">
-              {task.description}
-            </p>
-          </div>
-
-          {/* Requirements / Skills */}
-          {task.skills && task.skills.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="font-headline font-bold text-sm text-on-surface">Keahlian yang Dibutuhkan</h3>
-              <div className="flex flex-wrap gap-1.5">
-                {task.skills.map((skill: any) => (
-                  <span
-                    key={skill.id_skill || skill.nama_skill}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-low border border-card-border text-xs font-semibold text-on-surface"
-                  >
-                    {renderIcon(skill.icon, "w-3.5 h-3.5 text-primary")}
-                    <span>{skill.nama_skill}</span>
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
+        {/* Header Info */}
+        <div>
+          <h2 className="font-headline font-bold text-xl text-on-surface leading-snug mb-3">{task.title}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Avatar
+                src={task.requester_avatar || task.requester?.avatar_url}
+                name={requesterName}
+                size="lg"
+                shape="rounded"
+              />
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-xs text-on-surface">
+                    {requesterName}
                   </span>
-                ))}
+                  <CheckCircle2 className="w-3.5 h-3.5 text-primary fill-primary/10" />
+                </div>
+                <div className="flex items-center gap-1.5 text-on-surface-variant text-[11px]">
+                  <span className="flex items-center gap-1 text-amber-600 font-bold">
+                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                    4.8
+                  </span>
+                  <span>•</span>
+                  <span>Pemberi Kerja</span>
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* Security & Escrow guarantee badge */}
-          <div className="p-3.5 rounded-2xl bg-secondary/5 border border-secondary/20 flex items-start gap-3">
-            <Lock className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <span className="text-xs font-bold text-secondary block">Jaminan Escrow ITechno</span>
-              <p className="text-[11px] text-on-surface-variant leading-relaxed">
-                Dana kompensasi telah dikunci di sistem escrow kami. Pembayaran akan otomatis dicairkan segera setelah pekerjaan Anda diverifikasi selesai.
-              </p>
             </div>
           </div>
 
-          {/* Report Task to Admin Section */}
-          <div className="pt-2 border-t border-card-border/60 flex items-center justify-between">
-            <span className="text-[11px] text-on-surface-variant">Menemukan pelanggaran atau kejanggalan?</span>
-            <button
-              type="button"
-              onClick={() => setIsReportModalOpen(true)}
-              className="text-[11px] font-semibold text-error hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              <Flag className="w-3 h-3" />
-              <span>Laporkan Tugas</span>
-            </button>
+          <div className="flex flex-col gap-0.5 mb-5 p-3.5 bg-surface-container-low rounded-xl border border-card-border">
+            {task.is_bidding ? (
+              <>
+                <span className="font-headline text-2xl font-extrabold text-primary font-mono tabular-nums">
+                  {formatCurrency(task.budget_min ?? 0)} – {formatCurrency(task.budget_max ?? task.compensation)} <span className="text-xs font-normal text-on-surface-variant font-sans">/ worker</span>
+                </span>
+                <span className="text-[11px] text-primary font-bold font-sans">
+                  Mode Bidding — ajukan penawaran harga terbaik Anda
+                </span>
+              </>
+            ) : (
+              <span className="font-headline text-2xl font-extrabold text-primary font-mono tabular-nums">
+                {formatCurrency(task.compensation)} <span className="text-xs font-normal text-on-surface-variant font-sans">/ worker</span>
+              </span>
+            )}
+            {task.max_applicants && !task.is_bidding && (
+              <span className="text-[11px] text-on-surface-variant font-mono">
+                Total Escrow: {formatCurrency(task.compensation * task.max_applicants)} ({task.max_applicants} worker)
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-card-border/60">
+            {task.distance !== undefined && (
+              <div className="flex items-center gap-2 p-2.5 bg-surface-container-low rounded-xl border border-card-border/40">
+                <MapPin className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] text-on-surface-variant font-mono">Jarak</span>
+                  <span className="text-xs font-bold text-on-surface font-mono truncate">{formatDistance(task.distance)}</span>
+                </div>
+              </div>
+            )}
+            {task.duration_estimate && (
+              <div className="flex items-center gap-2 p-2.5 bg-surface-container-low rounded-xl border border-card-border/40">
+                <Clock className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] text-on-surface-variant font-mono">Estimasi</span>
+                  <span className="text-xs font-bold text-on-surface truncate">{task.duration_estimate}</span>
+                </div>
+              </div>
+            )}
+            {task.max_applicants && (
+              <div className="flex items-center gap-2 p-2.5 bg-surface-container-low rounded-xl border border-card-border/40">
+                <Users className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] text-on-surface-variant font-mono">Kuota</span>
+                  <span className="text-xs font-bold text-on-surface truncate">{task.max_applicants} Worker</span>
+                </div>
+              </div>
+            )}
+            {task.scheduled_at && (
+              <div className="flex items-center gap-2 p-2.5 bg-primary/5 rounded-xl border border-primary/20 col-span-2">
+                <Calendar className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] text-primary font-bold font-mono uppercase">Jadwal Tugas</span>
+                  <span className="text-xs font-bold text-on-surface">
+                    {new Date(task.scheduled_at).toLocaleDateString("id-ID", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Escrow Box */}
+        <div className="bg-tertiary-container/30 border border-tertiary/25 rounded-xl p-3.5 flex items-start gap-3 text-tertiary">
+          <Lock className="w-4 h-4 shrink-0 mt-0.5" />
+          <p className="text-xs leading-relaxed">
+            {task.is_bidding ? (
+              <>Dana pemberi kerja ditahan aman di Escrow (maksimal <span className="font-bold font-mono">{formatCurrency(task.budget_max ?? task.compensation)} / worker</span>). Setelah penawaran Anda diterima, dana dicairkan sesuai harga kesepakatan saat tugas selesai.</>
+            ) : (
+              <>Dana <span className="font-bold font-mono">{formatCurrency(task.compensation)} / worker</span> ditahan aman di Escrow dan langsung dicairkan setelah hasil kerja disetujui.</>
+            )}
+          </p>
+        </div>
+
+        {/* Task Description */}
+        <div>
+          <h3 className="font-headline font-bold text-xs uppercase tracking-wider text-on-surface-variant mb-2">Deskripsi Pekerjaan</h3>
+          <p className="text-xs text-on-surface leading-relaxed whitespace-pre-wrap bg-surface-container-low p-3.5 rounded-xl border border-card-border">
+            {task.description}
+          </p>
+        </div>
+
+        {/* Requirements / Skills */}
+        {task.skills && task.skills.length > 0 && (
+          <div>
+            <h3 className="font-headline font-bold text-xs uppercase tracking-wider text-on-surface-variant mb-2">Keahlian yang Dibutuhkan</h3>
+            <div className="flex flex-wrap gap-1.5">
+              {task.skills.map((skill: any) => (
+                <div key={skill.id_skill || skill.nama_skill} className="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full border border-primary/20">
+                  {renderIcon(skill.icon ?? null, "w-3.5 h-3.5 shrink-0")}
+                  <span>{skill.nama_skill}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Security & Escrow guarantee badge */}
+        <div className="p-3.5 rounded-2xl bg-secondary/5 border border-secondary/20 flex items-start gap-3">
+          <Lock className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-secondary block">Jaminan Escrow ITechno</span>
+            <p className="text-[11px] text-on-surface-variant leading-relaxed">
+              Dana kompensasi telah dikunci di sistem escrow kami. Pembayaran akan otomatis dicairkan segera setelah pekerjaan Anda diverifikasi selesai.
+            </p>
+          </div>
+        </div>
+
+        {/* Report Task to Admin Section */}
+        <div className="pt-2 border-t border-card-border/60 flex items-center justify-between">
+          <span className="text-[11px] text-on-surface-variant">Menemukan pelanggaran atau kejanggalan?</span>
+          <button
+            type="button"
+            onClick={() => setIsReportModalOpen(true)}
+            className="text-[11px] font-semibold text-error hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <Flag className="w-3 h-3" />
+            <span>Laporkan Tugas</span>
+          </button>
+        </div>
+      </div>
 
         {/* Bottom CTA Fixed */}
         <div className="p-4 bg-surface-container-lowest border-t border-card-border flex flex-col gap-2.5">

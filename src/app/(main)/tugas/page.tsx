@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Avatar } from "@/components/ui/Avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/motion/tabs";
 import { TaskStatus } from "@/types/database";
 import {
@@ -132,9 +133,11 @@ function TaskManagementCard({ task, onRefresh }: { task: RequesterTask; onRefres
         {/* Worker chip */}
         {task.accepted_worker && (
           <div className="flex items-center gap-2 bg-surface-container-lowest rounded-lg px-2.5 py-1 border border-card-border self-start">
-            <div className="w-5 h-5 rounded-full bg-primary text-on-primary flex items-center justify-center text-[10px] font-bold shrink-0">
-              {task.accepted_worker.nama_lengkap.charAt(0)}
-            </div>
+            <Avatar
+              src={task.accepted_worker.avatar_url}
+              name={task.accepted_worker.nama_lengkap}
+              size="xs"
+            />
             <span className="font-sans text-[11px] font-medium text-on-surface">
               Worker: {task.accepted_worker.nama_lengkap}
             </span>

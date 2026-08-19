@@ -15,7 +15,8 @@ import { useToast } from "@/components/ui/Toast";
 import { useDebounce } from "@/hooks/useDebounce";
 
 import { Modal } from "@/components/ui/Modal";
-import { Plus, Search, SearchX } from "lucide-react";
+import { Plus, Search, SearchX, Gavel, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface FeedClientProps {
   initialTasks: any[];
@@ -44,6 +45,8 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
   // Apply Modal state
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [applyMessage, setApplyMessage] = useState("");
+  const [applyBid, setApplyBid] = useState("");
+  const [bidError, setBidError] = useState("");
   const [applyLoading, setApplyLoading] = useState(false);
 
   useEffect(() => {
@@ -160,13 +163,37 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
   const openApplyModal = () => {
     if (!selectedTask) return;
     setApplyMessage("");
+    setApplyBid("");
+    setBidError("");
     setIsApplyModalOpen(true);
   };
 
-  // Submit Apply dengan Pesan
+  // Submit Apply dengan Pesan (+ harga penawaran untuk task bidding)
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTask) return;
+    setBidError("");
+
+    // Validasi bid untuk task bidding (sealed bid: wajib dalam range budget requester)
+    let numericBid: number | undefined = undefined;
+    if (selectedTask.is_bidding) {
+      numericBid = parseFloat(applyBid);
+      const minBid = selectedTask.budget_min ?? 0;
+      const maxBid = selectedTask.budget_max ?? selectedTask.compensation;
+      if (!numericBid || isNaN(numericBid) || numericBid <= 0) {
+        setBidError("Masukkan harga penawaran Anda terlebih dahulu.");
+        return;
+      }
+      if (numericBid < minBid) {
+        setBidError(`Penawaran minimal ${formatCurrency(minBid)}.`);
+        return;
+      }
+      if (numericBid > maxBid) {
+        setBidError(`Penawaran maksimal ${formatCurrency(maxBid)}.`);
+        return;
+      }
+    }
+
     setApplyLoading(true);
 
     try {
@@ -176,6 +203,7 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
         body: JSON.stringify({
           id_tasks: selectedTask.id_task,
           pesan: applyMessage.trim() || undefined,
+          bid_amount: numericBid,
         })
       });
       const data = await res.json();
@@ -188,7 +216,10 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
         }));
         setIsApplyModalOpen(false);
         setApplyMessage("");
-        showToast("Berhasil melamar tugas! Menunggu persetujuan pemberi kerja.");
+        setApplyBid("");
+        showToast(selectedTask?.is_bidding
+          ? "Penawaran terkirim! Menunggu pilihan pemberi kerja."
+          : "Berhasil melamar tugas! Menunggu persetujuan pemberi kerja.");
       } else {
         showToast(data.message || "Gagal melamar tugas");
       }
@@ -349,13 +380,58 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
 
       {/* Modal Popup Pengiriman Pesan Lamaran */}
       <Modal isOpen={isApplyModalOpen} onClose={() => setIsApplyModalOpen(false)} title="Lamar Tugas Pekerjaan">
-        <form onSubmit={handleApplySubmit} className="flex flex-col gap-4 font-sans text-xs">
+        <form onSubmit={handleApplySubmit} noValidate className="flex flex-col gap-4 font-sans text-xs">
           {selectedTask && (
             <div className="p-3 bg-surface-container-low border border-card-border rounded-xl flex flex-col gap-1">
               <span className="font-headline font-bold text-sm text-on-surface">{selectedTask.title}</span>
-              <span className="font-mono font-bold text-primary tabular-nums">
-                {formatCurrency(selectedTask.compensation)} / worker
-              </span>
+              {selectedTask.is_bidding ? (
+                <span className="font-mono font-bold text-primary tabular-nums flex items-center gap-1.5">
+                  <Gavel className="w-3.5 h-3.5" />
+                  {formatCurrency(selectedTask.budget_min ?? 0)} – {formatCurrency(selectedTask.budget_max ?? selectedTask.compensation)} (bidding)
+                </span>
+              ) : (
+                <span className="font-mono font-bold text-primary tabular-nums">
+                  {formatCurrency(selectedTask.compensation)} / worker
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Input Harga Penawaran — hanya untuk task bidding (sealed bid) */}
+          {selectedTask?.is_bidding && (
+            <div className="flex flex-col gap-1.5">
+              <label className="font-semibold text-on-surface">
+                Harga Penawaran Anda <span className="text-error">*</span>
+              </label>
+              <div className="relative flex items-center">
+                <span className="absolute left-3.5 font-mono font-bold text-on-surface-variant text-xs pointer-events-none">Rp</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  className={cn(
+                    "w-full pl-11 pr-3 py-2.5 text-xs font-mono font-bold bg-surface-container-low border rounded-lg text-on-surface focus:ring-2 focus:bg-surface-container-lowest focus:outline-none min-h-[42px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors",
+                    bidError
+                      ? "border-error focus:border-error focus:ring-error/20"
+                      : "border-card-border focus:border-primary focus:ring-primary/20"
+                  )}
+                  placeholder={`Range: ${formatCurrency(selectedTask.budget_min ?? 0)} – ${formatCurrency(selectedTask.budget_max ?? selectedTask.compensation)}`}
+                  value={applyBid}
+                  onChange={(e) => {
+                    setApplyBid(e.target.value);
+                    if (bidError) setBidError("");
+                  }}
+                />
+              </div>
+              {bidError ? (
+                <p className="text-[11px] font-medium text-error flex items-center gap-1.5 mt-0.5 animate-fadeIn">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{bidError}</span>
+                </p>
+              ) : (
+                <p className="text-[10px] text-on-surface-variant leading-relaxed">
+                  Penawaran bersifat rahasia (sealed bid) — hanya pemberi kerja yang dapat melihatnya.
+                </p>
+              )}
             </div>
           )}
 
@@ -364,7 +440,7 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
               Pesan untuk Pemberi Kerja (Opsional)
             </label>
             <textarea
-              className="w-full bg-surface-container-low border border-card-border rounded-xl p-3 text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[90px] custom-scrollbar"
+              className="w-full bg-surface-container-low border border-card-border rounded-lg p-3 text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[90px] custom-scrollbar"
               placeholder="Perkenalkan pengalaman Anda atau beri pesan singkat kepada pemberi kerja..."
               value={applyMessage}
               onChange={(e) => setApplyMessage(e.target.value)}
