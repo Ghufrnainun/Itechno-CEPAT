@@ -34,22 +34,28 @@ Satu akun bisa berperan sebagai Requester sekaligus Worker (dual-role).
 
 | Fitur                     | Deskripsi                                                      | Prioritas |
 | ------------------------- | -------------------------------------------------------------- | --------- |
-| Create Task               | Form: judul, deskripsi, kategori skill, lokasi, estimasi waktu, kompensasi (poin) | P0 |
+| Create Task (Fixed/Bidding)| Form: judul, deskripsi, kategori, lokasi, estimasi waktu, kompensasi fixed atau rentang budget bidding (Min-Max) | P0 |
+| Mode Bidding (Sealed-Bid) | Requester menentukan rentang budget min–max. Sistem mengunci escrow sebesar `budget_max * max_applicants`. | P0 |
 | Auto-geolocation          | Lokasi task otomatis dari GPS browser, bisa juga pin manual di map | P0     |
 | Task Status Tracking      | Requester lihat status: open → accepted → in_progress → completed | P0     |
-| Pilih Worker              | Dari daftar applicant, requester pilih siapa yang dikerjakan. Alternatif: auto-assign first-accept | P1 |
-| Konfirmasi Selesai        | Requester konfirmasi task selesai → trigger transfer poin + rating | P0    |
-| Cancel Task               | Requester bisa cancel task selama belum di-accept              | P1        |
+| Evaluasi & Terima Bid     | Melihat daftar tawaran masuk (sealed dari publik, hanya terlihat oleh requester), menerima worker dengan nominal bid yang diajukan | P0 |
+| Auto-Refund Selisih Escrow| Saat bid diterima di bawah `budget_max`, selisih dana langsung di-refund otomatis ke wallet requester (Model C Escrow) | P0 |
+| Multi-Worker Slot         | Mendukung perekrutan 1 atau banyak worker per task dengan kuota slot | P0     |
+| Konfirmasi Selesai        | Requester konfirmasi task selesai → trigger transfer dana ke worker + ulasan | P0    |
+| Cancel Task               | Requester bisa cancel task → seluruh sisa dana escrow di-refund penuh | P0        |
 
 ### 3.3 🔍 Feed & Discovery (Worker Side)
 
 | Fitur                     | Deskripsi                                                      | Prioritas |
 | ------------------------- | -------------------------------------------------------------- | --------- |
 | Feed Task Terdekat        | List view task yang ada dalam radius (default 2km)             | P0        |
+| Indikator Mode Bidding    | Badge visual `Gavel` dan rentang harga `Rp Min – Rp Max` untuk task berorientasi lelang/bidding | P0 |
 | Map View                  | Peta Leaflet + OpenStreetMap dengan marker task terdekat        | P0        |
 | Filter & Sort             | Filter by: kategori skill, kompensasi min, jarak. Sort by: terbaru, terdekat, kompensasi tertinggi | P1 |
-| Apply / Accept Task       | Worker klik apply → masuk antrian / langsung accept            | P0        |
-| Update Status             | Worker update: accepted → in_progress → selesai               | P0        |
+| Pengajuan Bid (Sealed-Bid)| Worker memasukkan harga penawaran dalam batas min–max yang ditentukan requester | P0 |
+| Perbarui & Batal Bid      | Worker dapat memperbarui nominal tawaran yang masih pending atau membatalkan lamaran | P0 |
+| Kuota Percobaan Melamar   | Batas maksimal melamar ulang (default 3x) jika tawaran sebelumnya ditolak/dibatalkan | P1 |
+| Update Status Pengerjaan  | Worker konfirmasi mulai pengerjaan & submit hasil tugas        | P0        |
 
 ### 3.4 📍 Geolocation & Radius
 
@@ -69,14 +75,16 @@ Satu akun bisa berperan sebagai Requester sekaligus Worker (dual-role).
 | Skor reputasi             | Rata-rata rating ditampilkan di profil                         | P0        |
 | Badge / Level (opsional)  | Gamification: badge untuk milestone tertentu                   | P2        |
 
-### 3.6 💰 Sistem Kompensasi (Poin Internal)
+### 3.6 💰 Sistem Dompet & Escrow Keamanan Dana
 
 | Fitur                     | Deskripsi                                                      | Prioritas |
 | ------------------------- | -------------------------------------------------------------- | --------- |
-| Poin sebagai mata uang    | Requester set kompensasi dalam poin. Worker terima poin setelah task selesai | P0 |
-| Saldo poin                | Tampilkan saldo poin user di dashboard/profil                  | P0        |
-| Histori transaksi         | Log keluar-masuk poin per task                                 | P1        |
-| Top-up poin (mock)        | Simulasi top-up poin untuk demo (bukan payment gateway riil)   | P1        |
+| Saldo Dompet Internal     | Saldo user untuk posting task atau menerima imbalan kerja      | P0        |
+| Escrow Hold (Plafon Max)  | Saldo dipotong & ditahan saat task dibuat (`budget_max * slot`) | P0        |
+| Dynamic Escrow Refund     | Selisih `budget_max - bid_accepted` langsung dikembalikan ke Requester saat kandidat disetujui | P0 |
+| Escrow Release            | Pencairan dana otomatis ke dompet Worker saat pekerjaan disetujui Requester | P0 |
+| Histori Transaksi         | Pencatatan log mutasi: `hold`, `release`, `refund`, `topup`    | P0        |
+| Top-up Saldo (Midtrans)   | Integrasi Midtrans Snap untuk pengisian saldo instan           | P0        |
 
 > **Catatan**: Untuk MVP/penyisihan, gunakan sistem poin internal. Tidak perlu integrasi payment gateway riil.
 

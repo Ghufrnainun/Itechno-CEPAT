@@ -259,37 +259,201 @@ Endpoint utama untuk daftar/feed tugas. Menghasilkan data yang kaya lengkap deng
 
 ---
 
-### POST `/api/tasks/apply`
+### POST `/api/tasks`
 
-🔒 **Authenticated (Worker)** — Mengirimkan lamaran (Apply) ke sebuah tugas.
+🔒 **Authenticated (Requester)** — Membuat tugas baru (mendukung mode Fixed-Price dan Bidding).
 
 **Request Body:**
 ```json
 {
-  "id_tasks": "uuid"
+  "judul_tugas": "Fotografi Menu Makanan Cafe",
+  "deskripsi_tugas": "Dibutuhkan fotografer untuk 10 menu baru...",
+  "estimasi_waktu": "2 Jam",
+  "kompensasi": 150000,
+  "latitude": -7.79194,
+  "longitude": 111.003746,
+  "id_category": "uuid-category",
+  "skill_requirements": ["uuid-skill-1"],
+  "max_applicants": 1,
+  "max_apply_attempts": 3,
+  "is_bidding": true,
+  "budget_min": 100000,
+  "budget_max": 150000
 }
 ```
 
-**Validasi:**
-- Tidak bisa melamar tugas buatan sendiri.
-- Tidak bisa melamar tugas yang sama lebih dari sekali.
-- User harus dalam keadaan login (Authenticated).
+**Validasi & Catatan Escrow:**
+- Untuk mode bidding (`is_bidding = true`), `budget_min` & `budget_max` wajib diisi (`budget_min < budget_max`).
+- `kompensasi` harus sama dengan `budget_max` sebagai plafon batas atas hold escrow.
+- Saldo requester akan di-hold di awal sebesar `budget_max * max_applicants`.
 
 **Response (201):**
 ```json
 {
   "success": true,
-  "message": "Berhasil melamar tugas.",
-  "data": { 
+  "message": "Task berhasil dibuat.",
+  "data": {
+    "id_tasks": "uuid",
+    "judul_tugas": "Fotografi Menu Makanan Cafe",
+    "kompensasi": 150000,
+    "is_bidding": true,
+    "budget_min": 100000,
+    "budget_max": 150000,
+    "max_applicants": 1,
+    "status": "open"
+  }
+}
+```
+
+---
+
+### POST `/api/tasks/[id]/apply`
+
+🔒 **Authenticated (Worker)** — Mengirimkan lamaran ke tugas tertentu (mendukung pengajuan nominal penawaran `bid_amount`).
+
+**Request Body:**
+```json
+{
+  "pesan": "Saya memiliki kamera DSLR dan pengalaman foto produk UMKM.",
+  "bid_amount": 125000
+}
+```
+
+**Validasi:**
+- Pada task mode bidding: `bid_amount` **wajib diisi** dan harus berada dalam rentang `budget_min <= bid_amount <= budget_max`.
+- Menggunakan sistem *Sealed-Bid*: Nominal penawaran hanya dapat dilihat oleh Requester pembuat tugas.
+- Worker tidak bisa melamar task buatannya sendiri atau melamar melebihi `max_apply_attempts`.
+
+**Response (201):**
+```json
+{
+  "success": true,
+  "message": "Lamaran berhasil dikirim.",
+  "data": {
     "id_task_applicants": "uuid",
     "id_tasks": "uuid",
     "id_worker": "uuid",
-    "id_status_task_applicants": "uuid",
-    "applied_at": "2026-08-03T10:00:00.000Z",
-    "status_applicant": {
-      "id_status_task_applicants": "uuid",
-      "nama_status": "PENDING"
-    }
+    "bid_amount": 125000,
+    "pesan": "Saya memiliki kamera DSLR...",
+    "status": "pending",
+    "applied_at": "2026-08-16T15:00:00.000Z"
+  }
+}
+```
+
+---
+
+### PATCH `/api/tasks/[id]/apply`
+
+🔒 **Authenticated (Worker)** — Mengubah nominal harga penawaran (*update bid*) yang masih berstatus `pending`.
+
+**Request Body:**
+```json
+{
+  "bid_amount": 120000
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Penawaran berhasil diperbarui.",
+  "data": {
+    "id_task_applicants": "uuid",
+    "bid_amount": 120000
+  }
+}
+```
+
+---
+
+### DELETE `/api/tasks/[id]/apply`
+
+🔒 **Authenticated (Worker)** — Membatalkan lamaran/penawaran yang diajukan.
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Lamaran berhasil dibatalkan."
+}
+```
+
+---
+
+### GET `/api/tasks/[id]/bids`
+
+🔒 **Authenticated (Requester Pemilik Task)** — Melihat seluruh daftar penawaran harga pelamar (Sealed Bids) diurutkan dari penawaran terendah.
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "task_id": "uuid",
+    "is_bidding": true,
+    "budget_min": 100000,
+    "budget_max": 150000,
+    "total_bids": 4,
+    "lowest_bid": 110000,
+    "highest_bid": 145000,
+    "bids": [
+      {
+        "id_task_applicants": "uuid-app-1",
+        "worker_id": "uuid-worker-1",
+        "worker_name": "Budi Santoso",
+        "worker_avatar": "https://...",
+        "rating": 4.9,
+        "total_completed": 12,
+        "bid_amount": 110000,
+        "message": "Siap kerja hari ini",
+        "status": "pending",
+        "applied_at": "2026-08-16T15:10:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### POST `/api/tasks/applicants/[id]`
+
+🔒 **Authenticated (Requester)** — Menerima (*accept*) atau menolak (*reject*) lamaran pelamar tertentu.
+
+**Request Body (Accept):**
+```json
+{
+  "action": "accept"
+}
+```
+
+**Request Body (Reject):**
+```json
+{
+  "action": "reject",
+  "alasan_penolakan": "Kualifikasi portofolio belum sesuai."
+}
+```
+
+**Logika Escrow & Refund (Model C):**
+- Saat `action: "accept"` disetujui pada task bidding:
+  - Worker diterima dengan nilai kontrak `bid_amount`.
+  - Selisih `(budget_max - bid_amount)` otomatis di-refund ke saldo Requester seketika.
+  - Alokasi slot dicatat pada `held_slots_json`.
+- Jika slot penuh (`accepted_count == max_applicants`), sisa pelamar `pending` otomatis diubah statusnya menjadi `rejected`.
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Pelamar berhasil diterima.",
+  "data": {
+    "id_task_applicants": "uuid",
+    "status": "accepted",
+    "bid_accepted": 110000,
+    "refund_amount": 40000
   }
 }
 ```
@@ -314,12 +478,14 @@ Endpoint utama untuk daftar/feed tugas. Menghasilkan data yang kaya lengkap deng
     {
       "id_task_applicants": "uuid",
       "applied_at": "2026-08-03T10:00:00.000Z",
+      "bid_amount": 110000,
       "status_applicant": {
         "nama_status": "PENDING"
       },
       "task": {
         "judul_tugas": "Perbaiki Pipa Bocor",
         "kompensasi": 100000,
+        "is_bidding": true,
         "status_task": {
           "nama_status": "OPEN"
         },
@@ -333,31 +499,6 @@ Endpoint utama untuk daftar/feed tugas. Menghasilkan data yang kaya lengkap deng
   ]
 }
 ```
-
----
-
-### POST `/api/tasks/:id/accept`
-
-🔒 **Authenticated (Requester)** — Accept applicant tertentu.
-
-**Request Body:**
-```json
-{
-  "worker_id": "uuid"
-}
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "data": { "task_id": "uuid", "status": "accepted", "worker_id": "uuid" }
-}
-```
-
-**Side effects:**
-- Task status → `accepted`, `accepted_at` di-set
-- `task_applicants` status worker → `accepted`, lainnya → `rejected`
 - Notifikasi ke worker yang diterima
 - FCM push ke worker
 

@@ -56,3 +56,14 @@ Jika ingin mengubah skema *database* di masa depan, ikuti alur kerja berikut:
 
 - **Untuk Perubahan Tabel/Kolom**: Ubah file `prisma/schema.prisma` dan jalankan `npx prisma migrate dev` untuk membuat migrasi Prisma.
 - **Untuk Perubahan Keamanan/Kebijakan (RLS)**: Jangan masukkan logika RLS ke dalam migrasi Prisma. Sebagai gantinya, ubah atau buat file *script* `.sql` di folder `supabase/migrations/` dan terapkan secara manual atau melalui Supabase CLI.
+
+---
+
+## 5. Riwayat Migrasi Database
+
+| Nama Migrasi | Tanggal | Deskripsi Perubahan |
+|---|---|---|
+| `20260729_init` | 29 Juli 2026 | Inisialisasi skema awal PostgreSQL, PostGIS, tabel core (User, Task, Category, Skill, Review). |
+| `20260803_multi_applicant` | 03 Agustus 2026 | Penambahan kolom `max_applicants`, `max_apply_attempts`, `apply_count`, dan pelacakan status multi-worker. |
+| `20260810_chat_and_admin` | 10 Agustus 2026 | Penambahan tabel `ChatRoom`, `Message`, `AdminSession`, dan `UserReport`. |
+| `20260816_task_bidding` | 16 Agustus 2026 | **Task Bidding System (Fase 1)**: Penambahan kolom `is_bidding`, `budget_min`, `budget_max`, `held_slots_json` pada `Task`, dan `bid_amount` pada `TaskApplicants`. |

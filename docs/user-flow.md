@@ -51,41 +51,46 @@ Dokumen ini menjelaskan alur pengguna (*User Journey*), perpindahan layar (*Scre
 ### A. Alur Pemberi Kerja (Poster Flow)
 1. **L2 - Dashboard**: Membuka dashboard ➔ Klik tombol **"Buat Tugas Baru"**.
 2. **L3A - Form Buat Task**:
-   * Mengisi judul, deskripsi, kategori, imbalan (misal: Rp 50.000), dan memilih titik lokasi di peta interaktif.
-   * Sistem memeriksa saldo wallet. Jika cukup, saldo dipotong & dikunci (*Escrow Lock*).
-   * Task tayang di peta publik dengan status `OPEN`.
-3. **L5 - Manajemen Pelamar**:
-   * Menerima notifikasi lamaran ➔ Melihat profil & *pitch message* pelamar.
-   * Mengklik **"Terima Pekerja"** ➔ Status task berubah menjadi `ASSIGNED` / `IN_PROGRESS`.
-   * Ruang chat otomatis terbuka untuk koordinasi.
+   * Memilih mode harga: **Harga Tetap (Fixed)** atau **Mode Bidding (Lelang/Penawaran)**.
+   * Pada mode Bidding: Menentukan rentang budget minimal & maksimal (misal: Rp 100.000 – Rp 150.000) serta kuota pekerja.
+   * Sistem memeriksa saldo wallet. Saldo dipotong & dikunci (*Escrow Lock*) sebesar plafon tertinggi (`budget_max * kuota_worker`).
+   * Task tayang di peta & feed dengan badge **Mode Bidding**.
+3. **L5 - Manajemen Pelamar & Sealed Bidding**:
+   * Menerima notifikasi lamaran ➔ Melihat daftar penawaran harga (*sealed bid* dari para pekerja).
+   * Memilih tawaran terbaik dan mengklik **"Terima Pekerja (Rp xxx.xxx)"**.
+   * **Auto-Refund Escrow (Model C)**: Selisih `(budget_max - bid_accepted)` otomatis dikembalikan seketika ke saldo Poster.
+   * Status task berubah menjadi `ACCEPTED` / `IN_PROGRESS` dan ruang chat koordinasi aktif.
 4. **L6B - Pengesahan & Pencairan Escrow**:
    * Menerima kiriman *bukti pengerjaan* dari Tasker.
-   * Mengklik **"Setujui & Selesaikan"** ➔ Sistem otomatis mentransfer dana escrow ke wallet Tasker (*Escrow Release*).
+   * Mengklik **"Setujui & Selesaikan"** ➔ Sistem otomatis mentransfer dana escrow yang disepakati ke wallet Tasker (*Escrow Release*).
    * Status task berubah menjadi `COMPLETED`.
 5. **L7 - Rating**: Memberikan penilaian bintang 1–5 & ulasan untuk Tasker.
 
 ---
 
 ### B. Alur Pekerja (Tasker Flow)
-1. **L2 - Dashboard Peta**:
+1. **L2 - Dashboard Peta & Feed**:
    * Mengizinkan fitur GPS / Geolocation.
-   * Melihat pin tugas mikro aktif dalam radius 2 km di sekitar posisi pengguna.
-2. **L3B - Detail Task**: Mengklik pin / card task untuk membaca deskripsi dan nominal imbalan.
-3. **L4 - Apply Task**: Mengirimkan pesan lamaran singkat (*pitch message*).
-4. **L5 - Koordinasi**: Setelah diterima, berkomunikasi dengan Poster via *In-App Realtime Chat*.
-5. **L6A - Kirim Bukti Kerja**: Mengunggah deskripsi & foto bukti pengerjaan ke Supabase Storage.
+   * Melihat pin & card tugas mikro aktif dalam radius 2 km di sekitar posisi pengguna dengan indikator badge harga tetap / rentang bidding.
+2. **L3B - Detail Task**: Membaca spesifikasi tugas, estimasi waktu, dan rentang budget yang ditawarkan Poster.
+3. **L4 - Apply & Ajukan Penawaran (Bidding)**:
+   * Memasukkan pesan lamaran (*pitch message*) dan nominal harga penawaran kustom (`bid_amount`) dalam batas rentang budget.
+   * Tawaran bersifat tertutup (*sealed-bid*) dan hanya bisa dilihat oleh Poster.
+   * Tasker dapat memperbarui (*edit/update*) nominal tawaran selama status masih `PENDING`.
+4. **L5 - Koordinasi**: Setelah tawaran diterima, berkomunikasi dengan Poster via *In-App Realtime Chat*.
+5. **L6A - Konfirmasi Mulai & Kirim Bukti Kerja**: Mengunggah deskripsi & foto bukti pengerjaan.
 6. **L7 & L8 - Terima Imbalan & Rating**:
-   * Menerima notifikasi saldo bertambah di wallet setelah disetujui Poster.
+   * Menerima notifikasi saldo bertambah di wallet sesuai nilai `bid_amount` yang disepakati.
    * Memberikan rating & ulasan balik untuk Poster.
 
 ---
 
-## 3. Matriks Transisi Status Task
+## 3. Matriks Transisi Status Task & Escrow
 
 | Status Saat Ini | Aksi Pemicu | Pelaku Aksi | Status Selanjutnya | Efek Saldo Escrow |
 |---|---|---|---|---|
-| `-` | Submit Form Buat Task | Poster | `OPEN` | Saldo Poster dipotong & dikunci |
-| `OPEN` | Poster memilih & menyetujui pelamar | Poster | `ASSIGNED` / `IN_PROGRESS` | Dana tetap dikunci di escrow |
-| `IN_PROGRESS` | Tasker mengirim bukti kerja | Tasker | `SUBMITTED` | Dana tetap dikunci di escrow |
-| `SUBMITTED` | Poster menyetujui hasil kerja | Poster | `COMPLETED` | Dana escrow ditransfer ke Tasker |
-| `OPEN` / `ASSIGNED` | Task dibatalkan / expired | Poster / System | `CANCELLED` | Dana escrow di-refund ke Poster |
+| `-` | Submit Form Buat Task | Poster | `OPEN` | Saldo Poster dipotong & dikunci sebesar `budget_max * kuota` |
+| `OPEN` | Poster menerima tawaran bid Worker | Poster | `ACCEPTED` / `IN_PROGRESS` | Selisih `(budget_max - bid)` di-refund ke Poster; sisa `bid` tetap di-hold |
+| `IN_PROGRESS` | Worker mengirim bukti kerja | Worker | `SUBMITTED` | Dana tetap dikunci di escrow |
+| `SUBMITTED` | Poster menyetujui hasil kerja | Poster | `COMPLETED` | Dana escrow (`bid_amount`) dicairkan ke wallet Worker |
+| `OPEN` / `ACCEPTED` | Task dibatalkan / kuota sisa tidak terisi | Poster / System | `CANCELLED` | Seluruh sisa dana escrow di-refund penuh ke Poster |
