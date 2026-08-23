@@ -152,4 +152,38 @@ export class GamificationService {
       console.error("[GamificationService] Failed to check badges:", error);
     }
   }
+
+  /**
+   * Memberikan bonus XP tambahan berdasarkan streak aktif user.
+   * Dipanggil SETELAH updateStreak() — jadi current_streak sudah nilai terbaru.
+   *
+   * Skala bonus (biar progres level tetap terasa):
+   * - streak 3-6 hari   → +10 XP
+   * - streak 7-13 hari  → +25 XP
+   * - streak 14-29 hari → +50 XP
+   * - streak 30+ hari   → +100 XP
+   */
+  static async awardStreakBonusXP(userId: string) {
+    try {
+      const streak = await prisma.userStreak.findUnique({
+        where: { id_user: userId },
+      });
+
+      if (!streak) return null;
+
+      const { current_streak } = streak;
+      let bonus = 0;
+      if (current_streak >= 30) bonus = 100;
+      else if (current_streak >= 14) bonus = 50;
+      else if (current_streak >= 7) bonus = 25;
+      else if (current_streak >= 3) bonus = 10;
+
+      if (bonus <= 0) return null;
+
+      return this.addXP(userId, bonus);
+    } catch (error) {
+      console.error("[GamificationService] Failed to award streak bonus XP:", error);
+      return null;
+    }
+  }
 }

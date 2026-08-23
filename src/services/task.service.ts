@@ -1309,6 +1309,8 @@ export const taskService = {
           try {
             await GamificationService.addXP(workerApp.id_worker, 50);
             await GamificationService.updateStreak(workerApp.id_worker);
+            // Bonus XP streak — dihitung setelah streak ter-update (3+ hari berturut-turut)
+            await GamificationService.awardStreakBonusXP(workerApp.id_worker);
             await GamificationService.checkAndAwardBadges(workerApp.id_worker);
           } catch (e) {
             console.error("Gamification hook failed", e);

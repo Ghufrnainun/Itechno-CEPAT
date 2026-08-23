@@ -27,6 +27,7 @@ import {
   Flag,
   Calendar,
   ShieldAlert,
+  Bookmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ReportModal } from "@/components/ui/ReportModal";
@@ -241,6 +242,16 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
             >
               <History className="w-4 h-4 shrink-0" />
               {isExpanded && "Riwayat"}
+            </Link>
+
+            <Link
+              href="/saved"
+              title={!isExpanded ? "Tersimpan" : undefined}
+              aria-current={pathname === "/saved" ? "page" : undefined}
+              className={cn("sidebar-link flex items-center gap-3", pathname === "/saved" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+            >
+              <Bookmark className="w-4 h-4 shrink-0" />
+              {isExpanded && "Tersimpan"}
             </Link>
 
             <Link

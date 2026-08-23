@@ -19,16 +19,19 @@ export async function GET(request: NextRequest) {
     // All time uses the user's total xp directly
     const leaderboard = await prisma.$queryRawUnsafe(`
       SELECT 
-        id_user, 
-        nama_lengkap, 
-        avatar_url, 
-        xp, 
-        level, 
-        total_completed, 
-        rating_avg,
-        xp AS score
-      FROM "User"
-      WHERE id_role = $1
+        u.id_user, 
+        u.nama_lengkap, 
+        u.avatar_url, 
+        u.xp, 
+        u.level, 
+        u.total_completed, 
+        u.rating_avg,
+        us.current_streak,
+        us.longest_streak,
+        u.xp AS score
+      FROM "User" u
+      LEFT JOIN "UserStreak" us ON us.id_user = u.id_user
+      WHERE u.id_role = $1
       ORDER BY score DESC, total_completed DESC, rating_avg DESC
       LIMIT $2
     `, workerRole.id_role, limit);
