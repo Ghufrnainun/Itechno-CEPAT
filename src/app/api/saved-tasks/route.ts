@@ -142,31 +142,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existing = await prisma.savedTask.findUnique({
-      where: {
-        id_user_id_tasks: {
+    // ── Atomic toggle via unique constraint ──────────────────────────────
+    // Race-safe: rely on the composite unique index (id_user, id_tasks).
+    // Try to create first. If it collides (P2002 = unique violation), the
+    // bookmark already exists → delete it instead. No check-then-act window.
+    try {
+      await prisma.savedTask.create({
+        data: {
           id_user: user.id_user,
           id_tasks,
         },
-      },
-    });
-
-    if (existing) {
-      // Sudah disimpan → hapus (unbookmark)
-      await prisma.savedTask.delete({
-        where: { id_saved: existing.id_saved },
       });
-      return NextResponse.json({ success: true, saved: false });
+      return NextResponse.json({ success: true, saved: true });
+    } catch (createError) {
+      const err = createError as { code?: string };
+      if (err?.code === "P2002") {
+        // Already saved → delete (toggle off)
+        await prisma.savedTask.delete({
+          where: {
+            id_user_id_tasks: {
+              id_user: user.id_user,
+              id_tasks,
+            },
+          },
+        });
+        return NextResponse.json({ success: true, saved: false });
+      }
+      throw createError;
     }
-
-    // Belum disimpan → tambah
-    await prisma.savedTask.create({
-      data: {
-        id_user: user.id_user,
-        id_tasks,
-      },
-    });
-    return NextResponse.json({ success: true, saved: true });
   } catch (error) {
     console.error("[POST /api/saved-tasks] Error:", error);
     return NextResponse.json(

@@ -68,11 +68,22 @@ export class GamificationService {
       const lastActivity = new Date(streak.last_activity_date);
       lastActivity.setHours(0, 0, 0, 0);
 
-      const diffTime = Math.abs(now.getTime() - lastActivity.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      // Compare dates directly using normalized strings (no time component)
+      const today = now.toISOString().split("T")[0]; // YYYY-MM-DD
+      const lastStr = lastActivity.toISOString().split("T")[0];
 
-      if (diffDays === 1) {
-        // Logged in next day, increment streak
+      if (today === lastStr) {
+        // Logged in same day, do nothing
+        return streak;
+      }
+
+      // Calculate yesterday
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+      if (lastStr === yesterdayStr) {
+        // Previous day logged in → increment streak
         const newCurrent = streak.current_streak + 1;
         return prisma.userStreak.update({
           where: { id_user: userId },
@@ -82,19 +93,16 @@ export class GamificationService {
             last_activity_date: now,
           },
         });
-      } else if (diffDays > 1) {
-        // Missed a day, reset streak
-        return prisma.userStreak.update({
-          where: { id_user: userId },
-          data: {
-            current_streak: 1,
-            last_activity_date: now,
-          },
-        });
       }
 
-      // Logged in the same day, do nothing
-      return streak;
+      // Gap > 1 day (missed a day) → reset to 1
+      return prisma.userStreak.update({
+        where: { id_user: userId },
+        data: {
+          current_streak: 1,
+          last_activity_date: now,
+        },
+      });
     } catch (error) {
       console.error("[GamificationService] Failed to update streak:", error);
       return null;
