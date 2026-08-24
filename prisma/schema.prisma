@@ -86,6 +86,7 @@ model User {
   user_reports            UserReport[]
   disputes_reported       Dispute[]        @relation("DisputeReporter")
   disputes_received       Dispute[]        @relation("DisputeRespondent")
+  xp_logs                 XPLog[]
   role                    Role             @relation(fields: [id_role], references: [id_role])
 }
 
@@ -272,6 +273,15 @@ model UserStreak {
   longest_streak     Int       @default(0)
   last_activity_date DateTime?
   user               User      @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+}
+
+model XPLog {
+  id_xp_log   String   @id @default(uuid())
+  id_user     String
+  xp_amount   Int
+  source      String?  
+  created_at  DateTime @default(now())
+  user        User     @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
 }
 
 model PaymentTransaction {
