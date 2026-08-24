@@ -9,6 +9,7 @@ interface AdminDrawerProps {
   onClose: () => void;
   title: string;
   subtitle?: string;
+  headerActions?: ReactNode;
   children: ReactNode;
 }
 
@@ -17,6 +18,7 @@ export default function AdminDrawer({
   onClose,
   title,
   subtitle,
+  headerActions,
   children,
 }: AdminDrawerProps) {
   useEffect(() => {
@@ -57,26 +59,29 @@ export default function AdminDrawer({
               className="w-screen max-w-md bg-white border-l border-card-border shadow-xl flex flex-col"
             >
               {/* Header */}
-              <div className="px-6 py-4 border-b border-card-border flex items-center justify-between bg-surface-container-low/50">
-                <div>
-                  <h3 className="font-headline font-bold text-base text-on-surface">
+              <div className="px-6 py-4 border-b border-card-border flex items-center justify-between bg-surface-container-low/50 gap-3">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-headline font-bold text-base text-on-surface truncate">
                     {title}
                   </h3>
                   {subtitle && (
-                    <p className="font-mono text-xs text-on-surface-variant mt-0.5">
+                    <p className="font-mono text-xs text-on-surface-variant mt-0.5 truncate">
                       {subtitle}
                     </p>
                   )}
                 </div>
 
-                <button
-                  onClick={onClose}
-                  className="w-8 h-8 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container flex items-center justify-center transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
-                  title="Tutup Panel"
-                  aria-label="Tutup Panel"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  {headerActions}
+                  <button
+                    onClick={onClose}
+                    className="w-8 h-8 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container flex items-center justify-center transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
+                    title="Tutup Panel"
+                    aria-label="Tutup Panel"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               {/* Scrollable Body */}
