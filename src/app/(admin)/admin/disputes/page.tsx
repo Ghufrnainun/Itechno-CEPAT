@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import AdminDrawer from '@/components/admin/AdminDrawer';
@@ -22,6 +23,8 @@ import {
   Send,
   Loader2,
   ExternalLink,
+  Maximize2,
+  X,
 } from 'lucide-react';
 
 interface DisputeUser {
@@ -143,6 +146,9 @@ export default function AdminDisputesPage() {
   // Admin Messaging in Drawer
   const [adminMsg, setAdminMsg] = useState('');
   const [sendingAdminMsg, setSendingAdminMsg] = useState(false);
+
+  // Lightbox Image Preview Modal
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   const fetchDisputes = useCallback(async (selectTargetId?: string) => {
     setLoading(true);
@@ -417,6 +423,19 @@ export default function AdminDisputesPage() {
         isOpen={Boolean(selectedDispute)}
         onClose={() => setSelectedDispute(null)}
         title="Tinjauan & Putusan Sengketa"
+        headerActions={
+          selectedDispute ? (
+            <Link
+              href={`/admin/disputes/${selectedDispute.id_dispute}`}
+              target="_blank"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-primary/10 text-primary hover:bg-primary hover:text-white flex items-center gap-1.5 transition-colors border border-primary/20 cursor-pointer shrink-0"
+              title="Buka Halaman Penuh"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Lihat Penuh</span>
+            </Link>
+          ) : undefined
+        }
       >
         {loadingDetail || !selectedDispute ? (
           <div className="p-6 flex flex-col gap-4">
@@ -448,26 +467,32 @@ export default function AdminDisputesPage() {
 
             {/* Parties Info */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-xl bg-surface-container-low border border-card-border flex flex-col gap-1">
+              <div className="p-3 rounded-xl bg-surface-container-low border border-card-border flex flex-col gap-1 min-w-0">
                 <span className="text-[10px] font-bold text-amber-600 uppercase font-mono">
                   Pelapor (Reporter)
                 </span>
-                <span className="font-bold text-on-surface">
+                <span className="font-bold text-on-surface truncate">
                   {selectedDispute.reporter?.nama_lengkap}
                 </span>
-                <span className="text-[11px] text-on-surface-variant">
+                <span
+                  className="text-[11px] text-on-surface-variant font-mono truncate break-all leading-snug"
+                  title={selectedDispute.reporter?.email}
+                >
                   {selectedDispute.reporter?.email}
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-surface-container-low border border-card-border flex flex-col gap-1">
+              <div className="p-3 rounded-xl bg-surface-container-low border border-card-border flex flex-col gap-1 min-w-0">
                 <span className="text-[10px] font-bold text-on-surface-variant uppercase font-mono">
                   Terlapor (Respondent)
                 </span>
-                <span className="font-bold text-on-surface">
+                <span className="font-bold text-on-surface truncate">
                   {selectedDispute.respondent?.nama_lengkap}
                 </span>
-                <span className="text-[11px] text-on-surface-variant">
+                <span
+                  className="text-[11px] text-on-surface-variant font-mono truncate break-all leading-snug"
+                  title={selectedDispute.respondent?.email}
+                >
                   {selectedDispute.respondent?.email}
                 </span>
               </div>
@@ -496,7 +521,7 @@ export default function AdminDisputesPage() {
                   {selectedDispute.evidences?.map((ev: any) => (
                     <div
                       key={ev.id_evidence}
-                      className="p-3 rounded-xl bg-surface-container-low border border-card-border flex flex-col gap-1"
+                      className="p-3 rounded-xl bg-surface-container-low border border-card-border flex flex-col gap-1.5"
                     >
                       <span className="text-[10px] text-on-surface-variant font-mono">
                         Diunggah oleh:{' '}
@@ -505,17 +530,42 @@ export default function AdminDisputesPage() {
                           : selectedDispute.respondent?.nama_lengkap}
                       </span>
                       {ev.type === 'image' || ev.content.match(/\.(jpeg|jpg|gif|png|webp)/i) ? (
-                        <a
-                          href={ev.content}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-primary font-semibold underline flex items-center gap-1 mt-1"
-                        >
-                          <span>Buka Gambar Bukti</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
+                        <div className="space-y-1.5 mt-0.5">
+                          <div
+                            onClick={() => setLightboxImage(ev.content)}
+                            className="relative group rounded-xl overflow-hidden border border-card-border bg-black/5 cursor-zoom-in aspect-video flex items-center justify-center max-h-36"
+                          >
+                            <img
+                              src={ev.content}
+                              alt="Bukti Sengketa"
+                              className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-150"
+                            />
+                            <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-semibold">
+                              <Maximize2 className="w-3.5 h-3.5" />
+                              <span>Perbesar</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px]">
+                            <button
+                              type="button"
+                              onClick={() => setLightboxImage(ev.content)}
+                              className="text-primary font-bold hover:underline cursor-pointer"
+                            >
+                              Pratinjau Foto
+                            </button>
+                            <a
+                              href={ev.content}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-on-surface-variant hover:text-on-surface flex items-center gap-1 font-mono"
+                            >
+                              <span>Buka Asli</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+                        </div>
                       ) : (
-                        <p className="text-on-surface">{ev.content}</p>
+                        <p className="text-on-surface break-all">{ev.content}</p>
                       )}
                     </div>
                   ))}
@@ -675,6 +725,29 @@ export default function AdminDisputesPage() {
           </div>
         )}
       </AdminDrawer>
+
+      {/* Lightbox Modal */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div className="relative max-w-3xl max-h-[90vh] bg-surface-container-lowest rounded-3xl overflow-hidden border border-card-border p-2">
+            <button
+              onClick={() => setLightboxImage(null)}
+              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <img
+              src={lightboxImage}
+              alt="Pratinjau Bukti"
+              className="w-full h-full max-h-[80vh] object-contain rounded-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {toast && <ToastNotif toast={toast} onClose={() => setToast(null)} />}

@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
 
     if (search.trim()) {
       where.OR = [
+        { id_tasks: { contains: search, mode: 'insensitive' } },
         { judul_tugas: { contains: search, mode: 'insensitive' } },
         { deskripsi_tugas: { contains: search, mode: 'insensitive' } },
         {
