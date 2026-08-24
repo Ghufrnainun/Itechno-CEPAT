@@ -82,14 +82,47 @@ export default function TaskManagementPage() {
     task: AdminTask;
   } | null>(null);
 
+  const openTaskById = useCallback(async (taskId: string) => {
+    try {
+      const res = await fetch(`/api/admin/tasks/${taskId}`);
+      if (res.ok) {
+        const json = await res.json().catch(() => ({}));
+        if (json.success && json.data) {
+          const t = json.data;
+          setSelectedTask({
+            id: t.id,
+            judul_tugas: t.judul_tugas,
+            deskripsi_tugas: t.deskripsi_tugas,
+            kompensasi: t.kompensasi,
+            estimasi_waktu: t.estimasi_waktu,
+            created_at: t.created_at,
+            status: (t.status || '').toLowerCase(),
+            kategori: t.kategori,
+            kategori_icon: t.kategori_icon,
+            applicants_count: t.applicants_count || t.applicants?.length || 0,
+            requester: t.requester,
+            worker_assigned: t.applicants?.find((a: any) => (a.status || '').toLowerCase() === 'accepted')?.worker || null,
+          });
+        }
+      }
+    } catch (e) {
+      console.error('[AdminTasks] Failed to auto-open task by ID:', e);
+    }
+  }, []);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const searchFromUrl = new URLSearchParams(window.location.search).get('search');
+      const urlParams = new URLSearchParams(window.location.search);
+      const idFromUrl = urlParams.get('id') || urlParams.get('taskId');
+      const searchFromUrl = urlParams.get('search');
       if (searchFromUrl) {
         setSearchTerm(searchFromUrl);
       }
+      if (idFromUrl) {
+        openTaskById(idFromUrl);
+      }
     }
-  }, []);
+  }, [openTaskById]);
 
   const fetchTasks = useCallback(async () => {
     setLoading(true);

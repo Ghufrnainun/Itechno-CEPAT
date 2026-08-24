@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import AdminDrawer from '@/components/admin/AdminDrawer';
@@ -20,6 +21,8 @@ import {
   XCircle,
   FileText,
   Loader2,
+  Briefcase,
+  ExternalLink,
 } from 'lucide-react';
 
 interface ReportUser {
@@ -80,6 +83,53 @@ function ReportStatusBadge({ status }: { status: string }) {
     rejected: 'ditolak',
   };
   return <StatusBadge status={statusMap[status] || status} />;
+}
+
+interface ParsedTaskInfo {
+  taskId: string;
+  taskTitle: string;
+  isExplicitTag: boolean;
+}
+
+function extractTaskFromReport(deskripsi: string, subjek: string): ParsedTaskInfo | null {
+  if (!deskripsi && !subjek) return null;
+
+  // 1. Format standar ReportModal: [Terkait Task: Judul (ID: uuid)]
+  const explicitMatch = deskripsi?.match(/\[Terkait Task:\s*(.*?)\s*\(ID:\s*([a-f0-9\-]+)\)\]/i);
+  if (explicitMatch) {
+    return {
+      taskTitle: explicitMatch[1].trim(),
+      taskId: explicitMatch[2].trim(),
+      isExplicitTag: true,
+    };
+  }
+
+  // 2. Pattern (ID: uuid) atau ID: uuid
+  const combined = `${subjek || ''} ${deskripsi || ''}`;
+  const idMatch =
+    combined.match(/\(ID:\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\)/i) ||
+    combined.match(/ID:\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
+
+  if (idMatch) {
+    const titleMatch = subjek?.match(/\[Pelanggaran Task\]\s*(.*)/i);
+    return {
+      taskTitle: titleMatch ? titleMatch[1].trim() : 'Tugas Terkait',
+      taskId: idMatch[1].trim(),
+      isExplicitTag: false,
+    };
+  }
+
+  // 3. Fallback UUID 36-char
+  const rawUuidMatch = combined.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
+  if (rawUuidMatch) {
+    return {
+      taskTitle: 'Tugas Terkait',
+      taskId: rawUuidMatch[1].trim(),
+      isExplicitTag: false,
+    };
+  }
+
+  return null;
 }
 
 export default function AdminReportsPage() {
@@ -206,12 +256,22 @@ export default function AdminReportsPage() {
     },
     {
       header: 'Subjek Laporan',
-      cell: (row) => (
-        <div className="max-w-xs truncate">
-          <p className="text-xs font-bold text-on-surface truncate">{row.subjek}</p>
-          <p className="text-[11px] text-on-surface-variant truncate">{row.deskripsi}</p>
-        </div>
-      ),
+      cell: (row) => {
+        const taskInfo = extractTaskFromReport(row.deskripsi, row.subjek);
+        return (
+          <div className="max-w-xs truncate">
+            <div className="flex items-center gap-1.5 truncate">
+              {taskInfo && (
+                <span className="px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 font-mono text-[9px] font-bold shrink-0">
+                  Task
+                </span>
+              )}
+              <p className="text-xs font-bold text-on-surface truncate">{row.subjek}</p>
+            </div>
+            <p className="text-[11px] text-on-surface-variant truncate">{row.deskripsi}</p>
+          </div>
+        );
+      },
     },
     {
       header: 'Status',
@@ -426,38 +486,101 @@ export default function AdminReportsPage() {
               <ReportStatusBadge status={selectedReport.status} />
             </div>
 
-            {/* Subject & Description */}
-            <div className="space-y-3">
-              <div>
-                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-on-surface-variant">
-                  Subjek Laporan
-                </label>
-                <h3 className="text-sm font-bold text-on-surface mt-0.5">
-                  {selectedReport.subjek}
-                </h3>
-              </div>
+            {/* Calculate taskInfo if report is associated with a task */}
+            {(() => {
+              const taskInfo = selectedReport ? extractTaskFromReport(selectedReport.deskripsi, selectedReport.subjek) : null;
 
-              <div>
-                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-on-surface-variant">
-                  Detail Permasalahan
-                </label>
-                <div className="mt-1 p-3.5 rounded-xl bg-surface-container-low border border-card-border text-xs text-on-surface leading-relaxed whitespace-pre-wrap">
-                  {selectedReport.deskripsi}
-                </div>
-              </div>
+              return (
+                <>
+                  {/* If related to task, show prominent Task Link Card */}
+                  {taskInfo && (
+                    <div className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 flex flex-col gap-2.5 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-amber-800 font-bold text-xs font-headline">
+                          <Briefcase className="w-4 h-4 text-amber-600 shrink-0" />
+                          <span>Tugas Terkait yang Dilaporkan</span>
+                        </div>
+                        <span className="font-mono text-[10px] bg-amber-500/20 text-amber-800 px-2 py-0.5 rounded font-bold">
+                          #{taskInfo.taskId.substring(0, 8)}
+                        </span>
+                      </div>
 
-              <div>
-                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-on-surface-variant">
-                  Waktu Pelaporan
-                </label>
-                <p className="text-xs font-mono text-on-surface-variant mt-0.5 tabular-nums">
-                  {new Date(selectedReport.created_at).toLocaleString('id-ID', {
-                    dateStyle: 'full',
-                    timeStyle: 'medium',
-                  })}
-                </p>
-              </div>
-            </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-xs text-on-surface truncate">
+                          {taskInfo.taskTitle}
+                        </p>
+                        <p className="text-[11px] font-mono text-on-surface-variant break-all mt-0.5" title={taskInfo.taskId}>
+                          ID: {taskInfo.taskId}
+                        </p>
+                      </div>
+
+                      <Link
+                        href={`/admin/tasks?id=${taskInfo.taskId}&search=${encodeURIComponent(taskInfo.taskTitle !== 'Tugas Terkait' ? taskInfo.taskTitle : taskInfo.taskId)}`}
+                        target="_blank"
+                        className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-xs hover:bg-primary/90 transition-all shadow-xs mt-1"
+                      >
+                        <span>Buka Detail Tugas di Task Management</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  )}
+
+                  {/* Subject & Description */}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-on-surface-variant">
+                        Subjek Laporan
+                      </label>
+                      <h3 className="text-sm font-bold text-on-surface mt-0.5">
+                        {selectedReport.subjek}
+                      </h3>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-on-surface-variant">
+                        Detail Permasalahan
+                      </label>
+                      <div className="mt-1 p-3.5 rounded-xl bg-surface-container-low border border-card-border text-xs text-on-surface leading-relaxed">
+                        {taskInfo && (
+                          <div className="mb-2.5 pb-2.5 border-b border-card-border/70">
+                            <Link
+                              href={`/admin/tasks?id=${taskInfo.taskId}&search=${encodeURIComponent(taskInfo.taskTitle !== 'Tugas Terkait' ? taskInfo.taskTitle : taskInfo.taskId)}`}
+                              target="_blank"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-800 border border-amber-500/30 hover:bg-amber-500/25 transition-colors font-semibold text-[11px]"
+                              title="Klik untuk membuka tugas di Task Management"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                              <span>
+                                Terkait Task:{' '}
+                                <strong className="underline underline-offset-2">{taskInfo.taskTitle}</strong>{' '}
+                                <span className="font-mono text-[10px] opacity-80">(ID: #{taskInfo.taskId.substring(0, 8)})</span>
+                              </span>
+                            </Link>
+                          </div>
+                        )}
+                        <div className="whitespace-pre-wrap">
+                          {taskInfo?.isExplicitTag
+                            ? selectedReport.deskripsi.replace(/\[Terkait Task:\s*.*?\s*\(ID:\s*[a-f0-9\-]+\)\]\s*\n*/i, '')
+                            : selectedReport.deskripsi}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-on-surface-variant">
+                        Waktu Pelaporan
+                      </label>
+                      <p className="text-xs font-mono text-on-surface-variant mt-0.5 tabular-nums">
+                        {new Date(selectedReport.created_at).toLocaleString('id-ID', {
+                          dateStyle: 'full',
+                          timeStyle: 'medium',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Admin Action Buttons */}
             <div className="pt-4 border-t border-card-border space-y-2">
