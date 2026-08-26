@@ -71,11 +71,11 @@ export async function GET(request: NextRequest) {
       : ''
       
     const distanceSelect = hasLocation 
-      ? `(ST_Distance(t.lokasi_geo, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography) / 1000.0) AS distance`
+      ? `(ST_Distance(t.lokasi_geo, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, true) / 1000.0) AS distance`
       : `NULL AS distance`
       
     const distanceCondition = (hasLocation && radius != null)
-      ? `AND ST_DWithin(t.lokasi_geo, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, ${radius})`
+      ? `AND ST_DWithin(t.lokasi_geo, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, ${radius}, true)`
       : ``
 
     const querySql = `

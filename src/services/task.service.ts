@@ -229,7 +229,7 @@ export const taskService = {
           t.id_requester,
           u.nama_lengkap AS requester_name,
           u.avatar_url AS requester_avatar,
-          ST_Distance(t.lokasi_geo, ST_MakePoint(${lng}, ${lat})::geography) AS distance_m,
+          ST_Distance(t.lokasi_geo, ST_MakePoint(${lng}, ${lat})::geography, true) AS distance_m,
           ST_Y(t.lokasi_geo::geometry) AS latitude,
           ST_X(t.lokasi_geo::geometry) AS longitude
         FROM "Task" t
@@ -237,7 +237,7 @@ export const taskService = {
         JOIN "User" u ON u.id_user = t.id_requester
         WHERE
           t.lokasi_geo IS NOT NULL
-          AND ST_DWithin(t.lokasi_geo, ST_MakePoint(${lng}, ${lat})::geography, ${radiusMeters})
+          AND ST_DWithin(t.lokasi_geo, ST_MakePoint(${lng}, ${lat})::geography, ${radiusMeters}, true)
           AND st.nama_status = ${statusValue}
         ORDER BY distance_m ASC
         LIMIT 50
@@ -698,8 +698,14 @@ export const taskService = {
       );
     }
 
-    await prisma.taskApplicants.delete({
+    const rejectedStatusId = await getApplicantStatusId('rejected');
+
+    await prisma.taskApplicants.update({
       where: { id_task_applicants: existing.id_task_applicants },
+      data: {
+        id_status_task_applicants: rejectedStatusId,
+        alasan_penolakan: 'Dibatalkan oleh pelamar',
+      },
     });
 
     return { success: true };
@@ -795,6 +801,7 @@ export const taskService = {
     requesterId: string,
     action: 'accept' | 'reject',
     alasan_penolakan?: string,
+    expectedBidAmount?: number,
   ) {
     const applicant = await prisma.taskApplicants.findUnique({
       where: { id_task_applicants: applicantId },
@@ -821,6 +828,15 @@ export const taskService = {
           ? 'Lamaran ini sudah diterima sebelumnya.'
           : 'Lamaran ini sudah ditolak sebelumnya.',
       );
+    }
+
+    if (
+      action === 'accept' &&
+      expectedBidAmount !== undefined &&
+      applicant.bid_amount !== null &&
+      expectedBidAmount !== applicant.bid_amount
+    ) {
+      throw new Error('Penawaran harga telah berubah. Silakan muat ulang daftar penawaran.');
     }
 
     if (action === 'accept') {
@@ -1224,8 +1240,10 @@ export const taskService = {
       // Valid
     } else if (
       newStatus === 'cancelled' &&
-      (currentStatus === 'open' || currentStatus === 'accepted') &&
-      isRequester
+      (
+        ((currentStatus === 'open' || currentStatus === 'accepted' || currentStatus === 'in_progress') && isRequester) ||
+        ((currentStatus === 'accepted' || currentStatus === 'in_progress') && isWorker)
+      )
     ) {
       // Valid
     } else {
@@ -1266,6 +1284,15 @@ export const taskService = {
               data: {
                 total_balance: { decrement: payoutAmount },
                 held_balance: { decrement: payoutAmount },
+              },
+            }),
+            prisma.transactions.create({
+              data: {
+                id_user: task.id_requester,
+                nominal: payoutAmount,
+                tipe_transaksi: 'MASUK',
+                sub_type: 'refund',
+                deskripsi: `Pelepasan escrow untuk pembayaran task: ${task.judul_tugas}`,
               },
             }),
             prisma.transactions.create({
