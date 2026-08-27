@@ -34,6 +34,7 @@ import {
   Search,
   ArrowRight,
   Sparkles,
+  Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -170,6 +171,11 @@ export default function DashboardPage() {
               </Button>
             </Link>
           )}
+          <Link href="/leaderboard">
+            <Button variant="secondary" size="sm" icon={<Trophy className="w-3.5 h-3.5" />} className="min-h-[38px] sm:min-h-[44px] text-xs font-bold px-3 sm:px-4">
+              Ranking
+            </Button>
+          </Link>
         </div>
       </header>
 
