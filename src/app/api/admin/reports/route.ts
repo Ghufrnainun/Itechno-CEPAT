@@ -1,28 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { Prisma } from '@prisma/client'
-import { verifyAdminToken, unauthorizedResponse } from '@/lib/admin/auth'
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyAdminToken, unauthorizedResponse } from '@/lib/admin/auth';
+import { prisma } from '@/lib/prisma';
 
 // GET /api/admin/reports?search=&status=&page=1&limit=10&id=
 export async function GET(request: NextRequest) {
   try {
-    const auth = await verifyAdminToken(request)
-    if (!auth.valid) return unauthorizedResponse()
+    const auth = await verifyAdminToken(request);
+    if (!auth.valid) return unauthorizedResponse();
 
-    const { searchParams } = new URL(request.url)
-    const search = searchParams.get('search') ?? ''
-    const status = searchParams.get('status') ?? 'All'
-    const reportId = searchParams.get('id') ?? ''
-    const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'))
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') ?? '10')))
-    
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search') ?? '';
+    const status = searchParams.get('status') ?? 'All';
+    const reportId = searchParams.get('id') ?? '';
+    const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
+    const limit = Math.min(
+      50,
+      Math.max(1, parseInt(searchParams.get('limit') ?? '10')),
+    );
+
     // When searching by specific reportId, ignore skip pagination offset
-    const effectiveSkip = reportId.trim() ? 0 : (page - 1) * limit
+    const effectiveSkip = reportId.trim() ? 0 : (page - 1) * limit;
 
-    const where: Prisma.UserReportWhereInput = {}
+    const where: any = {};
 
     if (reportId.trim()) {
-      where.id_report = reportId.trim()
+      where.id_report = reportId.trim();
     } else {
       if (search.trim()) {
         where.OR = [
@@ -38,15 +40,22 @@ export async function GET(request: NextRequest) {
               ],
             },
           },
-        ]
+        ];
       }
 
       if (status !== 'All') {
-        where.status = { equals: status, mode: 'insensitive' }
+        where.status = { equals: status, mode: 'insensitive' };
       }
     }
 
-    const [reports, total, totalGlobal, pendingCount, reviewedCount, resolvedCount] = await Promise.all([
+    const [
+      reports,
+      total,
+      totalGlobal,
+      pendingCount,
+      reviewedCount,
+      resolvedCount,
+    ] = await Promise.all([
       prisma.userReport.findMany({
         where,
         skip: effectiveSkip,
@@ -71,7 +80,7 @@ export async function GET(request: NextRequest) {
       prisma.userReport.count({ where: { status: 'pending' } }),
       prisma.userReport.count({ where: { status: 'reviewed' } }),
       prisma.userReport.count({ where: { status: 'resolved' } }),
-    ])
+    ]);
 
     const formattedReports = reports.map((r) => ({
       id: r.id_report,
@@ -90,7 +99,7 @@ export async function GET(request: NextRequest) {
         no_telpon: r.user.no_telpon,
         role: r.user.role.nama_role,
       },
-    }))
+    }));
 
     return NextResponse.json({
       success: true,
@@ -107,12 +116,12 @@ export async function GET(request: NextRequest) {
         limit,
         totalPages: Math.ceil(total / limit) || 1,
       },
-    })
+    });
   } catch (error) {
-    console.error('[GET /api/admin/reports] Error:', error)
+    console.error('[GET /api/admin/reports] Error:', error);
     return NextResponse.json(
       { success: false, message: 'Terjadi kesalahan internal server.' },
-      { status: 500 }
-    )
+      { status: 500 },
+    );
   }
 }
