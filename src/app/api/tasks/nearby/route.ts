@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 import { z } from 'zod'
 
@@ -55,7 +56,13 @@ export async function GET(request: NextRequest) {
     }
 
     const { lat: latitude, lng: longitude, radius: radiusMeters, q: query } = parsed.data
-    const searchString = query ? `%${query}%` : `%`
+    const userCondition = userId 
+      ? Prisma.sql`AND t.id_requester != ${userId}` 
+      : Prisma.empty
+
+    const searchCondition = query
+      ? Prisma.sql`AND (t.judul_tugas ILIKE ${`%${query}%`} OR t.deskripsi_tugas ILIKE ${`%${query}%`})`
+      : Prisma.empty
 
     /**
      * Execute PostGIS spatial query for radius-based filtering.
@@ -73,19 +80,15 @@ export async function GET(request: NextRequest) {
       JOIN "StatusTask" st ON t.id_status_task = st.id_status_task
       LEFT JOIN "TaskCategory" c ON t.id_category = c.id_category
       WHERE 
-        st.nama_status = 'OPEN'
-        ${userId ? `AND t.id_requester != '${userId}'` : ''}
+        st.nama_status ILIKE 'OPEN'
+        ${userCondition}
         AND ST_DWithin(
           t.lokasi_geo, 
           ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography, 
           ${radiusMeters}
         )
-        AND (
-          ${query ? true : false} = false OR 
-          t.judul_tugas ILIKE ${searchString} OR 
-          t.deskripsi_tugas ILIKE ${searchString}
-        )
-    `;
+        ${searchCondition}
+    `
 
     return NextResponse.json({
       success: true,

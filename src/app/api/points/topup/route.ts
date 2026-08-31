@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { walletService } from '@/services/wallet.service'
+import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,6 +28,30 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Rate Limiting on topup attempts
+    const clientIP = getClientIP(request.headers)
+    const rateLimit = checkRateLimit(clientIP, 'points:topup', {
+      maxRequests: 5,
+      windowSeconds: 60,
+    })
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, message: 'Terlalu banyak percobaan top-up. Coba lagi dalam 1 menit.' },
+        { status: 429 }
+      )
+    }
+
+    // Production environment check — require Midtrans unless explicit mock topup flag enabled for judging demo
+    const isProduction = process.env.NODE_ENV === 'production'
+    const allowMockInProd = process.env.ALLOW_MOCK_TOPUP === 'true'
+    if (isProduction && !allowMockInProd) {
+      return NextResponse.json(
+        { success: false, message: 'Simulasi top-up dinonaktifkan di production. Gunakan pembayaran Midtrans.' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const amount = parseInt(String(body.amount), 10)
 
@@ -37,9 +62,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (amount > 10_000_000) {
+    if (amount > 1_000_000) {
       return NextResponse.json(
-        { success: false, message: 'Nominal top-up maksimal 10.000.000 per transaksi.' },
+        { success: false, message: 'Nominal simulasi top-up maksimal 1.000.000 pts per transaksi.' },
         { status: 400 }
       )
     }

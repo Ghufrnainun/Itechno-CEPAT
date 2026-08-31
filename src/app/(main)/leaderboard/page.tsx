@@ -44,8 +44,7 @@ export default function LeaderboardPage() {
   }, [period]);
 
   const AvatarIcon = ({ user }: { user: LeaderboardUser }) => {
-    const [err, setErr] = useState(false);
-    if (!user.avatar_url || err) {
+    if (!user.avatar_url) {
       return (
         <div className="w-full h-full bg-primary/10 text-primary flex items-center justify-center font-bold font-mono">
           {user.nama_lengkap.substring(0, 2).toUpperCase()}
@@ -57,7 +56,6 @@ export default function LeaderboardPage() {
         src={user.avatar_url}
         alt={user.nama_lengkap}
         className="w-full h-full object-cover"
-        onError={() => setErr(true)}
       />
     );
   };
