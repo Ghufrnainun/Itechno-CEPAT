@@ -6,6 +6,7 @@ import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { Badge } from "@/components/ui/Badge";
 import { TaskStatus } from "@/types/database";
 import { Button } from "@/components/ui/Button";
+import { TaskCardSkeleton } from "@/components/ui/Skeleton";
 import {
   Banknote,
   Clock,
@@ -266,9 +267,10 @@ export default function RiwayatPage() {
 
           {/* Task list */}
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <Loader2 className="w-8 h-8 text-primary animate-spin" />
-              <p className="font-body-sm text-xs text-on-surface-variant">Memuat riwayat...</p>
+            <div className="flex flex-col gap-3">
+              <TaskCardSkeleton />
+              <TaskCardSkeleton />
+              <TaskCardSkeleton />
             </div>
           ) : filteredTasks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">

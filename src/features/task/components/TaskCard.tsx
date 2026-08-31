@@ -31,71 +31,58 @@ export function TaskCard({ task, isSelected = false, onClick, className }: TaskC
         }
       }}
       className={cn(
-        "p-4 feed-card w-full rounded-xl bg-surface-container-lowest border border-card-border shadow-xs",
-        "transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out",
-        "hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-sm active:scale-[0.985] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer",
+        "group p-4 sm:p-5 feed-card w-full rounded-2xl bg-surface-container-lowest border border-card-border/80 shadow-2xs animate-card-cascade",
+        "transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out flex flex-col justify-between min-h-[140px]",
+        "hover:border-primary/40 hover:shadow-xs active:scale-[0.985] active:brightness-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer",
         isSelected && "border-primary bg-primary/5 shadow-xs ring-1 ring-primary/20",
         className
       )}
     >
-      <div className="flex justify-between items-start mb-1.5 gap-2">
-        <h3 className="font-headline text-base font-bold text-on-surface leading-snug text-balance">
-          {task.title}
-          {task.is_bidding && (
-            <span className="inline-flex items-center gap-1 align-middle ml-2 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wide bg-primary/10 text-primary border border-primary/25">
-              <Gavel className="w-3 h-3" /> Bid
+      <div>
+        {/* Header Row: Title & Distance */}
+        <div className="flex justify-between items-start gap-3 mb-1.5">
+          <h3 className="font-headline text-sm sm:text-base font-bold text-on-surface group-hover:text-primary transition-colors leading-snug flex-1">
+            {task.title}
+            {task.is_bidding && (
+              <span className="inline-flex items-center gap-1 align-middle ml-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                <Gavel className="w-2.5 h-2.5" /> Bid
+              </span>
+            )}
+          </h3>
+          {task.distance !== undefined && (
+            <span className="font-mono text-xs font-semibold text-primary tabular-nums shrink-0 flex items-center gap-1 mt-0.5 bg-primary/5 px-2 py-0.5 rounded-lg border border-primary/15">
+              <Navigation className="w-3 h-3 fill-primary/20" />
+              {formatDistance(task.distance)}
             </span>
           )}
-        </h3>
-        <div className="flex items-center gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              setIsReportModalOpen(true);
-            }}
-            title="Laporkan Tugas"
-            aria-label="Laporkan Tugas"
-            className="p-1 rounded-lg text-on-surface-variant/50 hover:text-error hover:bg-error-container/20 transition-colors cursor-pointer"
-          >
-            <Flag className="w-3.5 h-3.5" />
-          </button>
-          {task.distance !== undefined && (
-            <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full shrink-0">
-              <Navigation className="w-3 h-3 text-primary fill-primary/20" />
-              <span className="font-mono text-xs font-semibold text-primary tabular-nums">
-                {formatDistance(task.distance)}
-              </span>
-            </div>
-          )}
         </div>
+
+        {/* Description */}
+        <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed mb-3">
+          {task.description}
+        </p>
       </div>
 
-      <p className="text-xs text-on-surface-variant mb-3 line-clamp-2 leading-relaxed">
-        {task.description}
-      </p>
-
-      <div className="flex justify-between items-end border-t border-card-border/60 pt-2.5 mt-auto">
-        <span className="font-mono text-sm text-on-surface font-extrabold tabular-nums">
+      {/* Footer: Price & Schedule/Duration */}
+      <div className="flex items-center justify-between border-t border-card-border/60 pt-3 mt-auto">
+        <span className="font-mono text-sm sm:text-base font-extrabold text-on-surface tracking-tight tabular-nums">
           {task.is_bidding
-            ? `${formatCurrency(task.budget_min ?? 0)}–${formatCurrency(task.budget_max ?? task.compensation)}`
+            ? `${formatCurrency(task.budget_min ?? 0)} – ${formatCurrency(task.budget_max ?? task.compensation)}`
             : formatCurrency(task.compensation)}
         </span>
 
-        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+        <div className="flex items-center gap-2 text-on-surface-variant font-mono text-[11px]">
           {task.scheduled_at && (
-            <span className="inline-flex items-center gap-1 font-mono text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-md font-medium">
+            <span className="inline-flex items-center gap-1 font-medium text-primary bg-primary/5 px-2 py-0.5 rounded-md border border-primary/15">
               <Calendar className="w-3 h-3" />
               {new Date(task.scheduled_at).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
             </span>
           )}
           {task.duration_estimate && (
-            <span className="font-mono text-xs text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-md uppercase font-medium">
+            <span className="inline-flex items-center gap-1 font-medium bg-surface-container-low px-2 py-0.5 rounded-md border border-card-border/60 uppercase">
               {task.duration_estimate}
             </span>
           )}
-          <SdgBadge />
         </div>
       </div>
     </div>

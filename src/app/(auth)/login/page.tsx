@@ -101,7 +101,7 @@ function LoginContent() {
           : "/onboarding";
         router.replace(onboardingTarget);
       } else {
-        router.replace(redirectParam || "/feed");
+        router.replace(redirectParam || "/dashboard");
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login gagal. Coba lagi.");
@@ -237,7 +237,7 @@ function LoginContent() {
               Kembali Berkontribusi &amp; Raih Peluang Nyata.
             </h1>
             <p className="text-on-surface-variant text-sm leading-relaxed">
-              Masuk untuk melanjutkan eksplorasi tugas mikro kampus, kelola saldo dompet PTS yang aman dengan escrow, atau delegasikan pekerjaan ke mahasiswa terpercaya di sekitarmu.
+              Masuk untuk melanjutkan eksplorasi tugas mikro kampus, kelola saldo dompet Rupiah yang aman dengan escrow, atau delegasikan pekerjaan ke mahasiswa terpercaya di sekitarmu.
             </p>
           </div>
 

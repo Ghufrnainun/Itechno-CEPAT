@@ -129,9 +129,9 @@ export default function MapPicker({
       
       const customIcon = L.divIcon({
         className: "custom-div-icon",
-        html: `<div class="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-white shadow transition-all duration-150 ${isSelected ? "bg-amber-500 border-white scale-110" : "bg-primary border-white"}" style="font-size:12px;">Rp</div>`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
+        html: `<div class="w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-white shadow-md transition-all duration-150 active:scale-95 ${isSelected ? "bg-amber-500 border-white scale-110 ring-4 ring-amber-500/30" : "bg-primary border-white"}" style="font-size:13px; font-family: monospace;">Rp</div>`,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
       });
 
       const m = L.marker([task.latitude, task.longitude], { icon: customIcon })

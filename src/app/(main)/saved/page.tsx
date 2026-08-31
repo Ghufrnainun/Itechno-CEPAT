@@ -79,7 +79,7 @@ export default function SavedTasksPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col p-4 max-w-4xl mx-auto w-full pb-24 md:pb-8">
+    <div className="flex-1 flex flex-col p-4 max-w-4xl mx-auto w-full pb-36 md:pb-8">
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-primary/10 text-primary rounded-xl">
           <Bookmark className="w-6 h-6" />

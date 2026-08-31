@@ -152,7 +152,7 @@ export default function AdminDashboardPage() {
               />
               <KPICard
                 title="Total Volume"
-                value={`${(stats?.totalRevenue ?? 0).toLocaleString('id-ID')} PTS`}
+                value={`Rp ${(stats?.totalRevenue ?? 0).toLocaleString('id-ID')}`}
                 change="Saldo Beredar"
                 isPositive={true}
                 icon={<Coins className="w-4 h-4" aria-hidden="true" />}
@@ -366,7 +366,7 @@ export default function AdminDashboardPage() {
 
                     <div className="flex items-center gap-5 shrink-0">
                       <span className="text-sm font-extrabold text-primary font-mono tabular-nums">
-                        +{task.kompensasi} PTS
+                        Rp {task.kompensasi.toLocaleString('id-ID')}
                       </span>
                       <StatusBadge status={task.status} />
                     </div>

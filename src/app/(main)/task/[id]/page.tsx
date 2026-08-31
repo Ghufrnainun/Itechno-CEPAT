@@ -33,6 +33,7 @@ import {
   Loader2,
   Gavel,
   Flag,
+  Briefcase,
 } from "lucide-react";
 import { DisputeModal } from "@/components/ui/DisputeModal";
 import { ReportModal } from "@/components/ui/ReportModal";
@@ -523,8 +524,8 @@ export default function TaskDetailPage() {
         <ErrorState
           title="Tugas Tidak Ditemukan"
           message="Tugas ini mungkin telah diselesaikan, dibatalkan, atau URL yang Anda tuju salah."
-          actionText="Kembali ke Feed Tugas"
-          onRetry={() => router.push("/feed")}
+          actionText="Kembali ke Cari Tugas"
+          onRetry={() => router.push("/cari-tugas")}
         />
       </div>
     );
@@ -537,7 +538,7 @@ export default function TaskDetailPage() {
     : [];
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 font-sans flex flex-col gap-6 bg-surface">
+    <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 font-sans flex flex-col gap-6 bg-surface pb-44 md:pb-8">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -569,53 +570,85 @@ export default function TaskDetailPage() {
       <EscrowBanner />
 
       {/* Main Details and Map grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Info Left */}
-        <div className="md:col-span-2 flex flex-col gap-md">
-          <div className="bg-white border border-outline-variant rounded-xl p-md md:p-lg flex flex-col gap-md">
-            <div className="flex justify-between items-center pb-sm border-b border-outline-variant/50">
-              <div className="flex flex-col">
+        <div className="md:col-span-2 flex flex-col gap-5">
+          {/* Card 1: Hero Price & Requester Profile */}
+          <div className="bg-surface-container-lowest border border-card-border rounded-2xl p-4 sm:p-6 flex flex-col gap-4 shadow-xs">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge status={taskStatus} />
+                  {task.is_bidding && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 text-[10px] font-mono font-bold uppercase tracking-wider">
+                      Sealed Bidding
+                    </span>
+                  )}
+                </div>
+
                 {task.is_bidding ? (
-                  <>
-                    <span className="font-label-md text-label-md font-bold text-primary font-mono text-[18px]">
-                      {formatCurrency(task.budget_min ?? 0)} – {formatCurrency(task.budget_max ?? task.kompensasi)} <span className="text-xs font-normal text-on-surface-variant font-sans">/ worker</span>
-                    </span>
-                    <span className="font-label-sm text-xs text-primary font-bold font-sans">
-                      Mode Bidding: penawaran terbaik dipilih pemberi tugas
-                    </span>
-                  </>
+                  <div className="mt-1">
+                    <div className="font-mono text-2xl sm:text-3xl font-black text-primary tabular-nums tracking-tight">
+                      {formatCurrency(task.budget_min ?? 0)} – {formatCurrency(task.budget_max ?? task.kompensasi)}
+                    </div>
+                    <p className="font-sans text-xs text-on-surface-variant mt-0.5">
+                      Mode Bidding: penawaran rahasia, harga terbaik dipilih oleh pemberi tugas.
+                    </p>
+                  </div>
                 ) : (
-                  <>
-                    <span className="font-label-md text-label-md font-bold text-primary font-mono text-[18px]">
-                      {formatCurrency(task.kompensasi)} <span className="text-xs font-normal text-on-surface-variant font-sans">/ worker</span>
-                    </span>
-                    <span className="font-label-sm text-[11px] text-on-surface-variant font-mono">
+                  <div className="mt-1">
+                    <div className="font-mono text-2xl sm:text-3xl font-black text-primary tabular-nums tracking-tight flex items-baseline gap-1.5">
+                      <span>{formatCurrency(task.kompensasi)}</span>
+                      <span className="text-xs font-normal text-on-surface-variant font-sans">/ orang</span>
+                    </div>
+                    <p className="font-mono text-[11px] text-on-surface-variant mt-0.5">
                       Total Escrow: {formatCurrency(task.kompensasi * (task.max_applicants ?? 1))} ({task.max_applicants ?? 1} worker)
-                    </span>
-                  </>
+                    </p>
+                  </div>
                 )}
               </div>
-              <Badge status={taskStatus} />
             </div>
 
-            {/* Requester info */}
-            <div className="flex items-center gap-sm text-on-surface-variant">
-              <Avatar
-                src={task.requester.avatar_url}
-                name={task.requester.nama_lengkap}
-                size="md"
-              />
-              <div>
-                <p className="font-label-sm text-label-sm font-semibold text-on-surface">{task.requester.nama_lengkap}</p>
-                <p className="font-body-sm text-[11px] text-on-surface-variant">
-                  ★ {task.requester.rating_avg.toFixed(1)} • {task.requester.total_completed} task selesai
-                </p>
+            {/* Requester info row */}
+            <div className="pt-4 border-t border-card-border/70 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <Avatar
+                  src={task.requester.avatar_url}
+                  name={task.requester.nama_lengkap}
+                  size="md"
+                  className="rounded-xl border border-card-border shrink-0"
+                />
+                <div>
+                  <span className="font-headline font-bold text-xs sm:text-sm text-on-surface block">
+                    {task.requester.nama_lengkap}
+                  </span>
+                  <span className="font-sans text-[11px] text-on-surface-variant flex items-center gap-1.5 mt-0.5">
+                    <span className="text-amber-500 font-bold font-mono">★ {task.requester.rating_avg.toFixed(1)}</span>
+                    <span>•</span>
+                    <span>{task.requester.total_completed} tugas selesai</span>
+                  </span>
+                </div>
               </div>
-            </div>
 
-            <div className="flex flex-col gap-xs">
-              <h3 className="font-body-md text-body-md font-semibold text-on-surface">Deskripsi</h3>
-              <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              <button
+                type="button"
+                onClick={() => router.push(`/profile/${task.requester.id_user}`)}
+                className="text-xs font-bold text-primary hover:underline px-2 py-1 rounded-lg hover:bg-primary/5 transition-colors shrink-0"
+              >
+                Lihat Profil
+              </button>
+            </div>
+          </div>
+
+          {/* Card 2: Task Description & Specifications */}
+          <div className="bg-surface-container-lowest border border-card-border rounded-2xl p-4 sm:p-6 flex flex-col gap-5 shadow-xs">
+            {/* Description */}
+            <div className="flex flex-col gap-2">
+              <h3 className="font-headline text-sm font-bold text-on-surface flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-primary" />
+                <span>Deskripsi Pekerjaan</span>
+              </h3>
+              <p className="font-sans text-xs sm:text-sm text-on-surface-variant leading-relaxed whitespace-pre-wrap">
                 {task.deskripsi_tugas}
               </p>
             </div>
@@ -628,7 +661,7 @@ export default function TaskDetailPage() {
                     <Calendar className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[11px] font-bold text-primary block uppercase tracking-wider">
+                    <span className="text-[11px] font-bold text-primary block uppercase tracking-wider font-mono">
                       Jadwal Pelaksanaan Tugas
                     </span>
                     <span className="font-medium text-on-surface text-xs sm:text-sm">
@@ -657,49 +690,73 @@ export default function TaskDetailPage() {
                     </span>
                   </div>
                 </div>
-                <span className="self-start sm:self-center px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold shrink-0">
-                  📅 Terjadwal
+                <span className="self-start sm:self-center px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold shrink-0 font-mono">
+                  Terjadwal
                 </span>
               </div>
             )}
 
+            {/* Requirements / Skill Badges */}
             {task.requirements.length > 0 && (
-              <div className="flex flex-wrap gap-xs">
-                {task.requirements.map((skill: any) => (
-                  <span
-                    key={skill.id_skill}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-interaction-bg border border-outline-variant text-primary-container font-label-sm text-[11px] font-semibold"
-                  >
-                    {renderIcon(skill.icon, "w-3 h-3 shrink-0")}
-                    {skill.nama_skill}
-                  </span>
-                ))}
+              <div className="flex flex-col gap-2 pt-1">
+                <span className="text-xs font-bold text-on-surface font-headline">Keahlian yang Dibutuhkan:</span>
+                <div className="flex flex-wrap gap-2">
+                  {task.requirements.map((skill: any) => (
+                    <span
+                      key={skill.id_skill}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold"
+                    >
+                      {renderIcon(skill.icon, "w-3 h-3 shrink-0")}
+                      <span>{skill.nama_skill}</span>
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-md border-t border-outline-variant/50 pt-md font-label-sm text-label-sm">
-              <div>
-                <span className="text-on-surface-variant block">Estimasi Waktu</span>
-                <span className="font-bold text-on-surface text-body-sm">{task.estimasi_waktu ?? "-"}</span>
+            {/* 4 Specifications Mini-Cards Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-4 border-t border-card-border/70">
+              <div className="p-3 rounded-xl bg-surface-container-low/70 border border-card-border/60 flex flex-col gap-1">
+                <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider font-bold">
+                  Estimasi Waktu
+                </span>
+                <span className="font-bold text-on-surface text-xs sm:text-sm font-headline">
+                  {task.estimasi_waktu ?? "-"}
+                </span>
               </div>
-              <div>
-                <span className="text-on-surface-variant block">Max Worker</span>
-                <span className="font-bold text-on-surface text-body-sm">{task.max_applicants ?? 1} Orang</span>
+              <div className="p-3 rounded-xl bg-surface-container-low/70 border border-card-border/60 flex flex-col gap-1">
+                <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider font-bold">
+                  Kebutuhan Worker
+                </span>
+                <span className="font-bold text-on-surface text-xs sm:text-sm font-headline">
+                  {task.max_applicants ?? 1} Orang
+                </span>
               </div>
-              <div>
-                <span className="text-on-surface-variant block">Max Percobaan</span>
-                <span className="font-bold text-on-surface text-body-sm">{task.max_apply_attempts ?? 3}x Apply</span>
+              <div className="p-3 rounded-xl bg-surface-container-low/70 border border-card-border/60 flex flex-col gap-1">
+                <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider font-bold">
+                  Maks. Apply
+                </span>
+                <span className="font-bold text-on-surface text-xs sm:text-sm font-headline">
+                  {task.max_apply_attempts ?? 3}x Percobaan
+                </span>
               </div>
-              <div>
-                <span className="text-on-surface-variant block">Diposting Pada</span>
-                <span className="font-bold text-on-surface text-body-sm">{formatDate(task.created_at)}</span>
+              <div className="p-3 rounded-xl bg-surface-container-low/70 border border-card-border/60 flex flex-col gap-1">
+                <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider font-bold">
+                  Diposting Pada
+                </span>
+                <span className="font-bold text-on-surface text-xs sm:text-sm font-headline">
+                  {formatDate(task.created_at)}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Status step tracker */}
-          <div className="bg-white border border-outline-variant rounded-xl p-md md:p-lg flex flex-col gap-sm">
-            <h3 className="font-body-md text-body-md font-semibold text-on-surface">Progres Status Tugas</h3>
+          {/* Card 3: Status step tracker */}
+          <div className="bg-surface-container-lowest border border-card-border rounded-2xl p-4 sm:p-6 flex flex-col gap-4 shadow-xs">
+            <h3 className="font-headline text-sm font-bold text-on-surface flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" />
+              <span>Progres Status Tugas</span>
+            </h3>
             <div className="flex items-center justify-between pt-sm relative">
               <div className="absolute top-1/2 left-[12%] right-[12%] h-[2px] bg-outline-variant/30 -translate-y-1/2 -z-10"></div>
 
@@ -723,12 +780,13 @@ export default function TaskDetailPage() {
 
           {/* Daftar Pelamar (Requester Only & Open Status) */}
           {isRequester && taskStatus === "open" && (
-            <div className="flex flex-col gap-sm bg-white border border-outline-variant rounded-xl p-md md:p-lg">
-              <div className="flex justify-between items-center border-b border-outline-variant/50 pb-sm">
-                <h3 className="font-body-md text-body-md font-extrabold text-on-surface">
-                  Daftar Pelamar ({task.applicants.length})
+            <div className="flex flex-col gap-4 bg-surface-container-lowest border border-card-border rounded-2xl p-4 sm:p-6 shadow-xs">
+              <div className="flex justify-between items-center border-b border-card-border pb-3">
+                <h3 className="font-headline text-sm font-extrabold text-on-surface flex items-center gap-2">
+                  <Users className="w-4 h-4 text-primary" />
+                  <span>Daftar Pelamar ({task.applicants.length})</span>
                 </h3>
-                <span className="font-label-sm text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                <span className="font-mono text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-2.5 py-0.5 rounded-full">
                   Worker Diterima: {task.applicants.filter(a => a.status === "accepted").length} / {task.max_applicants ?? 1}
                 </span>
               </div>
@@ -962,14 +1020,14 @@ export default function TaskDetailPage() {
         </div>
 
         {/* Location Map Right */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 mb-16 md:mb-0">
           <div className="bg-surface-container-lowest border border-card-border rounded-xl p-4 md:p-5 flex flex-col gap-3 shadow-xs">
             <h3 className="font-headline text-sm font-bold text-on-surface flex items-center gap-1.5">
               <MapPin className="w-4 h-4 text-primary" />
               Lokasi Pengerjaan
             </h3>
 
-            <div className="h-[200px] w-full relative rounded-lg overflow-hidden border border-card-border">
+            <div className="h-[200px] w-full relative rounded-lg overflow-hidden border border-card-border isolate z-0">
               <MapPickerWrapper
                 center={{
                   latitude: task.latitude ?? -7.782865,
@@ -988,7 +1046,7 @@ export default function TaskDetailPage() {
 
           {/* Action buttons based on role */}
           {role === "worker" ? (
-            <div className="flex flex-col gap-sm">
+            <div className="hidden md:flex flex-col gap-sm">
               {/* Pesan status jika worker telah ditolak */}
               {task.viewer_application?.status === "rejected" && (
                 <div className="bg-error-container/30 border border-error/25 rounded-xl p-4 flex flex-col gap-1.5">
@@ -1099,7 +1157,7 @@ export default function TaskDetailPage() {
                           Requester:
                         </span>
                         <span className={cn("font-semibold", task.requester_started ? "text-secondary font-bold" : "text-amber-600")}>
-                          {task.requester_started ? "Sudah Konfirmasi ✅" : "Belum Konfirmasi ⏳"}
+                          {task.requester_started ? "Sudah Konfirmasi" : "Belum Konfirmasi"}
                         </span>
                       </div>
                       {/* Per-worker status */}
@@ -1110,7 +1168,7 @@ export default function TaskDetailPage() {
                             {a.worker.nama_lengkap}:
                           </span>
                           <span className={cn("font-semibold", a.worker_confirmed ? "text-secondary font-bold" : "text-amber-600")}>
-                            {a.worker_confirmed ? "Sudah Konfirmasi ✅" : "Belum Konfirmasi ⏳"}
+                            {a.worker_confirmed ? "Sudah Konfirmasi" : "Belum Konfirmasi"}
                           </span>
                         </div>
                       ))}
@@ -1173,7 +1231,7 @@ export default function TaskDetailPage() {
               {taskStatus === "completed" && (
                 hasWorkerRatedRequester() ? (
                   <div className="p-3 text-center border border-card-border rounded-lg bg-surface-container-low text-secondary font-sans text-xs font-semibold">
-                    ✅ Anda sudah memberikan ulasan untuk task ini.
+                    Anda sudah memberikan ulasan untuk task ini.
                   </div>
                 ) : (
                   <Button onClick={openRatingModal} className="w-full py-3" variant="secondary">
@@ -1184,7 +1242,7 @@ export default function TaskDetailPage() {
             </div>
           ) : (
             // Requester Actions
-            <div className="flex flex-col gap-3">
+            <div className="hidden md:flex flex-col gap-3">
               {taskStatus === "open" && (
                 <div className="p-3 text-center border border-card-border rounded-lg bg-surface-container-low text-primary font-sans text-xs font-semibold">
                   Menunggu pelamar. Pilih dari daftar pelamar di bawah.
@@ -1218,7 +1276,7 @@ export default function TaskDetailPage() {
                           Requester (Anda):
                         </span>
                         <span className={cn("font-semibold", task.requester_started ? "text-secondary font-bold" : "text-amber-600")}>
-                          {task.requester_started ? "Sudah Konfirmasi ✅" : "Belum Konfirmasi ⏳"}
+                          {task.requester_started ? "Sudah Konfirmasi" : "Belum Konfirmasi"}
                         </span>
                       </div>
                       {/* Per-worker status */}
@@ -1229,7 +1287,7 @@ export default function TaskDetailPage() {
                             {a.worker.nama_lengkap}:
                           </span>
                           <span className={cn("font-semibold", a.worker_confirmed ? "text-secondary font-bold" : "text-amber-600")}>
-                            {a.worker_confirmed ? "Sudah Konfirmasi ✅" : "Belum Konfirmasi ⏳"}
+                            {a.worker_confirmed ? "Sudah Konfirmasi" : "Belum Konfirmasi"}
                           </span>
                         </div>
                       ))}
@@ -1285,7 +1343,7 @@ export default function TaskDetailPage() {
                   </Button>
                 ) : (
                   <div className="p-3 text-center border border-card-border rounded-lg bg-surface-container-low text-secondary font-sans text-xs font-semibold">
-                    ✅ Semua worker sudah dirating.
+                    Semua worker sudah dirating.
                   </div>
                 );
               })()}
@@ -1322,8 +1380,9 @@ export default function TaskDetailPage() {
                 <input
                   type="number"
                   inputMode="numeric"
+                  pattern="[0-9]*"
                   className={cn(
-                    "w-full pl-11 pr-3 py-2.5 text-xs font-mono font-bold bg-surface-container-low border rounded-lg text-on-surface focus:ring-2 focus:bg-surface-container-lowest focus:outline-none min-h-[42px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors",
+                    "w-full pl-11 pr-3 py-2.5 text-base sm:text-xs font-mono font-bold bg-surface-container-low border rounded-xl text-on-surface focus:ring-2 focus:bg-surface-container-lowest focus:outline-none min-h-[44px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors",
                     bidError
                       ? "border-error focus:border-error focus:ring-error/20"
                       : "border-card-border focus:border-primary focus:ring-primary/20"
@@ -1501,6 +1560,131 @@ export default function TaskDetailPage() {
         taskId={task.id_tasks}
         taskTitle={task.judul_tugas}
       />
+
+      {/* ───────────── MOBILE STICKY BOTTOM ACTION BAR (Thumb Reach) ───────────── */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 p-3.5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-surface-container-lowest/95 backdrop-blur-md border-t border-card-border flex items-center justify-between gap-2.5 z-[100] shadow-2xl">
+        {/* Chat Button (Available when in progress or accepted) */}
+        {(taskStatus === "accepted" || taskStatus === "in_progress") && (
+          <Button
+            variant="secondary"
+            size="lg"
+            onClick={async () => {
+              try {
+                const partnerId = role === "requester"
+                  ? task.applicants.find(a => a.status === "accepted")?.worker?.id_user
+                  : task.requester?.id_user;
+                if (!partnerId) return;
+                const res = await fetch("/api/chat/rooms", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ partner_id: partnerId, task_id: task.id_tasks }),
+                });
+                const json = await res.json();
+                if (json.success) {
+                  router.push(`/chat?room=${json.data.id_chat_room}`);
+                }
+              } catch (e) {
+                console.error(e);
+              }
+            }}
+            className="px-4 min-h-[46px]"
+            icon={<MessageSquare className="w-4 h-4" />}
+          >
+            Chat
+          </Button>
+        )}
+
+        {role === "worker" ? (
+          taskStatus === "open" ? (
+            task.has_applied ? (
+              isEditingPendingBid ? (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="flex-1 min-h-[46px] text-xs font-bold"
+                  onClick={openApplyOrEditModal}
+                >
+                  Ubah Penawaran
+                </Button>
+              ) : (
+                <div className="flex-1 py-3 px-3 rounded-xl bg-surface-container-low text-primary font-bold text-xs text-center border border-card-border">
+                  Lamaran Sudah Dikirim
+                </div>
+              )
+            ) : (
+              <Button
+                variant="primary"
+                size="lg"
+                className="flex-1 min-h-[46px] text-xs font-bold"
+                onClick={openApplyOrEditModal}
+                disabled={actionLoading}
+              >
+                {task.is_bidding ? "Ajukan Penawaran" : "Lamar Pekerjaan Ini"}
+              </Button>
+            )
+          ) : taskStatus === "accepted" ? (() => {
+            const acceptedWorkers = task.applicants.filter(a => a.status === "accepted");
+            const myEntry = acceptedWorkers.find(a => a.id_task_applicants === task.viewer_application?.id_task_applicants);
+            const iHaveConfirmed = myEntry?.worker_confirmed ?? false;
+            return !iHaveConfirmed ? (
+              <Button
+                variant="primary"
+                size="lg"
+                className="flex-1 min-h-[46px] text-xs font-bold"
+                onClick={handleStartWork}
+                disabled={actionLoading}
+              >
+                Konfirmasi Mulai Kerja
+              </Button>
+            ) : (
+              <div className="flex-1 py-3 px-3 rounded-xl bg-surface-container-low text-primary font-bold text-xs text-center border border-card-border">
+                Menunggu Requester...
+              </div>
+            );
+          })() : taskStatus === "completed" && !hasWorkerRatedRequester() ? (
+            <Button
+              variant="secondary"
+              size="lg"
+              className="flex-1 min-h-[46px] text-xs font-bold"
+              onClick={() => setIsRatingModalOpen(true)}
+            >
+              Beri Ulasan Requester
+            </Button>
+          ) : null
+        ) : (
+          // Requester Mobile Sticky
+          taskStatus === "accepted" && !task.requester_started ? (
+            <Button
+              variant="primary"
+              size="lg"
+              className="flex-1 min-h-[46px] text-xs font-bold"
+              onClick={handleStartWork}
+              disabled={actionLoading}
+            >
+              Konfirmasi Mulai Pekerjaan
+            </Button>
+          ) : taskStatus === "in_progress" ? (
+            <Button
+              variant="primary"
+              size="lg"
+              className="flex-1 min-h-[46px] text-xs font-bold"
+              onClick={handleConfirmCompletion}
+              disabled={actionLoading}
+            >
+              Konfirmasi Selesai &amp; Cairkan
+            </Button>
+          ) : taskStatus === "completed" && getRatingTargets().length > 0 ? (
+            <Button
+              variant="secondary"
+              size="lg"
+              className="flex-1 min-h-[46px] text-xs font-bold"
+              onClick={() => { setRatingTargetIndex(0); setIsRatingModalOpen(true); }}
+            >
+              Beri Rating Worker
+            </Button>
+          ) : null
+        )}
+      </div>
     </div>
   );
 }

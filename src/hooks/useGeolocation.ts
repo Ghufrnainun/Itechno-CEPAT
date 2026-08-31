@@ -55,7 +55,7 @@ export function useGeolocation() {
         setError(err.message);
         setLoading(false);
       },
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
     );
   }, []);
 

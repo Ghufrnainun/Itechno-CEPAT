@@ -115,7 +115,7 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
   };
 
   return (
-    <div className="p-4 bg-surface-container-lowest border-t border-card-border flex flex-col gap-3 relative font-sans">
+    <div className="p-3 sm:p-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] bg-surface-container-lowest border-t border-card-border flex flex-col gap-2.5 relative font-sans">
       {/* Error Alert */}
       {errorMsg && (
         <div className="absolute top-[-44px] left-1/2 -translate-x-1/2 bg-amber-500/10 border border-amber-500/30 text-amber-600 px-4 py-2 text-xs font-semibold z-50 rounded-xl shadow-lg animate-in fade-in slide-in-from-bottom-2 whitespace-nowrap flex items-center gap-2">
@@ -139,7 +139,7 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
         </div>
       )}
 
-      <div className="flex items-center gap-3 w-full z-20">
+      <div className="flex items-center gap-2.5 w-full z-20">
         <input
           type="file"
           accept="image/*"
@@ -152,7 +152,7 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
           disabled={disabled || isUploading}
           onClick={() => fileInputRef.current?.click()}
           aria-label="Unggah Gambar"
-          className="w-9 h-9 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer disabled:opacity-50"
+          className="min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors cursor-pointer disabled:opacity-50"
         >
           {isUploading ? (
             <Loader2 className="w-5 h-5 animate-spin text-primary" />
@@ -167,7 +167,7 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
             disabled={disabled || isUploading}
             onClick={() => setShowEmojiPicker(prev => !prev)}
             aria-label="Pilih Emoji"
-            className="w-9 h-9 items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer hidden sm:flex disabled:opacity-50"
+            className="min-w-[40px] min-h-[40px] rounded-xl items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors cursor-pointer hidden sm:flex disabled:opacity-50"
           >
             <Smile className="w-5 h-5" />
           </button>
@@ -186,7 +186,7 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
 
         <form 
           onSubmit={handleSendForm} 
-          className="flex-1 flex items-center gap-2 bg-surface-container-low rounded-2xl px-4 py-2 border border-card-border focus-within:border-primary focus-within:bg-surface-container-lowest transition-all"
+          className="flex-1 flex items-center gap-2 bg-surface-container-low rounded-2xl px-3.5 py-1.5 sm:py-2 border border-card-border focus-within:border-primary focus-within:bg-surface-container-lowest transition-all min-h-[44px]"
         >
           <input 
             type="text"
@@ -194,13 +194,13 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
             onChange={(e) => setText(e.target.value)}
             disabled={disabled || isUploading}
             placeholder={isUploading ? "Mengirim pesan..." : (selectedFile ? "Tambah keterangan..." : "Ketik pesan...")}
-            className="flex-1 bg-transparent border-none focus:outline-none text-xs text-on-surface placeholder:text-on-surface-variant/50 disabled:opacity-50 font-sans"
+            className="flex-1 bg-transparent border-none focus:outline-none text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 disabled:opacity-50 font-sans"
           />
           <button 
             type="submit" 
             disabled={(!text.trim() && !selectedFile) || disabled || isUploading}
             aria-label="Kirim Pesan"
-            className={`flex items-center justify-center transition-colors p-1 rounded-lg ${((text.trim() || selectedFile) && !disabled && !isUploading) ? 'text-primary hover:bg-primary/10 cursor-pointer' : 'text-on-surface-variant/30 cursor-not-allowed'}`}
+            className={`min-w-[36px] min-h-[36px] flex items-center justify-center transition-colors rounded-xl ${((text.trim() || selectedFile) && !disabled && !isUploading) ? 'text-primary hover:bg-primary/10 cursor-pointer active:scale-95' : 'text-on-surface-variant/30 cursor-not-allowed'}`}
           >
             <Send className="w-4 h-4" />
           </button>

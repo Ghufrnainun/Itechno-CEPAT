@@ -366,15 +366,38 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
           )}
         </div>
 
-        {/* Right Side: Task Inspector Sidebar */}
+        {/* Desktop Side Inspector */}
         {selectedTask && (
-          <TaskInspector 
-            task={selectedTask} 
-            onClose={() => setSelectedTask(null)} 
-            onApply={openApplyModal}
-            isApplied={appliedTaskIds.includes(selectedTask.id_task)}
-            applicationStatus={appliedAppsMap[selectedTask.id_task]?.status}
-          />
+          <div className="hidden lg:block w-[420px] border-l border-card-border h-full z-20 bg-surface-container-lowest overflow-hidden shrink-0">
+            <TaskInspector 
+              task={selectedTask} 
+              onClose={() => setSelectedTask(null)} 
+              onApply={openApplyModal}
+              isApplied={appliedTaskIds.includes(selectedTask.id_task)}
+              applicationStatus={appliedAppsMap[selectedTask.id_task]?.status}
+            />
+          </div>
+        )}
+
+        {/* Mobile Inspector Bottom Sheet */}
+        {selectedTask && (
+          <div
+            onClick={() => setSelectedTask(null)}
+            className="lg:hidden fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex flex-col justify-end animate-backdrop-fade"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-surface-container-lowest rounded-t-3xl border-t border-card-border max-h-[90dvh] h-[90dvh] flex flex-col overflow-hidden animate-sheet-slide-up shadow-2xl"
+            >
+              <TaskInspector 
+                task={selectedTask} 
+                onClose={() => setSelectedTask(null)} 
+                onApply={openApplyModal}
+                isApplied={appliedTaskIds.includes(selectedTask.id_task)}
+                applicationStatus={appliedAppsMap[selectedTask.id_task]?.status}
+              />
+            </div>
+          </div>
         )}
       </div>
 
@@ -408,8 +431,9 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
                 <input
                   type="number"
                   inputMode="numeric"
+                  pattern="[0-9]*"
                   className={cn(
-                    "w-full pl-11 pr-3 py-2.5 text-xs font-mono font-bold bg-surface-container-low border rounded-lg text-on-surface focus:ring-2 focus:bg-surface-container-lowest focus:outline-none min-h-[42px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors",
+                    "w-full pl-11 pr-3 py-2.5 text-base sm:text-xs font-mono font-bold bg-surface-container-low border rounded-xl text-on-surface focus:ring-2 focus:bg-surface-container-lowest focus:outline-none min-h-[44px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors",
                     bidError
                       ? "border-error focus:border-error focus:ring-error/20"
                       : "border-card-border focus:border-primary focus:ring-primary/20"
@@ -440,7 +464,7 @@ export default function FeedClient({ initialTasks, initialCategories }: FeedClie
               Pesan untuk Pemberi Kerja (Opsional)
             </label>
             <textarea
-              className="w-full bg-surface-container-low border border-card-border rounded-lg p-3 text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[90px] custom-scrollbar"
+              className="w-full bg-surface-container-low border border-card-border rounded-xl p-3 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none min-h-[90px] custom-scrollbar"
               placeholder="Perkenalkan pengalaman Anda atau beri pesan singkat kepada pemberi kerja..."
               value={applyMessage}
               onChange={(e) => setApplyMessage(e.target.value)}

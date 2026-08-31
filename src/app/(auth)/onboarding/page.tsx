@@ -366,10 +366,10 @@ function OnboardingContent() {
       localStorage.setItem("cepat_user_univ", univ);
       localStorage.setItem("cepat_user_skills", JSON.stringify(selectedSkills));
 
-      router.push(redirectParam || "/feed");
+      router.push(redirectParam || "/dashboard");
     } catch (err) {
       console.error("Gagal update onboarding profile:", err);
-      router.push(redirectParam || "/feed");
+      router.push(redirectParam || "/dashboard");
     } finally {
       setLoading(false);
     }

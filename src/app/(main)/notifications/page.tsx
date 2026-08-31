@@ -93,7 +93,7 @@ export default function NotificationsPage() {
       case "chat":
         return "/chat";
       case "welcome":
-        return "/feed";
+        return "/cari-tugas";
       default: {
         const titleLower = (notif.title || "").toLowerCase();
         const msgLower = (notif.message || "").toLowerCase();
@@ -118,9 +118,9 @@ export default function NotificationsPage() {
           titleLower.includes("task") ||
           titleLower.includes("lamaran")
         ) {
-          return "/feed";
+          return "/cari-tugas";
         }
-        return "/feed";
+        return "/cari-tugas";
       }
     }
   };
@@ -165,7 +165,9 @@ export default function NotificationsPage() {
         )}
       </header>
 
-      <div className="max-w-4xl mx-auto w-full p-4 md:p-6 lg:p-8 flex flex-col gap-5">
+      {/* Main Content with Scroll Container & Clearance */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="max-w-4xl mx-auto w-full p-4 md:p-6 lg:p-8 flex flex-col gap-5 pb-36 lg:pb-12">
         {/* Filter Navigation Tabs */}
         <div className="flex items-center justify-between border-b border-card-border pb-2">
           <div className="flex items-center gap-3">
@@ -273,6 +275,7 @@ export default function NotificationsPage() {
             ))
           )}
         </div>
+      </div>
       </div>
     </div>
   );

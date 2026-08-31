@@ -20,18 +20,20 @@ import {
   CreditCard,
   Zap,
   AlertCircle,
+  ArrowDownToLine,
+  Building,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const PRESET_AMOUNTS = [
-  { label: "10rb", value: 10_000 },
-  { label: "25rb", value: 25_000 },
-  { label: "50rb", value: 50_000 },
-  { label: "100rb", value: 100_000 },
-  { label: "250rb", value: 250_000 },
-  { label: "500rb", value: 500_000 },
+  { label: "Rp10.000", value: 10_000 },
+  { label: "Rp25.000", value: 25_000 },
+  { label: "Rp50.000", value: 50_000 },
+  { label: "Rp100.000", value: 100_000 },
+  { label: "Rp250.000", value: 250_000 },
+  { label: "Rp500.000", value: 500_000 },
 ];
 
 // ─── UI Helpers ──────────────────────────────────────────────────────────────
@@ -59,9 +61,9 @@ function getSubTypeLabel(subType: TransactionSubType): string {
     case "task_payment":
       return "Pembayaran";
     case "refund":
-      return "Refund";
+      return "Pengembalian";
     case "hold":
-      return "Hold Escrow";
+      return "Ditahan (Escrow)";
     default:
       return subType;
   }
@@ -92,7 +94,7 @@ function WalletSkeleton() {
   );
 }
 
-// ─── Page ────────────────────────────────────────────────────────────────────
+// ─── Page Inner ──────────────────────────────────────────────────────────────
 
 function WalletPageInner() {
   const { showToast } = useToast();
@@ -110,6 +112,7 @@ function WalletPageInner() {
   } = useWallet();
 
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
+  const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState("");
   const [topUpMode, setTopUpMode] = useState<"midtrans" | "simulasi">("midtrans");
   const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
@@ -135,7 +138,7 @@ function WalletPageInner() {
         <header className="page-header bg-surface-container-lowest border-b border-card-border px-6 py-5">
           <div>
             <h1 className="font-headline text-2xl text-on-surface font-extrabold tracking-tight">
-              Dompet Poin
+              Dompet Saldo
             </h1>
           </div>
         </header>
@@ -180,7 +183,7 @@ function WalletPageInner() {
     setTopUpAmount("");
     setSelectedPreset(null);
     showToast(
-      `Berhasil top up ${amountVal.toLocaleString("id-ID")} pts! (Simulasi)`
+      `Berhasil top up Rp ${amountVal.toLocaleString("id-ID")}! (Simulasi)`
     );
   };
 
@@ -196,7 +199,7 @@ function WalletPageInner() {
 
     const errorMsg = await createPayment(amountVal, {
       onSuccess: () => {
-        showToast(`Pembayaran berhasil! Saldo bertambah ${amountVal.toLocaleString("id-ID")} pts.`);
+        showToast(`Pembayaran berhasil! Saldo bertambah Rp ${amountVal.toLocaleString("id-ID")}.`);
         setTopUpAmount("");
         setSelectedPreset(null);
       },
@@ -223,30 +226,44 @@ function WalletPageInner() {
   return (
     <div className="flex flex-col h-full bg-surface font-sans">
       {/* Page Header */}
-      <header className="page-header bg-surface-container-lowest border-b border-card-border px-6 py-5 flex items-center justify-between">
-        <div>
-          <h1 className="font-headline text-2xl text-on-surface font-extrabold tracking-tight">
-            Dompet Poin
-          </h1>
-          <p className="font-body-sm text-sm text-on-surface-variant font-medium mt-0.5">
-            Lacak transaksi keluar-masuk poin untuk pengerjaan tugas mikro.
-          </p>
-        </div>
-        <div className="flex items-center gap-2.5">
+      <header className="page-header bg-surface-container-lowest border-b border-card-border px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+        <div className="flex items-center justify-between w-full sm:w-auto">
+          <div>
+            <h1 className="font-headline text-xl sm:text-2xl text-on-surface font-extrabold tracking-tight">
+              Dompet Saldo
+            </h1>
+            <p className="font-body-sm text-xs sm:text-sm text-on-surface-variant font-medium mt-0.5">
+              Kelola saldo, pembayaran escrow tugas, dan riwayat pendapatan.
+            </p>
+          </div>
           <button
             onClick={() => refresh()}
-            className="w-10 h-10 rounded-lg border border-card-border hover:bg-surface-container flex items-center justify-center transition-colors duration-150 cursor-pointer text-on-surface-variant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="w-10 h-10 rounded-xl border border-card-border hover:bg-surface-container flex sm:hidden items-center justify-center transition-colors duration-150 cursor-pointer text-on-surface-variant shrink-0"
             title="Refresh Saldo"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
-          <Button onClick={() => setIsTopUpOpen(true)} variant="primary" icon={<PlusCircle className="w-4 h-4" />}>
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button
+            onClick={() => refresh()}
+            className="w-10 h-10 rounded-xl border border-card-border hover:bg-surface-container hidden sm:flex items-center justify-center transition-colors duration-150 cursor-pointer text-on-surface-variant shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            title="Refresh Saldo"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+          <Button onClick={() => setIsWithdrawOpen(true)} variant="secondary" className="flex-1 sm:flex-initial min-h-[42px] font-bold text-xs" icon={<ArrowDownToLine className="w-4 h-4" />}>
+            Tarik Saldo
+          </Button>
+          <Button onClick={() => setIsTopUpOpen(true)} variant="primary" className="flex-1 sm:flex-initial min-h-[42px] font-bold text-xs" icon={<PlusCircle className="w-4 h-4" />}>
             Top Up
           </Button>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto w-full p-4 md:p-6 lg:p-8 flex flex-col gap-6">
+      {/* Main Content Area with bottom clearance */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="max-w-4xl mx-auto w-full p-4 md:p-6 lg:p-8 flex flex-col gap-6 pb-36 lg:pb-12">
         {/* Balance Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Saldo Tersedia */}
@@ -258,11 +275,11 @@ function WalletPageInner() {
               </div>
             </div>
             <div>
-              <div className="font-mono text-3xl font-extrabold text-secondary tracking-tight tabular-nums">
+              <div className="font-mono text-3xl font-extrabold text-on-surface tracking-tight tabular-nums">
                 {formatCurrency(availableBalance)}
               </div>
               <div className="font-sans text-xs text-primary mt-1.5 flex items-center gap-1 font-semibold">
-                <TrendingUp className="w-3.5 h-3.5" /> Saldo aktif siap pakai
+                <TrendingUp className="w-3.5 h-3.5" /> Saldo aktif siap dicairkan / dipakai
               </div>
             </div>
           </div>
@@ -270,7 +287,7 @@ function WalletPageInner() {
           {/* Saldo Ditahan (Escrow) */}
           <div className="rounded-xl bg-surface-container-lowest border border-card-border p-5 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between mb-3 text-on-surface-variant">
-              <span className="font-sans text-xs font-semibold">Saldo Ditahan (Escrow)</span>
+              <span className="font-sans text-xs font-semibold">Saldo Ditahan di Escrow</span>
               <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600">
                 <Lock className="w-4.5 h-4.5" />
               </div>
@@ -281,7 +298,7 @@ function WalletPageInner() {
               </div>
               <div className="font-sans text-[11px] text-amber-700 mt-1.5 flex items-center gap-1 bg-amber-500/10 w-fit px-2 py-0.5 rounded-md border border-amber-500/20" title="Saldo dikunci saat memposting tugas dan dirilis ke worker saat tugas selesai">
                 <Info className="w-3 h-3 shrink-0" />
-                Dikunci untuk tugas aktif
+                Otomatis dirilis begitu tugas selesai
               </div>
             </div>
           </div>
@@ -388,7 +405,7 @@ function WalletPageInner() {
                           )}
                         >
                           {tx.amount > 0 ? "+" : ""}
-                          {tx.amount.toLocaleString("id-ID")} pts
+                          Rp {Math.abs(tx.amount).toLocaleString("id-ID")}
                         </td>
                         <td className="px-4 py-3 text-on-surface-variant font-mono text-[11px] tabular-nums">
                           {formatDate(tx.createdAt)}
@@ -429,7 +446,7 @@ function WalletPageInner() {
                 )}
               >
                 <CreditCard className="w-3.5 h-3.5" />
-                Midtrans
+                Midtrans Payment
               </button>
               <button
                 type="button"
@@ -442,14 +459,14 @@ function WalletPageInner() {
                 )}
               >
                 <Zap className="w-3.5 h-3.5" />
-                Simulasi
+                Simulasi Instan
               </button>
             </div>
 
             {/* Preset Amounts */}
             <div>
               <p className="font-semibold text-on-surface-variant mb-2">
-                Pilih nominal instan:
+                Pilih nominal cepat:
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {PRESET_AMOUNTS.map((preset) => (
@@ -472,7 +489,7 @@ function WalletPageInner() {
 
             {/* Custom Amount */}
             <Input
-              label="Atau masukkan nominal kustom"
+              label="Atau masukkan nominal kustom (Rp)"
               type="number"
               placeholder="Contoh: 75000"
               value={topUpAmount}
@@ -484,20 +501,18 @@ function WalletPageInner() {
               min={topUpMode === "midtrans" ? "1000" : "1"}
             />
 
-            {/* Info Text */}
             <p className="text-[11px] text-on-surface-variant leading-relaxed">
               {topUpMode === "midtrans" ? (
                 <>
-                  *Pembayaran diproses via <strong>Midtrans Sandbox</strong>. Gunakan test card untuk simulasi pembayaran.
+                  *Pembayaran diproses via <strong>Midtrans Sandbox</strong> (QRIS / GoPay / Bank Transfer).
                 </>
               ) : (
                 <>
-                  *Simulasi pengisian saldo instan untuk keperluan demo aplikasi ITechno Cup 2026.
+                  *Simulasi pengisian saldo instan untuk keperluan demo aplikasi.
                 </>
               )}
             </p>
 
-            {/* Actions */}
             <div className="flex justify-end gap-2 border-t border-card-border pt-3 mt-1">
               <Button
                 type="button"
@@ -527,6 +542,63 @@ function WalletPageInner() {
             </div>
           </form>
         </Modal>
+
+        {/* Withdrawal Info Modal */}
+        <Modal
+          isOpen={isWithdrawOpen}
+          onClose={() => setIsWithdrawOpen(false)}
+          title="Penarikan Saldo (Payout)"
+        >
+          <div className="flex flex-col gap-4 font-sans text-xs">
+            <div className="p-4 rounded-xl bg-surface-container-low border border-card-border flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-bold text-on-surface-variant uppercase font-mono">
+                  Saldo yang dapat ditarik
+                </span>
+                <div className="text-2xl font-extrabold text-on-surface font-mono tabular-nums mt-0.5">
+                  {formatCurrency(availableBalance)}
+                </div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                <Building className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 bg-surface-container-lowest p-3.5 rounded-xl border border-card-border">
+              <h4 className="font-headline font-bold text-xs text-on-surface flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5 text-primary" />
+                Informasi Penarikan Dana
+              </h4>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Penarikan saldo otomatis ditransfer ke rekening bank terdaftar (BCA/Mandiri/BRI) atau e-wallet (GoPay/DANA/OVO) dalam 1x24 jam kerja.
+              </p>
+              <p className="text-[11px] text-on-surface-variant font-mono">
+                Minimal penarikan: Rp 20.000 • Biaya admin: Bebas biaya
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-card-border pt-3">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsWithdrawOpen(false)}
+              >
+                Tutup
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setIsWithdrawOpen(false);
+                  showToast("Permintaan penarikan saldo Anda telah dicatat.");
+                }}
+                disabled={availableBalance < 20000}
+              >
+                Ajukan Penarikan
+              </Button>
+            </div>
+          </div>
+        </Modal>
+        </div>
       </div>
     </div>
   );

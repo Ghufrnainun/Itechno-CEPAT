@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useToast } from "@/components/ui/Toast";
 import { formatCurrency } from "@/lib/utils/format";
+import { cn } from "@/lib/utils";
 import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
 import { renderIcon } from "@/lib/icon-map";
 import {
@@ -25,6 +26,7 @@ import {
   Gavel,
   Calendar,
   Clock,
+  Loader2,
 } from "lucide-react";
 
 // Preset Task Templates with clean professional labels (no raw emojis)
@@ -146,6 +148,33 @@ export default function NewTaskPage() {
   const [isSkillDropdownOpen, setIsSkillDropdownOpen] = useState(false);
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [skillSearchQuery, setSkillSearchQuery] = useState("");
+
+  // Mobile 3-Step Wizard State
+  const [mobileStep, setMobileStep] = useState<1 | 2 | 3>(1);
+
+  const validateStep1 = useCallback(() => {
+    if (!title.trim()) {
+      showToast("Judul tugas wajib diisi.");
+      return false;
+    }
+    if (!description.trim()) {
+      showToast("Deskripsi tugas wajib diisi.");
+      return false;
+    }
+    return true;
+  }, [title, description, showToast]);
+
+  const validateStep2 = useCallback(() => {
+    if (!lat || !lng) {
+      showToast("Silakan tentukan titik lokasi tugas pada peta.");
+      return false;
+    }
+    if (isScheduled && !scheduledDate) {
+      showToast("Silakan tentukan tanggal pelaksanaan tugas.");
+      return false;
+    }
+    return true;
+  }, [lat, lng, isScheduled, scheduledDate, showToast]);
 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const skillDropdownRef = useRef<HTMLDivElement>(null);
@@ -505,6 +534,44 @@ export default function NewTaskPage() {
           </div>
         </div>
 
+        {/* Mobile 3-Step Wizard Navigation Strip */}
+        <div className="lg:hidden bg-surface-container-lowest border border-card-border rounded-2xl p-3 sticky top-2 z-30 flex items-center justify-between shadow-md mb-5">
+          <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar">
+            {[
+              { step: 1, label: "1. Detail" },
+              { step: 2, label: "2. Lokasi & Jadwal" },
+              { step: 3, label: "3. Bayar & Escrow" },
+            ].map((s) => (
+              <button
+                key={s.step}
+                type="button"
+                onClick={() => {
+                  if (s.step === 1) {
+                    setMobileStep(1);
+                  } else if (s.step === 2) {
+                    if (validateStep1()) setMobileStep(2);
+                  } else if (s.step === 3) {
+                    if (validateStep1() && validateStep2()) setMobileStep(3);
+                  }
+                }}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all duration-150 shrink-0",
+                  mobileStep === s.step
+                    ? "bg-primary text-on-primary shadow-xs"
+                    : mobileStep > s.step
+                    ? "bg-primary/15 text-primary"
+                    : "bg-surface-container-low text-on-surface-variant"
+                )}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <span className="text-[11px] font-mono text-on-surface-variant font-bold shrink-0 ml-2">
+            Langkah {mobileStep}/3
+          </span>
+        </div>
+
         {/* ──── Form & Map Grid (7 cols left, 5 cols right) ──── */}
         <form onSubmit={handleSubmit} noValidate>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -513,7 +580,10 @@ export default function NewTaskPage() {
             <div className="lg:col-span-7 flex flex-col gap-6">
               
               {/* Section 1: Informasi Pokok Tugas (Clean Double Bezel) */}
-              <div className="p-1 rounded-[1.75rem] bg-gradient-to-b from-card-border/70 to-card-border/30 border border-card-border/60 shadow-xs">
+              <div className={cn(
+                "p-1 rounded-[1.75rem] bg-gradient-to-b from-card-border/70 to-card-border/30 border border-card-border/60 shadow-xs",
+                mobileStep !== 1 && "hidden lg:block"
+              )}>
                 <div className="bg-surface-container-lowest rounded-[calc(1.75rem-0.25rem)] p-4 sm:p-7 flex flex-col gap-5">
                   <div className="border-b border-card-border/60 pb-3">
                     <h2 className="font-headline font-bold text-base text-on-surface">
@@ -542,7 +612,7 @@ export default function NewTaskPage() {
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       required
-                      className="w-full px-4 py-3 text-sm font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/40 rounded-xl border border-card-border/90 transition-all duration-150 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:outline-none min-h-[44px]"
+                      className="w-full px-4 py-3 text-base sm:text-sm font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/40 rounded-xl border border-card-border/90 transition-all duration-150 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:outline-none min-h-[44px]"
                     />
                   </div>
 
@@ -771,7 +841,10 @@ export default function NewTaskPage() {
               </div>
 
               {/* Section 2: Anggaran & Ketentuan Pelamar (Double Bezel) */}
-              <div className="p-1 rounded-[1.75rem] bg-gradient-to-b from-card-border/70 to-card-border/30 border border-card-border/60 shadow-xs">
+              <div className={cn(
+                "p-1 rounded-[1.75rem] bg-gradient-to-b from-card-border/70 to-card-border/30 border border-card-border/60 shadow-xs",
+                mobileStep !== 3 && "hidden lg:block"
+              )}>
                 <div className="bg-surface-container-lowest rounded-[calc(1.75rem-0.25rem)] p-4 sm:p-7 flex flex-col gap-6">
                   <div className="border-b border-card-border/60 pb-3">
                     <h2 className="font-headline font-bold text-base text-on-surface">
@@ -848,13 +921,15 @@ export default function NewTaskPage() {
                             <input
                               id="budget-min-input"
                               type="number"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
                               min={1000}
                               step={1000}
                               placeholder="Contoh: 40000"
                               value={budgetMin}
                               onChange={(e) => setBudgetMin(e.target.value)}
                               required
-                              className="w-full pl-12 pr-4 py-3 text-sm sm:text-base font-mono font-bold bg-surface-container-low text-on-surface rounded-xl border border-card-border/90 transition-all duration-150 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:outline-none min-h-[46px]"
+                              className="w-full pl-12 pr-4 py-3 text-base font-mono font-bold bg-surface-container-low text-on-surface rounded-xl border border-card-border/90 transition-all duration-150 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:outline-none min-h-[46px]"
                             />
                           </div>
                         </div>
@@ -870,13 +945,15 @@ export default function NewTaskPage() {
                             <input
                               id="budget-max-input"
                               type="number"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
                               min={1000}
                               step={1000}
                               placeholder="Contoh: 75000"
                               value={budgetMax}
                               onChange={(e) => setBudgetMax(e.target.value)}
                               required
-                              className="w-full pl-12 pr-4 py-3 text-sm sm:text-base font-mono font-bold bg-surface-container-low text-on-surface rounded-xl border border-card-border/90 transition-all duration-150 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:outline-none min-h-[46px]"
+                              className="w-full pl-12 pr-4 py-3 text-base font-mono font-bold bg-surface-container-low text-on-surface rounded-xl border border-card-border/90 transition-all duration-150 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:outline-none min-h-[46px]"
                             />
                           </div>
                         </div>
@@ -902,13 +979,15 @@ export default function NewTaskPage() {
                         <input
                           id="compensation-input"
                           type="number"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           min={1000}
                           step={1000}
                           placeholder="Contoh: 75000"
                           value={compensation}
                           onChange={(e) => setCompensation(e.target.value)}
                           required={!isBidding}
-                          className="w-full pl-12 pr-4 py-3 text-sm sm:text-base font-mono font-bold bg-surface-container-low text-on-surface rounded-xl border border-card-border/90 transition-all duration-150 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:outline-none min-h-[46px]"
+                          className="w-full pl-12 pr-4 py-3 text-base font-mono font-bold bg-surface-container-low text-on-surface rounded-xl border border-card-border/90 transition-all duration-150 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:outline-none min-h-[46px]"
                         />
                       </div>
 
@@ -1170,7 +1249,10 @@ export default function NewTaskPage() {
             <div className="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-20">
               
               {/* Section 3: Titik Lokasi Tugas & Radar Map (Double Bezel) */}
-              <div className="p-1 rounded-[1.75rem] bg-gradient-to-b from-card-border/70 to-card-border/30 border border-card-border/60 shadow-xs">
+              <div className={cn(
+                "p-1 rounded-[1.75rem] bg-gradient-to-b from-card-border/70 to-card-border/30 border border-card-border/60 shadow-xs",
+                mobileStep !== 2 && "hidden lg:block"
+              )}>
                 <div className="bg-surface-container-lowest rounded-[calc(1.75rem-0.25rem)] p-4 sm:p-6 flex flex-col gap-4">
                   <div className="border-b border-card-border/60 pb-3">
                     <h2 className="font-headline font-bold text-base text-on-surface">
@@ -1197,7 +1279,7 @@ export default function NewTaskPage() {
                               handleSearchLocation();
                             }
                           }}
-                          className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/40 rounded-xl border border-card-border/90 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:outline-none min-h-[44px]"
+                          className="w-full pl-10 pr-3.5 py-2.5 text-base sm:text-sm font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/40 rounded-xl border border-card-border/90 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:outline-none min-h-[44px]"
                         />
                       </div>
                       <button
@@ -1263,7 +1345,10 @@ export default function NewTaskPage() {
               </div>
 
               {/* Section 4: Smart Escrow Financial Ledger (Double Bezel) */}
-              <div className="p-1 rounded-[1.75rem] bg-gradient-to-b from-card-border/70 to-card-border/30 border border-card-border/60 shadow-sm">
+              <div className={cn(
+                "p-1 rounded-[1.75rem] bg-gradient-to-b from-card-border/70 to-card-border/30 border border-card-border/60 shadow-sm",
+                mobileStep !== 3 && "hidden lg:block"
+              )}>
                 <div className="bg-surface-container-lowest rounded-[calc(1.75rem-0.25rem)] p-4 sm:p-6 flex flex-col gap-5">
                   <div className="flex items-center justify-between border-b border-card-border/60 pb-3">
                     <div>
@@ -1396,8 +1481,8 @@ export default function NewTaskPage() {
                     </div>
                   </div>
 
-                  {/* Submit Button (CTA with Island Architecture) */}
-                  <div className="pt-2">
+                  {/* Desktop Submit Button */}
+                  <div className="pt-2 hidden lg:block">
                     <button
                       type="submit"
                       disabled={loading || isBalanceInsufficient || !lat || !lng}
@@ -1423,6 +1508,54 @@ export default function NewTaskPage() {
 
             </div>
 
+          </div>
+
+          {/* ════════ MOBILE STICKY FLOATING STEP ACTION BAR ════════ */}
+          <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3.5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-surface-container-lowest/95 backdrop-blur-md border-t border-card-border flex items-center justify-between gap-3 z-40 shadow-2xl">
+            {mobileStep > 1 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileStep((prev) => (prev - 1) as 1 | 2 | 3);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="px-4 py-3 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-bold text-xs border border-card-border transition-colors cursor-pointer min-h-[46px]"
+              >
+                ← Kembali
+              </button>
+            )}
+            {mobileStep < 3 ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (mobileStep === 1 && !validateStep1()) return;
+                  if (mobileStep === 2 && !validateStep2()) return;
+                  setMobileStep((prev) => (prev + 1) as 1 | 2 | 3);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="flex-1 py-3 px-4 rounded-xl bg-primary text-on-primary font-bold text-xs shadow-md transition-all active:scale-[0.98] cursor-pointer min-h-[46px] flex items-center justify-center gap-1.5"
+              >
+                <span>{mobileStep === 1 ? "Lanjut: Lokasi & Jadwal" : "Lanjut: Kompensasi & Bayar"}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={loading || isBalanceInsufficient || !lat || !lng}
+                className="flex-1 py-3 px-4 rounded-xl bg-primary text-on-primary font-bold text-xs shadow-md transition-all active:scale-[0.98] cursor-pointer min-h-[46px] flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Memproses Escrow...
+                  </span>
+                ) : isBalanceInsufficient ? (
+                  "Saldo Kurang — Top Up Dulu"
+                ) : (
+                  <span>Posting Tugas &amp; Kunci Escrow</span>
+                )}
+              </button>
+            )}
           </div>
         </form>
       </div>

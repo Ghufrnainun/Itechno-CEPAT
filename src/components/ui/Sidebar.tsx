@@ -7,13 +7,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useUnreadChat } from "@/hooks/useUnreadChat";
 import {
-  Menu,
-  MenuSquare,
   Briefcase,
   PlusCircle,
   Home,
   Compass,
-  ListFilter,
   History,
   MessageSquare,
   Bell,
@@ -28,9 +25,12 @@ import {
   Calendar,
   ShieldAlert,
   Bookmark,
+  Sparkles,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ReportModal } from "@/components/ui/ReportModal";
+import { usePwaInstall } from "@/hooks/usePwaInstall";
 
 interface SidebarProps {
   role: "worker" | "requester";
@@ -50,6 +50,7 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
   const router = useRouter();
   const { unreadCount } = useNotifications();
   const { unreadCount: chatUnreadCount } = useUnreadChat();
+  const { canInstall, promptInstall } = usePwaInstall();
   const [loggingOut, setLoggingOut] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -82,12 +83,12 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
       id="sidebar"
       aria-label="Navigasi Utama Aplikasi"
       className={cn(
-        "hidden lg:flex flex-col h-screen py-5 gap-5 border-r border-card-border bg-surface-container-lowest sticky top-0 shrink-0 shadow-xs overflow-x-hidden transition-[width,padding] duration-200 ease-out",
+        "hidden lg:flex flex-col h-screen py-4 gap-4 border-r border-card-border bg-surface-container-lowest sticky top-0 shrink-0 shadow-xs overflow-x-hidden transition-[width,padding] duration-200 ease-out z-30",
         isExpanded ? "w-64 px-3.5" : "w-20 px-2 items-center"
       )}
     >
       {/* Brand / Header */}
-      <div className={cn("flex items-center px-1 mb-1 w-full", isExpanded ? "justify-between" : "justify-center flex-col gap-3")}>
+      <div className={cn("flex items-center px-1 w-full", isExpanded ? "justify-between" : "justify-center flex-col gap-2")}>
         {isExpanded ? (
           <Link
             href="/dashboard"
@@ -127,7 +128,7 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
       </div>
 
       {/* User Profile Card */}
-      <div className={cn("flex flex-col gap-2.5 p-3 bg-surface-container-low border border-card-border rounded-xl shadow-xs w-full", !isExpanded && "items-center px-1")}>
+      <div className={cn("flex flex-col gap-2 p-2.5 bg-surface-container-low border border-card-border rounded-xl shadow-xs w-full", !isExpanded && "items-center px-1")}>
         <div className={cn("flex items-center", isExpanded ? "gap-2.5" : "justify-center")}>
           <div className="w-9 h-9 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-xs shrink-0 shadow-xs relative overflow-hidden" title={!isExpanded ? displayName : undefined}>
             {user?.avatar_url ? (
@@ -141,22 +142,26 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
               <span className="font-sans font-bold text-xs text-on-surface truncate">
                 {displayName}
               </span>
-              <span className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-primary tabular-nums">
+              <Link
+                href="/wallet"
+                className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-primary tabular-nums hover:underline transition-all cursor-pointer"
+                title="Buka Dompet"
+              >
                 <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block shrink-0" />
-                Saldo: {user?.total_balance ?? 0} pts
-              </span>
+                Saldo: Rp {(user?.total_balance ?? 0).toLocaleString("id-ID")}
+              </Link>
             </div>
           )}
         </div>
 
-        {/* Segmented Control Role Switcher */}
+        {/* Role Switcher */}
         <div className={cn("flex w-full bg-surface-container rounded-lg border border-card-border/60", isExpanded ? "p-0.5" : "flex-col p-1 gap-1 border-none bg-transparent")}>
           <button
             type="button"
             onClick={() => role !== "worker" && onRoleToggle()}
             aria-label="Mode Pekerja"
             className={cn(
-              "flex-1 py-1.5 px-2 text-xs font-semibold rounded-md transition-colors duration-150 flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none active:scale-[0.96]",
+              "flex-1 py-1 px-2 text-xs font-semibold rounded-md transition-colors duration-150 flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none active:scale-[0.96]",
               role === "worker"
                 ? "bg-primary text-on-primary shadow-xs font-bold"
                 : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest",
@@ -170,15 +175,15 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
           <button
             type="button"
             onClick={() => role !== "requester" && onRoleToggle()}
-            aria-label="Mode Pemberi Kerja"
+            aria-label="Mode Pemberi Tugas"
             className={cn(
-              "flex-1 py-1.5 px-2 text-xs font-semibold rounded-md transition-colors duration-150 flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none active:scale-[0.96]",
+              "flex-1 py-1 px-2 text-xs font-semibold rounded-md transition-colors duration-150 flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none active:scale-[0.96]",
               role === "requester"
                 ? "bg-primary text-on-primary shadow-xs font-bold"
                 : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest",
               !isExpanded && "w-9 h-9 rounded-lg p-0"
             )}
-            title={!isExpanded ? "Mode Pemberi" : undefined}
+            title={!isExpanded ? "Mode Pemberi Tugas" : undefined}
           >
             <PlusCircle className="w-3.5 h-3.5 shrink-0" />
             {isExpanded && "Pemberi"}
@@ -186,101 +191,41 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
         </div>
       </div>
 
-      {/* Navigation Links */}
+      {/* Navigation Sections */}
       <nav className={cn("flex-1 flex flex-col gap-1 overflow-y-auto overflow-x-hidden custom-scrollbar w-full", !isExpanded && "items-center px-1")}>
+        {/* SECTION 1: UTAMA */}
+        {isExpanded && (
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-on-surface-variant/70 px-2 pt-1 pb-0.5">
+            Utama
+          </span>
+        )}
+
+        {/* 1. Beranda */}
         <Link
           href="/dashboard"
-          title={!isExpanded ? "Dashboard" : undefined}
+          title={!isExpanded ? "Beranda" : undefined}
           aria-current={pathname === "/dashboard" ? "page" : undefined}
           className={cn("sidebar-link flex items-center gap-3", pathname === "/dashboard" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
         >
           <Home className="w-4 h-4 shrink-0" />
-          {isExpanded && "Dashboard"}
+          {isExpanded && "Beranda"}
         </Link>
 
-        <Link
-          href="/leaderboard"
-          title={!isExpanded ? "Peringkat" : undefined}
-          aria-current={pathname === "/leaderboard" ? "page" : undefined}
-          className={cn("sidebar-link flex items-center gap-3", pathname === "/leaderboard" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
-        >
-          <Trophy className="w-4 h-4 shrink-0" />
-          {isExpanded && "Peringkat"}
-        </Link>
-
-        <Link
-          href="/schedule"
-          title={!isExpanded ? "Jadwal" : undefined}
-          aria-current={pathname === "/schedule" ? "page" : undefined}
-          className={cn("sidebar-link flex items-center gap-3", pathname === "/schedule" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
-        >
-          <Calendar className="w-4 h-4 shrink-0" />
-          {isExpanded && "Jadwal"}
-        </Link>
-
+        {/* 2. Cari Tugas (Worker) / Kelola Tugas (Requester) */}
         {role === "worker" ? (
-          <>
-            <Link
-              href="/cari-tugas"
-              title={!isExpanded ? "Cari Tugas" : undefined}
-              aria-current={pathname === "/cari-tugas" ? "page" : undefined}
-              className={cn("sidebar-link flex items-center gap-3", pathname === "/cari-tugas" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
-            >
-              <Compass className="w-4 h-4 shrink-0" />
-              {isExpanded && "Cari Tugas"}
-            </Link>
-
-            <Link
-              href="/feed"
-              title={!isExpanded ? "Feeds" : undefined}
-              aria-current={pathname === "/feed" ? "page" : undefined}
-              className={cn("sidebar-link flex items-center gap-3", pathname === "/feed" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
-            >
-              <ListFilter className="w-4 h-4 shrink-0" />
-              {isExpanded && "Feeds"}
-            </Link>
-
-            <Link
-              href="/history/riwayat"
-              title={!isExpanded ? "Riwayat" : undefined}
-              aria-current={pathname === "/history/riwayat" ? "page" : undefined}
-              className={cn("sidebar-link flex items-center gap-3", pathname === "/history/riwayat" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
-            >
-              <History className="w-4 h-4 shrink-0" />
-              {isExpanded && "Riwayat"}
-            </Link>
-
-            <Link
-              href="/saved"
-              title={!isExpanded ? "Tersimpan" : undefined}
-              aria-current={pathname === "/saved" ? "page" : undefined}
-              className={cn("sidebar-link flex items-center gap-3", pathname === "/saved" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
-            >
-              <Bookmark className="w-4 h-4 shrink-0" />
-              {isExpanded && "Tersimpan"}
-            </Link>
-
-            <Link
-              href="/chat"
-              title={!isExpanded ? "Chat" : undefined}
-              aria-current={pathname === "/chat" ? "page" : undefined}
-              className={cn("sidebar-link flex items-center gap-3", pathname === "/chat" && "active", isExpanded ? "justify-between" : "justify-center w-10 h-10 rounded-lg p-0 relative")}
-            >
-              <div className="flex items-center gap-3">
-                <MessageSquare className="w-4 h-4 shrink-0" />
-                {isExpanded && "Chat"}
-              </div>
-              {chatUnreadCount > 0 && (
-                <span className={cn(
-                  isExpanded
-                    ? "bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono tabular-nums"
-                    : "absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full ring-2 ring-surface-container-lowest"
-                )}>
-                  {isExpanded ? chatUnreadCount : ""}
-                </span>
-              )}
-            </Link>
-          </>
+          <Link
+            href="/cari-tugas"
+            title={!isExpanded ? "Cari Tugas" : undefined}
+            aria-current={pathname === "/cari-tugas" || pathname === "/feed" ? "page" : undefined}
+            className={cn(
+              "sidebar-link flex items-center gap-3",
+              (pathname === "/cari-tugas" || pathname === "/feed") && "active",
+              !isExpanded && "justify-center w-10 h-10 rounded-lg p-0"
+            )}
+          >
+            <Compass className="w-4 h-4 shrink-0" />
+            {isExpanded && "Cari Tugas"}
+          </Link>
         ) : (
           <>
             <Link
@@ -302,30 +247,32 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
               <ClipboardList className="w-4 h-4 shrink-0" />
               {isExpanded && "Kelola Tugas"}
             </Link>
-
-            <Link
-              href="/chat"
-              title={!isExpanded ? "Chat" : undefined}
-              aria-current={pathname === "/chat" ? "page" : undefined}
-              className={cn("sidebar-link flex items-center gap-3", pathname === "/chat" && "active", isExpanded ? "justify-between" : "justify-center w-10 h-10 rounded-lg p-0 relative")}
-            >
-              <div className="flex items-center gap-3">
-                <MessageSquare className="w-4 h-4 shrink-0" />
-                {isExpanded && "Chat"}
-              </div>
-              {chatUnreadCount > 0 && (
-                <span className={cn(
-                  isExpanded
-                    ? "bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono tabular-nums"
-                    : "absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full ring-2 ring-surface-container-lowest"
-                )}>
-                  {isExpanded ? chatUnreadCount : ""}
-                </span>
-              )}
-            </Link>
           </>
         )}
 
+        {/* 3. Chat */}
+        <Link
+          href="/chat"
+          title={!isExpanded ? "Chat" : undefined}
+          aria-current={pathname === "/chat" ? "page" : undefined}
+          className={cn("sidebar-link flex items-center gap-3", pathname === "/chat" && "active", isExpanded ? "justify-between" : "justify-center w-10 h-10 rounded-lg p-0 relative")}
+        >
+          <div className="flex items-center gap-3">
+            <MessageSquare className="w-4 h-4 shrink-0" />
+            {isExpanded && "Chat"}
+          </div>
+          {chatUnreadCount > 0 && (
+            <span className={cn(
+              isExpanded
+                ? "bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono tabular-nums"
+                : "absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full ring-2 ring-surface-container-lowest"
+            )}>
+              {isExpanded ? chatUnreadCount : ""}
+            </span>
+          )}
+        </Link>
+
+        {/* 4. Notifikasi */}
         <Link
           href="/notifications"
           title={!isExpanded ? "Notifikasi" : undefined}
@@ -347,28 +294,20 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
           )}
         </Link>
 
+        {/* 5. Dompet */}
         <Link
           href="/wallet"
-          title={!isExpanded ? "Dompet Poin" : undefined}
+          title={!isExpanded ? "Dompet" : undefined}
           aria-current={pathname === "/wallet" ? "page" : undefined}
           className={cn("sidebar-link flex items-center gap-3", pathname === "/wallet" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
         >
           <Wallet className="w-4 h-4 shrink-0" />
-          {isExpanded && "Dompet Poin"}
+          {isExpanded && "Dompet"}
         </Link>
 
+        {/* 6. Profil Saya */}
         <Link
-          href="/disputes"
-          title={!isExpanded ? "Pusat Sengketa" : undefined}
-          aria-current={pathname.startsWith("/disputes") ? "page" : undefined}
-          className={cn("sidebar-link flex items-center gap-3", pathname.startsWith("/disputes") && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
-        >
-          <ShieldAlert className="w-4 h-4 shrink-0 text-amber-600" />
-          {isExpanded && "Pusat Sengketa"}
-        </Link>
-
-        <Link
-          href="/profile"
+          href="/profile/me"
           title={!isExpanded ? "Profil Saya" : undefined}
           aria-current={isMyProfileActive ? "page" : undefined}
           className={cn(
@@ -380,23 +319,100 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
           <User className="w-4 h-4 shrink-0" />
           {isExpanded && "Profil Saya"}
         </Link>
+
+        {/* SECTION 2: FITUR & PINTASAN */}
+        <div className="my-1 border-t border-card-border/60" />
+        {isExpanded && (
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-on-surface-variant/70 px-2 pt-1 pb-0.5">
+            Pintasan & Agenda
+          </span>
+        )}
+
+        {/* 7. Jadwal & Agenda */}
+        <Link
+          href="/schedule"
+          title={!isExpanded ? "Jadwal & Agenda" : undefined}
+          aria-current={pathname === "/schedule" ? "page" : undefined}
+          className={cn("sidebar-link flex items-center gap-3", pathname === "/schedule" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+        >
+          <Calendar className="w-4 h-4 shrink-0" />
+          {isExpanded && "Jadwal & Agenda"}
+        </Link>
+
+        {/* 8. Peringkat & Streak */}
+        <Link
+          href="/leaderboard"
+          title={!isExpanded ? "Peringkat & Streak" : undefined}
+          aria-current={pathname === "/leaderboard" ? "page" : undefined}
+          className={cn("sidebar-link flex items-center gap-3", pathname === "/leaderboard" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+        >
+          <Trophy className="w-4 h-4 shrink-0" />
+          {isExpanded && "Peringkat & Streak"}
+        </Link>
+
+        {/* 9. Tugas Tersimpan */}
+        <Link
+          href="/saved"
+          title={!isExpanded ? "Tersimpan" : undefined}
+          aria-current={pathname === "/saved" ? "page" : undefined}
+          className={cn("sidebar-link flex items-center gap-3", pathname === "/saved" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+        >
+          <Bookmark className="w-4 h-4 shrink-0" />
+          {isExpanded && "Tugas Tersimpan"}
+        </Link>
+
+        {/* 10. Riwayat Transaksi & Tugas */}
+        <Link
+          href="/history/riwayat"
+          title={!isExpanded ? "Riwayat Aktivitas" : undefined}
+          aria-current={pathname === "/history/riwayat" ? "page" : undefined}
+          className={cn("sidebar-link flex items-center gap-3", pathname === "/history/riwayat" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+        >
+          <History className="w-4 h-4 shrink-0" />
+          {isExpanded && "Riwayat Aktivitas"}
+        </Link>
+
+        {/* 11. Pusat Sengketa */}
+        <Link
+          href="/disputes"
+          title={!isExpanded ? "Pusat Sengketa" : undefined}
+          aria-current={pathname.startsWith("/disputes") ? "page" : undefined}
+          className={cn("sidebar-link flex items-center gap-3", pathname.startsWith("/disputes") && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+        >
+          <ShieldAlert className="w-4 h-4 shrink-0" />
+          {isExpanded && "Pusat Sengketa"}
+        </Link>
       </nav>
 
       {/* Footer */}
-      <div className={cn("flex flex-col gap-2 pt-3 border-t border-card-border w-full", !isExpanded && "items-center px-1")}>
-        {/* Tombol Laporan ke Admin */}
+      <div className={cn("flex flex-col gap-1.5 pt-2.5 border-t border-card-border w-full", !isExpanded && "items-center px-1")}>
+        {canInstall && (
+          <button
+            type="button"
+            onClick={() => promptInstall()}
+            title={!isExpanded ? "Pasang Aplikasi" : undefined}
+            aria-label="Pasang Aplikasi CEPAT"
+            className={cn(
+              "sidebar-link flex items-center gap-3 text-primary hover:bg-primary/10 transition-colors rounded-lg focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none cursor-pointer text-xs font-semibold",
+              isExpanded ? "w-full text-left" : "justify-center w-10 h-10 p-0"
+            )}
+          >
+            <Download className="w-4 h-4 shrink-0 text-primary" aria-hidden="true" />
+            {isExpanded && "Pasang Aplikasi"}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setIsReportModalOpen(true)}
-          title={!isExpanded ? "Laporkan Masalah" : undefined}
-          aria-label="Laporkan masalah ke Admin"
+          title={!isExpanded ? "Bantuan & Laporan" : undefined}
+          aria-label="Bantuan atau laporkan masalah"
           className={cn(
-            "sidebar-link flex items-center gap-3 text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-colors rounded-lg focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:outline-none cursor-pointer",
+            "sidebar-link flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors rounded-lg focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none cursor-pointer text-xs",
             isExpanded ? "w-full text-left" : "justify-center w-10 h-10 p-0"
           )}
         >
-          <Flag className="w-4 h-4 shrink-0 text-rose-600" aria-hidden="true" />
-          {isExpanded && "Laporkan Masalah"}
+          <Flag className="w-4 h-4 shrink-0 text-on-surface-variant" aria-hidden="true" />
+          {isExpanded && "Bantuan & Laporan"}
         </button>
         <button
           onClick={handleLogout}
@@ -404,7 +420,7 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
           title={!isExpanded ? "Keluar" : undefined}
           aria-label="Keluar dari akun"
           className={cn(
-            "sidebar-link flex items-center gap-3 text-error hover:bg-error-container/30 rounded-lg disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-error/40 focus-visible:outline-none cursor-pointer",
+            "sidebar-link flex items-center gap-3 text-error hover:bg-error-container/30 rounded-lg disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-error/40 focus-visible:outline-none cursor-pointer text-xs",
             isExpanded ? "w-full text-left" : "justify-center w-10 h-10 p-0"
           )}
         >

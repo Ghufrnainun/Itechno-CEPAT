@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     if (amount > 1_000_000) {
       return NextResponse.json(
-        { success: false, message: 'Nominal simulasi top-up maksimal 1.000.000 pts per transaksi.' },
+        { success: false, message: 'Nominal simulasi top-up maksimal Rp 1.000.000 per transaksi.' },
         { status: 400 }
       )
     }
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Top up ${amount.toLocaleString('id-ID')} pts berhasil.`,
+      message: `Top up Rp ${amount.toLocaleString('id-ID')} berhasil.`,
       data: updatedBalance,
     })
   } catch (error) {

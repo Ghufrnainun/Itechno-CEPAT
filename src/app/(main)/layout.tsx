@@ -8,6 +8,7 @@ import { useFCM } from "@/hooks/useFCM";
 import { usePresencePing } from "@/hooks/usePresencePing";
 import { BellRing } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { PwaInstallBanner } from "@/components/ui/PwaInstallBanner";
 
 type Role = "worker" | "requester";
 
@@ -148,17 +149,22 @@ export default function MainAppLayout({
   return (
     <RoleContext.Provider value={{ role, setRole, toggleRole, user }}>
       <ToastProvider>
+        <PwaInstallBanner />
         <FcmBridge />
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-3 focus:bg-primary focus:text-on-primary font-bold shadow-md m-2 rounded-lg text-xs">
           Skip to main content
         </a>
-        <div className="flex h-screen w-screen overflow-hidden bg-surface font-sans">
+        <div className="flex h-[100dvh] w-full max-w-full overflow-hidden bg-surface font-sans">
           {/* Sidebar Left */}
           <Sidebar role={role} onRoleToggle={toggleRole} user={user} />
 
           {/* Main Content Area */}
-          <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-            <main id="main-content" className="flex-grow overflow-y-auto pb-20 lg:pb-0 custom-scrollbar" tabIndex={-1}>
+          <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden relative">
+            <main
+              id="main-content"
+              className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] lg:pb-0"
+              tabIndex={-1}
+            >
               {children}
             </main>
 
