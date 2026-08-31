@@ -26,9 +26,11 @@ import {
   ShieldAlert,
   Bookmark,
   Sparkles,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ReportModal } from "@/components/ui/ReportModal";
+import { usePwaInstall } from "@/hooks/usePwaInstall";
 
 interface SidebarProps {
   role: "worker" | "requester";
@@ -48,6 +50,7 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
   const router = useRouter();
   const { unreadCount } = useNotifications();
   const { unreadCount: chatUnreadCount } = useUnreadChat();
+  const { canInstall, promptInstall } = usePwaInstall();
   const [loggingOut, setLoggingOut] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -383,6 +386,21 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
 
       {/* Footer */}
       <div className={cn("flex flex-col gap-1.5 pt-2.5 border-t border-card-border w-full", !isExpanded && "items-center px-1")}>
+        {canInstall && (
+          <button
+            type="button"
+            onClick={() => promptInstall()}
+            title={!isExpanded ? "Pasang Aplikasi" : undefined}
+            aria-label="Pasang Aplikasi CEPAT"
+            className={cn(
+              "sidebar-link flex items-center gap-3 text-primary hover:bg-primary/10 transition-colors rounded-lg focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none cursor-pointer text-xs font-semibold",
+              isExpanded ? "w-full text-left" : "justify-center w-10 h-10 p-0"
+            )}
+          >
+            <Download className="w-4 h-4 shrink-0 text-primary" aria-hidden="true" />
+            {isExpanded && "Pasang Aplikasi"}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setIsReportModalOpen(true)}

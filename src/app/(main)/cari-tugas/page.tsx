@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export default function CariTugasPage() {
+function CariTugasPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { coords, loading: locLoading } = useGeolocation();
@@ -589,5 +589,19 @@ export default function CariTugasPage() {
         </form>
       </Modal>
     </div>
+  );
+}
+
+export default function CariTugasPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="flex-1 flex items-center justify-center min-h-[400px]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <CariTugasPageContent />
+    </React.Suspense>
   );
 }

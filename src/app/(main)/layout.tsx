@@ -8,6 +8,7 @@ import { useFCM } from "@/hooks/useFCM";
 import { usePresencePing } from "@/hooks/usePresencePing";
 import { BellRing } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { PwaInstallBanner } from "@/components/ui/PwaInstallBanner";
 
 type Role = "worker" | "requester";
 
@@ -148,6 +149,7 @@ export default function MainAppLayout({
   return (
     <RoleContext.Provider value={{ role, setRole, toggleRole, user }}>
       <ToastProvider>
+        <PwaInstallBanner />
         <FcmBridge />
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-3 focus:bg-primary focus:text-on-primary font-bold shadow-md m-2 rounded-lg text-xs">
           Skip to main content

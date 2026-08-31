@@ -30,12 +30,15 @@ import {
   Clock,
   Bookmark,
   History,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePwaInstall } from "@/hooks/usePwaInstall";
 
 export default function DashboardPage() {
   const { role, user, toggleRole } = useCurrentRole();
   const { coords } = useGeolocation();
+  const { canInstall, promptInstall } = usePwaInstall();
 
   const [tasks, setTasks] = useState<any[]>([]);
   const [recommendedTasks, setRecommendedTasks] = useState<any[]>([]);
@@ -149,6 +152,19 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {canInstall && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => promptInstall()}
+              icon={<Download className="w-3.5 h-3.5 text-primary" />}
+              className="min-h-[38px] sm:min-h-[44px] text-xs font-bold px-3 sm:px-4 shadow-2xs border-primary/30 hover:border-primary text-primary hover:bg-primary/5"
+            >
+              <span className="hidden sm:inline">Pasang Aplikasi</span>
+              <span className="sm:hidden">Pasang App</span>
+            </Button>
+          )}
+
           {role === "requester" ? (
             <Link href="/task/new">
               <Button

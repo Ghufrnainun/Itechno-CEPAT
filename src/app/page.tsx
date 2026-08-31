@@ -8,6 +8,7 @@ import { CategoriesCloud } from "@/components/landing/CategoriesCloud";
 import { SdgImpact } from "@/components/landing/SdgImpact";
 import { ComparisonSection } from "@/components/landing/ComparisonSection";
 import { FinalCTA } from "@/components/landing/FinalCTA";
+import { PwaInstallBanner } from "@/components/ui/PwaInstallBanner";
 
 export default function Home() {
   return (
@@ -18,6 +19,7 @@ export default function Home() {
         so they don't leak into the dashboard.
       */}
       <LandingNavbar />
+      <PwaInstallBanner />
       
       <main>
         <HeroSection />
