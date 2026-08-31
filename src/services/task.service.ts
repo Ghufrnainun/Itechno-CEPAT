@@ -1421,105 +1421,124 @@ export const taskService = {
   },
 
   /**
-   * Histori task user (sebagai requester & sebagai worker)
+   * Mengambil riwayat tugas user (baik sebagai requester maupun worker).
    */
   async getUserTaskHistory(
     userId: string,
     role: 'requester' | 'worker',
-    statusFilter?: string,
+    status?: string
   ) {
     if (role === 'requester') {
       const where: Record<string, unknown> = { id_requester: userId };
-      if (statusFilter) {
-        where.status_task = { nama_status: statusFilter.toUpperCase() };
+      if (status) {
+        where.status_task = {
+          nama_status: { equals: getDbStatusName(status), mode: 'insensitive' },
+        };
       }
 
       const tasks = await prisma.task.findMany({
         where,
         include: {
           status_task: { select: { nama_status: true } },
-          _count: { select: { applicants: true } },
           applicants: {
-            where: { status_applicant: { nama_status: 'accepted' } },
             include: {
-              worker: {
-                select: { id_user: true, nama_lengkap: true, avatar_url: true },
-              },
+              status_applicant: { select: { nama_status: true } },
+              worker: { select: { id_user: true, nama_lengkap: true, avatar_url: true } },
             },
-            take: 1,
           },
-          reviews: { where: { id_rater: { not: userId } }, take: 1 }, // review dari worker ke requester
+          reviews: {
+            select: { rating: true, id_rater: true },
+          },
         },
         orderBy: { created_at: 'desc' },
       });
 
       return tasks.map((t) => {
-        const acceptedApplicant = t.applicants[0];
+        const acceptedApp = t.applicants.find(
+          (a) => a.status_applicant?.nama_status?.toLowerCase() === 'accepted'
+        );
+        const workerReview = acceptedApp
+          ? t.reviews.find((r) => r.id_rater === acceptedApp.id_worker)
+          : (t.reviews[0] ?? null);
         const isBidding = t.is_bidding;
+
         return {
           id_tasks: t.id_tasks,
           judul_tugas: t.judul_tugas,
           estimasi_waktu: t.estimasi_waktu,
-          kompensasi: (isBidding && acceptedApplicant && acceptedApplicant.bid_amount != null) 
-                        ? acceptedApplicant.bid_amount 
-                        : t.kompensasi,
-          status: t.status_task.nama_status.toLowerCase(),
-          created_at: t.created_at,
-          completed_at: t.completed_at,
-          applicant_count: t._count.applicants,
-          accepted_worker: acceptedApplicant?.worker ?? null,
-          received_rating: t.reviews[0]?.rating ?? null,
+          kompensasi: (isBidding && acceptedApp && acceptedApp.bid_amount != null)
+            ? acceptedApp.bid_amount
+            : t.kompensasi,
+          status: getFrontendStatusName(t.status_task.nama_status),
+          created_at: t.created_at instanceof Date ? t.created_at.toISOString() : String(t.created_at),
+          completed_at: t.completed_at ? (t.completed_at instanceof Date ? t.completed_at.toISOString() : String(t.completed_at)) : null,
+          applicant_count: t.applicants.length,
+          accepted_worker: acceptedApp?.worker
+            ? {
+                id_user: acceptedApp.worker.id_user,
+                nama_lengkap: acceptedApp.worker.nama_lengkap,
+                avatar_url: acceptedApp.worker.avatar_url,
+              }
+            : null,
+          received_rating: workerReview?.rating ?? null,
         };
       });
     } else {
-      // Worker: ambil semua task yang pernah diapply (berbagai status)
+      // Worker history
+      const where: Record<string, unknown> = { id_worker: userId };
+      if (status) {
+        where.status_applicant = {
+          nama_status: { equals: status, mode: 'insensitive' },
+        };
+      }
+
       const applications = await prisma.taskApplicants.findMany({
-        where: {
-          id_worker: userId,
-          ...(statusFilter
-            ? {
-                task: {
-                  status_task: { nama_status: statusFilter.toUpperCase() },
-                },
-              }
-            : {}),
-        },
+        where,
         include: {
+          status_applicant: { select: { nama_status: true } },
           task: {
             include: {
               status_task: { select: { nama_status: true } },
-              requester: {
-                select: { id_user: true, nama_lengkap: true, avatar_url: true },
+              requester: { select: { id_user: true, nama_lengkap: true, avatar_url: true } },
+              reviews: {
+                where: { id_ratee: userId },
+                select: { rating: true, comment: true },
               },
-              reviews: { where: { id_ratee: userId }, take: 1 }, // review yang diterima worker
             },
           },
-          status_applicant: { select: { nama_status: true } },
         },
         orderBy: { applied_at: 'desc' },
       });
 
-      return applications.map((a) => {
-        const isBidding = a.task.is_bidding;
-        
+      return applications.map((app) => {
+        const t = app.task;
+        const reviewForWorker = t.reviews[0] ?? null;
+        const isBidding = t.is_bidding;
+
         return {
-          id_task_applicants: a.id_task_applicants,
-          id_tasks: a.id_tasks,
-          judul_tugas: a.task.judul_tugas,
-          estimasi_waktu: a.task.estimasi_waktu,
-          kompensasi: (isBidding && a.bid_amount != null)
-                        ? a.bid_amount 
-                        : a.task.kompensasi,
-          task_status: a.task.status_task.nama_status.toLowerCase(),
-          application_status: a.status_applicant.nama_status.toLowerCase(),
-          apply_count: a.apply_count,
-          alasan_penolakan: a.alasan_penolakan,
-          max_apply_attempts: a.task.max_apply_attempts ?? 3,
-          applied_at: a.applied_at,
-          completed_at: a.task.completed_at,
-          requester: a.task.requester,
-          received_rating: a.task.reviews[0]?.rating ?? null,
-          received_comment: a.task.reviews[0]?.comment ?? null,
+          id_task_applicants: app.id_task_applicants,
+          id_tasks: t.id_tasks,
+          judul_tugas: t.judul_tugas,
+          estimasi_waktu: t.estimasi_waktu,
+          kompensasi: (isBidding && app.bid_amount != null)
+            ? app.bid_amount
+            : (app.bid_amount ?? t.kompensasi),
+          task_status: getFrontendStatusName(t.status_task.nama_status),
+          application_status: app.status_applicant?.nama_status?.toLowerCase() ?? 'pending',
+          apply_count: app.apply_count,
+          alasan_penolakan: app.alasan_penolakan,
+          max_apply_attempts: t.max_apply_attempts ?? 3,
+          applied_at: app.applied_at instanceof Date ? app.applied_at.toISOString() : String(app.applied_at),
+          completed_at: t.completed_at ? (t.completed_at instanceof Date ? t.completed_at.toISOString() : String(t.completed_at)) : null,
+          requester: t.requester
+            ? {
+                id_user: t.requester.id_user,
+                nama_lengkap: t.requester.nama_lengkap,
+                avatar_url: t.requester.avatar_url,
+              }
+            : null,
+          received_rating: reviewForWorker?.rating ?? null,
+          received_comment: reviewForWorker?.comment ?? null,
         };
       });
     }
@@ -1625,4 +1644,5 @@ export const taskService = {
     });
   },
 };
+
 
