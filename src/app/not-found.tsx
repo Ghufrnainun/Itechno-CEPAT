@@ -52,10 +52,10 @@ export default function NotFound() {
           <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
             <Link href="/dashboard" className="flex-1">
               <Button variant="primary" fullWidth size="md" icon={<Home className="w-4 h-4" />}>
-                Ke Dashboard
+                Ke Beranda
               </Button>
             </Link>
-            <Link href="/feed" className="flex-1">
+            <Link href="/cari-tugas" className="flex-1">
               <Button variant="secondary" fullWidth size="md" icon={<Search className="w-4 h-4" />}>
                 Cari Tugas
               </Button>

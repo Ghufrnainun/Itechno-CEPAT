@@ -493,8 +493,8 @@ export default function TaskDetailPage() {
         <ErrorState
           title="Tugas Tidak Ditemukan"
           message="Tugas ini mungkin telah diselesaikan, dibatalkan, atau URL yang Anda tuju salah."
-          actionText="Kembali ke Feed Tugas"
-          onRetry={() => router.push("/feed")}
+          actionText="Kembali ke Cari Tugas"
+          onRetry={() => router.push("/cari-tugas")}
         />
       </div>
     );

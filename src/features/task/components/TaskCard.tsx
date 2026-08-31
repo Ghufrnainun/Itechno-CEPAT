@@ -79,7 +79,7 @@ export function TaskCard({ task, isSelected = false, onClick, className }: TaskC
       <div className="flex justify-between items-end border-t border-card-border/60 pt-2.5 mt-auto">
         <span className="font-mono text-sm text-on-surface font-extrabold tabular-nums">
           {task.is_bidding
-            ? `${formatCurrency(task.budget_min ?? 0)}–${formatCurrency(task.budget_max ?? task.compensation)}`
+            ? `${formatCurrency(task.budget_min ?? 0)} – ${formatCurrency(task.budget_max ?? task.compensation)}`
             : formatCurrency(task.compensation)}
         </span>
 
@@ -95,7 +95,6 @@ export function TaskCard({ task, isSelected = false, onClick, className }: TaskC
               {task.duration_estimate}
             </span>
           )}
-          <SdgBadge />
         </div>
       </div>
     </div>

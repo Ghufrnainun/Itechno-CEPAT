@@ -108,7 +108,7 @@ export default function SavedTasksPage() {
             Ketuk ikon bookmark di detail tugas buat menyimpannya. Tugas yang kamu simpan bakal muncul di sini.
           </p>
           <Link
-            href="/feed"
+            href="/cari-tugas"
             className="mt-2 inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-on-primary text-sm font-semibold rounded-lg hover:bg-primary-container transition-colors"
           >
             Cari Tugas

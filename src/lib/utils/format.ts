@@ -7,7 +7,7 @@ export function formatPoints(points: number): string {
 
 export function formatCurrency(amount: number | null | undefined): string {
   const num = typeof amount === "number" && !isNaN(amount) ? amount : 0;
-  return "Rp" + new Intl.NumberFormat("id-ID", {
+  return "Rp " + new Intl.NumberFormat("id-ID", {
     style: "decimal",
     minimumFractionDigits: 0,
   }).format(num);

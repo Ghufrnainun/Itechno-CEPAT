@@ -93,7 +93,7 @@ export default function NotificationsPage() {
       case "chat":
         return "/chat";
       case "welcome":
-        return "/feed";
+        return "/cari-tugas";
       default: {
         const titleLower = (notif.title || "").toLowerCase();
         const msgLower = (notif.message || "").toLowerCase();
@@ -118,9 +118,9 @@ export default function NotificationsPage() {
           titleLower.includes("task") ||
           titleLower.includes("lamaran")
         ) {
-          return "/feed";
+          return "/cari-tugas";
         }
-        return "/feed";
+        return "/cari-tugas";
       }
     }
   };

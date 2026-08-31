@@ -101,7 +101,7 @@ function LoginContent() {
           : "/onboarding";
         router.replace(onboardingTarget);
       } else {
-        router.replace(redirectParam || "/feed");
+        router.replace(redirectParam || "/dashboard");
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login gagal. Coba lagi.");
