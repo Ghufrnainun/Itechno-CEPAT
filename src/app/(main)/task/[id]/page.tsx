@@ -628,7 +628,7 @@ export default function TaskDetailPage() {
                   </div>
                 </div>
                 <span className="self-start sm:self-center px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold shrink-0">
-                  📅 Terjadwal
+                  Terjadwal
                 </span>
               </div>
             )}
@@ -1069,7 +1069,7 @@ export default function TaskDetailPage() {
                           Requester:
                         </span>
                         <span className={cn("font-semibold", task.requester_started ? "text-secondary font-bold" : "text-amber-600")}>
-                          {task.requester_started ? "Sudah Konfirmasi ✅" : "Belum Konfirmasi ⏳"}
+                          {task.requester_started ? "Sudah Konfirmasi" : "Belum Konfirmasi"}
                         </span>
                       </div>
                       {/* Per-worker status */}
@@ -1080,7 +1080,7 @@ export default function TaskDetailPage() {
                             {a.worker.nama_lengkap}:
                           </span>
                           <span className={cn("font-semibold", a.worker_confirmed ? "text-secondary font-bold" : "text-amber-600")}>
-                            {a.worker_confirmed ? "Sudah Konfirmasi ✅" : "Belum Konfirmasi ⏳"}
+                            {a.worker_confirmed ? "Sudah Konfirmasi" : "Belum Konfirmasi"}
                           </span>
                         </div>
                       ))}
@@ -1132,7 +1132,7 @@ export default function TaskDetailPage() {
               {taskStatus === "completed" && (
                 hasWorkerRatedRequester() ? (
                   <div className="p-3 text-center border border-card-border rounded-lg bg-surface-container-low text-secondary font-sans text-xs font-semibold">
-                    ✅ Anda sudah memberikan ulasan untuk task ini.
+                    Anda sudah memberikan ulasan untuk task ini.
                   </div>
                 ) : (
                   <Button onClick={() => setIsRatingModalOpen(true)} className="w-full py-3" variant="secondary">
@@ -1177,7 +1177,7 @@ export default function TaskDetailPage() {
                           Requester (Anda):
                         </span>
                         <span className={cn("font-semibold", task.requester_started ? "text-secondary font-bold" : "text-amber-600")}>
-                          {task.requester_started ? "Sudah Konfirmasi ✅" : "Belum Konfirmasi ⏳"}
+                          {task.requester_started ? "Sudah Konfirmasi" : "Belum Konfirmasi"}
                         </span>
                       </div>
                       {/* Per-worker status */}
@@ -1188,7 +1188,7 @@ export default function TaskDetailPage() {
                             {a.worker.nama_lengkap}:
                           </span>
                           <span className={cn("font-semibold", a.worker_confirmed ? "text-secondary font-bold" : "text-amber-600")}>
-                            {a.worker_confirmed ? "Sudah Konfirmasi ✅" : "Belum Konfirmasi ⏳"}
+                            {a.worker_confirmed ? "Sudah Konfirmasi" : "Belum Konfirmasi"}
                           </span>
                         </div>
                       ))}
@@ -1244,7 +1244,7 @@ export default function TaskDetailPage() {
                   </Button>
                 ) : (
                   <div className="p-3 text-center border border-card-border rounded-lg bg-surface-container-low text-secondary font-sans text-xs font-semibold">
-                    ✅ Semua worker sudah dirating.
+                    Semua worker sudah dirating.
                   </div>
                 );
               })()}
