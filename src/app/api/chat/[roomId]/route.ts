@@ -160,6 +160,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ success: false, message: 'Pengguna tidak ditemukan.' }, { status: 404 })
     }
 
+    // Verify user is part of the chat room
+    const chatRoom = await prisma.chatRoom.findUnique({
+      where: { id_chat_room: roomId },
+      select: { id_requester: true, id_worker: true }
+    })
+
+    if (!chatRoom || (chatRoom.id_requester !== currentUser.id_user && chatRoom.id_worker !== currentUser.id_user)) {
+      return NextResponse.json({ success: false, message: 'Akses ditolak.' }, { status: 403 })
+    }
+
     // Mark all unread messages from the OTHER user as read
     const result = await prisma.message.updateMany({
       where: {
@@ -200,6 +210,16 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     
     if (!currentUser) {
       return NextResponse.json({ success: false, message: 'Pengguna tidak ditemukan.' }, { status: 404 })
+    }
+
+    // Verify user is part of the chat room
+    const deleteRoom = await prisma.chatRoom.findUnique({
+      where: { id_chat_room: roomId },
+      select: { id_requester: true, id_worker: true }
+    })
+
+    if (!deleteRoom || (deleteRoom.id_requester !== currentUser.id_user && deleteRoom.id_worker !== currentUser.id_user)) {
+      return NextResponse.json({ success: false, message: 'Akses ditolak.' }, { status: 403 })
     }
 
     const body = await request.json()

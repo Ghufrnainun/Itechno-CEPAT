@@ -116,17 +116,17 @@ export const walletService = {
    * karena held dipisah dari total — total tetap, held naik, available turun.
    */
   async holdEscrow(userId: string, amount: number, taskId: string, taskTitle: string): Promise<void> {
-    const user = await prisma.user.findUnique({
-      where: { id_user: userId },
-      select: { total_balance: true, held_balance: true },
-    })
-    if (!user) throw new Error('User tidak ditemukan.')
+    await prisma.$transaction(async (tx) => {
+      const userRows = await tx.$queryRaw<Array<{ total_balance: number; held_balance: number }>>`
+        SELECT total_balance, held_balance FROM "User" WHERE id_user = ${userId} FOR UPDATE
+      `
+      const user = userRows[0]
+      if (!user) throw new Error('User tidak ditemukan.')
 
-    const available = user.total_balance - user.held_balance
-    if (available < amount) throw new Error('Saldo tidak cukup untuk menahan escrow.')
+      const available = user.total_balance - user.held_balance
+      if (available < amount) throw new Error('Saldo tidak cukup untuk menahan escrow.')
 
-    await prisma.$transaction([
-      prisma.transactions.create({
+      await tx.transactions.create({
         data: {
           id_user: userId,
           nominal: amount,
@@ -134,12 +134,12 @@ export const walletService = {
           sub_type: TransactionSubType.hold,
           deskripsi: `Escrow Ditahan: ${taskTitle}`,
         },
-      }),
-      prisma.user.update({
+      })
+      await tx.user.update({
         where: { id_user: userId },
         data: { held_balance: { increment: amount } },
-      }),
-    ])
+      })
+    })
   },
 
   /**
