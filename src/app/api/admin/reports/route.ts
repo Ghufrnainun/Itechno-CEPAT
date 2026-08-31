@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { verifyAdminToken, unauthorizedResponse } from '@/lib/admin/auth'
 import { prisma } from '@/lib/prisma'
 
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     // When searching by specific reportId, ignore skip pagination offset
     const effectiveSkip = reportId.trim() ? 0 : (page - 1) * limit
 
-    const where: any = {}
+    const where: Prisma.UserReportWhereInput = {}
 
     if (reportId.trim()) {
       where.id_report = reportId.trim()
