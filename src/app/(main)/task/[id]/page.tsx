@@ -1137,7 +1137,7 @@ export default function TaskDetailPage() {
                     }}
                     disabled={actionLoading}
                     className="w-full py-2 text-xs font-semibold"
-                    variant="danger"
+                    variant="destructive"
                   >
                     Mundur dari Tugas
                   </Button>
@@ -1291,7 +1291,7 @@ export default function TaskDetailPage() {
                   }}
                   disabled={actionLoading}
                   className="w-full py-2"
-                  variant="danger"
+                  variant="destructive"
                 >
                   Batalkan Task
                 </Button>
