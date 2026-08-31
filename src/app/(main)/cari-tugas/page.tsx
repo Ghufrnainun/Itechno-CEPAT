@@ -379,7 +379,7 @@ export default function CariTugasPage() {
 
             {/* Desktop Side Inspector */}
             {selectedTask && (
-              <div className="hidden lg:block w-[400px] border-l border-card-border h-full z-20 bg-surface-container-lowest overflow-y-auto custom-scrollbar">
+              <div className="hidden lg:block w-[420px] border-l border-card-border h-full z-20 bg-surface-container-lowest overflow-hidden shrink-0">
                 <TaskInspector
                   task={selectedTask}
                   onClose={() => setSelectedTask(null)}
@@ -497,7 +497,7 @@ export default function CariTugasPage() {
 
             {/* Desktop Task Inspector Overlay */}
             {selectedTask && (
-              <div className="hidden lg:block absolute top-0 bottom-0 right-0 h-full z-20 w-[400px] border-l border-card-border bg-surface-container-lowest overflow-y-auto custom-scrollbar">
+              <div className="hidden lg:block absolute top-0 bottom-0 right-0 h-full z-20 w-[420px] border-l border-card-border bg-surface-container-lowest overflow-hidden shadow-lg">
                 <TaskInspector
                   task={selectedTask}
                   onClose={() => setSelectedTask(null)}
