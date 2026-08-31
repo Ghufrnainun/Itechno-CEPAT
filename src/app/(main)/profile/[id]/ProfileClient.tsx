@@ -1114,7 +1114,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
 
       {/* ───────────── EDIT PROFILE MODAL ───────────── */}
       <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit Profil Saya">
-        <div className="flex flex-col gap-4 max-h-[75vh] overflow-y-auto pr-1 custom-scrollbar text-xs">
+        <div className="flex flex-col gap-4 text-xs pb-1">
           <div>
             <label className="font-semibold text-on-surface block mb-1">Nama Lengkap</label>
             <input
