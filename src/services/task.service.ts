@@ -1272,15 +1272,6 @@ export const taskService = {
               data: {
                 id_user: task.id_requester,
                 nominal: payoutAmount,
-                tipe_transaksi: 'MASUK',
-                sub_type: 'refund',
-                deskripsi: `Pelepasan escrow untuk pembayaran task: ${task.judul_tugas}`,
-              },
-            }),
-            prisma.transactions.create({
-              data: {
-                id_user: task.id_requester,
-                nominal: payoutAmount,
                 tipe_transaksi: 'KELUAR',
                 sub_type: 'task_payment',
                 deskripsi: `Pembayaran task ke ${workerApp.worker.nama_lengkap}: ${task.judul_tugas}`,
@@ -1460,18 +1451,24 @@ export const taskService = {
         orderBy: { created_at: 'desc' },
       });
 
-      return tasks.map((t) => ({
-        id_tasks: t.id_tasks,
-        judul_tugas: t.judul_tugas,
-        estimasi_waktu: t.estimasi_waktu,
-        kompensasi: t.kompensasi,
-        status: t.status_task.nama_status.toLowerCase(),
-        created_at: t.created_at,
-        completed_at: t.completed_at,
-        applicant_count: t._count.applicants,
-        accepted_worker: t.applicants[0]?.worker ?? null,
-        received_rating: t.reviews[0]?.rating ?? null,
-      }));
+      return tasks.map((t) => {
+        const acceptedApplicant = t.applicants[0];
+        const isBidding = t.is_bidding;
+        return {
+          id_tasks: t.id_tasks,
+          judul_tugas: t.judul_tugas,
+          estimasi_waktu: t.estimasi_waktu,
+          kompensasi: (isBidding && acceptedApplicant && acceptedApplicant.bid_amount != null) 
+                        ? acceptedApplicant.bid_amount 
+                        : t.kompensasi,
+          status: t.status_task.nama_status.toLowerCase(),
+          created_at: t.created_at,
+          completed_at: t.completed_at,
+          applicant_count: t._count.applicants,
+          accepted_worker: acceptedApplicant?.worker ?? null,
+          received_rating: t.reviews[0]?.rating ?? null,
+        };
+      });
     } else {
       // Worker: ambil semua task yang pernah diapply (berbagai status)
       const applications = await prisma.taskApplicants.findMany({
@@ -1500,23 +1497,29 @@ export const taskService = {
         orderBy: { applied_at: 'desc' },
       });
 
-      return applications.map((a) => ({
-        id_task_applicants: a.id_task_applicants,
-        id_tasks: a.id_tasks,
-        judul_tugas: a.task.judul_tugas,
-        estimasi_waktu: a.task.estimasi_waktu,
-        kompensasi: a.task.kompensasi,
-        task_status: a.task.status_task.nama_status.toLowerCase(),
-        application_status: a.status_applicant.nama_status.toLowerCase(),
-        apply_count: a.apply_count,
-        alasan_penolakan: a.alasan_penolakan,
-        max_apply_attempts: a.task.max_apply_attempts ?? 3,
-        applied_at: a.applied_at,
-        completed_at: a.task.completed_at,
-        requester: a.task.requester,
-        received_rating: a.task.reviews[0]?.rating ?? null,
-        received_comment: a.task.reviews[0]?.comment ?? null,
-      }));
+      return applications.map((a) => {
+        const isBidding = a.task.is_bidding;
+        
+        return {
+          id_task_applicants: a.id_task_applicants,
+          id_tasks: a.id_tasks,
+          judul_tugas: a.task.judul_tugas,
+          estimasi_waktu: a.task.estimasi_waktu,
+          kompensasi: (isBidding && a.bid_amount != null)
+                        ? a.bid_amount 
+                        : a.task.kompensasi,
+          task_status: a.task.status_task.nama_status.toLowerCase(),
+          application_status: a.status_applicant.nama_status.toLowerCase(),
+          apply_count: a.apply_count,
+          alasan_penolakan: a.alasan_penolakan,
+          max_apply_attempts: a.task.max_apply_attempts ?? 3,
+          applied_at: a.applied_at,
+          completed_at: a.task.completed_at,
+          requester: a.task.requester,
+          received_rating: a.task.reviews[0]?.rating ?? null,
+          received_comment: a.task.reviews[0]?.comment ?? null,
+        };
+      });
     }
   },
 
@@ -1599,12 +1602,16 @@ export const taskService = {
     return tasks.map((t) => {
       const isRequester = t.id_requester === userId;
       const acceptedApplicant = t.applicants[0];
+      const isBidding = t.is_bidding;
+      
       return {
         id_tasks: t.id_tasks,
         judul_tugas: t.judul_tugas,
         deskripsi_tugas: t.deskripsi_tugas,
         estimasi_waktu: t.estimasi_waktu,
-        kompensasi: t.kompensasi,
+        kompensasi: (isBidding && acceptedApplicant && acceptedApplicant.bid_amount != null)
+                      ? acceptedApplicant.bid_amount
+                      : t.kompensasi,
         status: getFrontendStatusName(t.status_task.nama_status),
         scheduled_at: t.scheduled_at,
         scheduled_end: t.scheduled_end,

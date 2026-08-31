@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
         rating_avg: true,
         total_completed: true,
         total_balance: true,
+        held_balance: true,
         role: {
           select: {
             id_role: true,
@@ -88,7 +89,7 @@ export async function GET(request: NextRequest) {
         no_telpon: userProfile.no_telpon,
         rating_avg: userProfile.rating_avg,
         total_completed: userProfile.total_completed,
-        total_balance: userProfile.total_balance,
+        total_balance: userProfile.total_balance - (userProfile.held_balance || 0),
         role: userProfile.role,
         skills: userProfile.skills_user.map((s) => ({
           id: s.id_skills_user,
