@@ -37,6 +37,10 @@ import {
   History,
   Phone,
   MapPin,
+  Calendar,
+  Trophy,
+  Bookmark,
+  ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -875,11 +879,41 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                 {isCurrentUser && (
                   <div className="bg-surface-container-lowest rounded-2xl p-5 shadow-xs border border-card-border flex flex-col gap-2">
                     <span className="text-xs font-bold text-on-surface uppercase tracking-wider font-mono mb-1">
-                      Menu Pintas
+                      Menu Pintas & Fitur
                     </span>
                     <Link
+                      href="/schedule"
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors text-xs font-semibold text-on-surface"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-primary" />
+                        Jadwal &amp; Agenda Tugas
+                      </span>
+                      <ExternalLink className="w-3.5 h-3.5 text-on-surface-variant" />
+                    </Link>
+                    <Link
+                      href="/leaderboard"
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors text-xs font-semibold text-on-surface"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-amber-600" />
+                        Papan Peringkat &amp; Streak
+                      </span>
+                      <ExternalLink className="w-3.5 h-3.5 text-on-surface-variant" />
+                    </Link>
+                    <Link
+                      href="/saved"
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors text-xs font-semibold text-on-surface"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Bookmark className="w-4 h-4 text-primary" />
+                        Tugas Tersimpan
+                      </span>
+                      <ExternalLink className="w-3.5 h-3.5 text-on-surface-variant" />
+                    </Link>
+                    <Link
                       href="/history/riwayat"
-                      className="flex items-center justify-between p-3 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors text-xs font-semibold text-on-surface"
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors text-xs font-semibold text-on-surface"
                     >
                       <span className="flex items-center gap-2">
                         <History className="w-4 h-4 text-primary" />
@@ -889,11 +923,21 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                     </Link>
                     <Link
                       href="/wallet"
-                      className="flex items-center justify-between p-3 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors text-xs font-semibold text-on-surface"
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors text-xs font-semibold text-on-surface"
                     >
                       <span className="flex items-center gap-2">
                         <Wallet className="w-4 h-4 text-primary" />
                         Dompet &amp; Penarikan Saldo
+                      </span>
+                      <ExternalLink className="w-3.5 h-3.5 text-on-surface-variant" />
+                    </Link>
+                    <Link
+                      href="/disputes"
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors text-xs font-semibold text-on-surface"
+                    >
+                      <span className="flex items-center gap-2">
+                        <ShieldAlert className="w-4 h-4 text-amber-600" />
+                        Pusat Sengketa &amp; Bantuan
                       </span>
                       <ExternalLink className="w-3.5 h-3.5 text-on-surface-variant" />
                     </Link>

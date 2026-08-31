@@ -7,13 +7,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useUnreadChat } from "@/hooks/useUnreadChat";
 import {
-  Menu,
-  MenuSquare,
   Briefcase,
   PlusCircle,
   Home,
   Compass,
-  ListFilter,
   History,
   MessageSquare,
   Bell,
@@ -28,6 +25,7 @@ import {
   Calendar,
   ShieldAlert,
   Bookmark,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ReportModal } from "@/components/ui/ReportModal";
@@ -82,12 +80,12 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
       id="sidebar"
       aria-label="Navigasi Utama Aplikasi"
       className={cn(
-        "hidden lg:flex flex-col h-screen py-5 gap-5 border-r border-card-border bg-surface-container-lowest sticky top-0 shrink-0 shadow-xs overflow-x-hidden transition-[width,padding] duration-200 ease-out",
+        "hidden lg:flex flex-col h-screen py-4 gap-4 border-r border-card-border bg-surface-container-lowest sticky top-0 shrink-0 shadow-xs overflow-x-hidden transition-[width,padding] duration-200 ease-out z-30",
         isExpanded ? "w-64 px-3.5" : "w-20 px-2 items-center"
       )}
     >
       {/* Brand / Header */}
-      <div className={cn("flex items-center px-1 mb-1 w-full", isExpanded ? "justify-between" : "justify-center flex-col gap-3")}>
+      <div className={cn("flex items-center px-1 w-full", isExpanded ? "justify-between" : "justify-center flex-col gap-2")}>
         {isExpanded ? (
           <Link
             href="/dashboard"
@@ -127,7 +125,7 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
       </div>
 
       {/* User Profile Card */}
-      <div className={cn("flex flex-col gap-2.5 p-3 bg-surface-container-low border border-card-border rounded-xl shadow-xs w-full", !isExpanded && "items-center px-1")}>
+      <div className={cn("flex flex-col gap-2 p-2.5 bg-surface-container-low border border-card-border rounded-xl shadow-xs w-full", !isExpanded && "items-center px-1")}>
         <div className={cn("flex items-center", isExpanded ? "gap-2.5" : "justify-center")}>
           <div className="w-9 h-9 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-xs shrink-0 shadow-xs relative overflow-hidden" title={!isExpanded ? displayName : undefined}>
             {user?.avatar_url ? (
@@ -149,14 +147,14 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
           )}
         </div>
 
-        {/* Segmented Control Role Switcher */}
+        {/* Role Switcher */}
         <div className={cn("flex w-full bg-surface-container rounded-lg border border-card-border/60", isExpanded ? "p-0.5" : "flex-col p-1 gap-1 border-none bg-transparent")}>
           <button
             type="button"
             onClick={() => role !== "worker" && onRoleToggle()}
             aria-label="Mode Pekerja"
             className={cn(
-              "flex-1 py-1.5 px-2 text-xs font-semibold rounded-md transition-colors duration-150 flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none active:scale-[0.96]",
+              "flex-1 py-1 px-2 text-xs font-semibold rounded-md transition-colors duration-150 flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none active:scale-[0.96]",
               role === "worker"
                 ? "bg-primary text-on-primary shadow-xs font-bold"
                 : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest",
@@ -172,7 +170,7 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
             onClick={() => role !== "requester" && onRoleToggle()}
             aria-label="Mode Pemberi Tugas"
             className={cn(
-              "flex-1 py-1.5 px-2 text-xs font-semibold rounded-md transition-colors duration-150 flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none active:scale-[0.96]",
+              "flex-1 py-1 px-2 text-xs font-semibold rounded-md transition-colors duration-150 flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none active:scale-[0.96]",
               role === "requester"
                 ? "bg-primary text-on-primary shadow-xs font-bold"
                 : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest",
@@ -186,8 +184,15 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
         </div>
       </div>
 
-      {/* 6 Focused Navigation Links */}
+      {/* Navigation Sections */}
       <nav className={cn("flex-1 flex flex-col gap-1 overflow-y-auto overflow-x-hidden custom-scrollbar w-full", !isExpanded && "items-center px-1")}>
+        {/* SECTION 1: UTAMA */}
+        {isExpanded && (
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-on-surface-variant/70 px-2 pt-1 pb-0.5">
+            Utama
+          </span>
+        )}
+
         {/* 1. Beranda */}
         <Link
           href="/dashboard"
@@ -307,17 +312,80 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
           <User className="w-4 h-4 shrink-0" />
           {isExpanded && "Profil Saya"}
         </Link>
+
+        {/* SECTION 2: FITUR & PINTASAN */}
+        <div className="my-1 border-t border-card-border/60" />
+        {isExpanded && (
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-on-surface-variant/70 px-2 pt-1 pb-0.5">
+            Pintasan & Agenda
+          </span>
+        )}
+
+        {/* 7. Jadwal & Agenda */}
+        <Link
+          href="/schedule"
+          title={!isExpanded ? "Jadwal & Agenda" : undefined}
+          aria-current={pathname === "/schedule" ? "page" : undefined}
+          className={cn("sidebar-link flex items-center gap-3", pathname === "/schedule" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+        >
+          <Calendar className="w-4 h-4 shrink-0" />
+          {isExpanded && "Jadwal & Agenda"}
+        </Link>
+
+        {/* 8. Peringkat & Streak */}
+        <Link
+          href="/leaderboard"
+          title={!isExpanded ? "Peringkat & Streak" : undefined}
+          aria-current={pathname === "/leaderboard" ? "page" : undefined}
+          className={cn("sidebar-link flex items-center gap-3", pathname === "/leaderboard" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+        >
+          <Trophy className="w-4 h-4 shrink-0" />
+          {isExpanded && "Peringkat & Streak"}
+        </Link>
+
+        {/* 9. Tugas Tersimpan */}
+        <Link
+          href="/saved"
+          title={!isExpanded ? "Tersimpan" : undefined}
+          aria-current={pathname === "/saved" ? "page" : undefined}
+          className={cn("sidebar-link flex items-center gap-3", pathname === "/saved" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+        >
+          <Bookmark className="w-4 h-4 shrink-0" />
+          {isExpanded && "Tugas Tersimpan"}
+        </Link>
+
+        {/* 10. Riwayat Transaksi & Tugas */}
+        <Link
+          href="/history/riwayat"
+          title={!isExpanded ? "Riwayat Aktivitas" : undefined}
+          aria-current={pathname === "/history/riwayat" ? "page" : undefined}
+          className={cn("sidebar-link flex items-center gap-3", pathname === "/history/riwayat" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+        >
+          <History className="w-4 h-4 shrink-0" />
+          {isExpanded && "Riwayat Aktivitas"}
+        </Link>
+
+        {/* 11. Pusat Sengketa */}
+        <Link
+          href="/disputes"
+          title={!isExpanded ? "Pusat Sengketa" : undefined}
+          aria-current={pathname.startsWith("/disputes") ? "page" : undefined}
+          className={cn("sidebar-link flex items-center gap-3", pathname.startsWith("/disputes") && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+        >
+          <ShieldAlert className="w-4 h-4 shrink-0" />
+          {isExpanded && "Pusat Sengketa"}
+        </Link>
       </nav>
 
       {/* Footer */}
-      <div className={cn("flex flex-col gap-2 pt-3 border-t border-card-border w-full", !isExpanded && "items-center px-1")}>
+      <div className={cn("flex flex-col gap-1.5 pt-2.5 border-t border-card-border w-full", !isExpanded && "items-center px-1")}>
         <button
           type="button"
           onClick={() => setIsReportModalOpen(true)}
           title={!isExpanded ? "Bantuan & Laporan" : undefined}
           aria-label="Bantuan atau laporkan masalah"
           className={cn(
-            "sidebar-link flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors rounded-lg focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none cursor-pointer",
+            "sidebar-link flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors rounded-lg focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none cursor-pointer text-xs",
             isExpanded ? "w-full text-left" : "justify-center w-10 h-10 p-0"
           )}
         >
@@ -330,7 +398,7 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
           title={!isExpanded ? "Keluar" : undefined}
           aria-label="Keluar dari akun"
           className={cn(
-            "sidebar-link flex items-center gap-3 text-error hover:bg-error-container/30 rounded-lg disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-error/40 focus-visible:outline-none cursor-pointer",
+            "sidebar-link flex items-center gap-3 text-error hover:bg-error-container/30 rounded-lg disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-error/40 focus-visible:outline-none cursor-pointer text-xs",
             isExpanded ? "w-full text-left" : "justify-center w-10 h-10 p-0"
           )}
         >

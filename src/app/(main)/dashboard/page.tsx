@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
 import { useCurrentRole } from "@/app/(main)/layout";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { Button } from "@/components/ui/Button";
@@ -21,12 +20,16 @@ import {
   Store,
   Footprints,
   SearchX,
-  User,
   Plus,
   Search,
   ArrowRight,
   Sparkles,
+  Calendar,
+  Trophy,
+  Flame,
   Clock,
+  Bookmark,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +42,7 @@ export default function DashboardPage() {
   const [featuredTask, setFeaturedTask] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [myActiveTasks, setMyActiveTasks] = useState<any[]>([]);
+  const [scheduledCount, setScheduledCount] = useState<number>(0);
   const hasLoadedOnce = useRef(false);
 
   useEffect(() => {
@@ -58,10 +62,11 @@ export default function DashboardPage() {
         feedUrl.searchParams.append("limit", "6");
         feedUrl.searchParams.append("sort", "distance_asc");
 
-        const [mapRes, feedRes, activityRes] = await Promise.all([
+        const [mapRes, feedRes, activityRes, schedRes] = await Promise.all([
           fetch(mapUrl.toString(), { cache: "no-store" }),
           fetch(feedUrl.toString(), { cache: "no-store" }),
           fetch("/api/users/me/tasks?role=worker", { cache: "no-store" }),
+          fetch("/api/tasks/scheduled", { cache: "no-store" }).catch(() => null),
         ]);
 
         if (mapRes.ok) {
@@ -81,6 +86,13 @@ export default function DashboardPage() {
           const activityJson = await activityRes.json().catch(() => ({}));
           if (activityJson.success && Array.isArray(activityJson.data)) {
             setMyActiveTasks(activityJson.data);
+          }
+        }
+
+        if (schedRes && schedRes.ok) {
+          const schedJson = await schedRes.json().catch(() => ({}));
+          if (schedJson.success && Array.isArray(schedJson.data)) {
+            setScheduledCount(schedJson.data.length);
           }
         }
       } catch (err) {
@@ -194,6 +206,59 @@ export default function DashboardPage() {
               <PlusSquare className="w-4 h-4" />
               Mode Pemberi Tugas
             </button>
+          </div>
+
+          {/* Mobile Quick Action Strip (Gojek/Grab style 5 items) */}
+          <div className="grid grid-cols-5 gap-2 mt-3 p-3 bg-surface-container-lowest border border-card-border rounded-2xl shadow-xs">
+            <Link
+              href="/schedule"
+              className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
+            >
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-2xs">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-bold text-on-surface leading-tight">Jadwal</span>
+            </Link>
+
+            <Link
+              href="/leaderboard"
+              className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
+            >
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shadow-2xs">
+                <Trophy className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-bold text-on-surface leading-tight">Peringkat</span>
+            </Link>
+
+            <Link
+              href="/saved"
+              className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
+            >
+              <div className="w-10 h-10 rounded-xl bg-secondary-container/50 text-secondary flex items-center justify-center shadow-2xs">
+                <Bookmark className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-bold text-on-surface leading-tight">Tersimpan</span>
+            </Link>
+
+            <Link
+              href="/history/riwayat"
+              className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
+            >
+              <div className="w-10 h-10 rounded-xl bg-surface-container text-on-surface-variant flex items-center justify-center shadow-2xs">
+                <History className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-bold text-on-surface leading-tight">Riwayat</span>
+            </Link>
+
+            <Link
+              href="/wallet"
+              className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shadow-2xs">
+                <Wallet className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-bold text-on-surface leading-tight">Dompet</span>
+            </Link>
           </div>
         </section>
 
@@ -360,7 +425,7 @@ export default function DashboardPage() {
                 </span>
               </div>
               <Link
-                href="/cari-tugas"
+                href="/cari-tugas?view=map"
                 className="w-8 h-8 bg-surface-container-lowest/95 backdrop-blur border border-card-border rounded-lg shadow-xs flex items-center justify-center text-on-surface-variant pointer-events-auto hover:text-primary transition-colors"
                 title="Buka Peta Penuh"
               >
@@ -378,13 +443,68 @@ export default function DashboardPage() {
 
             <div className="absolute bottom-3 left-3 right-3 z-10 text-center pointer-events-none">
               <Link
-                href="/cari-tugas"
+                href="/cari-tugas?view=map"
                 className="pointer-events-auto inline-block bg-surface-container-lowest/95 backdrop-blur border border-card-border px-3 py-1.5 rounded-xl text-xs font-bold text-primary shadow-xs hover:bg-surface-container-low transition-colors"
               >
                 Buka Peta Penuh →
               </Link>
             </div>
           </div>
+        </section>
+
+        {/* ───────────── SECONDARY FEATURE WIDGETS: JADWAL & LEADERBOARD ───────────── */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Widget 1: Jadwal & Agenda */}
+          <Link
+            href="/schedule"
+            className="group rounded-2xl bg-surface-container-lowest border border-card-border p-5 shadow-xs hover:border-primary/40 transition-all flex items-center justify-between gap-4 cursor-pointer"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-headline font-bold text-sm text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
+                  Jadwal & Agenda Tugas
+                  <span className="font-mono text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-md">
+                    {scheduledCount} Agenda
+                  </span>
+                </h3>
+                <p className="text-xs text-on-surface-variant mt-0.5">
+                  Pantau kalender jadwal pengerjaan dan deadline tugas aktif.
+                </p>
+              </div>
+            </div>
+            <div className="p-2 rounded-lg text-on-surface-variant group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0">
+              <ArrowRight className="w-4 h-4" />
+            </div>
+          </Link>
+
+          {/* Widget 2: Peringkat & Streak */}
+          <Link
+            href="/leaderboard"
+            className="group rounded-2xl bg-surface-container-lowest border border-card-border p-5 shadow-xs hover:border-primary/40 transition-all flex items-center justify-between gap-4 cursor-pointer"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+                <Trophy className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-headline font-bold text-sm text-on-surface group-hover:text-amber-600 transition-colors flex items-center gap-1.5">
+                  Papan Peringkat & Streak
+                  <span className="font-mono text-[10px] font-bold bg-amber-500/10 text-amber-700 px-2 py-0.5 rounded-md flex items-center gap-0.5">
+                    <Flame className="w-3 h-3 text-amber-500" /> XP Bulanan
+                  </span>
+                </h3>
+                <p className="text-xs text-on-surface-variant mt-0.5">
+                  Lihat top worker berprestasi dan jaga streak harianmu.
+                </p>
+              </div>
+            </div>
+            <div className="p-2 rounded-lg text-on-surface-variant group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all shrink-0">
+              <ArrowRight className="w-4 h-4" />
+            </div>
+          </Link>
         </section>
 
         {/* ───────────── MORE NEARBY TASKS (Grid) ───────────── */}

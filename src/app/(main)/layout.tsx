@@ -158,7 +158,7 @@ export default function MainAppLayout({
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-            <main id="main-content" className="flex-grow overflow-y-auto pb-20 lg:pb-0 custom-scrollbar" tabIndex={-1}>
+            <main id="main-content" className="flex-1 min-h-0 flex flex-col overflow-y-auto custom-scrollbar" tabIndex={-1}>
               {children}
             </main>
 
