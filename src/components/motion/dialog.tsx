@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, type Transition } from "motion/react";
 import { X } from "lucide-react";
@@ -100,6 +100,7 @@ export function DialogContent({
 }) {
   const { isOpen, onOpenChange } = useDialog();
   const [mounted, setMounted] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -109,6 +110,31 @@ export function DialogContent({
     (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onOpenChange(false);
+        return;
+      }
+
+      if (e.key === "Tab" && contentRef.current) {
+        const focusable = contentRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) {
+          e.preventDefault();
+          return;
+        }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            last.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === last) {
+            first.focus();
+            e.preventDefault();
+          }
+        }
       }
     },
     [onOpenChange]
@@ -118,6 +144,21 @@ export function DialogContent({
     if (isOpen) {
       document.body.style.overflow = "hidden";
       window.addEventListener("keydown", handleKeyDown);
+
+      // Auto-focus first focusable element or content
+      const timer = setTimeout(() => {
+        if (contentRef.current) {
+          const focusable = contentRef.current.querySelector<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          );
+          if (focusable) {
+            focusable.focus();
+          } else {
+            contentRef.current.focus();
+          }
+        }
+      }, 50);
+      return () => clearTimeout(timer);
     } else {
       document.body.style.overflow = "";
     }
@@ -154,6 +195,8 @@ export function DialogContent({
 
           {/* Motion Dialog Surface */}
           <motion.div
+            ref={contentRef}
+            tabIndex={-1}
             initial={{ opacity: 0, scale: 0.95, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 8 }}
@@ -161,7 +204,7 @@ export function DialogContent({
             role="dialog"
             aria-modal="true"
             className={cn(
-              "relative z-10 w-full bg-surface-container-lowest border border-card-border/90 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]",
+              "relative z-10 w-full bg-surface-container-lowest border border-card-border/90 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] focus:outline-none",
               maxWidthClasses[maxWidth],
               className
             )}

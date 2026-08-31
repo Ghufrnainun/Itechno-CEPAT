@@ -19,16 +19,16 @@ import {
 import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
-  { id: "c1", label: "Foto Produk", icon: Camera, color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20", size: "lg", delay: 0 },
-  { id: "c2", label: "Input Data", icon: Keyboard, color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20", size: "md", delay: 100 },
-  { id: "c3", label: "Jaga Booth", icon: Store, color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20", size: "lg", delay: 200 },
-  { id: "c4", label: "Survei Pasar", icon: TrendingUp, color: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20", size: "sm", delay: 150 },
-  { id: "c5", label: "Desain Banner", icon: Palette, color: "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20", size: "md", delay: 50 },
-  { id: "c6", label: "Copywriting", icon: PenTool, color: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20", size: "sm", delay: 250 },
-  { id: "c7", label: "Sebar Brosur", icon: Megaphone, color: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20", size: "md", delay: 120 },
-  { id: "c8", label: "Kurir Lokal", icon: Truck, color: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20", size: "sm", delay: 80 },
-  { id: "c9", label: "Bantu Coding", icon: Code, color: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20", size: "md", delay: 180 },
-  { id: "c10", label: "Bantu Pindahan", icon: Package, color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20", size: "lg", delay: 220 },
+  { id: "c1", label: "Foto Produk", icon: Camera, color: "bg-blue-500/10 text-blue-600 border-blue-500/20", size: "lg", delay: 0 },
+  { id: "c2", label: "Input Data", icon: Keyboard, color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20", size: "md", delay: 100 },
+  { id: "c3", label: "Jaga Booth", icon: Store, color: "bg-amber-500/10 text-amber-600 border-amber-500/20", size: "lg", delay: 200 },
+  { id: "c4", label: "Survei Pasar", icon: TrendingUp, color: "bg-purple-500/10 text-purple-600 border-purple-500/20", size: "sm", delay: 150 },
+  { id: "c5", label: "Desain Banner", icon: Palette, color: "bg-pink-500/10 text-pink-600 border-pink-500/20", size: "md", delay: 50 },
+  { id: "c6", label: "Copywriting", icon: PenTool, color: "bg-slate-500/10 text-slate-600 border-slate-500/20", size: "sm", delay: 250 },
+  { id: "c7", label: "Sebar Brosur", icon: Megaphone, color: "bg-red-500/10 text-red-600 border-red-500/20", size: "md", delay: 120 },
+  { id: "c8", label: "Kurir Lokal", icon: Truck, color: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20", size: "sm", delay: 80 },
+  { id: "c9", label: "Bantu Coding", icon: Code, color: "bg-teal-500/10 text-teal-600 border-teal-500/20", size: "md", delay: 180 },
+  { id: "c10", label: "Bantu Pindahan", icon: Package, color: "bg-amber-500/10 text-amber-600 border-amber-500/20", size: "lg", delay: 220 },
 ];
 
 export function CategoriesCloud() {
@@ -45,10 +45,10 @@ export function CategoriesCloud() {
           className="flex-1 md:max-w-[40%]"
         >
           <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight leading-tight mb-4">
-            Bukan cuma<br/>pekerjaan kantoran
+            Ragam tugas<br/>di sekitar kampus
           </h2>
-          <p className="font-body-sm text-sm md:text-base text-on-surface-variant leading-relaxed mb-6">
-            Dari yang butuh skill khusus sampai yang cuma butuh tenaga ekstra. Semua tugas berdurasi pendek, bayaran jelas, dan dekat denganmu.
+          <p className="text-sm md:text-base text-on-surface-variant leading-relaxed mb-6">
+            Mulai dari foto produk UMKM, entri data, jaga booth, hingga bantuan logistik harian. Durasi terukur, kompensasi transparan, dan lokasi dekat.
           </p>
           <Link href="/login" className="inline-flex items-center gap-1.5 text-primary text-xs font-bold hover:underline">
             Lihat semua kategori

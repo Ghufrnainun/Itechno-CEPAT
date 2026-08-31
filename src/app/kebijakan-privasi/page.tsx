@@ -3,7 +3,7 @@ import { LandingNavbar } from "@/components/landing/LandingNavbar";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Kebijakan Privasi — CEPAT",
+  title: "Kebijakan Privasi: CEPAT",
   description:
     "Pelajari bagaimana CEPAT mengumpulkan, menggunakan, dan melindungi data pribadi kamu sebagai pengguna platform.",
 };
@@ -37,7 +37,7 @@ const SECTIONS = [
     content: [
       {
         subtitle: "Menjalankan Platform",
-        text: "Data kamu digunakan untuk mencocokkan tugas dengan pekerja yang relevan berdasarkan lokasi, skill, dan ketersediaan — bukan dijual ke pihak ketiga.",
+        text: "Data kamu digunakan untuk mencocokkan tugas dengan pekerja yang relevan berdasarkan lokasi, skill, dan ketersediaan, bukan dijual ke pihak ketiga.",
       },
       {
         subtitle: "Keamanan Transaksi",

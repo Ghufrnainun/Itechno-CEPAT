@@ -86,62 +86,57 @@
   --spacing-gutter: 16px;
 
   /* ──── Typography Scale ──── */
-  --font-sans: var(--font-plus-jakarta), "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-headline: var(--font-outfit), "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-headline-xl: var(--font-outfit), "Outfit", sans-serif;
-  --font-headline-lg: var(--font-outfit), "Outfit", sans-serif;
-  --font-headline-md: var(--font-outfit), "Outfit", sans-serif;
-  --font-headline-sm: var(--font-outfit), "Outfit", sans-serif;
-  --font-body-lg: var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif;
-  --font-body-md: var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif;
-  --font-body-sm: var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif;
-  --font-label-md: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
-  --font-label-sm: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
+  --font-sans: var(--font-plus-jakarta), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-headline: var(--font-outfit), "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
 
-  /* Font Sizes */
-  --text-headline-xl: 36px;
-  --text-headline-xl--line-height: 44px;
+  /* Font Sizes (Modular scale in rem) */
+  --text-headline-xl: 2.5rem;
+  --text-headline-xl--line-height: 3rem;
   --text-headline-xl--letter-spacing: -0.02em;
-  --text-headline-xl--font-weight: 800;
+  --text-headline-xl--font-weight: 700;
 
-  --text-headline-lg: 32px;
-  --text-headline-lg--line-height: 40px;
+  --text-headline-lg: 2rem;
+  --text-headline-lg--line-height: 2.5rem;
   --text-headline-lg--letter-spacing: -0.01em;
-  --text-headline-lg--font-weight: 800;
+  --text-headline-lg--font-weight: 600;
 
-  --text-headline-md: 24px;
-  --text-headline-md--line-height: 32px;
-  --text-headline-md--font-weight: 700;
+  --text-headline-md: 1.5rem;
+  --text-headline-md--line-height: 2rem;
+  --text-headline-md--font-weight: 600;
 
-  --text-headline-sm: 20px;
-  --text-headline-sm--line-height: 28px;
-  --text-headline-sm--font-weight: 700;
+  --text-headline-sm: 1.25rem;
+  --text-headline-sm--line-height: 1.75rem;
+  --text-headline-sm--font-weight: 600;
 
-  --text-body-lg: 18px;
-  --text-body-lg--line-height: 28px;
+  --text-body-lg: 1.125rem;
+  --text-body-lg--line-height: 1.75rem;
   --text-body-lg--font-weight: 400;
 
-  --text-body-md: 16px;
-  --text-body-md--line-height: 24px;
+  --text-body-md: 1rem;
+  --text-body-md--line-height: 1.5rem;
   --text-body-md--font-weight: 400;
 
-  --text-body-sm: 14px;
-  --text-body-sm--line-height: 20px;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.25rem;
   --text-body-sm--font-weight: 400;
 
-  --text-label-md: 14px;
-  --text-label-md--line-height: 20px;
+  --text-label-md: 0.875rem;
+  --text-label-md--line-height: 1.25rem;
   --text-label-md--letter-spacing: 0.02em;
   --text-label-md--font-weight: 500;
 
-  --text-label-sm: 12px;
-  --text-label-sm--line-height: 16px;
+  --text-label-sm: 0.75rem;
+  --text-label-sm--line-height: 1rem;
   --text-label-sm--letter-spacing: 0.04em;
   --text-label-sm--font-weight: 500;
 }
 
 /* ──── Base Layer & Typography Rules ──── */
+html {
+  scroll-padding-top: 5rem;
+}
+
 body {
   background-color: var(--color-surface);
   color: var(--color-on-surface);
@@ -151,6 +146,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-headline);
   text-wrap: balance;
 }
 
@@ -257,7 +253,7 @@ p, li, blockquote {
   padding: 10px 14px 10px 16px;
   border-radius: var(--radius-sm);
   color: var(--color-on-surface-variant);
-  font-family: var(--font-body-sm);
+  font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 500;
   letter-spacing: 0.01em;
@@ -499,36 +495,6 @@ p, li, blockquote {
   transform: translateY(0) scale(0.98);
 }
 
-/* ──── Clean Dark Mode (CSS Variable Reassignment) ──── */
-.dark {
-  --color-surface: oklch(0.14 0.015 155);
-  --color-surface-bright: oklch(0.18 0.015 155);
-  --color-surface-dim: oklch(0.10 0.015 155);
-  --color-surface-container-lowest: oklch(0.12 0.015 155);
-  --color-surface-container-low: oklch(0.16 0.015 155);
-  --color-surface-container: oklch(0.19 0.015 155);
-  --color-surface-container-high: oklch(0.22 0.015 155);
-  --color-surface-container-highest: oklch(0.25 0.015 155);
-
-  --color-background: oklch(0.14 0.015 155);
-  --color-on-background: oklch(0.92 0.008 155);
-  --color-on-surface: oklch(0.92 0.008 155);
-  --color-on-surface-variant: oklch(0.72 0.010 155);
-
-  --color-outline: oklch(0.40 0.010 155);
-  --color-outline-variant: oklch(0.28 0.012 155);
-  --color-card-border: oklch(0.26 0.012 155);
-  --color-layout-bg: oklch(0.14 0.015 155);
-  --color-interaction-bg: oklch(0.22 0.025 175);
-
-  --color-inverse-surface: oklch(0.94 0.008 155);
-  --color-inverse-on-surface: oklch(0.18 0.015 155);
-  --color-inverse-primary: oklch(0.48 0.10 175);
-
-  --color-primary: oklch(0.65 0.12 175);
-  --color-primary-container: oklch(0.55 0.10 175);
-  --color-on-primary-container: #ffffff;
-}
 
 /* ──── Reduced Motion Accessibility Support ──── */
 @media (prefers-reduced-motion: reduce) {

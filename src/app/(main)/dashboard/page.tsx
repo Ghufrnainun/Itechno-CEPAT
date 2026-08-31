@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/motion/tabs";
 import { formatCurrency } from "@/lib/utils/format";
 import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
+import { StreakReminderCard } from "@/components/ui/StreakReminderCard";
 import {
   Wallet,
   TrendingUp,
@@ -213,6 +214,13 @@ export default function DashboardPage() {
             </button>
           </div>
         </section>
+
+        {/* ───────────── STREAK REMINDER (WORKER ONLY) ───────────── */}
+        {role === "worker" && (
+          <section>
+            <StreakReminderCard />
+          </section>
+        )}
 
         {/* ───────────── ASYMMETRIC BENTO STATS GRID (12 Columns) ───────────── */}
         <section className="grid grid-cols-12 gap-3.5 sm:gap-4 md:gap-5">
@@ -642,10 +650,10 @@ export default function DashboardPage() {
                       const statusName = app.application_status || "Pending";
                       const statusColor =
                         statusName === "accepted"
-                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                           : statusName === "rejected"
                           ? "bg-error-container text-error border-error/30"
-                          : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+                          : "bg-amber-500/10 text-amber-600 border-amber-500/20";
 
                       return (
                         <Link key={app.id_task_applicants} href={`/task/${app.id_tasks}`}>

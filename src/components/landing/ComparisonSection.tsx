@@ -32,11 +32,11 @@ export function ComparisonSection() {
           viewport={{ once: true, amount: 0.5 }}
           className="flex-1 text-center lg:text-left"
         >
-          <h2 className="font-headline-lg text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight leading-tight mb-6">
-            Solusi paling masuk akal buat UMKM.
+          <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight leading-tight mb-6">
+            Pilihan praktis untuk pemilik usaha lokal.
           </h2>
           <p className="text-base md:text-lg text-on-surface-variant leading-relaxed">
-            UMKM butuh bantuan yang cepat, dekat, dan sesuai budget. CEPAT memotong perantara dan langsung menghubungkanmu dengan mahasiswa di sekitar tempat usahamu.
+            UMKM membutuhkan bantuan yang cepat, dekat, dan sesuai anggaran. CEPAT menghubungkan pemilik usaha secara langsung dengan mahasiswa di area sekitar tanpa perantara.
           </p>
         </motion.div>
 
@@ -51,10 +51,10 @@ export function ComparisonSection() {
           >
             <div className="flex items-center gap-3 mb-2">
               <CheckCircle size={24} weight="fill" className="text-primary" />
-              <h3 className="text-lg font-bold text-on-surface">CEPAT (Pilihan Cerdas)</h3>
+              <h3 className="font-headline text-lg font-bold text-on-surface">CEPAT</h3>
             </div>
             <p className="text-on-surface-variant text-sm md:text-base leading-relaxed pl-9">
-              Pekerja hiperlokal dari area sekitarmu, sistem escrow aman, harga transparan, dan rating berbasis performa nyata.
+              Pekerja dari area sekitarmu, dana aman di escrow, biaya transparan, dan rating performa terverifikasi.
             </p>
           </motion.div>
 
@@ -71,7 +71,7 @@ export function ComparisonSection() {
             >
               <div className="flex items-center gap-3 mb-2">
                 <XCircle size={20} weight="fill" className="text-outline" />
-                <h3 className="text-base font-semibold text-on-surface-variant">{comp.name}</h3>
+                <h3 className="font-headline text-base font-semibold text-on-surface-variant">{comp.name}</h3>
               </div>
               <p className="text-on-surface-variant/80 text-sm leading-relaxed pl-8">
                 {comp.weakness}

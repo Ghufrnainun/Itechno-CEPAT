@@ -503,16 +503,16 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
               <div className="flex-1 min-w-0">
                 <h3 className="font-headline font-bold text-xs text-on-surface truncate hover:text-primary transition-colors">{roomInfo.otherUserName}</h3>
                 {isOnline ? (
-                  <span className="text-[11px] text-primary flex items-center gap-1 font-mono">
+                  <span className="text-xs text-primary flex items-center gap-1 font-mono">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
                     Online
                   </span>
                 ) : lastSeenFormatted ? (
-                  <span className="text-[11px] text-on-surface-variant flex items-center gap-1 font-mono truncate">
+                  <span className="text-xs text-on-surface-variant flex items-center gap-1 font-mono truncate">
                     {lastSeenFormatted}
                   </span>
                 ) : (
-                  <span className="text-[11px] text-on-surface-variant flex items-center gap-1 font-mono truncate">
+                  <span className="text-xs text-on-surface-variant flex items-center gap-1 font-mono truncate">
                     Offline
                   </span>
                 )}
@@ -639,7 +639,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
                   </div>
                   
                   {/* Timestamp & Status */}
-                  <div className={`flex items-center gap-1 mt-1 text-[10px] font-mono ${isSelectionMode && isSelected ? 'text-primary font-medium' : 'text-on-surface-variant'}`}>
+                  <div className={`flex items-center gap-1 mt-1 text-xs font-mono ${isSelectionMode && isSelected ? 'text-primary font-medium' : 'text-on-surface-variant'}`}>
                     <span className="tabular-nums">
                       {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
@@ -711,10 +711,10 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
                     className="flex flex-col text-left p-3 hover:bg-surface-container-low rounded-xl transition-colors border-b border-card-border/40 last:border-0 cursor-pointer"
                   >
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-[11px] font-bold text-primary truncate max-w-[120px]">
+                      <span className="text-xs font-bold text-primary truncate max-w-[120px]">
                         {msg.id_sender === currentUserId ? "Anda" : roomInfo.otherUserName}
                       </span>
-                      <span className="text-[10px] text-on-surface-variant font-mono tabular-nums">
+                      <span className="text-xs text-on-surface-variant font-mono tabular-nums">
                         {new Date(msg.created_at).toLocaleDateString()}
                       </span>
                     </div>

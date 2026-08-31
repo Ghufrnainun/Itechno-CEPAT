@@ -32,7 +32,7 @@ export function SdgImpact() {
           transition={{ delay: 0.1 }}
           className="mb-20"
         >
-          <h2 className="font-headline-lg text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6">
+          <h2 className="font-headline text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6">
             Mendukung <span className="text-shimmer">SDG 8</span> untuk
             <br />
             ekonomi yang inklusif.
@@ -72,7 +72,7 @@ export function SdgImpact() {
               <div className="w-12 h-12 rounded-xl bg-primary/20 text-primary flex items-center justify-center mb-6">
                 <item.icon size={24} weight="duotone" />
               </div>
-              <h3 className="text-xl font-bold mb-3 text-white/90">{item.title}</h3>
+              <h3 className="font-headline text-xl font-bold mb-3 text-white/90">{item.title}</h3>
               <p className="text-white/50 leading-relaxed text-sm md:text-base">{item.desc}</p>
             </motion.div>
           ))}

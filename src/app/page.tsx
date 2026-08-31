@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LandingNavbar } from "@/components/landing/LandingNavbar";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { TrustStrip } from "@/components/landing/TrustStrip";
@@ -37,9 +38,9 @@ export default function Home() {
              <span className="text-sm text-on-surface-variant">© 2026 ITechno Cup.</span>
           </div>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-4 md:mt-0">
-            <a href="/kebijakan-privasi" className="text-sm text-on-surface-variant hover:text-primary">Kebijakan Privasi</a>
-            <a href="/syarat-ketentuan" className="text-sm text-on-surface-variant hover:text-primary">Syarat &amp; Ketentuan</a>
-            <a href="/bantuan" className="text-sm text-on-surface-variant hover:text-primary">Bantuan</a>
+            <Link href="/kebijakan-privasi" className="text-sm text-on-surface-variant hover:text-primary transition-colors">Kebijakan Privasi</Link>
+            <Link href="/syarat-ketentuan" className="text-sm text-on-surface-variant hover:text-primary transition-colors">Syarat &amp; Ketentuan</Link>
+            <Link href="/bantuan" className="text-sm text-on-surface-variant hover:text-primary transition-colors">Bantuan</Link>
           </div>
         </div>
       </footer>

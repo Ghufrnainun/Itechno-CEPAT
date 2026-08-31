@@ -37,7 +37,7 @@ export function ErrorState({
         <h3 className="font-headline text-base font-bold text-on-surface">
           {title}
         </h3>
-        <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed max-w-xs">
+        <p className="text-xs text-on-surface-variant leading-relaxed max-w-xs">
           {message}
         </p>
       </div>

@@ -91,11 +91,22 @@ export class GamificationService {
       const lastActivity = new Date(streak.last_activity_date);
       lastActivity.setHours(0, 0, 0, 0);
 
-      const diffTime = Math.abs(now.getTime() - lastActivity.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      // Compare dates directly using normalized strings (no time component)
+      const today = now.toISOString().split("T")[0]; // YYYY-MM-DD
+      const lastStr = lastActivity.toISOString().split("T")[0];
 
-      if (diffDays === 1) {
-        // Logged in next day, increment streak
+      if (today === lastStr) {
+        // Logged in same day, do nothing
+        return streak;
+      }
+
+      // Calculate yesterday
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+      if (lastStr === yesterdayStr) {
+        // Previous day logged in → increment streak
         const newCurrent = streak.current_streak + 1;
         return prisma.userStreak.update({
           where: { id_user: userId },
@@ -105,19 +116,16 @@ export class GamificationService {
             last_activity_date: now,
           },
         });
-      } else if (diffDays > 1) {
-        // Missed a day, reset streak
-        return prisma.userStreak.update({
-          where: { id_user: userId },
-          data: {
-            current_streak: 1,
-            last_activity_date: now,
-          },
-        });
       }
 
-      // Logged in the same day, do nothing
-      return streak;
+      // Gap > 1 day (missed a day) → reset to 1
+      return prisma.userStreak.update({
+        where: { id_user: userId },
+        data: {
+          current_streak: 1,
+          last_activity_date: now,
+        },
+      });
     } catch (error) {
       console.error("[GamificationService] Failed to update streak:", error);
       return null;
@@ -173,6 +181,40 @@ export class GamificationService {
       }
     } catch (error) {
       console.error("[GamificationService] Failed to check badges:", error);
+    }
+  }
+
+  /**
+   * Memberikan bonus XP tambahan berdasarkan streak aktif user.
+   * Dipanggil SETELAH updateStreak() — jadi current_streak sudah nilai terbaru.
+   *
+   * Skala bonus (biar progres level tetap terasa):
+   * - streak 3-6 hari   → +10 XP
+   * - streak 7-13 hari  → +25 XP
+   * - streak 14-29 hari → +50 XP
+   * - streak 30+ hari   → +100 XP
+   */
+  static async awardStreakBonusXP(userId: string) {
+    try {
+      const streak = await prisma.userStreak.findUnique({
+        where: { id_user: userId },
+      });
+
+      if (!streak) return null;
+
+      const { current_streak } = streak;
+      let bonus = 0;
+      if (current_streak >= 30) bonus = 100;
+      else if (current_streak >= 14) bonus = 50;
+      else if (current_streak >= 7) bonus = 25;
+      else if (current_streak >= 3) bonus = 10;
+
+      if (bonus <= 0) return null;
+
+      return this.addXP(userId, bonus);
+    } catch (error) {
+      console.error("[GamificationService] Failed to award streak bonus XP:", error);
+      return null;
     }
   }
 }

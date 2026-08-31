@@ -360,7 +360,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
   let currentIndexTracker = 0;
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-white border-b border-card-border shadow-2xs">
+    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-surface-container-lowest border-b border-card-border shadow-2xs">
       {/* Title / Breadcrumb */}
       <div className="flex items-center gap-3">
         <h1 className="font-headline font-bold text-lg text-on-surface tracking-tight">
@@ -386,7 +386,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                 if (query.trim()) setIsOpen(true);
               }}
               placeholder="Cari menu, user, task..."
-              className="w-full pl-9 pr-14 py-1.5 text-xs font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 rounded-xl border border-card-border focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+              className="w-full pl-9 pr-14 py-1.5 text-xs font-sans bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 rounded-xl border border-card-border focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 outline-none transition-all"
             />
 
             <div className="absolute right-2.5 flex items-center gap-1">
@@ -407,7 +407,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                   <X className="w-3.5 h-3.5" />
                 </button>
               ) : (
-                <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-on-surface-variant/70 bg-white border border-card-border rounded shadow-2xs">
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-on-surface-variant/70 bg-surface-container-lowest border border-card-border rounded shadow-2xs">
                   <Command className="w-2.5 h-2.5" />K
                 </kbd>
               )}
@@ -416,7 +416,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
 
           {/* Search Dropdown Modal */}
           {isOpen && query.trim() !== '' && (
-            <div className="absolute top-full right-0 left-0 mt-2 bg-white rounded-xl border border-card-border shadow-xl overflow-hidden z-50 max-h-[75vh] flex flex-col animate-in fade-in-50 zoom-in-95 duration-150">
+            <div className="absolute top-full right-0 left-0 mt-2 bg-surface-container-lowest rounded-xl border border-card-border shadow-xl overflow-hidden z-50 max-h-[75vh] flex flex-col animate-in fade-in-50 zoom-in-95 duration-150">
               {loading && totalResultsCount === 0 ? (
                 <div className="p-6 text-center text-xs text-on-surface-variant flex flex-col items-center gap-2">
                   <Loader2 className="w-5 h-5 text-primary animate-spin" />
@@ -452,7 +452,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                             }`}
                           >
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="p-1.5 rounded-md bg-surface-container group-hover:bg-white shrink-0">
+                              <div className="p-1.5 rounded-md bg-surface-container group-hover:bg-surface-container-lowest shrink-0">
                                 {getMenuIcon(menu.icon)}
                               </div>
                               <div className="truncate">
@@ -606,13 +606,13 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
               <div className="px-3 py-2 bg-surface-container-low border-t border-card-border flex items-center justify-between text-[10px] text-on-surface-variant">
                 <div className="flex items-center gap-3">
                   <span>
-                    <kbd className="px-1 py-0.5 bg-white border border-outline-variant rounded font-mono font-bold text-on-surface">↑↓</kbd> Navigasi
+                    <kbd className="px-1 py-0.5 bg-surface-container-lowest border border-outline-variant rounded font-mono font-bold text-on-surface">↑↓</kbd> Navigasi
                   </span>
                   <span>
-                    <kbd className="px-1 py-0.5 bg-white border border-outline-variant rounded font-mono font-bold text-on-surface">↵</kbd> Pilih
+                    <kbd className="px-1 py-0.5 bg-surface-container-lowest border border-outline-variant rounded font-mono font-bold text-on-surface">↵</kbd> Pilih
                   </span>
                   <span>
-                    <kbd className="px-1 py-0.5 bg-white border border-outline-variant rounded font-mono font-bold text-on-surface">ESC</kbd> Tutup
+                    <kbd className="px-1 py-0.5 bg-surface-container-lowest border border-outline-variant rounded font-mono font-bold text-on-surface">ESC</kbd> Tutup
                   </span>
                 </div>
                 {totalResultsCount > 0 && (
@@ -638,7 +638,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
           >
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-rose-600 text-white font-mono text-[9px] font-extrabold ring-2 ring-white animate-pulse">
+              <span className="absolute top-1.5 right-1.5 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-rose-600 text-white font-mono text-[9px] font-extrabold ring-2 ring-surface-container-lowest animate-pulse">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
@@ -646,7 +646,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
 
           {/* Admin Notification Popup */}
           {isNotifOpen && (
-            <div className="absolute top-full right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl border border-card-border shadow-xl overflow-hidden z-50 flex flex-col animate-in fade-in-50 zoom-in-95 duration-150">
+            <div className="absolute top-full right-0 mt-2 w-80 sm:w-96 bg-surface-container-lowest rounded-2xl border border-card-border shadow-xl overflow-hidden z-50 flex flex-col animate-in fade-in-50 zoom-in-95 duration-150">
               <div className="p-3.5 bg-surface-container-low border-b border-card-border flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Bell className="w-4 h-4 text-[var(--primary)]" />

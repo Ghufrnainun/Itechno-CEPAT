@@ -1,6 +1,6 @@
 "use client";
 
-import React, { forwardRef, useState, useRef, useEffect, useId, useMemo, useCallback } from "react";
+import React, { forwardRef, useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +37,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, required, error, icon, leftIcon, rightIcon, helperText, type = "text", id, ...props }, ref) => {
     const activeIcon = leftIcon || icon;
     const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+    const helperId = helperText && inputId ? `${inputId}-helper` : undefined;
 
     return (
       <div className="w-full flex flex-col">
@@ -56,6 +57,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             type={type}
             ref={ref}
             required={required}
+            aria-describedby={helperId}
+            aria-invalid={error ? true : undefined}
             className={cn(
               "w-full px-3.5 py-2.5 text-xs sm:text-sm font-sans bg-transparent text-on-surface placeholder:text-on-surface-variant/40 rounded-lg border transition-all duration-150 shadow-2xs focus-visible:outline-none min-h-[42px]",
               type === "number" && "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
@@ -75,7 +78,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
         {helperText && (
-          <span className={cn("text-[11px] font-medium font-mono mt-1", error ? "text-error" : "text-on-surface-variant/70")}>
+          <span id={helperId} className={cn("text-[11px] font-medium font-mono mt-1", error ? "text-error" : "text-on-surface-variant/70")}>
             {helperText}
           </span>
         )}
@@ -235,6 +238,8 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       }
     };
 
+    const helperId = helperText && selectId ? `${selectId}-helper` : undefined;
+
     return (
       <div className="w-full flex flex-col relative" ref={dropdownRef} onKeyDown={handleKeyDown}>
         {label && (
@@ -261,6 +266,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
             role="combobox"
             aria-expanded={isOpen}
             aria-haspopup="listbox"
+            aria-describedby={helperId}
             disabled={disabled}
             onClick={() => !disabled && setIsOpen(!isOpen)}
             className={cn(
@@ -268,8 +274,8 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
               icon && "pl-10",
               error
                 ? "border-error focus:border-error focus:ring-2 focus:ring-error/20"
-                : "border-card-border/90 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20 hover:border-primary/40 hover:bg-white",
-              isOpen && "border-primary ring-2 ring-primary/20 bg-white",
+                : "border-card-border/90 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 hover:border-primary/40 hover:bg-surface-container-lowest",
+              isOpen && "border-primary ring-2 ring-primary/20 bg-surface-container-lowest",
               disabled && "opacity-50 cursor-not-allowed",
               className
             )}
@@ -289,7 +295,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           {isOpen && (
             <div
               role="listbox"
-              className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white border border-card-border rounded-lg shadow-xl py-1 overflow-hidden font-sans text-xs sm:text-sm animate-in fade-in-50 zoom-in-95 duration-100"
+              className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-surface-container-lowest border border-card-border rounded-lg shadow-xl py-1 overflow-hidden font-sans text-xs sm:text-sm animate-in fade-in-50 zoom-in-95 duration-100"
             >
               <div className="max-h-60 overflow-y-auto divide-y divide-card-border/30 custom-scrollbar">
                 {extractedOptions.map((opt, idx) => {
@@ -328,6 +334,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
 
         {helperText && (
           <span
+            id={helperId}
             className={cn(
               "text-[11px] font-medium font-mono mt-1",
               error ? "text-error" : "text-on-surface-variant/70"
@@ -352,6 +359,7 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, label, required, error, helperText, id, ...props }, ref) => {
     const textareaId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+    const helperId = helperText && textareaId ? `${textareaId}-helper` : undefined;
 
     return (
       <div className="w-full flex flex-col">
@@ -364,6 +372,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           id={textareaId}
           ref={ref}
           required={required}
+          aria-describedby={helperId}
+          aria-invalid={error ? true : undefined}
           className={cn(
             "w-full px-3.5 py-2.5 text-xs sm:text-sm font-sans bg-transparent text-on-surface placeholder:text-on-surface-variant/40 rounded-lg border transition-all duration-150 shadow-2xs focus-visible:outline-none resize-none",
             error
@@ -374,7 +384,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           {...props}
         />
         {helperText && (
-          <span className={cn("text-[11px] font-medium font-mono mt-1", error ? "text-error" : "text-on-surface-variant/70")}>
+          <span id={helperId} className={cn("text-[11px] font-medium font-mono mt-1", error ? "text-error" : "text-on-surface-variant/70")}>
             {helperText}
           </span>
         )}

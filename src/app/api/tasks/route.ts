@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
               userId: worker.id_user,
               type: 'system',
               title: 'Tugas Baru di Sekitarmu! 📍',
-              message: `"${parsed.data.judul_tugas}" — Kompensasi: ${parsed.data.kompensasi.toLocaleString('id-ID')} poin. Lamar sekarang!`,
+              message: `"${parsed.data.judul_tugas}" · Kompensasi: ${parsed.data.kompensasi.toLocaleString('id-ID')} poin. Lamar sekarang!`,
               data: { task_id: taskId },
             })
           )

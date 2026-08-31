@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Task } from "@/types/database";
 import { formatCurrency, formatDistance } from "@/lib/utils/format";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { useToast } from "@/components/ui/Toast";
 import { renderIcon } from "@/lib/icon-map";
@@ -20,7 +19,6 @@ import {
   Lock,
   MessageSquare,
   Eye,
-  Loader2,
   Flag,
   Calendar,
 } from "lucide-react";
@@ -47,6 +45,80 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
   const { showToast } = useToast();
   const [isStartingChat, setIsStartingChat] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Cek status bookmark saat komponen mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/saved-tasks/ids?ids=${encodeURIComponent(task.id_task)}`);
+        const json = await res.json();
+        if (!cancelled && json.success) {
+          setIsSaved(json.data.includes(task.id_task));
+        }
+      } catch (e) {
+        console.error("Gagal cek status bookmark", e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [task.id_task]);
+
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/task/${task.id_task}`;
+    const shareData = {
+      title: task.title,
+      text: `Cek tugas ini di CEPAT: ${task.title}`,
+      url: shareUrl,
+    };
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        showToast("Link tugas disalin!");
+      }
+    } catch (e: unknown) {
+      // User batal share (AbortError) — bukan error
+      const err = e as { name?: string } | null;
+      if (err?.name !== "AbortError") {
+        console.error("Share gagal", e);
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          showToast("Link tugas disalin!");
+        } catch (_) {
+          showToast("Gagal membagikan tugas.");
+        }
+      }
+    }
+  };
+
+  const handleToggleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/saved-tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_tasks: task.id_task }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setIsSaved(json.saved);
+        showToast(json.saved ? "Tugas disimpan!" : "Tugas dihapus dari tersimpan.");
+      } else {
+        showToast(json.message || "Gagal menyimpan tugas.");
+      }
+    } catch (e) {
+      console.error("Gagal toggle bookmark", e);
+      showToast("Gagal menyimpan tugas.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleInitChat = async () => {
     try {
@@ -70,9 +142,10 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
       } else {
         throw new Error(dataInit.message || "Gagal membuat obrolan");
       }
-    } catch (e: any) {
-      console.error(e);
-      showToast(e.message || "Gagal memulai chat.");
+    } catch (e: unknown) {
+      const err = e as { message?: string } | null;
+      console.error(err);
+      showToast(err?.message || "Gagal memulai chat.");
     } finally {
       setIsStartingChat(false);
     }
@@ -102,6 +175,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
               <Flag className="w-4 h-4" />
             </button>
             <button
+              onClick={handleShare}
               title="Bagikan Tugas"
               aria-label="Bagikan Tugas"
               className="text-on-surface-variant hover:text-primary transition-colors w-8 h-8 rounded-lg hover:bg-surface-container-low flex items-center justify-center cursor-pointer"
@@ -109,11 +183,18 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
               <Share2 className="w-4 h-4" />
             </button>
             <button
-              title="Simpan Tugas"
-              aria-label="Simpan Tugas"
-              className="text-on-surface-variant hover:text-primary transition-colors w-8 h-8 rounded-lg hover:bg-surface-container-low flex items-center justify-center cursor-pointer"
+              onClick={handleToggleSave}
+              disabled={isSaving}
+              title={isSaved ? "Hapus dari Tersimpan" : "Simpan Tugas"}
+              aria-label={isSaved ? "Hapus dari Tersimpan" : "Simpan Tugas"}
+              aria-pressed={isSaved}
+              className={`transition-colors w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer disabled:opacity-50 ${
+                isSaved
+                  ? "text-primary bg-primary/10 hover:bg-primary/15"
+                  : "text-on-surface-variant hover:text-primary hover:bg-surface-container-low"
+              }`}
             >
-              <Bookmark className="w-4 h-4" />
+              <Bookmark className={`w-4 h-4 ${isSaved ? "fill-primary" : ""}`} />
             </button>
           </div>
         </div>
@@ -138,7 +219,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
                   </span>
                   <CheckCircle2 className="w-3.5 h-3.5 text-primary fill-primary/10" />
                 </div>
-                <div className="flex items-center gap-1.5 text-on-surface-variant text-[11px]">
+                <div className="flex items-center gap-1.5 text-on-surface-variant text-xs">
                   <span className="flex items-center gap-1 text-amber-600 font-bold">
                     <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                     4.8
@@ -153,20 +234,20 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
           <div className="flex flex-col gap-0.5 mb-5 p-3.5 bg-surface-container-low rounded-xl border border-card-border">
             {task.is_bidding ? (
               <>
-                <span className="font-headline text-2xl font-extrabold text-primary font-mono tabular-nums">
+                <span className="text-2xl font-extrabold text-primary font-mono tabular-nums">
                   {formatCurrency(task.budget_min ?? 0)} – {formatCurrency(task.budget_max ?? task.compensation)} <span className="text-xs font-normal text-on-surface-variant font-sans">/ worker</span>
                 </span>
-                <span className="text-[11px] text-primary font-bold font-sans">
-                  Mode Bidding — ajukan penawaran harga terbaik Anda
+                <span className="text-xs text-primary font-bold font-sans">
+                  Mode Bidding: ajukan penawaran harga terbaik Anda
                 </span>
               </>
             ) : (
-              <span className="font-headline text-2xl font-extrabold text-primary font-mono tabular-nums">
+              <span className="text-2xl font-extrabold text-primary font-mono tabular-nums">
                 {formatCurrency(task.compensation)} <span className="text-xs font-normal text-on-surface-variant font-sans">/ worker</span>
               </span>
             )}
             {task.max_applicants && !task.is_bidding && (
-              <span className="text-[11px] text-on-surface-variant font-mono">
+              <span className="text-xs text-on-surface-variant font-mono">
                 Total Escrow: {formatCurrency(task.compensation * task.max_applicants)} ({task.max_applicants} worker)
               </span>
             )}
@@ -177,7 +258,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
               <div className="flex items-center gap-2 p-2.5 bg-surface-container-low rounded-xl border border-card-border/40">
                 <MapPin className="w-4 h-4 text-primary shrink-0" />
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] text-on-surface-variant font-mono">Jarak</span>
+                  <span className="text-xs text-on-surface-variant font-mono">Jarak</span>
                   <span className="text-xs font-bold text-on-surface font-mono truncate">{formatDistance(task.distance)}</span>
                 </div>
               </div>
@@ -186,7 +267,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
               <div className="flex items-center gap-2 p-2.5 bg-surface-container-low rounded-xl border border-card-border/40">
                 <Clock className="w-4 h-4 text-primary shrink-0" />
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] text-on-surface-variant font-mono">Estimasi</span>
+                  <span className="text-xs text-on-surface-variant font-mono">Estimasi</span>
                   <span className="text-xs font-bold text-on-surface truncate">{task.duration_estimate}</span>
                 </div>
               </div>
@@ -195,7 +276,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
               <div className="flex items-center gap-2 p-2.5 bg-surface-container-low rounded-xl border border-card-border/40">
                 <Users className="w-4 h-4 text-primary shrink-0" />
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] text-on-surface-variant font-mono">Kuota</span>
+                  <span className="text-xs text-on-surface-variant font-mono">Kuota</span>
                   <span className="text-xs font-bold text-on-surface truncate">{task.max_applicants} Worker</span>
                 </div>
               </div>
@@ -204,7 +285,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
               <div className="flex items-center gap-2 p-2.5 bg-primary/5 rounded-xl border border-primary/20 col-span-2">
                 <Calendar className="w-4 h-4 text-primary shrink-0" />
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] text-primary font-bold font-mono uppercase">Jadwal Tugas</span>
+                  <span className="text-xs text-primary font-bold font-mono uppercase">Jadwal Tugas</span>
                   <span className="text-xs font-bold text-on-surface">
                     {new Date(task.scheduled_at).toLocaleDateString("id-ID", {
                       weekday: "long",
@@ -246,7 +327,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
           <div>
             <h3 className="font-headline font-bold text-xs uppercase tracking-wider text-on-surface-variant mb-2">Keahlian yang Dibutuhkan</h3>
             <div className="flex flex-wrap gap-1.5">
-              {task.skills.map((skill: any) => (
+              {task.skills.map((skill: { id_skill?: string; nama_skill?: string; icon?: string | null }) => (
                 <div key={skill.id_skill || skill.nama_skill} className="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full border border-primary/20">
                   {renderIcon(skill.icon ?? null, "w-3.5 h-3.5 shrink-0")}
                   <span>{skill.nama_skill}</span>
@@ -261,7 +342,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
           <Lock className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
           <div className="space-y-1">
             <span className="text-xs font-bold text-secondary block">Jaminan Escrow ITechno</span>
-            <p className="text-[11px] text-on-surface-variant leading-relaxed">
+            <p className="text-xs text-on-surface-variant leading-relaxed">
               Dana kompensasi telah dikunci di sistem escrow kami. Pembayaran akan otomatis dicairkan segera setelah pekerjaan Anda diverifikasi selesai.
             </p>
           </div>
@@ -269,11 +350,11 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
 
         {/* Report Task to Admin Section */}
         <div className="pt-2 border-t border-card-border/60 flex items-center justify-between">
-          <span className="text-[11px] text-on-surface-variant">Menemukan pelanggaran atau kejanggalan?</span>
+          <span className="text-xs text-on-surface-variant">Menemukan pelanggaran atau kejanggalan?</span>
           <button
             type="button"
             onClick={() => setIsReportModalOpen(true)}
-            className="text-[11px] font-semibold text-error hover:underline flex items-center gap-1 cursor-pointer"
+            className="text-xs font-semibold text-error hover:underline flex items-center gap-1 cursor-pointer"
           >
             <Flag className="w-3 h-3" />
             <span>Laporkan Tugas</span>

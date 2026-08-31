@@ -21,13 +21,13 @@ function SpotlightCard({ children, className = "" }: SpotlightCardProps) {
   };
 
   return (
-    <div className={`p-1.5 md:p-2 rounded-2xl bg-black/[0.03] dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 ${className}`}>
+    <div className={`p-1.5 md:p-2 rounded-2xl bg-black/[0.03] ring-1 ring-black/5 ${className}`}>
       <div
         ref={divRef}
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setOpacity(1)}
         onMouseLeave={() => setOpacity(0)}
-        className="relative h-full spotlight-card rounded-xl border border-white/60 dark:border-white/10 bg-white/80 backdrop-blur-xl p-6 md:p-8 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_4px_12px_rgba(0,0,0,0.03)] overflow-hidden"
+        className="relative h-full spotlight-card rounded-xl border border-white/60 bg-white/80 backdrop-blur-xl p-6 md:p-8 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_4px_12px_rgba(0,0,0,0.03)] overflow-hidden"
         style={{
           // @ts-ignore - Custom properties used by CSS
           "--x": `${position.x}px`,
@@ -59,13 +59,13 @@ export function FeaturesSection() {
         viewport={{ once: true, amount: 0.8 }}
         className="mb-12 md:mb-16"
       >
-        <h2 className="font-headline-lg text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight leading-tight mb-4">
-          Ekosistem terpercaya
+        <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight leading-tight mb-4">
+          Fitur utama untuk kerja
           <br className="hidden md:block" />
-          untuk hasil maksimal
+          aman dan cepat
         </h2>
         <p className="text-base md:text-lg text-on-surface-variant max-w-[50ch] leading-relaxed">
-          Dibangun khusus untuk kecepatan, keamanan, dan kualitas di level hiper-lokal.
+          Dirancang untuk kemudahan kerja mahasiswa dan kebutuhan harian pemilik usaha lokal.
         </p>
       </motion.div>
 
@@ -90,7 +90,7 @@ export function FeaturesSection() {
                     <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                     Area Sekitar
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-extrabold text-on-surface mb-3 tracking-tight">Geo-Radar Hiperlokal</h3>
+                  <h3 className="font-headline text-2xl md:text-3xl font-extrabold text-on-surface mb-3 tracking-tight">Geo-Radar Hiperlokal</h3>
                   <p className="text-on-surface-variant text-base md:text-lg leading-relaxed">
                     Tidak perlu menunggu freelancer dari luar kota. CEPAT memindai area di sekitar kampusmu untuk menemukan UMKM atau Worker yang siap sedia dalam hitungan menit.
                   </p>
@@ -109,11 +109,11 @@ export function FeaturesSection() {
                   {/* Floating map pins */}
                   <div className="absolute -top-2 -right-2 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 rounded-lg shadow-md border border-outline-variant flex items-center gap-1.5">
                      <span className="w-2.5 h-2.5 rounded-full bg-[#84CC16]" />
-                     <span className="text-[11px] font-bold font-mono">0.4km</span>
+                     <span className="text-xs font-bold font-mono">0.4km</span>
                   </div>
                    <div className="absolute bottom-6 -left-6 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 rounded-lg shadow-md border border-outline-variant flex items-center gap-1.5">
                      <span className="w-2.5 h-2.5 rounded-full bg-primary" />
-                     <span className="text-[11px] font-bold font-mono">1.2km</span>
+                     <span className="text-xs font-bold font-mono">1.2km</span>
                   </div>
                 </div>
               </div>
@@ -136,10 +136,10 @@ export function FeaturesSection() {
                     <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shadow-sm">
                       <ShieldCheck size={24} weight="duotone" />
                     </div>
-                    <span className="px-3 py-1 bg-green-50 text-green-700 border border-green-200/50 text-[10px] font-extrabold tracking-widest rounded-full uppercase shadow-sm">Aman</span>
+                    <span className="px-3 py-1 bg-green-50 text-green-700 border border-green-200/50 text-xs font-extrabold tracking-widest rounded-full uppercase shadow-sm">Aman</span>
                  </div>
                  <div>
-                   <h3 className="text-xl font-extrabold text-on-surface mb-2 tracking-tight">Escrow Otomatis</h3>
+                   <h3 className="font-headline text-xl font-extrabold text-on-surface mb-2 tracking-tight">Escrow Otomatis</h3>
                    <p className="text-base text-on-surface-variant leading-relaxed">
                      Dana dari UMKM dikunci aman oleh sistem saat tugas berjalan, dan otomatis cair ke mahasiswa saat disetujui. Tanpa drama pembayaran telat.
                    </p>
@@ -163,7 +163,7 @@ export function FeaturesSection() {
                     </div>
                  </div>
                  <div>
-                   <h3 className="text-xl font-extrabold text-on-surface mb-2 tracking-tight">Rating & Portofolio</h3>
+                   <h3 className="font-headline text-xl font-extrabold text-on-surface mb-2 tracking-tight">Rating & Portofolio</h3>
                    <p className="text-base text-on-surface-variant leading-relaxed">
                      Setiap tugas yang selesai otomatis membangun reputasi publikmu. CV yang terbuat dengan sendirinya berdasarkan performa nyata.
                    </p>

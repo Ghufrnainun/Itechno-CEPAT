@@ -17,18 +17,31 @@ export default async function ProfilePage({
 
   if (id === "me") {
     if (!authUser) {
-      // Allow client side to handle redirect or error
       targetUserId = ""; 
     } else {
-      targetUserId = authUser.id;
+      const meUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { id_user: authUser.id },
+            { auth_id: authUser.id },
+            ...(authUser.email ? [{ email: authUser.email }] : []),
+          ],
+        },
+      });
+      targetUserId = meUser ? meUser.id_user : authUser.id;
     }
   }
 
   let initialData = null;
 
   if (targetUserId) {
-    const dbUser = await prisma.user.findUnique({
-      where: { id_user: targetUserId },
+    const dbUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { id_user: targetUserId },
+          { auth_id: targetUserId },
+        ],
+      },
       include: {
         role: true,
         skills_user: {
@@ -60,5 +73,5 @@ export default async function ProfilePage({
     }
   }
 
-  return <ProfileClient initialData={initialData} />;
+  return <ProfileClient key={targetUserId || id} initialData={initialData} />;
 }

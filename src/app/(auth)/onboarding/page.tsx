@@ -143,7 +143,7 @@ function StepProfile({
               Bio singkat{" "}
               <span className="text-error normal-case font-normal tracking-normal">*</span>
             </label>
-            <span className="text-[11px] text-on-surface-variant/50 font-mono">
+            <span className="text-xs text-on-surface-variant/70 font-mono">
               {bio.length}/200
             </span>
           </div>
@@ -161,7 +161,7 @@ function StepProfile({
                 key={i}
                 type="button"
                 onClick={() => setBio(tpl)}
-                className="text-[11px] px-2.5 py-1.5 rounded-lg bg-surface-container-low hover:bg-primary/10 text-on-surface-variant hover:text-primary transition-colors border border-card-border cursor-pointer font-medium"
+                className="text-xs px-2.5 py-1.5 rounded-lg bg-surface-container-low hover:bg-primary/10 text-on-surface-variant hover:text-primary transition-colors border border-card-border cursor-pointer font-medium"
               >
                 {tpl.slice(0, 28)}…
               </button>
@@ -176,7 +176,7 @@ function StepProfile({
               Keahlian / Minat{" "}
               <span className="text-error normal-case font-normal tracking-normal">*</span>
             </label>
-            <span className="text-[11px] text-primary font-bold font-mono">
+            <span className="text-xs text-primary font-bold font-mono">
               {selectedSkills.length} terpilih
             </span>
           </div>
@@ -434,8 +434,8 @@ function OnboardingContent() {
 
       {/* ── FOOTER ── */}
       <footer className="text-center py-4 border-t border-outline-variant/20">
-        <p className="text-[11px] text-on-surface-variant/40 font-mono">
-          © 2026 CEPAT Marketplace · SDG 8 — Decent Work
+        <p className="text-xs text-on-surface-variant/70 font-mono">
+          © 2026 CEPAT Marketplace · SDG 8 · Decent Work
         </p>
       </footer>
     </main>
