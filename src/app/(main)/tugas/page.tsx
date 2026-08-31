@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { TaskCardSkeleton } from "@/components/ui/Skeleton";
+import { Modal } from "@/components/ui/Modal";
 import { Tabs, TabsList, TabsTrigger } from "@/components/motion/tabs";
 import { TaskStatus } from "@/types/database";
 import {
@@ -59,11 +60,10 @@ const FILTERS: { label: string; status: string | null; icon: React.ComponentType
 function TaskManagementCard({ task, onRefresh }: { task: RequesterTask; onRefresh: () => void }) {
   const router = useRouter();
   const [cancelling, setCancelling] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
-  const handleCancel = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!confirm("Yakin ingin membatalkan task ini?")) return;
+  const executeCancel = async () => {
+    setIsCancelModalOpen(false);
     setCancelling(true);
     try {
       const res = await fetch(`/api/tasks/${task.id_tasks}`, { method: "DELETE" });
@@ -155,7 +155,11 @@ function TaskManagementCard({ task, onRefresh }: { task: RequesterTask; onRefres
         {task.status === "open" && (
           <div className="flex justify-end gap-2 pt-2 border-t border-card-border/60 mt-1">
             <button
-              onClick={handleCancel}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsCancelModalOpen(true);
+              }}
               disabled={cancelling}
               className="text-[11px] text-error font-semibold px-2.5 py-1 rounded-md hover:bg-error-container/30 transition-colors cursor-pointer disabled:opacity-50"
             >
@@ -182,6 +186,35 @@ function TaskManagementCard({ task, onRefresh }: { task: RequesterTask; onRefres
           </div>
         )}
       </div>
+
+      <Modal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        title="Batalkan Task"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="font-sans text-xs text-on-surface">
+            Yakin ingin membatalkan task <strong>{task.judul_tugas}</strong>? Task yang dibatalkan tidak dapat dikembalikan, dan dana di escrow (jika ada) akan dikembalikan ke dompet Anda.
+          </p>
+          <div className="flex justify-end gap-2 pt-2 border-t border-card-border">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsCancelModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={executeCancel}
+              disabled={cancelling}
+            >
+              Ya, Batalkan
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </Link>
   );
 }

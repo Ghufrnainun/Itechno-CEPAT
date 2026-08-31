@@ -144,10 +144,21 @@ export function DialogContent({
     if (isOpen) {
       document.body.style.overflow = "hidden";
       window.addEventListener("keydown", handleKeyDown);
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, handleKeyDown]);
 
-      // Auto-focus first focusable element or content
+  // Handle auto-focus separately so it only runs when opening
+  useEffect(() => {
+    if (isOpen) {
       const timer = setTimeout(() => {
         if (contentRef.current) {
+          // Find first focusable element inside the dialog content
           const focusable = contentRef.current.querySelector<HTMLElement>(
             'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
           );
@@ -159,14 +170,8 @@ export function DialogContent({
         }
       }, 50);
       return () => clearTimeout(timer);
-    } else {
-      document.body.style.overflow = "";
     }
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen, handleKeyDown]);
+  }, [isOpen]);
 
   if (!mounted) return null;
 

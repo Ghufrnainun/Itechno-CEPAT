@@ -28,15 +28,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const result: any = await prisma.$queryRaw`
-      SELECT SUM(t.kompensasi) as total
-      FROM "Task" t
-      JOIN "StatusTask" st ON t.id_status_task = st.id_status_task
-      WHERE t.id_requester = ${authUser.id}
-      AND UPPER(st.nama_status) IN ('OPEN', 'IN PROGRESS', 'IN_PROGRESS')
-    `;
+    const dbUser = await prisma.user.findUnique({
+      where: { email: authUser.email },
+      select: { held_balance: true }
+    });
 
-    const totalKompensasi = result[0]?.total ? Number(result[0].total) : 0;
+    if (!dbUser) {
+      return NextResponse.json(
+        { success: false, message: 'User not found.' },
+        { status: 404 }
+      )
+    }
+
+    const totalKompensasi = dbUser.held_balance || 0;
 
     return NextResponse.json({
       success: true,

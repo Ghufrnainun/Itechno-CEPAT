@@ -66,11 +66,11 @@ export async function GET(request: NextRequest) {
       : Prisma.empty
       
     const distanceSelect = hasLocation 
-      ? Prisma.sql`(ST_Distance(t.lokasi_geo, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography) / 1000.0) AS distance`
+      ? Prisma.sql`(ST_Distance(t.lokasi_geo, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, true) / 1000.0) AS distance`
       : Prisma.sql`NULL AS distance`
       
     const distanceCondition = (hasLocation && radius != null)
-      ? Prisma.sql`AND ST_DWithin(t.lokasi_geo, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, ${radius})`
+      ? Prisma.sql`AND ST_DWithin(t.lokasi_geo, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, ${radius}, true)`
       : Prisma.empty
 
     const userCondition = userId 

@@ -37,7 +37,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       id,
       currentUser.id_user,
       parsed.data.action,
-      parsed.data.alasan_penolakan
+      parsed.data.alasan_penolakan,
+      parsed.data.expected_bid_amount
     )
 
     const message = parsed.data.action === 'accept'
