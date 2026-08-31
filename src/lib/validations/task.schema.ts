@@ -86,6 +86,7 @@ export type UpdateTaskStatusInput = z.infer<typeof updateTaskStatusSchema>
 export const updateApplicantSchema = z.object({
   action: z.enum(['accept', 'reject']),
   alasan_penolakan: z.string().max(500, 'Alasan penolakan maksimal 500 karakter.').optional(),
+  expected_bid_amount: z.number().optional(),
 })
 
 export type UpdateApplicantInput = z.infer<typeof updateApplicantSchema>

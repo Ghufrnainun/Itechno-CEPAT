@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { notificationService } from '@/services/notification.service'
+import { taskService } from '@/services/task.service'
 
 /**
  * GET /api/cron/notifications
@@ -23,6 +24,7 @@ export async function GET(request: NextRequest) {
   const results = {
     reviewReminders: 0,
     unfilledTaskAlerts: 0,
+    autoCancelledTasks: 0,
     lowBalanceWarnings: 0,
   }
 
@@ -148,6 +150,33 @@ export async function GET(request: NextRequest) {
     }
   } catch (error) {
     console.error('[Cron] Unfilled task alert error:', error)
+  }
+
+  // ─── 2.5 Auto-Cancel Expired Tasks (Refund Escrow yang Tertahan) ────────────
+  try {
+    // Cari task yang masih OPEN dan melewati scheduled_end, atau umurnya > 7 hari jika tak ada scheduled_end
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const expiredTasks = await prisma.task.findMany({
+      where: {
+        status_task: { nama_status: { equals: 'open', mode: 'insensitive' } },
+        OR: [
+          { scheduled_end: { lt: new Date() } },
+          { scheduled_end: null, created_at: { lt: sevenDaysAgo } }
+        ]
+      },
+      select: { id_tasks: true, id_requester: true }
+    });
+
+    for (const task of expiredTasks) {
+      try {
+        await taskService.updateTaskStatus(task.id_tasks, task.id_requester, 'cancelled');
+        results.autoCancelledTasks++;
+      } catch (error) {
+        console.error(`[Cron] Auto-cancel task ${task.id_tasks} error:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('[Cron] Auto-cancel tasks error:', error);
   }
 
   // ─── 3. Low Balance Warning (Saldo < 5000 untuk requester aktif) ────────────

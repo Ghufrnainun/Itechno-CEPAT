@@ -5,6 +5,7 @@ export const createReviewSchema = z.object({
   reviewee_id: z.string().min(1, 'Reviewee ID wajib diisi.').uuid('Format Reviewee ID tidak valid.'),
   rating: z
     .number()
+    .int('Rating harus berupa bilangan bulat.')
     .min(1, 'Rating minimal 1.')
     .max(5, 'Rating maksimal 5.'),
   comment: z

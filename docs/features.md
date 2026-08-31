@@ -103,13 +103,19 @@ Satu akun bisa berperan sebagai Requester sekaligus Worker (dual-role).
 | Histori sebagai Requester | Daftar task yang pernah diposting + statusnya                  | P0        |
 | Histori sebagai Worker    | Daftar task yang pernah dikerjakan + rating yang didapat       | P0        |
 
+### 3.9 💬 Chat Antar User
+
+| Fitur                     | Deskripsi                                                      | Prioritas |
+| ------------------------- | -------------------------------------------------------------- | --------- |
+| Realtime Chat             | Direct message antara Requester dan Worker untuk koordinasi tugas | P0      |
+| Chat List & Room          | Tampilan daftar obrolan dan ruang pesan yang intuitif          | P0        |
+
 ---
 
 ## 4. Fitur Tambahan (Nice-to-Have / Post-MVP)
 
 | Fitur                        | Deskripsi                                                   | Prioritas |
 | ---------------------------- | ----------------------------------------------------------- | --------- |
-| Chat antar user              | Direct message Requester ↔ Worker untuk koordinasi          | P2        |
 | Kategori skill marketplace   | Halaman browse semua kategori skill yang tersedia            | P2        |
 | Search task by keyword       | Full-text search di judul + deskripsi task                   | P2        |
 | Skill exchange (barter)      | Mode khusus: tukar skill tanpa poin (saya bantu X, kamu bantu Y) | P2   |
