@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/motion/tabs";
 import { formatCurrency } from "@/lib/utils/format";
 import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
+import { StreakReminderCard } from "@/components/ui/StreakReminderCard";
 import {
   Wallet,
   TrendingUp,
@@ -213,6 +214,13 @@ export default function DashboardPage() {
             </button>
           </div>
         </section>
+
+        {/* ───────────── STREAK REMINDER (WORKER ONLY) ───────────── */}
+        {role === "worker" && (
+          <section>
+            <StreakReminderCard />
+          </section>
+        )}
 
         {/* ───────────── ASYMMETRIC BENTO STATS GRID (12 Columns) ───────────── */}
         <section className="grid grid-cols-12 gap-3.5 sm:gap-4 md:gap-5">

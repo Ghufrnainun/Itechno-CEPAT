@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { RatingStars } from "@/components/ui/RatingStars";
 import { Modal } from "@/components/ui/Modal";
 import { BadgeDisplay, BadgeProps } from "@/components/ui/BadgeDisplay";
+import { StreakCalendar } from "@/components/ui/StreakCalendar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/motion/tabs";
 import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -848,12 +849,16 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Login Beruntun</p>
-                      <div className="flex items-center justify-end gap-1.5 text-amber-500">
-                        <Star className="w-4 h-4 fill-amber-500" />
-                        <span className="text-lg font-black font-mono">{streak} Hari</span>
+                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Streak Aktif</p>
+                      <div className="flex items-center justify-end gap-1.5 text-tertiary">
+                        <span className="text-lg font-black font-mono">🔥 {streak} Hari</span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Streak Calendar Heatmap */}
+                  <div className="mb-4">
+                    <StreakCalendar />
                   </div>
 
                   <h4 className="font-headline text-xs font-bold text-on-surface mb-3 flex items-center gap-2">
