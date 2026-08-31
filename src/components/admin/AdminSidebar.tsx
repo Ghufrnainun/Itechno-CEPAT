@@ -59,7 +59,7 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
   return (
     <aside
       className={cn(
-        "sticky top-0 h-screen flex flex-col bg-white text-on-surface border-r border-card-border",
+        "sticky top-0 h-screen flex flex-col bg-surface-container-lowest text-on-surface border-r border-card-border",
         "transition-[width] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] z-30 shrink-0",
         collapsed ? "w-20" : "w-64"
       )}
@@ -171,7 +171,7 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
       </nav>
 
       {/* Footer / Quick Actions */}
-      <div className="p-3 border-t border-card-border bg-white shrink-0">
+      <div className="p-3 border-t border-card-border bg-surface-container-lowest shrink-0">
         <button
           onClick={handleLogout}
           disabled={loggingOut}

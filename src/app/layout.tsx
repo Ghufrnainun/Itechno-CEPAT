@@ -21,7 +21,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CEPAT — Cari Entry Pekerjaan Area Terdekat",
+  title: "CEPAT: Cari Entry Pekerjaan Area Terdekat",
   description: "Platform micro-freelancing & skill exchange berbasis lokasi untuk mahasiswa dan UMKM lokal (SDG 8).",
 };
 
@@ -31,9 +31,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className="scroll-smooth" data-scroll-behavior="smooth">
+    <html
+      lang="id"
+      className={`${plusJakartaSans.variable} ${outfit.variable} ${jetbrainsMono.variable} scroll-smooth`}
+      data-scroll-behavior="smooth"
+    >
       <body
-        className={`${plusJakartaSans.variable} ${outfit.variable} ${jetbrainsMono.variable} font-sans antialiased min-h-screen flex flex-col bg-surface text-on-surface`}
+        className="font-sans antialiased min-h-screen flex flex-col bg-surface text-on-surface"
       >
         {children}
       </body>

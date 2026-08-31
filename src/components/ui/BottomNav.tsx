@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useUnreadChat } from "@/hooks/useUnreadChat";
+import { useCurrentRole } from "@/app/(main)/layout";
 import { Home, ClipboardList, ListFilter, Bell, MessageSquare, User, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -14,8 +15,14 @@ interface BottomNavProps {
 
 export function BottomNav({ role }: BottomNavProps) {
   const pathname = usePathname();
+  const { user } = useCurrentRole();
   const { unreadCount } = useNotifications();
   const { unreadCount: chatUnreadCount } = useUnreadChat();
+
+  const isMyProfileActive =
+    pathname === "/profile" ||
+    pathname === "/profile/me" ||
+    (Boolean(user?.id_user) && pathname === `/profile/${user?.id_user}`);
 
   return (
     <nav
@@ -70,7 +77,7 @@ export function BottomNav({ role }: BottomNavProps) {
         href="/notifications"
         aria-label="Notifikasi"
         className={cn(
-          "flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-lg text-[11px] font-medium relative transition-[color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none",
+          "flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-lg text-[11px] font-medium relative transition-[color,transform] duration-150 active:scale-90 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none",
           pathname === "/notifications"
             ? "text-primary font-bold scale-105"
             : "text-on-surface-variant hover:text-on-surface"
@@ -109,7 +116,7 @@ export function BottomNav({ role }: BottomNavProps) {
         aria-label="Profil Saya"
         className={cn(
           "flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-lg text-[11px] font-medium transition-[color,transform] duration-150 active:scale-90 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none",
-          pathname.includes("/profile")
+          isMyProfileActive
             ? "text-primary font-bold scale-105"
             : "text-on-surface-variant hover:text-on-surface"
         )}

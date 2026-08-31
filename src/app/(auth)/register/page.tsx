@@ -132,7 +132,7 @@ function RegisterContent() {
         {/* Center: Value Proposition & Pillars */}
         <div className="space-y-8 max-w-lg my-auto py-8">
           <div className="space-y-3">
-            <span className="inline-block px-3 py-1 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+            <span className="inline-block px-3 py-1 rounded-full text-xs font-sans font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
               Campus Micro-Freelancing
             </span>
             <h1 className="font-headline text-3xl lg:text-4xl font-extrabold text-on-surface leading-[1.15] tracking-tight">
@@ -153,7 +153,7 @@ function RegisterContent() {
                 <h4 className="font-headline text-xs font-bold text-on-surface">
                   Peluang Kerja Fleksibel
                 </h4>
-                <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                <p className="text-xs text-on-surface-variant leading-relaxed">
                   Ambil pekerjaan mikro di sekitar kampus yang sesuai dengan jadwal kuliahmu.
                 </p>
               </div>
@@ -167,7 +167,7 @@ function RegisterContent() {
                 <h4 className="font-headline text-xs font-bold text-on-surface">
                   Garansi Pembayaran Escrow
                 </h4>
-                <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                <p className="text-xs text-on-surface-variant leading-relaxed">
                   Poin kompensasi dijamin aman terkunci dan langsung cair setelah tugas disetujui.
                 </p>
               </div>
@@ -181,7 +181,7 @@ function RegisterContent() {
                 <h4 className="font-headline text-xs font-bold text-on-surface">
                   Bantuan On-Demand UMKM
                 </h4>
-                <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                <p className="text-xs text-on-surface-variant leading-relaxed">
                   Pemilik usaha lokal dapat mendelegasikan tugas harian kepada talenta kampus dalam hitungan menit.
                 </p>
               </div>
@@ -370,7 +370,7 @@ function RegisterContent() {
             {/* Divider */}
             <div className="relative flex items-center py-1">
               <div className="flex-grow border-t border-card-border" />
-              <span className="mx-4 text-[10px] text-on-surface-variant/60 font-mono font-bold uppercase tracking-widest">
+              <span className="mx-4 text-xs text-on-surface-variant/60 font-mono font-bold uppercase tracking-widest">
                 atau
               </span>
               <div className="flex-grow border-t border-card-border" />

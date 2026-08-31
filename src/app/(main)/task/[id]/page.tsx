@@ -550,8 +550,8 @@ export default function TaskDetailPage() {
                     <span className="font-label-md text-label-md font-bold text-primary font-mono text-[18px]">
                       {formatCurrency(task.budget_min ?? 0)} – {formatCurrency(task.budget_max ?? task.kompensasi)} <span className="text-xs font-normal text-on-surface-variant font-sans">/ worker</span>
                     </span>
-                    <span className="font-label-sm text-[11px] text-primary font-bold font-sans">
-                      Mode Bidding — penawaran terbaik dipilih pemberi tugas
+                    <span className="font-label-sm text-xs text-primary font-bold font-sans">
+                      Mode Bidding: penawaran terbaik dipilih pemberi tugas
                     </span>
                   </>
                 ) : (
@@ -971,8 +971,8 @@ export default function TaskDetailPage() {
                       &ldquo;Alasan: {task.viewer_application.alasan_penolakan}&rdquo;
                     </p>
                   )}
-                  <span className="font-sans text-[11px] text-on-surface-variant font-medium font-mono tabular-nums">
-                    Percobaan apply: {task.viewer_application.apply_count} dari {task.max_apply_attempts} maksimal.
+                  <span className="font-sans text-xs text-on-surface-variant font-medium">
+                    Percobaan apply: <span className="font-mono tabular-nums">{task.viewer_application.apply_count}</span> dari <span className="font-mono tabular-nums">{task.max_apply_attempts}</span> maksimal.
                   </span>
                 </div>
               )}
@@ -1331,13 +1331,13 @@ export default function TaskDetailPage() {
                 />
               </div>
               {bidError ? (
-                <p className="text-[11px] font-medium text-error flex items-center gap-1.5 mt-0.5 animate-fadeIn">
+                <p className="text-xs font-medium text-error flex items-center gap-1.5 mt-0.5 animate-fadeIn">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                   <span>{bidError}</span>
                 </p>
               ) : (
-                <p className="text-[10px] text-on-surface-variant leading-relaxed">
-                  Penawaran bersifat rahasia (sealed bid) — hanya pemberi tugas yang dapat melihatnya.
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  Penawaran bersifat rahasia (sealed bid), hanya pemberi tugas yang dapat melihatnya.
                 </p>
               )}
             </div>

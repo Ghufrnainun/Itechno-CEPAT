@@ -243,13 +243,13 @@ export default function CariTugasPage() {
                 />
               </div>
               {bidError ? (
-                <p className="text-[11px] font-medium text-error flex items-center gap-1.5 mt-0.5 animate-fadeIn">
+                <p className="text-xs font-medium text-error flex items-center gap-1.5 mt-0.5 animate-fadeIn">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                   <span>{bidError}</span>
                 </p>
               ) : (
-                <p className="text-[10px] text-on-surface-variant leading-relaxed">
-                  Penawaran bersifat rahasia (sealed bid) — hanya pemberi tugas yang dapat melihatnya.
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  Penawaran bersifat rahasia (sealed bid), hanya pemberi tugas yang dapat melihatnya.
                 </p>
               )}
             </div>

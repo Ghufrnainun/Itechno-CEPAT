@@ -72,7 +72,7 @@ export function RoleCard({
         >
           {title}
         </span>
-        <p className="font-sans text-[11px] text-on-surface-variant leading-relaxed">
+        <p className="font-sans text-xs text-on-surface-variant leading-relaxed">
           {description}
         </p>
       </div>

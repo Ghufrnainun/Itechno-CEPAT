@@ -30,7 +30,7 @@ export default function KPICard({
         className
       )}
     >
-      <div className="bg-white shadow-[inset_0_1px_1px_rgba(255,255,255,1)] rounded-[calc(1rem-0.25rem)] p-4 h-full flex flex-col justify-between gap-3">
+      <div className="bg-surface-container-lowest shadow-[inset_0_1px_1px_rgba(255,255,255,1)] rounded-[calc(1rem-0.25rem)] p-4 h-full flex flex-col justify-between gap-3">
         
         <div className="flex items-center justify-between gap-2">
           <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-on-surface-variant truncate">

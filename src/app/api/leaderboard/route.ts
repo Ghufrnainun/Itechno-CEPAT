@@ -50,12 +50,15 @@ export async function GET(request: NextRequest) {
           u.level,
           u.total_completed,
           u.rating_avg,
+          us.current_streak,
+          us.longest_streak,
           COALESCE(SUM(x.xp_amount), 0)::int AS xp,
           RANK() OVER (ORDER BY COALESCE(SUM(x.xp_amount), 0) DESC, u.total_completed DESC, u.rating_avg DESC)::int as rank
         FROM "User" u
+        LEFT JOIN "UserStreak" us ON us.id_user = u.id_user
         LEFT JOIN "XPLog" x ON u.id_user = x.id_user AND x.created_at >= ${startDate} AND x.created_at <= ${endDate}
         WHERE u.id_role = ${workerRole.id_role}
-        GROUP BY u.id_user
+        GROUP BY u.id_user, us.current_streak, us.longest_streak
       )
       SELECT * FROM RankedScores
       WHERE rank <= ${limit} OR id_user = ${targetUserId}

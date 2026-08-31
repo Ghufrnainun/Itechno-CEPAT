@@ -16,7 +16,7 @@ export function FinalCTA() {
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-secondary/5 rounded-full blur-[100px] animate-float" style={{ animationDuration: '11s', animationDelay: '2s' }} />
 
       <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center">
-        <h2 className="font-headline-lg text-4xl md:text-5xl lg:text-6xl font-extrabold text-on-surface tracking-tighter leading-tight mb-8">
+        <h2 className="font-headline text-4xl md:text-5xl lg:text-6xl font-extrabold text-on-surface tracking-tighter leading-tight mb-8">
           {words.map((word, i) => (
             <motion.span
               key={i}
@@ -38,7 +38,7 @@ export function FinalCTA() {
           transition={{ delay: 0.6, duration: 0.5 }}
           className="text-lg md:text-xl text-on-surface-variant mb-12 max-w-[500px]"
         >
-          Ribuan mahasiswa dan UMKM di sekitarmu sudah bergabung. Jangan sampai ketinggalan.
+          Gabung bersama komunitas mahasiswa dan UMKM lokal di sekitarmu sekarang.
         </motion.p>
 
         <motion.div

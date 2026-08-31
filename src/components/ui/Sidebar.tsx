@@ -27,6 +27,7 @@ import {
   Flag,
   Calendar,
   ShieldAlert,
+  Bookmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ReportModal } from "@/components/ui/ReportModal";
@@ -35,6 +36,7 @@ interface SidebarProps {
   role: "worker" | "requester";
   onRoleToggle: () => void;
   user?: {
+    id_user?: string;
     nama_lengkap?: string;
     username?: string;
     email?: string;
@@ -59,6 +61,11 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
     .join("")
     .substring(0, 2)
     .toUpperCase();
+
+  const isMyProfileActive =
+    pathname === "/profile" ||
+    pathname === "/profile/me" ||
+    (Boolean(user?.id_user) && pathname === `/profile/${user?.id_user}`);
 
   const handleLogout = async () => {
     if (loggingOut) return;
@@ -244,6 +251,16 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
             </Link>
 
             <Link
+              href="/saved"
+              title={!isExpanded ? "Tersimpan" : undefined}
+              aria-current={pathname === "/saved" ? "page" : undefined}
+              className={cn("sidebar-link flex items-center gap-3", pathname === "/saved" && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+            >
+              <Bookmark className="w-4 h-4 shrink-0" />
+              {isExpanded && "Tersimpan"}
+            </Link>
+
+            <Link
               href="/chat"
               title={!isExpanded ? "Chat" : undefined}
               aria-current={pathname === "/chat" ? "page" : undefined}
@@ -353,8 +370,12 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
         <Link
           href="/profile"
           title={!isExpanded ? "Profil Saya" : undefined}
-          aria-current={pathname.includes("/profile") ? "page" : undefined}
-          className={cn("sidebar-link flex items-center gap-3", pathname.includes("/profile") && "active", !isExpanded && "justify-center w-10 h-10 rounded-lg p-0")}
+          aria-current={isMyProfileActive ? "page" : undefined}
+          className={cn(
+            "sidebar-link flex items-center gap-3",
+            isMyProfileActive && "active",
+            !isExpanded && "justify-center w-10 h-10 rounded-lg p-0"
+          )}
         >
           <User className="w-4 h-4 shrink-0" />
           {isExpanded && "Profil Saya"}
@@ -370,7 +391,7 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
           title={!isExpanded ? "Laporkan Masalah" : undefined}
           aria-label="Laporkan masalah ke Admin"
           className={cn(
-            "sidebar-link flex items-center gap-3 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30 transition-colors rounded-lg focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:outline-none cursor-pointer",
+            "sidebar-link flex items-center gap-3 text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-colors rounded-lg focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:outline-none cursor-pointer",
             isExpanded ? "w-full text-left" : "justify-center w-10 h-10 p-0"
           )}
         >

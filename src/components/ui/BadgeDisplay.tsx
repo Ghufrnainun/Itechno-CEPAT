@@ -28,7 +28,7 @@ export function BadgeDisplay({ badge }: { badge: BadgeProps }) {
       </div>
       <div>
         <h4 className="font-headline font-bold text-xs text-on-surface">{badge.nama_badge}</h4>
-        <p className="font-body-sm text-[10px] text-on-surface-variant line-clamp-2 mt-1">{badge.deskripsi}</p>
+        <p className="text-xs text-on-surface-variant line-clamp-2 mt-1">{badge.deskripsi}</p>
       </div>
     </div>
   );

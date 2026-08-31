@@ -88,6 +88,7 @@ model User {
   disputes_received       Dispute[]        @relation("DisputeRespondent")
   xp_logs                 XPLog[]
   role                    Role             @relation(fields: [id_role], references: [id_role])
+  saved_tasks             SavedTask[]
 }
 
 model Task {
@@ -125,6 +126,20 @@ model Task {
   status_task     StatusTask                @relation(fields: [id_status_task], references: [id_status_task])
   applicants      TaskApplicants[]
   requirements    TaskRequirements[]
+  saved_by        SavedTask[]
+}
+
+/// Tugas yang disimpan (bookmark) oleh user — muncul di halaman "Tugas Tersimpan".
+model SavedTask {
+  id_saved    String   @id @default(uuid())
+  id_user     String
+  id_tasks    String
+  created_at  DateTime @default(now())
+  user        User     @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+  task        Task     @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)
+
+  @@unique([id_user, id_tasks])
+  @@index([id_user])
 }
 
 model Transactions {
