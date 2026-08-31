@@ -133,6 +133,8 @@ export default function TaskDetailPage() {
   const [bidError, setBidError] = useState("");
   const [rating, setRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
+  const [isCancelTaskModalOpen, setIsCancelTaskModalOpen] = useState(false);
+  const [cancelTaskMode, setCancelTaskMode] = useState<"worker" | "requester">("worker");
 
   // Fetch task detail dari API
   const fetchTask = useCallback(async () => {
@@ -373,7 +375,7 @@ export default function TaskDetailPage() {
       if (res.ok && data.success) {
         showToast("Task selesai! Poin telah ditransfer ke Worker.");
         fetchTask();
-        setIsRatingModalOpen(true);
+        openRatingModal();
       } else {
         showToast(data.message || "Gagal mengkonfirmasi penyelesaian.");
       }
@@ -382,6 +384,12 @@ export default function TaskDetailPage() {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const openRatingModal = () => {
+    setReviewComment("");
+    setRating(5);
+    setIsRatingModalOpen(true);
   };
 
   // ── Rating Submit (via Review API) ─────────────────────────────────────────
@@ -457,6 +465,28 @@ export default function TaskDetailPage() {
       }
     } catch {
       showToast("Terjadi kesalahan jaringan.");
+    }
+  };
+
+  // ── Action: Cancel Task (shared by worker and requester) ────────────────
+  const executeCancelTask = async () => {
+    setIsCancelTaskModalOpen(false);
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        if (cancelTaskMode === "worker") {
+          showToast("Anda telah mengundurkan diri. Task dibatalkan.");
+        } else {
+          showToast("Task berhasil dibatalkan.");
+        }
+        router.push("/tugas");
+      } else {
+        showToast(data.message || "Gagal membatalkan task.");
+      }
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -1119,21 +1149,9 @@ export default function TaskDetailPage() {
                     Tugas Sedang Dikerjakan. Menunggu Konfirmasi Selesai dari Requester.
                   </div>
                   <Button
-                    onClick={async () => {
-                      if (!confirm("Yakin ingin membatalkan/mengundurkan diri dari task ini? Task akan dibatalkan sepenuhnya.")) return;
-                      setActionLoading(true);
-                      try {
-                        const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
-                        const data = await res.json();
-                        if (data.success) {
-                          showToast("Anda telah mengundurkan diri. Task dibatalkan.");
-                          router.push("/tugas");
-                        } else {
-                          showToast(data.message || "Gagal membatalkan task.");
-                        }
-                      } finally {
-                        setActionLoading(false);
-                      }
+                    onClick={() => {
+                      setCancelTaskMode("worker");
+                      setIsCancelTaskModalOpen(true);
                     }}
                     disabled={actionLoading}
                     className="w-full py-2 text-xs font-semibold"
@@ -1158,7 +1176,7 @@ export default function TaskDetailPage() {
                     ✅ Anda sudah memberikan ulasan untuk task ini.
                   </div>
                 ) : (
-                  <Button onClick={() => setIsRatingModalOpen(true)} className="w-full py-3" variant="secondary">
+                  <Button onClick={openRatingModal} className="w-full py-3" variant="secondary">
                     Berikan Ulasan Balik ke Requester
                   </Button>
                 )
@@ -1262,7 +1280,7 @@ export default function TaskDetailPage() {
               {taskStatus === "completed" && (() => {
                 const unratedWorkers = getRatingTargets();
                 return unratedWorkers.length > 0 ? (
-                  <Button onClick={() => { setRatingTargetIndex(0); setIsRatingModalOpen(true); }} className="w-full py-3" variant="secondary">
+                  <Button onClick={() => { setRatingTargetIndex(0); openRatingModal(); }} className="w-full py-3" variant="secondary">
                     Beri Rating Worker ({unratedWorkers.length} belum dirating)
                   </Button>
                 ) : (
@@ -1273,21 +1291,9 @@ export default function TaskDetailPage() {
               })()}
               {(taskStatus === "open" || taskStatus === "accepted" || taskStatus === "in_progress") && (
                 <Button
-                  onClick={async () => {
-                    if (!confirm("Yakin ingin membatalkan task ini? Semua slot akan dibatalkan dan escrow dikembalikan.")) return;
-                    setActionLoading(true);
-                    try {
-                      const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
-                      const data = await res.json();
-                      if (data.success) {
-                        showToast("Task berhasil dibatalkan.");
-                        router.push("/tugas");
-                      } else {
-                        showToast(data.message || "Gagal membatalkan task.");
-                      }
-                    } finally {
-                      setActionLoading(false);
-                    }
+                  onClick={() => {
+                    setCancelTaskMode("requester");
+                    setIsCancelTaskModalOpen(true);
                   }}
                   disabled={actionLoading}
                   className="w-full py-2"
@@ -1377,7 +1383,11 @@ export default function TaskDetailPage() {
       {/* Modal: Ulasan & Rating */}
       <Modal
         isOpen={isRatingModalOpen}
-        onClose={() => setIsRatingModalOpen(false)}
+        onClose={() => {
+          setIsRatingModalOpen(false);
+          setReviewComment("");
+          setRating(5);
+        }}
         title={
           isRequester && currentRatingTarget
             ? `Berikan Ulasan: ${currentRatingTarget.worker.nama_lengkap}`
