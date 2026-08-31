@@ -552,7 +552,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               <span className="font-mono text-xs font-extrabold text-primary">
-                                {task.kompensasi.toLocaleString('id-ID')} PTS
+                                Rp {task.kompensasi.toLocaleString('id-ID')}
                               </span>
                               <ArrowRight className={`w-3.5 h-3.5 transition-transform ${isSelected ? 'translate-x-1 text-primary' : 'text-on-surface-variant/70'}`} />
                             </div>

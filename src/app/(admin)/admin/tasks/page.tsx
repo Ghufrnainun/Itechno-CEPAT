@@ -224,7 +224,7 @@ export default function TaskManagementPage() {
       header: 'Compensation',
       cell: (task) => (
         <span className="text-xs font-extrabold text-primary font-mono tabular-nums">
-          +{task.kompensasi} PTS
+          Rp {task.kompensasi.toLocaleString('id-ID')}
         </span>
       ),
     },
@@ -340,7 +340,7 @@ export default function TaskManagementPage() {
                 </h4>
                 <div className="flex items-center gap-2 pt-1">
                   <span className="text-sm font-extrabold text-primary font-mono tabular-nums">
-                    +{selectedTask.kompensasi} PTS
+                    Rp {selectedTask.kompensasi.toLocaleString('id-ID')}
                   </span>
                   {selectedTask.estimasi_waktu && (
                     <>

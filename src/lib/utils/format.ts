@@ -1,8 +1,8 @@
 export function formatPoints(points: number): string {
-  return new Intl.NumberFormat("id-ID", {
+  return "Rp " + new Intl.NumberFormat("id-ID", {
     style: "decimal",
     minimumFractionDigits: 0,
-  }).format(points) + " pts";
+  }).format(points);
 }
 
 export function formatCurrency(amount: number | null | undefined): string {

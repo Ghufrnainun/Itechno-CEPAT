@@ -139,10 +139,14 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
               <span className="font-sans font-bold text-xs text-on-surface truncate">
                 {displayName}
               </span>
-              <span className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-primary tabular-nums">
+              <Link
+                href="/wallet"
+                className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-primary tabular-nums hover:underline transition-all cursor-pointer"
+                title="Buka Dompet"
+              >
                 <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block shrink-0" />
                 Saldo: Rp {(user?.total_balance ?? 0).toLocaleString("id-ID")}
-              </span>
+              </Link>
             </div>
           )}
         </div>

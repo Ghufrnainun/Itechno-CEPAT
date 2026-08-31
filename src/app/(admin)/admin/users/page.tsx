@@ -347,7 +347,7 @@ export default function UserManagementPage() {
       header: 'Balance',
       cell: (user) => (
         <span className="text-xs font-extrabold text-primary font-mono tabular-nums">
-          {user.total_balance.toLocaleString('id-ID')} PTS
+          Rp {user.total_balance.toLocaleString('id-ID')}
         </span>
       ),
     },
@@ -503,10 +503,10 @@ export default function UserManagementPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3.5 rounded-lg bg-primary/10 border border-primary/20">
                   <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
-                    Total Poin
+                    Total Saldo
                   </span>
                   <p className="font-mono text-base font-extrabold text-primary tabular-nums mt-0.5">
-                    {selectedUser.total_balance.toLocaleString('id-ID')} PTS
+                    Rp {selectedUser.total_balance.toLocaleString('id-ID')}
                   </p>
                 </div>
                 <div className="p-3.5 rounded-lg bg-tertiary-container/40 border border-tertiary/25">
@@ -514,7 +514,7 @@ export default function UserManagementPage() {
                     Escrow Ditahan
                   </span>
                   <p className="font-mono text-base font-extrabold text-tertiary tabular-nums mt-0.5">
-                    {selectedUser.held_balance.toLocaleString('id-ID')} PTS
+                    Rp {selectedUser.held_balance.toLocaleString('id-ID')}
                   </p>
                 </div>
               </div>
