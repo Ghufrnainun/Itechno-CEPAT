@@ -217,12 +217,12 @@ export default function LeaderboardPage() {
               <h1 className="font-headline font-extrabold text-2xl sm:text-3xl text-on-surface tracking-tight">
                 Peringkat Pekerja
               </h1>
-              <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-bold font-mono">
+              <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold font-mono">
                 <Sparkles className="w-3 h-3" /> Musim Bulanan
               </span>
             </div>
             <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">
-              Kompetisi performa terbaik — kumpulkan XP dari penyelesaian tugas & streak harian
+              Kumpulkan XP dari penyelesaian tugas dan streak harian untuk naik peringkat.
             </p>
           </div>
         </div>

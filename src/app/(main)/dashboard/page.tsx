@@ -650,10 +650,10 @@ export default function DashboardPage() {
                       const statusName = app.application_status || "Pending";
                       const statusColor =
                         statusName === "accepted"
-                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                           : statusName === "rejected"
                           ? "bg-error-container text-error border-error/30"
-                          : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+                          : "bg-amber-500/10 text-amber-600 border-amber-500/20";
 
                       return (
                         <Link key={app.id_task_applicants} href={`/task/${app.id_tasks}`}>

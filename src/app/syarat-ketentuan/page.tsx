@@ -3,7 +3,7 @@ import { LandingNavbar } from "@/components/landing/LandingNavbar";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Syarat & Ketentuan — CEPAT",
+  title: "Syarat & Ketentuan: CEPAT",
   description:
     "Baca syarat dan ketentuan penggunaan platform CEPAT sebelum mendaftar sebagai pemberi tugas atau pekerja.",
 };

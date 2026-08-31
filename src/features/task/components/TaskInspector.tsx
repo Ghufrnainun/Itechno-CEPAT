@@ -219,7 +219,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
                   </span>
                   <CheckCircle2 className="w-3.5 h-3.5 text-primary fill-primary/10" />
                 </div>
-                <div className="flex items-center gap-1.5 text-on-surface-variant text-[11px]">
+                <div className="flex items-center gap-1.5 text-on-surface-variant text-xs">
                   <span className="flex items-center gap-1 text-amber-600 font-bold">
                     <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                     4.8
@@ -234,20 +234,20 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
           <div className="flex flex-col gap-0.5 mb-5 p-3.5 bg-surface-container-low rounded-xl border border-card-border">
             {task.is_bidding ? (
               <>
-                <span className="font-headline text-2xl font-extrabold text-primary font-mono tabular-nums">
+                <span className="text-2xl font-extrabold text-primary font-mono tabular-nums">
                   {formatCurrency(task.budget_min ?? 0)} – {formatCurrency(task.budget_max ?? task.compensation)} <span className="text-xs font-normal text-on-surface-variant font-sans">/ worker</span>
                 </span>
-                <span className="text-[11px] text-primary font-bold font-sans">
-                  Mode Bidding — ajukan penawaran harga terbaik Anda
+                <span className="text-xs text-primary font-bold font-sans">
+                  Mode Bidding: ajukan penawaran harga terbaik Anda
                 </span>
               </>
             ) : (
-              <span className="font-headline text-2xl font-extrabold text-primary font-mono tabular-nums">
+              <span className="text-2xl font-extrabold text-primary font-mono tabular-nums">
                 {formatCurrency(task.compensation)} <span className="text-xs font-normal text-on-surface-variant font-sans">/ worker</span>
               </span>
             )}
             {task.max_applicants && !task.is_bidding && (
-              <span className="text-[11px] text-on-surface-variant font-mono">
+              <span className="text-xs text-on-surface-variant font-mono">
                 Total Escrow: {formatCurrency(task.compensation * task.max_applicants)} ({task.max_applicants} worker)
               </span>
             )}
@@ -258,7 +258,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
               <div className="flex items-center gap-2 p-2.5 bg-surface-container-low rounded-xl border border-card-border/40">
                 <MapPin className="w-4 h-4 text-primary shrink-0" />
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] text-on-surface-variant font-mono">Jarak</span>
+                  <span className="text-xs text-on-surface-variant font-mono">Jarak</span>
                   <span className="text-xs font-bold text-on-surface font-mono truncate">{formatDistance(task.distance)}</span>
                 </div>
               </div>
@@ -267,7 +267,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
               <div className="flex items-center gap-2 p-2.5 bg-surface-container-low rounded-xl border border-card-border/40">
                 <Clock className="w-4 h-4 text-primary shrink-0" />
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] text-on-surface-variant font-mono">Estimasi</span>
+                  <span className="text-xs text-on-surface-variant font-mono">Estimasi</span>
                   <span className="text-xs font-bold text-on-surface truncate">{task.duration_estimate}</span>
                 </div>
               </div>
@@ -276,7 +276,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
               <div className="flex items-center gap-2 p-2.5 bg-surface-container-low rounded-xl border border-card-border/40">
                 <Users className="w-4 h-4 text-primary shrink-0" />
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] text-on-surface-variant font-mono">Kuota</span>
+                  <span className="text-xs text-on-surface-variant font-mono">Kuota</span>
                   <span className="text-xs font-bold text-on-surface truncate">{task.max_applicants} Worker</span>
                 </div>
               </div>
@@ -285,7 +285,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
               <div className="flex items-center gap-2 p-2.5 bg-primary/5 rounded-xl border border-primary/20 col-span-2">
                 <Calendar className="w-4 h-4 text-primary shrink-0" />
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] text-primary font-bold font-mono uppercase">Jadwal Tugas</span>
+                  <span className="text-xs text-primary font-bold font-mono uppercase">Jadwal Tugas</span>
                   <span className="text-xs font-bold text-on-surface">
                     {new Date(task.scheduled_at).toLocaleDateString("id-ID", {
                       weekday: "long",
@@ -342,7 +342,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
           <Lock className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
           <div className="space-y-1">
             <span className="text-xs font-bold text-secondary block">Jaminan Escrow ITechno</span>
-            <p className="text-[11px] text-on-surface-variant leading-relaxed">
+            <p className="text-xs text-on-surface-variant leading-relaxed">
               Dana kompensasi telah dikunci di sistem escrow kami. Pembayaran akan otomatis dicairkan segera setelah pekerjaan Anda diverifikasi selesai.
             </p>
           </div>
@@ -350,11 +350,11 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
 
         {/* Report Task to Admin Section */}
         <div className="pt-2 border-t border-card-border/60 flex items-center justify-between">
-          <span className="text-[11px] text-on-surface-variant">Menemukan pelanggaran atau kejanggalan?</span>
+          <span className="text-xs text-on-surface-variant">Menemukan pelanggaran atau kejanggalan?</span>
           <button
             type="button"
             onClick={() => setIsReportModalOpen(true)}
-            className="text-[11px] font-semibold text-error hover:underline flex items-center gap-1 cursor-pointer"
+            className="text-xs font-semibold text-error hover:underline flex items-center gap-1 cursor-pointer"
           >
             <Flag className="w-3 h-3" />
             <span>Laporkan Tugas</span>

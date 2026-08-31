@@ -547,7 +547,7 @@ export const taskService = {
     if (isBidding) {
       if (typeof bidAmount !== 'number' || !Number.isFinite(bidAmount) || bidAmount <= 0) {
         throw new Error(
-          'Task ini menggunakan mode bidding — wajib menyertakan harga penawaran.',
+          'Task ini menggunakan mode bidding: wajib menyertakan harga penawaran.',
         );
       }
       if (budgetMin !== null && bidAmount < budgetMin) {
@@ -562,7 +562,7 @@ export const taskService = {
       }
     } else if (typeof bidAmount === 'number') {
       throw new Error(
-        'Task ini menggunakan harga tetap — tidak perlu menyertakan harga penawaran.',
+        'Task ini menggunakan harga tetap, tidak perlu menyertakan harga penawaran.',
       );
     }
 
@@ -718,7 +718,7 @@ export const taskService = {
 
     if (!task) throw new Error('Task tidak ditemukan.');
     if (!task.is_bidding) {
-      throw new Error('Task ini menggunakan harga tetap — tidak ada penawaran yang bisa diubah.');
+      throw new Error('Task ini menggunakan harga tetap, tidak ada penawaran yang bisa diubah.');
     }
     if (task.status_task.nama_status.toLowerCase() !== 'open') {
       throw new Error('Task sudah tidak menerima penawaran.');

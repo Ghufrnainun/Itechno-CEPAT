@@ -88,7 +88,7 @@ export function HeroSection() {
           style={{ animationDelay: "300ms" }}
         >
           CEPAT menghubungkan mahasiswa dengan UMKM lokal yang butuh bantuan
-          cepat — langsung di sekitar kampus, tanpa perlu buang waktu di jalan.
+          cepat, langsung di sekitar kampus, tanpa perlu buang waktu di jalan.
         </p>
 
         {/* CTAs */}
@@ -153,7 +153,7 @@ export function HeroSection() {
                   <span className="text-xs font-bold text-on-surface tracking-tight font-sans">Semarang, ID</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-on-surface-variant font-mono">Area Kampus</span>
+                  <span className="text-xs text-on-surface-variant font-mono">Area Kampus</span>
                   <div className="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center border border-card-border">
                     <User className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                   </div>
@@ -181,7 +181,7 @@ export function HeroSection() {
                 </svg>
                 <div className="absolute top-3 left-3 bg-surface-container-lowest/95 backdrop-blur-md border border-card-border rounded-lg px-2.5 py-1 flex items-center gap-1.5 shadow-xs">
                   <span className="pulse-dot w-2 h-2 rounded-full bg-primary inline-block" />
-                  <span className="text-[10px] font-bold tracking-wide uppercase text-on-surface font-mono">Radar Aktif</span>
+                  <span className="text-xs font-bold tracking-wide uppercase text-on-surface font-mono">Radar Aktif</span>
                 </div>
               </div>
   
@@ -196,10 +196,10 @@ export function HeroSection() {
                       <span className="text-xs font-mono font-medium tabular-nums">0.8 km</span>
                     </div>
                   </div>
-                  <p className="font-body-sm text-xs text-on-surface-variant mb-2.5">Waroeng Bu Sri • Butuh foto rapi untuk menu online.</p>
+                  <p className="text-xs text-on-surface-variant mb-2.5">Waroeng Bu Sri • Butuh foto rapi untuk menu online.</p>
                   <div className="flex justify-between items-end border-t border-card-border pt-2">
                     <span className="font-mono text-sm font-bold text-primary tabular-nums">Rp75.000</span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/40 text-secondary text-[10px] font-bold font-mono uppercase tracking-wider border border-secondary/20">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/40 text-secondary text-xs font-bold font-mono uppercase tracking-wider border border-secondary/20">
                       <Handshake className="w-3 h-3" aria-hidden="true" />
                       Decent Work
                     </span>

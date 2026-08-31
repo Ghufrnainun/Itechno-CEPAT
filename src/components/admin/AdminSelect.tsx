@@ -120,7 +120,7 @@ export default function AdminSelect({
           isOpen && highlightedIndex >= 0 ? `${listboxId}-opt-${highlightedIndex}` : undefined
         }
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between gap-2 px-3.5 py-2.5 min-h-[42px] text-xs font-sans font-semibold bg-surface-container-low text-on-surface border border-card-border rounded-xl hover:border-primary/40 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-all duration-150 cursor-pointer shadow-2xs"
+        className="flex items-center justify-between gap-2 px-3.5 py-2.5 min-h-[42px] text-xs font-sans font-semibold bg-surface-container-low text-on-surface border border-card-border rounded-xl hover:border-primary/40 hover:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-all duration-150 cursor-pointer shadow-2xs"
       >
         <span className="truncate flex items-center gap-2">
           {selectedOption?.icon}
@@ -140,7 +140,7 @@ export default function AdminSelect({
           id={listboxId}
           ref={listboxRef}
           role="listbox"
-          className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-card-border rounded-xl shadow-lg py-1 overflow-hidden font-sans text-xs"
+          className="absolute top-full left-0 right-0 mt-1 z-50 bg-surface-container-lowest border border-card-border rounded-xl shadow-lg py-1 overflow-hidden font-sans text-xs"
         >
           <div className="max-h-60 overflow-y-auto divide-y divide-card-border/40 custom-scrollbar">
             {options.map((option, index) => {

@@ -42,8 +42,8 @@ export function TaskCard({ task, isSelected = false, onClick, className }: TaskC
         <h3 className="font-headline text-base font-bold text-on-surface leading-snug text-balance">
           {task.title}
           {task.is_bidding && (
-            <span className="inline-flex items-center gap-1 align-middle ml-2 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wide bg-primary/10 text-primary border border-primary/25">
-              <Gavel className="w-2.5 h-2.5" /> Bid
+            <span className="inline-flex items-center gap-1 align-middle ml-2 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wide bg-primary/10 text-primary border border-primary/25">
+              <Gavel className="w-3 h-3" /> Bid
             </span>
           )}
         </h3>
@@ -72,7 +72,7 @@ export function TaskCard({ task, isSelected = false, onClick, className }: TaskC
         </div>
       </div>
 
-      <p className="font-body-sm text-xs text-on-surface-variant mb-3 line-clamp-2 leading-relaxed">
+      <p className="text-xs text-on-surface-variant mb-3 line-clamp-2 leading-relaxed">
         {task.description}
       </p>
 
@@ -85,13 +85,13 @@ export function TaskCard({ task, isSelected = false, onClick, className }: TaskC
 
         <div className="flex items-center gap-1.5 flex-wrap justify-end">
           {task.scheduled_at && (
-            <span className="inline-flex items-center gap-1 font-mono text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded-md font-medium">
-              <Calendar className="w-2.5 h-2.5" />
+            <span className="inline-flex items-center gap-1 font-mono text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-md font-medium">
+              <Calendar className="w-3 h-3" />
               {new Date(task.scheduled_at).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
             </span>
           )}
           {task.duration_estimate && (
-            <span className="font-mono text-[10px] text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-md uppercase font-medium">
+            <span className="font-mono text-xs text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-md uppercase font-medium">
               {task.duration_estimate}
             </span>
           )}

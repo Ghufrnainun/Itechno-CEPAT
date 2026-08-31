@@ -161,7 +161,7 @@ function LoginContent() {
                 <span className="font-semibold text-on-surface-variant">Jenis Penangguhan:</span>
                 <span
                   className={cn(
-                    "px-2.5 py-0.5 rounded font-mono font-bold uppercase text-[10px]",
+                    "px-2.5 py-0.5 rounded font-mono font-bold uppercase text-xs",
                     banDetails.type === "PERMANENT"
                       ? "bg-error-container/50 text-error"
                       : "bg-amber-500/20 text-amber-600"
@@ -230,13 +230,13 @@ function LoginContent() {
         {/* Center: Value Proposition & Pillars */}
         <div className="space-y-8 max-w-lg my-auto py-8">
           <div className="space-y-3">
-            <span className="inline-block px-3 py-1 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+            <span className="inline-block px-3 py-1 rounded-full text-xs font-sans font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
               Campus Micro-Freelancing
             </span>
             <h1 className="font-headline text-3xl lg:text-4xl font-extrabold text-on-surface leading-[1.15] tracking-tight">
               Kembali Berkontribusi &amp; Raih Peluang Nyata.
             </h1>
-            <p className="text-on-surface-variant text-sm leading-relaxed font-body-sm">
+            <p className="text-on-surface-variant text-sm leading-relaxed">
               Masuk untuk melanjutkan eksplorasi tugas mikro kampus, kelola saldo dompet PTS yang aman dengan escrow, atau delegasikan pekerjaan ke mahasiswa terpercaya di sekitarmu.
             </p>
           </div>
@@ -251,7 +251,7 @@ function LoginContent() {
                 <h4 className="font-headline text-xs font-bold text-on-surface">
                   Pencarian Tugas Terdekat &amp; Fleksibel
                 </h4>
-                <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                <p className="text-xs text-on-surface-variant leading-relaxed">
                   Akses feed tugas berbasis lokasi di sekitar kampus dan sesuaikan dengan jadwal kuliahmu.
                 </p>
               </div>
@@ -263,9 +263,9 @@ function LoginContent() {
               </div>
               <div>
                 <h4 className="font-headline text-xs font-bold text-on-surface">
-                  Sistem Escrow Terlindungi 100%
+                  Garansi Pembayaran Escrow
                 </h4>
-                <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                <p className="text-xs text-on-surface-variant leading-relaxed">
                   Saldo kompensasi otomatis diamankan dan langsung cair seketika hasil pekerjaan disetujui.
                 </p>
               </div>
@@ -279,8 +279,8 @@ function LoginContent() {
                 <h4 className="font-headline text-xs font-bold text-on-surface">
                   Reputasi &amp; Portofolio Terverifikasi
                 </h4>
-                <p className="text-[11px] text-on-surface-variant leading-relaxed">
-                  Bangun Trust Score dan ulasan rating bintang lima untuk meningkatkan peluang kerjamu.
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  Bangun Trust Score dan ulasan rating performa untuk meningkatkan peluang kerjamu.
                 </p>
               </div>
             </div>

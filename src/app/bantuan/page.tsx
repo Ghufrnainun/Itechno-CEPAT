@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "Bantuan — CEPAT",
+  title: "Bantuan: CEPAT",
   description:
     "Temukan jawaban atas pertanyaan umum tentang cara menggunakan CEPAT, mulai dari daftar akun, posting tugas, sampai sistem poin.",
 };

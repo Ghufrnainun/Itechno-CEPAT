@@ -77,7 +77,7 @@ export default function NotFound() {
 
       {/* Footer */}
       <footer className="py-5 text-center text-xs text-on-surface-variant font-mono relative z-10">
-        © 2026 CEPAT — Empowering Campus Micro-Freelancing
+        © 2026 CEPAT · Platform Micro-Freelancing Mahasiswa & UMKM Lokal
       </footer>
     </div>
   );

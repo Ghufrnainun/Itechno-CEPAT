@@ -16,7 +16,7 @@ const TABS = [
     steps: [
       { title: "Register & isi profil skill", desc: "Email + username. Isi skill: fotografi, desain, data entry, dan lainnya." },
       { title: "Buka feed task terdekat", desc: "Lihat peta & list tugas di area sekitarmu. Filter by skill & kompensasi." },
-      { title: "Apply, kerjakan, terima poin", desc: "Kirim bukti kerja → requester konfirmasi → poin masuk otomatis." },
+      { title: "Apply, kerjakan, terima poin", desc: "Kirim bukti kerja, tunggu konfirmasi requester, dan saldo poin masuk otomatis." },
     ],
     cta: "Cari Tugas Sekarang",
     ctaIcon: Search,
@@ -29,7 +29,7 @@ const TABS = [
     steps: [
       { title: "Post task dengan detail lokasi", desc: "Isi judul, deskripsi, skill yang dibutuhkan, estimasi waktu, dan kompensasi." },
       { title: "Terima notifikasi & pilih worker", desc: "Lihat profil & rating applicant. Escrow mengunci dana saat task aktif." },
-      { title: "Konfirmasi selesai & kasih rating", desc: "Setujui hasil kerja → dana escrow cair ke worker. Rating membangun reputasi." },
+      { title: "Konfirmasi selesai & kasih rating", desc: "Setujui hasil kerja agar dana escrow cair ke worker dan bangun reputasi." },
     ],
     cta: "Post Tugas Sekarang",
     ctaIcon: PlusCircle,
@@ -50,12 +50,12 @@ export function HowItWorks() {
         viewport={{ once: true, amount: 0.3 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       >
-        {/* Header — left-aligned */}
+        {/* Header: left-aligned */}
         <div className="mb-10 md:mb-14">
           <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight leading-tight mb-3">
             Cara kerja CEPAT
           </h2>
-          <p className="font-body-sm text-sm md:text-base text-on-surface-variant max-w-[50ch] leading-relaxed">
+          <p className="text-sm md:text-base text-on-surface-variant max-w-[50ch] leading-relaxed">
             Dua peran, satu platform. Satu akun bisa jadi Requester dan Worker sekaligus.
           </p>
         </div>

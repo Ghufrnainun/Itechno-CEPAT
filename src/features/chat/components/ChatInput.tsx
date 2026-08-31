@@ -118,7 +118,7 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
     <div className="p-4 bg-surface-container-lowest border-t border-card-border flex flex-col gap-3 relative font-sans">
       {/* Error Alert */}
       {errorMsg && (
-        <div className="absolute top-[-44px] left-1/2 -translate-x-1/2 bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 px-4 py-2 text-xs font-semibold z-50 rounded-xl shadow-lg animate-in fade-in slide-in-from-bottom-2 whitespace-nowrap flex items-center gap-2">
+        <div className="absolute top-[-44px] left-1/2 -translate-x-1/2 bg-amber-500/10 border border-amber-500/30 text-amber-600 px-4 py-2 text-xs font-semibold z-50 rounded-xl shadow-lg animate-in fade-in slide-in-from-bottom-2 whitespace-nowrap flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           {errorMsg}
         </div>

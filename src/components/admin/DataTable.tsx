@@ -33,7 +33,7 @@ export default function DataTable<T extends { id: string | number }>({
   const currentData = data.slice(startIndex, startIndex + pageSize);
 
   return (
-    <div className="bg-white border border-card-border rounded-2xl overflow-hidden shadow-xs">
+    <div className="bg-surface-container-lowest border border-card-border rounded-2xl overflow-hidden shadow-xs">
       <div className="overflow-x-auto">
         <table className="w-full text-left font-sans text-xs">
           <thead className="bg-surface-container-low border-b border-card-border font-mono text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
