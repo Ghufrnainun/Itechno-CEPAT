@@ -12,4 +12,4 @@ jobs:
     steps:
       - name: Ping Keep-Alive Endpoint
         run: |
-          curl -s -f https://cepat.vercel.app/api/health || echo "Ping failed, check URL deployment"
+          curl -s -f https://cepat-steel.vercel.app/api/health || echo "Ping failed, check URL deployment"
