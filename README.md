@@ -1,6 +1,6 @@
 <div align="center">
 
-# Radius
+# CEPAT (Cari Entry Pekerjaan Area Terdekat)
 ### Hyperlocal Micro-Task & Freelancing Platform for Inclusive Digital Economy
 
 [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_Site-success?style=for-the-badge)](https://[URL_DEMO])
@@ -122,19 +122,24 @@ CI/CD      : GitHub Actions / Vercel CI
 Testing    : Vitest / Playwright
 ```
 
+### 🚫 Deklarasi Bebas Template Instan (Compliance ITECHNO CUP)
+Menanggapi aturan ketat dari panitia lomba, kami mendeklarasikan bahwa platform CEPAT dibangun **100% dari awal (scratch)** dengan menggunakan bahasa pemrograman modern (TypeScript, React/Next.js) dan ditulis secara kustom. Proyek ini **tidak menggunakan** *template* instan, CMS (*Content Management System*), atau *Visual Builder* instan (seperti WordPress, Wix, Shopify, atau Webflow). Semua elemen UI dan alur bisnis (*business logic*) dikembangkan secara mandiri oleh tim untuk menunjukkan kompetensi *engineering* yang orisinal dan sesungguhnya.
+
 ---
 
 ## 🤖 Penggunaan AI & Etika (Dokumentasi Wajib ITECHNO CUP)
 
-Dalam pengembangan aplikasi **Radius**, Artificial Intelligence (AI) digunakan secara terukur dan etis sesuai ketentuan perlombaan ITECHNO CUP 2026:
+Sesuai dengan regulasi perlombaan ITECHNO CUP 2026, kami mendeklarasikan bahwa Artificial Intelligence (AI) digunakan dalam pengembangan aplikasi **CEPAT** sebagai *Pair-Programming Assistant* dengan batasan dan pertimbangan etis/keamanan yang ketat:
 
-1. **Peruntukan AI**:
-   * Membantu *brainstorming* arsitektur database (DDL SQL) dan optimasi algoritma perhitungan jarak *Haversine*.
-   * Menggenerasi *boilerplate code* dan refactoring komponen UI agar memenuhi standar aksesibilitas & responsivitas.
-2. **Prinsip Etika & Keamanan**:
-   * **Privasi Data**: AI tidak pernah digunakan untuk memproses atau menyimpan data kredensial atau informasi sensitif pengguna.
-   * **Bebas Pelanggaran Hak Cipta**: Seluruh kode visual dan fungsional dibangun secara custom tanpa menyalin repositori komersial.
-   * **Keamanan Kode**: Logika kritis seperti penguncian saldo *escrow* dieksekusi secara ketat di tingkat PostgreSQL Stored Procedure (*Security Definer*) untuk menghindari celah маниulasi data dari sisi client.
+### 1. Penggunaan AI dalam Pengembangan
+- **Code Generation & Boilerplate**: AI digunakan untuk mempercepat pembuatan struktur dasar komponen React (UI), *routing* di Next.js, dan skema validasi Zod.
+- **Vulnerability Scanning & Bug Fixing**: AI bertindak sebagai auditor keamanan untuk menemukan dan menambal celah seperti *Escrow Mismatch*, *Race Condition*, dan celah pada kalkulasi radius *Geo-fence* PostGIS.
+- **Data Seeding**: AI digunakan untuk menyusun *dummy data* (*cold start seed script*) untuk keperluan presentasi dan demo agar *database* memiliki data simulasi realistis tanpa menggunakan data privasi pengguna asli.
+
+### 2. Pertimbangan Etis & Keamanan
+- **Data Privacy (Privasi Data)**: Kami menjamin **tidak ada** satupun data pribadi, kredensial pengguna, atau rahasia lingkungan (*environment variables/secrets*) yang pernah dikirimkan ke model AI publik. Simulasi pengujian murni menggunakan data buatan (*dummy/mock*).
+- **Security & Human-in-the-Loop**: Meskipun AI memberikan rekomendasi kode keamanan (seperti perlindungan algoritma *escrow* dan pelepasan dana), **keputusan akhir dan proses integrasi (Code Review) sepenuhnya diverifikasi oleh anggota tim manusia** (Developer) untuk memastikan tidak ada logika yang rentan terhadap *hacking* atau *fraud*.
+- **Orisinalitas & Hak Cipta**: Keseluruhan arsitektur sistem, desain UI/UX, dan ide dasar platform CEPAT adalah hasil karya orisinal tim. AI hanya bertindak sebagai *copilot* untuk meningkatkan efisiensi *coding*, dan tidak ada kode komersial berhak cipta yang dijiplak.
 
 ---
 
