@@ -32,7 +32,13 @@ export const reviewService = {
       throw new Error('Task tidak ditemukan.')
     }
 
-    // 2. Cek rater adalah requester atau worker
+    // 2. Cek status task harus sudah selesai (COMPLETED)
+    const taskStatus = task.status_task?.nama_status?.toUpperCase() ?? ''
+    if (taskStatus !== 'COMPLETED' && taskStatus !== 'SELESAI') {
+      throw new Error('Ulasan hanya dapat diberikan setelah tugas berstatus selesai (COMPLETED).')
+    }
+
+    // 3. Cek rater adalah requester atau worker
     const isRequester = task.id_requester === rater_id
     const isWorker = task.applicants.some((app) => app.id_worker === rater_id)
 
@@ -40,12 +46,12 @@ export const reviewService = {
       throw new Error('Anda tidak memiliki hak akses untuk memberikan ulasan pada task ini.')
     }
 
-    // 3. Cek reviewee adalah lawan transaksi yang valid
+    // 4. Cek reviewee adalah lawan transaksi yang valid
     if (rater_id === reviewee_id) {
       throw new Error('Anda tidak dapat memberikan ulasan untuk diri sendiri.')
     }
 
-    // 4. Cek apakah sudah pernah beri review untuk kombinasi (task, rater, ratee) yang sama
+    // 5. Cek apakah sudah pernah beri review untuk kombinasi (task, rater, ratee) yang sama
     const existingReview = await prisma.reviews.findFirst({
       where: {
         id_tasks: task_id,

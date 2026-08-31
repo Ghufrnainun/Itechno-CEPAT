@@ -101,64 +101,63 @@ export const taskService = {
     const scheduledAtDate = params.scheduled_at ? new Date(params.scheduled_at) : null;
     const scheduledEndDate = params.scheduled_end ? new Date(params.scheduled_end) : null;
 
-    // Cek saldo ketersediaan Requester
-    const requester = await prisma.user.findUnique({
-      where: { id_user: requesterId },
-      select: { total_balance: true, held_balance: true },
-    });
-    if (!requester) throw new Error('User requester tidak ditemukan.');
+    // Seluruh pembuatan task dan penguncian escrow dijalankan atomik dalam 1 transaksi
+    return await prisma.$transaction(async (tx) => {
+      // 1. Kunci baris user requester untuk mencegah race condition double-spend
+      const requesterRows = await tx.$queryRaw<Array<{ total_balance: number; held_balance: number }>>`
+        SELECT total_balance, held_balance FROM "User" WHERE id_user = ${requesterId} FOR UPDATE
+      `;
+      const requester = requesterRows[0];
+      if (!requester) throw new Error('User requester tidak ditemukan.');
 
-    const availableBalance = requester.total_balance - requester.held_balance;
-    if (availableBalance < totalEscrow) {
-      throw new Error(
-        `Saldo poin Anda tidak mencukupi untuk mengunci total escrow sebesar ${totalEscrow.toLocaleString('id-ID')} poin (${maxApplicantsNum} worker x ${kompensasi.toLocaleString('id-ID')} poin). Saldo tersedia: ${availableBalance.toLocaleString('id-ID')} poin.`
-      );
-    }
+      const availableBalance = requester.total_balance - requester.held_balance;
+      if (availableBalance < totalEscrow) {
+        throw new Error(
+          `Saldo poin Anda tidak mencukupi untuk mengunci total escrow sebesar ${totalEscrow.toLocaleString('id-ID')} poin (${maxApplicantsNum} worker x ${kompensasi.toLocaleString('id-ID')} poin). Saldo tersedia: ${availableBalance.toLocaleString('id-ID')} poin.`
+        );
+      }
 
-    // Insert task dengan raw SQL agar bisa pakai ST_MakePoint untuk PostGIS
-    // Catatan escrow bidding: untuk task bidding, `kompensasi` = budget_max (plafon).
-    // Hold escrow tetap kompensasi × slots; selisih bid di-refund saat bid diterima.
-    const result = await prisma.$queryRaw<{ id_tasks: string }[]>`
-      INSERT INTO "Task" (
-        id_tasks, id_requester, id_status_task,
-        judul_tugas, deskripsi_tugas, estimasi_waktu, kompensasi,
-        lokasi_geo, created_at, id_category, max_applicants, max_apply_attempts,
-        is_bidding, budget_min, budget_max,
-        scheduled_at, scheduled_end
-      ) VALUES (
-        gen_random_uuid(),
-        ${requesterId},
-        ${openStatusId},
-        ${judul_tugas},
-        ${deskripsi_tugas},
-        ${estimasi_waktu},
-        ${kompensasi},
-        ST_MakePoint(${longitude}, ${latitude})::geography,
-        NOW(),
-        ${categoryId},
-        ${max_applicants},
-        ${max_apply_attempts},
-        ${is_bidding},
-        ${budget_min ?? null},
-        ${budget_max ?? null},
-        ${scheduledAtDate},
-        ${scheduledEndDate}
-      )
-      RETURNING id_tasks
-    `;
+      // 2. Insert task dengan raw SQL agar bisa pakai ST_MakePoint untuk PostGIS
+      const result = await tx.$queryRaw<{ id_tasks: string }[]>`
+        INSERT INTO "Task" (
+          id_tasks, id_requester, id_status_task,
+          judul_tugas, deskripsi_tugas, estimasi_waktu, kompensasi,
+          lokasi_geo, created_at, id_category, max_applicants, max_apply_attempts,
+          is_bidding, budget_min, budget_max,
+          scheduled_at, scheduled_end
+        ) VALUES (
+          gen_random_uuid(),
+          ${requesterId},
+          ${openStatusId},
+          ${judul_tugas},
+          ${deskripsi_tugas},
+          ${estimasi_waktu},
+          ${kompensasi},
+          ST_MakePoint(${longitude}, ${latitude})::geography,
+          NOW(),
+          ${categoryId},
+          ${max_applicants},
+          ${max_apply_attempts},
+          ${is_bidding},
+          ${budget_min ?? null},
+          ${budget_max ?? null},
+          ${scheduledAtDate},
+          ${scheduledEndDate}
+        )
+        RETURNING id_tasks
+      `;
 
-    const taskId = result[0]?.id_tasks;
-    if (!taskId) throw new Error('Gagal membuat task.');
+      const taskId = result[0]?.id_tasks;
+      if (!taskId) throw new Error('Gagal membuat task.');
 
-    // Hold escrow pada Requester
-    await prisma.user.update({
-      where: { id_user: requesterId },
-      data: { held_balance: { increment: totalEscrow } },
-    });
+      // 3. Hold escrow pada Requester
+      await tx.user.update({
+        where: { id_user: requesterId },
+        data: { held_balance: { increment: totalEscrow } },
+      });
 
-    // Catat transaksi escrow lock
-    try {
-      await prisma.transactions.create({
+      // 4. Catat transaksi escrow lock (wajib dalam transaksi yang sama)
+      await tx.transactions.create({
         data: {
           id_user: requesterId,
           nominal: totalEscrow,
@@ -167,20 +166,16 @@ export const taskService = {
           deskripsi: `Escrow dikunci untuk task: ${judul_tugas} (${maxApplicantsNum} worker x ${kompensasi.toLocaleString('id-ID')} poin)`,
         },
       });
-    } catch (_) {}
 
-    // Link skill requirements jika ada
-    if (skill_requirements && skill_requirements.length > 0) {
-      try {
-        await prisma.taskRequirements.createMany({
-          data: skill_requirements.map(id => ({ id_tasks: taskId, id_skill_master: id })),
+      // 5. Link skill requirements jika ada
+      if (skill_requirements && skill_requirements.length > 0) {
+        await tx.taskRequirements.createMany({
+          data: skill_requirements.map((id) => ({ id_tasks: taskId, id_skill_master: id })),
         });
-      } catch (error) {
-        console.error('Error creating task requirements', error);
       }
-    }
 
-    return taskId;
+      return taskId;
+    });
   },
 
   /**
@@ -899,35 +894,21 @@ export const taskService = {
               where: { id_user: applicant.task.id_requester },
               data: { held_balance: { decrement: bidDiff } },
             });
+
+            await tx.transactions.create({
+              data: {
+                id_user: applicant.task.id_requester,
+                nominal: bidDiff,
+                tipe_transaksi: 'MASUK',
+                sub_type: 'refund',
+                deskripsi: `Pengembalian selisih bid (${bidDiff.toLocaleString('id-ID')} poin) untuk task: ${applicant.task.judul_tugas}`,
+              },
+            });
           }
         }
 
         return totalAccepted;
       });
-
-      // Log transaksi refund selisih bid (best-effort, di luar tx utama)
-      try {
-        const isBiddingTask = applicant.task.is_bidding ?? false;
-        const bidAmountNum = typeof applicant.bid_amount === 'number' ? applicant.bid_amount : null;
-        if (isBiddingTask && bidAmountNum !== null) {
-          const budgetMaxNum =
-            (await prisma.$queryRaw<Array<{ budget_max: number | null }>>`
-              SELECT budget_max FROM "Task" WHERE id_tasks = ${applicant.id_tasks}
-            `)[0]?.budget_max ?? applicant.task.kompensasi;
-          const bidDiffLog = budgetMaxNum - bidAmountNum;
-          if (bidDiffLog > 0) {
-            await prisma.transactions.create({
-              data: {
-                id_user: applicant.task.id_requester,
-                nominal: bidDiffLog,
-                tipe_transaksi: 'MASUK',
-                sub_type: 'refund',
-                deskripsi: `Pengembalian selisih bid (${bidDiffLog.toLocaleString('id-ID')} poin) untuk task: ${applicant.task.judul_tugas}`,
-              },
-            });
-          }
-        }
-      } catch (_) {}
 
       const isQuotaFull = acceptedCount >= maxApplicants;
 
@@ -1254,21 +1235,22 @@ export const taskService = {
       })();
 
       if (acceptedWorkers.length > 0) {
-        for (const workerApp of acceptedWorkers) {
-          const payoutAmount =
-            typeof slotHeldMap[workerApp.id_task_applicants] === 'number'
-              ? slotHeldMap[workerApp.id_task_applicants]
-              : task.kompensasi;
+        await prisma.$transaction(async (tx) => {
+          for (const workerApp of acceptedWorkers) {
+            const payoutAmount =
+              typeof slotHeldMap[workerApp.id_task_applicants] === 'number'
+                ? slotHeldMap[workerApp.id_task_applicants]
+                : task.kompensasi;
 
-          await prisma.$transaction([
-            prisma.user.update({
+            await tx.user.update({
               where: { id_user: task.id_requester },
               data: {
                 total_balance: { decrement: payoutAmount },
                 held_balance: { decrement: payoutAmount },
               },
-            }),
-            prisma.transactions.create({
+            });
+
+            await tx.transactions.create({
               data: {
                 id_user: task.id_requester,
                 nominal: payoutAmount,
@@ -1276,15 +1258,17 @@ export const taskService = {
                 sub_type: 'task_payment',
                 deskripsi: `Pembayaran task ke ${workerApp.worker.nama_lengkap}: ${task.judul_tugas}`,
               },
-            }),
-            prisma.user.update({
+            });
+
+            await tx.user.update({
               where: { id_user: workerApp.id_worker },
               data: {
                 total_balance: { increment: payoutAmount },
                 total_completed: { increment: 1 },
               },
-            }),
-            prisma.transactions.create({
+            });
+
+            await tx.transactions.create({
               data: {
                 id_user: workerApp.id_worker,
                 nominal: payoutAmount,
@@ -1292,8 +1276,21 @@ export const taskService = {
                 sub_type: 'task_earning',
                 deskripsi: `Kompensasi dari task: ${task.judul_tugas}`,
               },
-            }),
-          ]);
+            });
+          }
+
+          await tx.task.update({
+            where: { id_tasks: taskId },
+            data: updateData,
+          });
+        });
+
+        // Notifications & Gamification hooks (post-transaction)
+        for (const workerApp of acceptedWorkers) {
+          const payoutAmount =
+            typeof slotHeldMap[workerApp.id_task_applicants] === 'number'
+              ? slotHeldMap[workerApp.id_task_applicants]
+              : task.kompensasi;
 
           try {
             await notificationService.createNotification({
@@ -1316,6 +1313,11 @@ export const taskService = {
             console.error("Gamification hook failed", e);
           }
         }
+      } else {
+        await prisma.task.update({
+          where: { id_tasks: taskId },
+          data: updateData,
+        });
       }
     } else if (newStatus === 'cancelled') {
       // Refund escrow ke requester: slot yang sudah diterima dikembalikan sesuai
@@ -1341,28 +1343,33 @@ export const taskService = {
       }
       const unfilledSlots = Math.max(0, maxApplicants - acceptedWorkers.length);
       // Slot kosong hanya di-refund bila cancel terjadi dari status 'open'.
-      // Jika task sudah pernah dimulai (status 'accepted'), slot kosong sudah
-      // di-refund pada action 'start' — refund ulang membuat held_balance
-      // requester negatif (bug uang).
       if (currentStatus === 'open') {
         totalRefund += unfilledSlots * task.kompensasi;
       }
 
-      await prisma.user.update({
-        where: { id_user: task.id_requester },
-        data: { held_balance: { decrement: totalRefund } },
-      });
-      try {
-        await prisma.transactions.create({
-          data: {
-            id_user: task.id_requester,
-            nominal: totalRefund,
-            tipe_transaksi: 'MASUK',
-            sub_type: 'refund',
-            deskripsi: `Pengembalian dana (refund) dari task dibatalkan: ${task.judul_tugas}`,
-          },
+      await prisma.$transaction(async (tx) => {
+        if (totalRefund > 0) {
+          await tx.user.update({
+            where: { id_user: task.id_requester },
+            data: { held_balance: { decrement: totalRefund } },
+          });
+
+          await tx.transactions.create({
+            data: {
+              id_user: task.id_requester,
+              nominal: totalRefund,
+              tipe_transaksi: 'MASUK',
+              sub_type: 'refund',
+              deskripsi: `Pengembalian dana (refund) dari task dibatalkan: ${task.judul_tugas}`,
+            },
+          });
+        }
+
+        await tx.task.update({
+          where: { id_tasks: taskId },
+          data: updateData,
         });
-      } catch (_) {}
+      });
 
       try {
         await notificationService.createNotification({
@@ -1385,12 +1392,12 @@ export const taskService = {
           });
         } catch (_) {}
       }
+    } else {
+      await prisma.task.update({
+        where: { id_tasks: taskId },
+        data: updateData,
+      });
     }
-
-    await prisma.task.update({
-      where: { id_tasks: taskId },
-      data: updateData,
-    });
 
     return { success: true, new_status: newStatus };
   },

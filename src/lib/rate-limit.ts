@@ -47,9 +47,8 @@ export function checkRateLimit(
   action: string,
   options: RateLimitOptions
 ): RateLimitResult {
-  // TODO: Hapus/ubah ke false sebelum launch!
-  const DEV_MODE = true
-  if (DEV_MODE) {
+  const isTest = process.env.NODE_ENV === 'test'
+  if (isTest) {
     return { allowed: true, remaining: options.maxRequests, resetAt: Date.now() + options.windowSeconds * 1000 }
   }
 
