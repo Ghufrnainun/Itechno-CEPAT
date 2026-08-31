@@ -22,11 +22,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#005c55",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
+  viewportFit: "cover",
+  themeColor: "#005c55",
+  interactiveWidget: "resizes-visual",
 };
 
 export const metadata: Metadata = {

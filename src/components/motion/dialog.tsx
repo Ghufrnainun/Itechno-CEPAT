@@ -181,35 +181,37 @@ export function DialogContent({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto font-sans">
+        <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto font-sans">
           {/* Motion Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs z-0"
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-0"
             onClick={() => onOpenChange(false)}
             aria-hidden="true"
           />
 
-          {/* Motion Dialog Surface */}
+          {/* Motion Dialog Surface (Mobile Bottom Sheet / Desktop Centered Dialog) */}
           <motion.div
             ref={contentRef}
             tabIndex={-1}
-            initial={{ opacity: 0, scale: 0.95, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 8 }}
+            initial={{ opacity: 0, y: 30, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 25, scale: 0.98 }}
             transition={springTransition}
             role="dialog"
             aria-modal="true"
             className={cn(
-              "relative z-10 w-full bg-surface-container-lowest border border-card-border/90 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] focus:outline-none",
+              "relative z-10 w-full bg-surface-container-lowest border border-card-border/90 rounded-t-3xl sm:rounded-2xl border-b-0 sm:border-b shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[85vh] focus:outline-none pb-[env(safe-area-inset-bottom,0px)] sm:pb-0 animate-in",
               maxWidthClasses[maxWidth],
               className
             )}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Mobile Sheet Drag Handle Indicator */}
+            <div className="w-12 h-1.5 bg-on-surface-variant/20 rounded-full mx-auto mt-2.5 mb-1 sm:hidden shrink-0" />
             {children}
           </motion.div>
         </div>
@@ -220,10 +222,9 @@ export function DialogContent({
 }
 
 export function DialogHeader({ children, className }: { children: React.ReactNode; className?: string }) {
-  const { onOpenChange } = useDialog();
   return (
-    <div className={cn("px-4 sm:px-6 py-3.5 sm:py-4.5 border-b border-card-border bg-surface-container-low/50 flex justify-between items-center shrink-0 rounded-t-2xl", className)}>
-      <div className="flex-1 pr-4">{children}</div>
+    <div className={cn("px-4 sm:px-6 py-3 sm:py-4.5 border-b border-card-border bg-surface-container-low/40 flex justify-between items-center shrink-0", className)}>
+      <div className="flex-1 pr-3">{children}</div>
       <DialogClose />
     </div>
   );
@@ -231,7 +232,7 @@ export function DialogHeader({ children, className }: { children: React.ReactNod
 
 export function DialogTitle({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <h3 className={cn("font-headline font-extrabold text-base sm:text-lg text-on-surface tracking-tight", className)}>
+    <h3 className={cn("font-headline font-extrabold text-base sm:text-lg text-on-surface tracking-tight leading-snug", className)}>
       {children}
     </h3>
   );
@@ -255,7 +256,7 @@ export function DialogBody({ children, className }: { children: React.ReactNode;
 
 export function DialogFooter({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("px-6 py-4 border-t border-card-border/80 bg-surface-container-low/30 flex items-center justify-end gap-3 shrink-0 rounded-b-2xl", className)}>
+    <div className={cn("px-4 sm:px-6 py-3.5 sm:py-4 border-t border-card-border/80 bg-surface-container-low/30 flex items-center justify-end gap-3 shrink-0", className)}>
       {children}
     </div>
   );
@@ -269,7 +270,7 @@ export function DialogClose({ className }: { className?: string }) {
       onClick={() => onOpenChange(false)}
       aria-label="Tutup dialog"
       className={cn(
-        "w-9 h-9 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container flex items-center justify-center cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 shrink-0",
+        "min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container flex items-center justify-center cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 shrink-0",
         className
       )}
     >

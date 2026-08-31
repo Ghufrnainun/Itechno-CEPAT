@@ -78,7 +78,6 @@ export default function SchedulePage() {
   const [tasks, setTasks] = useState<ScheduledTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [roleFilter, setRoleFilter] = useState<"all" | "requester" | "worker">("all");
-  const [viewMode, setViewMode] = useState<"calendar" | "agenda">("calendar");
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth(); // 0-indexed
@@ -203,9 +202,9 @@ export default function SchedulePage() {
   const today = new Date();
 
   return (
-    <div className="min-h-full bg-surface pb-32 lg:pb-16 font-sans text-on-surface">
+    <div className="flex flex-col h-full bg-surface font-sans">
       {/* ──── Header & Action Bar ──── */}
-      <div className="border-b border-card-border/80 bg-surface-container-lowest/90 backdrop-blur-md sticky top-0 z-20">
+      <div className="border-b border-card-border/80 bg-surface-container-lowest/90 backdrop-blur-md sticky top-0 z-20 shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -286,363 +285,364 @@ export default function SchedulePage() {
       </div>
 
       {/* ──── Main Grid Layout (Calendar Left, Agenda Right) ──── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* ════════ LEFT COLUMN: Interactive Month Calendar (7 cols) ════════ */}
-          <div className="lg:col-span-7 flex flex-col gap-5">
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-36 lg:pb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            {/* Calendar Container Card */}
-            <div className="p-1 rounded-[1.75rem] bg-gradient-to-b from-card-border/70 to-card-border/30 border border-card-border/60 shadow-xs">
-              <div className="bg-surface-container-lowest rounded-[calc(1.75rem-0.25rem)] p-4 sm:p-6 flex flex-col gap-4">
-                
-                {/* Month Navigation Toolbar */}
-                <div className="flex items-center justify-between border-b border-card-border/60 pb-4">
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-headline font-bold text-lg sm:text-xl text-on-surface">
-                      {MONTH_NAMES[currentMonth]} {currentYear}
-                    </h2>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={handleToday}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors cursor-pointer mr-1"
-                    >
-                      Hari Ini
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Bulan sebelumnya"
-                      onClick={handlePrevMonth}
-                      className="w-8 h-8 rounded-lg border border-card-border flex items-center justify-center text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Bulan berikutnya"
-                      onClick={handleNextMonth}
-                      className="w-8 h-8 rounded-lg border border-card-border flex items-center justify-center text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Day of Week Labels */}
-                <div className="grid grid-cols-7 gap-1 text-center font-mono text-[11px] font-bold text-on-surface-variant/80 uppercase">
-                  {DAY_NAMES.map((name) => (
-                    <div key={name} className="py-1.5">
-                      {name}
+            {/* ════════ LEFT COLUMN: Interactive Month Calendar (7 cols) ════════ */}
+            <div className="lg:col-span-7 flex flex-col gap-5">
+              
+              {/* Calendar Container Card */}
+              <div className="p-1 rounded-[1.75rem] bg-gradient-to-b from-card-border/70 to-card-border/30 border border-card-border/60 shadow-xs">
+                <div className="bg-surface-container-lowest rounded-[calc(1.75rem-0.25rem)] p-4 sm:p-6 flex flex-col gap-4">
+                  
+                  {/* Month Navigation Toolbar */}
+                  <div className="flex items-center justify-between border-b border-card-border/60 pb-4">
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-headline font-bold text-lg sm:text-xl text-on-surface">
+                        {MONTH_NAMES[currentMonth]} {currentYear}
+                      </h2>
                     </div>
-                  ))}
-                </div>
 
-                {/* Days Grid */}
-                <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
-                  {calendarDays.map(({ date, isCurrentMonth, key }) => {
-                    const isSelected = isSameDay(date, selectedDate);
-                    const isCurrentDay = isSameDay(date, today);
-
-                    const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
-                      2,
-                      "0"
-                    )}-${String(date.getDate()).padStart(2, "0")}`;
-                    const dayTasks = tasksByDate.get(dateKey) || [];
-                    const hasTasks = dayTasks.length > 0;
-
-                    return (
+                    <div className="flex items-center gap-1.5">
                       <button
-                        key={key}
                         type="button"
-                        onClick={() => {
-                          setSelectedDate(date);
-                          if (!isCurrentMonth) {
-                            setCurrentDate(new Date(date.getFullYear(), date.getMonth(), 1));
-                          }
-                        }}
-                        className={cn(
-                          "min-h-[64px] sm:min-h-[76px] p-1.5 sm:p-2 rounded-xl flex flex-col justify-between items-start transition-all cursor-pointer border text-left relative",
-                          isSelected
-                            ? "bg-primary/10 border-primary ring-2 ring-primary/20 shadow-xs"
-                            : isCurrentDay
-                            ? "bg-surface-container-low border-primary/40"
-                            : isCurrentMonth
-                            ? "bg-surface-container-lowest border-card-border/80 hover:bg-surface-container-low hover:border-primary/30"
-                            : "bg-surface-container/30 border-transparent text-on-surface-variant/40 opacity-40 hover:opacity-70"
-                        )}
+                        onClick={handleToday}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors cursor-pointer mr-1"
                       >
-                        {/* Day Number & Today Pill */}
-                        <div className="flex items-center justify-between w-full">
-                          <span
-                            className={cn(
-                              "font-mono text-xs sm:text-sm font-bold",
-                              isSelected
-                                ? "text-primary font-extrabold"
-                                : isCurrentDay
-                                ? "text-primary"
-                                : isCurrentMonth
-                                ? "text-on-surface"
-                                : "text-on-surface-variant/50"
-                            )}
-                          >
-                            {date.getDate()}
-                          </span>
-
-                          {isCurrentDay && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                          )}
-                        </div>
-
-                        {/* Task Dots / Chips Indicator */}
-                        {hasTasks && (
-                          <div className="w-full flex flex-col gap-1 mt-1">
-                            <div className="hidden sm:flex items-center gap-1 w-full overflow-hidden">
-                              <span className="text-[10px] font-mono font-bold text-primary bg-primary/15 px-1.5 py-0.2 rounded truncate w-full">
-                                {dayTasks.length} Tugas
-                              </span>
-                            </div>
-                            <div className="flex sm:hidden items-center gap-0.5">
-                              {dayTasks.slice(0, 3).map((_, idx) => (
-                                <span key={idx} className="w-1.5 h-1.5 rounded-full bg-primary" />
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        Hari Ini
                       </button>
-                    );
-                  })}
-                </div>
-
-                {/* Calendar Legend */}
-                <div className="flex items-center justify-between pt-3 border-t border-card-border/60 text-[11px] text-on-surface-variant flex-wrap gap-2">
-                  <div className="flex items-center gap-4">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-primary" />
-                      Hari Ini
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-md bg-primary/20 border border-primary/40" />
-                      Ada Tugas
-                    </span>
+                      <button
+                        type="button"
+                        aria-label="Bulan sebelumnya"
+                        onClick={handlePrevMonth}
+                        className="w-8 h-8 rounded-lg border border-card-border flex items-center justify-center text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Bulan berikutnya"
+                        onClick={handleNextMonth}
+                        className="w-8 h-8 rounded-lg border border-card-border flex items-center justify-center text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <span className="font-mono">
-                    {selectedDate.toLocaleDateString("id-ID", {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
+
+                  {/* Day of Week Labels */}
+                  <div className="grid grid-cols-7 gap-1 text-center font-mono text-[11px] font-bold text-on-surface-variant/80 uppercase">
+                    {DAY_NAMES.map((name) => (
+                      <div key={name} className="py-1.5">
+                        {name}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Days Grid */}
+                  <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+                    {calendarDays.map(({ date, isCurrentMonth, key }) => {
+                      const isSelected = isSameDay(date, selectedDate);
+                      const isCurrentDay = isSameDay(date, today);
+
+                      const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+                        2,
+                        "0"
+                      )}-${String(date.getDate()).padStart(2, "0")}`;
+                      const dayTasks = tasksByDate.get(dateKey) || [];
+                      const hasTasks = dayTasks.length > 0;
+
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => {
+                            setSelectedDate(date);
+                            if (!isCurrentMonth) {
+                              setCurrentDate(new Date(date.getFullYear(), date.getMonth(), 1));
+                            }
+                          }}
+                          className={cn(
+                            "min-h-[64px] sm:min-h-[76px] p-1.5 sm:p-2 rounded-xl flex flex-col justify-between items-start transition-all cursor-pointer border text-left relative",
+                            isSelected
+                              ? "bg-primary/10 border-primary ring-2 ring-primary/20 shadow-xs"
+                              : isCurrentDay
+                              ? "bg-surface-container-low border-primary/40"
+                              : isCurrentMonth
+                              ? "bg-surface-container-lowest border-card-border/80 hover:bg-surface-container-low hover:border-primary/30"
+                              : "bg-surface-container/30 border-transparent text-on-surface-variant/40 opacity-40 hover:opacity-70"
+                          )}
+                        >
+                          {/* Day Number & Today Pill */}
+                          <div className="flex items-center justify-between w-full">
+                            <span
+                              className={cn(
+                                "font-mono text-xs sm:text-sm font-bold",
+                                isSelected
+                                  ? "text-primary font-extrabold"
+                                  : isCurrentDay
+                                  ? "text-primary"
+                                  : isCurrentMonth
+                                  ? "text-on-surface"
+                                  : "text-on-surface-variant/50"
+                              )}
+                            >
+                              {date.getDate()}
+                            </span>
+
+                            {isCurrentDay && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                            )}
+                          </div>
+
+                          {/* Task Dots / Chips Indicator */}
+                          {hasTasks && (
+                            <div className="w-full flex flex-col gap-1 mt-1">
+                              <div className="hidden sm:flex items-center gap-1 w-full overflow-hidden">
+                                <span className="text-[10px] font-mono font-bold text-primary bg-primary/15 px-1.5 py-0.2 rounded truncate w-full">
+                                  {dayTasks.length} Tugas
+                                </span>
+                              </div>
+                              <div className="flex sm:hidden items-center gap-0.5">
+                                {dayTasks.slice(0, 3).map((_, idx) => (
+                                  <span key={idx} className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </button>
+                      );
                     })}
-                  </span>
-                </div>
+                  </div>
 
-              </div>
-            </div>
-
-          </div>
-
-          {/* ════════ RIGHT COLUMN: Task Agenda & Selected Date Inspector (5 cols) ════════ */}
-          <div className="lg:col-span-5 flex flex-col gap-5">
-            
-            {/* Selected Date Header */}
-            <div className="p-1 rounded-[1.75rem] bg-gradient-to-b from-card-border/70 to-card-border/30 border border-card-border/60 shadow-xs">
-              <div className="bg-surface-container-lowest rounded-[calc(1.75rem-0.25rem)] p-4 sm:p-6 flex flex-col gap-4">
-                
-                <div className="flex items-center justify-between border-b border-card-border/60 pb-3">
-                  <div>
-                    <h3 className="font-headline font-bold text-base text-on-surface">
-                      Agenda Tanggal Terpilih
-                    </h3>
-                    <p className="text-xs text-primary font-medium font-mono mt-0.5">
+                  {/* Calendar Legend */}
+                  <div className="flex items-center justify-between pt-3 border-t border-card-border/60 text-[11px] text-on-surface-variant flex-wrap gap-2">
+                    <div className="flex items-center gap-4">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+                        Hari Ini
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-md bg-primary/20 border border-primary/40" />
+                        Ada Tugas
+                      </span>
+                    </div>
+                    <span className="font-mono">
                       {selectedDate.toLocaleDateString("id-ID", {
                         weekday: "long",
                         day: "numeric",
                         month: "long",
                         year: "numeric",
                       })}
-                    </p>
+                    </span>
                   </div>
 
-                  <span className="px-2.5 py-1 rounded-full bg-surface-container-low border border-card-border text-xs font-mono font-bold text-on-surface">
-                    {tasksForSelectedDate.length} Tugas
+                </div>
+              </div>
+
+            </div>
+
+            {/* ════════ RIGHT COLUMN: Task Agenda & Selected Date Inspector (5 cols) ════════ */}
+            <div className="lg:col-span-5 flex flex-col gap-5">
+              
+              {/* Selected Date Header */}
+              <div className="p-1 rounded-[1.75rem] bg-gradient-to-b from-card-border/70 to-card-border/30 border border-card-border/60 shadow-xs">
+                <div className="bg-surface-container-lowest rounded-[calc(1.75rem-0.25rem)] p-4 sm:p-6 flex flex-col gap-4">
+                  
+                  <div className="flex items-center justify-between border-b border-card-border/60 pb-3">
+                    <div>
+                      <h3 className="font-headline font-bold text-base text-on-surface">
+                        Agenda Tanggal Terpilih
+                      </h3>
+                      <p className="text-xs text-primary font-medium font-mono mt-0.5">
+                        {selectedDate.toLocaleDateString("id-ID", {
+                          weekday: "long",
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+
+                    <span className="px-2.5 py-1 rounded-full bg-surface-container-low border border-card-border text-xs font-mono font-bold text-on-surface">
+                      {tasksForSelectedDate.length} Tugas
+                    </span>
+                  </div>
+
+                  {/* Loading state */}
+                  {loading && (
+                    <div className="py-12 flex flex-col items-center justify-center gap-2 text-on-surface-variant">
+                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                      <span className="text-xs">Memuat daftar tugas terjadwal...</span>
+                    </div>
+                  )}
+
+                  {/* Empty State for Selected Date */}
+                  {!loading && tasksForSelectedDate.length === 0 && (
+                    <div className="py-10 flex flex-col items-center justify-center text-center px-4">
+                      <div className="w-12 h-12 rounded-2xl bg-surface-container-low text-on-surface-variant flex items-center justify-center mb-3">
+                        <CalendarDays className="w-6 h-6 text-on-surface-variant/60" />
+                      </div>
+                      <h4 className="font-headline font-bold text-sm text-on-surface">
+                        Tidak Ada Jadwal Tugas
+                      </h4>
+                      <p className="text-xs text-on-surface-variant mt-1 max-w-xs leading-relaxed">
+                        Belum ada tugas mikro yang dijadwalkan untuk tanggal ini.
+                      </p>
+
+                      {activeRole === "requester" ? (
+                        <Link
+                          href="/task/new"
+                          className="mt-4 px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary-container transition-colors shadow-xs"
+                        >
+                          + Jadwalkan Tugas Baru
+                        </Link>
+                      ) : (
+                        <Link
+                          href="/cari-tugas"
+                          className="mt-4 px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary-container transition-colors shadow-xs"
+                        >
+                          Jelajahi Tugas Sekitar
+                        </Link>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Tasks List for Selected Date */}
+                  {!loading && tasksForSelectedDate.length > 0 && (
+                    <div className="flex flex-col gap-3">
+                      {tasksForSelectedDate.map((t) => {
+                        const startDate = new Date(t.scheduled_at);
+                        const endDate = t.scheduled_end ? new Date(t.scheduled_end) : null;
+
+                        return (
+                          <div
+                            key={t.id_tasks}
+                            className="p-4 rounded-2xl bg-surface-container-low border border-card-border/90 flex flex-col gap-3 hover:border-primary/40 transition-colors shadow-2xs"
+                          >
+                            {/* Time Slot & Badge */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-primary">
+                                <Clock className="w-3.5 h-3.5 shrink-0" />
+                                <span>
+                                  {startDate.toLocaleTimeString("id-ID", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                  {endDate && (
+                                    <>
+                                      {" - "}
+                                      {endDate.toLocaleTimeString("id-ID", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
+                                    </>
+                                  )}{" "}
+                                  WIB
+                                </span>
+                              </div>
+
+                              <Badge status={t.status} />
+                            </div>
+
+                            {/* Task Info */}
+                            <div>
+                              <h4 className="font-headline font-bold text-sm text-on-surface line-clamp-1">
+                                {t.judul_tugas}
+                              </h4>
+                              <p className="text-xs text-on-surface-variant line-clamp-2 mt-1 leading-relaxed">
+                                {t.deskripsi_tugas}
+                              </p>
+                            </div>
+
+                            {/* Partner & Compensation Details */}
+                            <div className="flex items-center justify-between pt-2 border-t border-card-border/60 text-xs">
+                              <div className="flex items-center gap-2">
+                                <span className="text-on-surface-variant text-[11px]">
+                                  {t.user_role === "requester" ? "Worker:" : "Requester:"}
+                                </span>
+                                <span className="font-semibold text-on-surface">
+                                  {t.user_role === "requester"
+                                    ? t.worker?.nama_lengkap || "Belum ditentukan"
+                                    : t.requester.nama_lengkap}
+                                </span>
+                              </div>
+
+                              <span className="font-mono font-bold text-primary text-sm">
+                                {formatCurrency(t.kompensasi)}
+                              </span>
+                            </div>
+
+                            {/* Direct Navigation Button */}
+                            <Link
+                              href={`/task/${t.id_tasks}`}
+                              className="w-full py-2 px-3 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-primary border border-card-border text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                              <span>Lihat Detail Tugas</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                </div>
+              </div>
+
+              {/* Upcoming Agenda Feed Summary */}
+              <div className="p-4 rounded-2xl bg-surface-container-lowest border border-card-border/80 shadow-2xs flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-on-surface flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-primary" />
+                    Jadwal Mendatang Terdekat
+                  </span>
+                  <span className="text-[11px] font-mono text-on-surface-variant">
+                    {upcomingTasks.length} Total
                   </span>
                 </div>
 
-                {/* Loading state */}
-                {loading && (
-                  <div className="py-12 flex flex-col items-center justify-center gap-2 text-on-surface-variant">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                    <span className="text-xs">Memuat daftar tugas terjadwal...</span>
-                  </div>
-                )}
-
-                {/* Empty State for Selected Date */}
-                {!loading && tasksForSelectedDate.length === 0 && (
-                  <div className="py-10 flex flex-col items-center justify-center text-center px-4">
-                    <div className="w-12 h-12 rounded-2xl bg-surface-container-low text-on-surface-variant flex items-center justify-center mb-3">
-                      <CalendarDays className="w-6 h-6 text-on-surface-variant/60" />
-                    </div>
-                    <h4 className="font-headline font-bold text-sm text-on-surface">
-                      Tidak Ada Jadwal Tugas
-                    </h4>
-                    <p className="text-xs text-on-surface-variant mt-1 max-w-xs leading-relaxed">
-                      Belum ada tugas mikro yang dijadwalkan untuk tanggal ini.
-                    </p>
-
-                    {activeRole === "requester" ? (
+                {upcomingTasks.length === 0 ? (
+                  <p className="text-xs text-on-surface-variant py-3 italic text-center">
+                    Tidak ada agenda mendatang untuk bulan ini.
+                  </p>
+                ) : (
+                  <div className="divide-y divide-card-border/40">
+                    {upcomingTasks.slice(0, 4).map((ut) => (
                       <Link
-                        href="/task/new"
-                        className="mt-4 px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary-container transition-colors shadow-xs"
+                        key={ut.id_tasks}
+                        href={`/task/${ut.id_tasks}`}
+                        className="py-2.5 flex items-center justify-between gap-3 hover:bg-surface-container-low/50 px-2 rounded-lg transition-colors group"
                       >
-                        + Jadwalkan Tugas Baru
-                      </Link>
-                    ) : (
-                      <Link
-                        href="/cari-tugas"
-                        className="mt-4 px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary-container transition-colors shadow-xs"
-                      >
-                        Jelajahi Tugas Sekitar
-                      </Link>
-                    )}
-                  </div>
-                )}
-
-                {/* Tasks List for Selected Date */}
-                {!loading && tasksForSelectedDate.length > 0 && (
-                  <div className="flex flex-col gap-3">
-                    {tasksForSelectedDate.map((t) => {
-                      const startDate = new Date(t.scheduled_at);
-                      const endDate = t.scheduled_end ? new Date(t.scheduled_end) : null;
-
-                      return (
-                        <div
-                          key={t.id_tasks}
-                          className="p-4 rounded-2xl bg-surface-container-low border border-card-border/90 flex flex-col gap-3 hover:border-primary/40 transition-colors shadow-2xs"
-                        >
-                          {/* Time Slot & Badge */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-primary">
-                              <Clock className="w-3.5 h-3.5 shrink-0" />
-                              <span>
-                                {startDate.toLocaleTimeString("id-ID", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                                {endDate && (
-                                  <>
-                                    {" - "}
-                                    {endDate.toLocaleTimeString("id-ID", {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
-                                  </>
-                                )}{" "}
-                                WIB
-                              </span>
-                            </div>
-
-                            <Badge status={t.status} />
-                          </div>
-
-                          {/* Task Info */}
-                          <div>
-                            <h4 className="font-headline font-bold text-sm text-on-surface line-clamp-1">
-                              {t.judul_tugas}
-                            </h4>
-                            <p className="text-xs text-on-surface-variant line-clamp-2 mt-1 leading-relaxed">
-                              {t.deskripsi_tugas}
-                            </p>
-                          </div>
-
-                          {/* Partner & Compensation Details */}
-                          <div className="flex items-center justify-between pt-2 border-t border-card-border/60 text-xs">
-                            <div className="flex items-center gap-2">
-                              <span className="text-on-surface-variant text-[11px]">
-                                {t.user_role === "requester" ? "Worker:" : "Requester:"}
-                              </span>
-                              <span className="font-semibold text-on-surface">
-                                {t.user_role === "requester"
-                                  ? t.worker?.nama_lengkap || "Belum ditentukan"
-                                  : t.requester.nama_lengkap}
-                              </span>
-                            </div>
-
-                            <span className="font-mono font-bold text-primary text-sm">
-                              {formatCurrency(t.kompensasi)}
-                            </span>
-                          </div>
-
-                          {/* Direct Navigation Button */}
-                          <Link
-                            href={`/task/${t.id_tasks}`}
-                            className="w-full py-2 px-3 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-primary border border-card-border text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                          >
-                            <span>Lihat Detail Tugas</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </Link>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="font-headline font-semibold text-xs text-on-surface truncate group-hover:text-primary transition-colors">
+                            {ut.judul_tugas}
+                          </span>
+                          <span className="text-[10px] text-on-surface-variant font-mono">
+                            {new Date(ut.scheduled_at).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "short",
+                            })}{" "}
+                            •{" "}
+                            {new Date(ut.scheduled_at).toLocaleTimeString("id-ID", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}{" "}
+                            WIB
+                          </span>
                         </div>
-                      );
-                    })}
+                        <span className="font-mono text-xs font-bold text-primary shrink-0">
+                          {formatCurrency(ut.kompensasi)}
+                        </span>
+                      </Link>
+                    ))}
                   </div>
                 )}
-
-              </div>
-            </div>
-
-            {/* Upcoming Agenda Feed Summary */}
-            <div className="p-4 rounded-2xl bg-surface-container-lowest border border-card-border/80 shadow-2xs flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-on-surface flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-primary" />
-                  Jadwal Mendatang Terdekat
-                </span>
-                <span className="text-[11px] font-mono text-on-surface-variant">
-                  {upcomingTasks.length} Total
-                </span>
               </div>
 
-              {upcomingTasks.length === 0 ? (
-                <p className="text-xs text-on-surface-variant py-3 italic text-center">
-                  Tidak ada agenda mendatang untuk bulan ini.
-                </p>
-              ) : (
-                <div className="divide-y divide-card-border/40">
-                  {upcomingTasks.slice(0, 4).map((ut) => (
-                    <Link
-                      key={ut.id_tasks}
-                      href={`/task/${ut.id_tasks}`}
-                      className="py-2.5 flex items-center justify-between gap-3 hover:bg-surface-container-low/50 px-2 rounded-lg transition-colors group"
-                    >
-                      <div className="flex flex-col min-w-0 flex-1">
-                        <span className="font-headline font-semibold text-xs text-on-surface truncate group-hover:text-primary transition-colors">
-                          {ut.judul_tugas}
-                        </span>
-                        <span className="text-[10px] text-on-surface-variant font-mono">
-                          {new Date(ut.scheduled_at).toLocaleDateString("id-ID", {
-                            day: "numeric",
-                            month: "short",
-                          })}{" "}
-                          •{" "}
-                          {new Date(ut.scheduled_at).toLocaleTimeString("id-ID", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}{" "}
-                          WIB
-                        </span>
-                      </div>
-                      <span className="font-mono text-xs font-bold text-primary shrink-0">
-                        {formatCurrency(ut.kompensasi)}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )}
             </div>
-
           </div>
-
         </div>
       </div>
     </div>

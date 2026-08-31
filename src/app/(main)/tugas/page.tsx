@@ -7,6 +7,7 @@ import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
+import { TaskCardSkeleton } from "@/components/ui/Skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/motion/tabs";
 import { TaskStatus } from "@/types/database";
 import {
@@ -316,9 +317,10 @@ export default function KelolaTaskPage() {
 
           {/* Task list */}
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <Loader2 className="w-8 h-8 text-primary animate-spin" />
-              <p className="font-body-sm text-xs text-on-surface-variant">Memuat daftar task...</p>
+            <div className="flex flex-col gap-3">
+              <TaskCardSkeleton />
+              <TaskCardSkeleton />
+              <TaskCardSkeleton />
             </div>
           ) : filteredTasks.length === 0 ? (
             <EmptyState activeFilter={activeFilter} />

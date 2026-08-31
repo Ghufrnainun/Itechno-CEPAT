@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
@@ -41,6 +41,9 @@ import {
   Trophy,
   Bookmark,
   ShieldAlert,
+  LogOut,
+  AlertCircle,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -130,10 +133,27 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
   const [editAlamat, setEditAlamat] = useState("");
   const [editTagline, setEditTagline] = useState("");
   const [editSkills, setEditSkills] = useState<UserSkill[]>([]);
+  const [isSkillDropdownOpen, setIsSkillDropdownOpen] = useState(false);
+  const skillDropdownRef = useRef<HTMLDivElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  // Close skill dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (skillDropdownRef.current && !skillDropdownRef.current.contains(event.target as Node)) {
+        setIsSkillDropdownOpen(false);
+      }
+    }
+    if (isSkillDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isSkillDropdownOpen]);
 
   // Add Portfolio states
   const [newPortfolioTitle, setNewPortfolioTitle] = useState("");
@@ -146,6 +166,20 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
   // Reviews from API
   const [reviews, setReviews] = useState<ReviewData[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
+
+  // Logout state
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      router.replace("/login");
+    }
+  };
 
   const showFeedback = (msg: string) => {
     setToastMessage(msg);
@@ -609,6 +643,15 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                   >
                     Edit Profil
                   </Button>
+                  <button
+                    type="button"
+                    onClick={() => setIsLogoutConfirmOpen(true)}
+                    aria-label="Keluar dari akun"
+                    title="Keluar dari akun"
+                    className="p-2.5 rounded-xl border border-error/30 text-error hover:bg-error-container/20 active:scale-95 transition-all cursor-pointer min-h-[40px] min-w-[40px] flex items-center justify-center shrink-0"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
                 </>
               ) : (
                 <>
@@ -653,47 +696,47 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
           </div>
 
           {/* ───────────── ESSENTIAL REPUTATION METRICS (2 Clean Cards) ───────────── */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 pt-5 border-t border-card-border/80">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-4 pt-4 sm:pt-5 border-t border-card-border/80">
             {/* Stat 1: Rating */}
-            <div className="p-4 rounded-xl bg-surface-container-low/70 border border-card-border flex items-center justify-between">
-              <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider font-mono text-on-surface-variant block mb-1">
-                  Reputasi Rating
+            <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-surface-container-low/70 border border-card-border/80 flex flex-col justify-between gap-1.5 shadow-2xs">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider font-mono text-on-surface-variant truncate">
+                  Rating
                 </span>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="font-mono text-2xl sm:text-3xl font-black text-on-surface tabular-nums">
-                    {rating > 0 ? rating.toFixed(1) : "-"}
-                  </span>
-                  <span className="text-xs text-on-surface-variant font-medium">/ 5.0</span>
+                <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 shrink-0">
+                  <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-amber-500 text-amber-500" />
                 </div>
-                <span className="text-[11px] text-on-surface-variant font-medium">
-                  {reviews.length > 0 ? `${reviews.length} ulasan klien` : "Belum ada ulasan"}
+              </div>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="font-mono text-xl sm:text-2xl font-black text-on-surface tabular-nums">
+                  {rating > 0 ? rating.toFixed(1) : "-"}
                 </span>
+                <span className="text-[11px] sm:text-xs text-on-surface-variant font-medium">/ 5.0</span>
               </div>
-              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 shrink-0">
-                <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
-              </div>
+              <span className="text-[10px] sm:text-xs text-on-surface-variant font-medium truncate">
+                {reviews.length > 0 ? `${reviews.length} ulasan klien` : "Belum ada ulasan"}
+              </span>
             </div>
 
             {/* Stat 2: Completed Tasks */}
-            <div className="p-4 rounded-xl bg-surface-container-low/70 border border-card-border flex items-center justify-between">
-              <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider font-mono text-on-surface-variant block mb-1">
-                  Tugas Diselesaikan
+            <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-surface-container-low/70 border border-card-border/80 flex flex-col justify-between gap-1.5 shadow-2xs">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider font-mono text-on-surface-variant truncate">
+                  Tugas Selesai
                 </span>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="font-mono text-2xl sm:text-3xl font-black text-on-surface tabular-nums">
-                    {completedCount}
-                  </span>
-                  <span className="text-xs text-on-surface-variant font-medium">pekerjaan</span>
+                <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                  <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
-                <span className="text-[11px] text-on-surface-variant font-medium">
-                  {completedCount > 0 ? "Telah terverifikasi selesai" : "Belum ada riwayat"}
+              </div>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="font-mono text-xl sm:text-2xl font-black text-on-surface tabular-nums">
+                  {completedCount}
                 </span>
+                <span className="text-[11px] sm:text-xs text-on-surface-variant font-medium">tugas</span>
               </div>
-              <div className="p-2.5 rounded-xl bg-primary/10 text-primary shrink-0">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
+              <span className="text-[10px] sm:text-xs text-on-surface-variant font-medium truncate">
+                {completedCount > 0 ? "Terverifikasi selesai" : "Belum ada riwayat"}
+              </span>
             </div>
           </div>
         </div>
@@ -732,9 +775,9 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
               className="grid grid-cols-1 lg:grid-cols-3 gap-6"
             >
               {/* Left 2 Cols: Bio & Skills */}
-              <div className="lg:col-span-2 flex flex-col gap-6">
+              <div className="lg:col-span-2 flex flex-col gap-5 sm:gap-6">
                 {/* Bio Card */}
-                <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-xs border border-card-border">
+                <div className="bg-surface-container-lowest rounded-2xl p-4 sm:p-6 shadow-xs border border-card-border">
                   <h3 className="font-headline text-base font-bold text-on-surface mb-3 flex items-center gap-2">
                     <User className="w-4 h-4 text-primary" />
                     Tentang Saya
@@ -745,7 +788,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                 </div>
 
                 {/* Skills List */}
-                <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-xs border border-card-border">
+                <div className="bg-surface-container-lowest rounded-2xl p-4 sm:p-6 shadow-xs border border-card-border">
                   <div className="flex items-center justify-between mb-4 pb-3 border-b border-card-border">
                     <h3 className="font-headline text-base font-bold text-on-surface flex items-center gap-2">
                       <Award className="w-4 h-4 text-primary" />
@@ -802,8 +845,8 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
               </div>
 
               {/* Right Col: Contact & Shortcuts */}
-              <div className="flex flex-col gap-6">
-                <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-xs border border-card-border">
+              <div className="flex flex-col gap-5 sm:gap-6">
+                <div className="bg-surface-container-lowest rounded-2xl p-4 sm:p-6 shadow-xs border border-card-border">
                   <h3 className="font-headline text-base font-bold text-on-surface mb-4 flex items-center gap-2 pb-3 border-b border-card-border">
                     <Mail className="w-4 h-4 text-primary" />
                     Informasi Kontak
@@ -877,7 +920,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
 
                 {/* Shortcuts & Security info */}
                 {isCurrentUser && (
-                  <div className="bg-surface-container-lowest rounded-2xl p-5 shadow-xs border border-card-border flex flex-col gap-2">
+                  <div className="bg-surface-container-lowest rounded-2xl p-4 sm:p-6 shadow-xs border border-card-border flex flex-col gap-2">
                     <span className="text-xs font-bold text-on-surface uppercase tracking-wider font-mono mb-1">
                       Menu Pintas & Fitur
                     </span>
@@ -941,6 +984,16 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                       </span>
                       <ExternalLink className="w-3.5 h-3.5 text-on-surface-variant" />
                     </Link>
+
+                    {/* Dedicated Logout Action Button */}
+                    <button
+                      type="button"
+                      onClick={() => setIsLogoutConfirmOpen(true)}
+                      className="w-full mt-2 flex items-center justify-center gap-2 p-3 rounded-xl border border-error/30 bg-error-container/20 text-error hover:bg-error-container/40 active:scale-[0.99] font-bold text-xs transition-all cursor-pointer min-h-[44px]"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Keluar dari Akun (Logout)</span>
+                    </button>
                   </div>
                 )}
               </div>
@@ -1183,76 +1236,121 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
 
           {/* Edit Skills list */}
           <div className="border-t border-card-border pt-3">
-            <div className="flex items-center justify-between mb-2">
-              <label className="font-semibold text-on-surface">Keahlian Saya</label>
-              <select
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (!val) return;
-                  const item = availableSkills.find((s) => s.id_skill_master === val);
-                  if (item && !editSkills.some((s) => s.id_skill_master === val)) {
-                    setEditSkills([
-                      ...editSkills,
-                      {
-                        id_skill_master: item.id_skill_master,
-                        nama_skill: item.nama_skill,
-                        deskripsi_pengalaman: "",
-                        certificate_url: "",
-                      },
-                    ]);
-                  }
-                  e.target.value = "";
-                }}
-                className="text-xs bg-surface-container-low border border-card-border rounded-lg p-1.5 text-on-surface"
-              >
-                <option value="">+ Tambah Keahlian</option>
-                {availableSkills
-                  .filter((s) => !editSkills.some((es) => es.id_skill_master === s.id_skill_master))
-                  .map((s) => (
-                    <option key={s.id_skill_master} value={s.id_skill_master}>
-                      {s.nama_skill}
-                    </option>
-                  ))}
-              </select>
+            <div className="flex items-center justify-between mb-3">
+              <label className="font-semibold text-on-surface text-xs flex items-center gap-1.5">
+                <Award className="w-3.5 h-3.5 text-primary" />
+                <span>Keahlian Saya</span>
+                <span className="text-[10px] text-on-surface-variant font-normal">({editSkills.length})</span>
+              </label>
+
+              {/* Custom Elegant Dropdown */}
+              <div className="relative" ref={skillDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsSkillDropdownOpen(!isSkillDropdownOpen)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 font-bold text-xs transition-all active:scale-95 cursor-pointer shadow-2xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Tambah Keahlian</span>
+                  <ChevronDown
+                    className={cn(
+                      "w-3.5 h-3.5 transition-transform duration-150",
+                      isSkillDropdownOpen && "rotate-180"
+                    )}
+                  />
+                </button>
+
+                {isSkillDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-1.5 w-56 sm:w-64 max-h-56 overflow-y-auto custom-scrollbar bg-surface-container-lowest border border-card-border rounded-xl shadow-xl z-50 p-1.5 flex flex-col gap-1 animate-fadeIn">
+                    {availableSkills.filter(
+                      (s) => !editSkills.some((es) => es.id_skill_master === s.id_skill_master)
+                    ).length > 0 ? (
+                      availableSkills
+                        .filter(
+                          (s) => !editSkills.some((es) => es.id_skill_master === s.id_skill_master)
+                        )
+                        .map((s) => (
+                          <button
+                            key={s.id_skill_master}
+                            type="button"
+                            onClick={() => {
+                              setEditSkills([
+                                ...editSkills,
+                                {
+                                  id_skill_master: s.id_skill_master,
+                                  nama_skill: s.nama_skill,
+                                  deskripsi_pengalaman: "",
+                                  certificate_url: "",
+                                },
+                              ]);
+                              setIsSkillDropdownOpen(false);
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container-low text-xs font-semibold text-on-surface flex items-center justify-between transition-colors group cursor-pointer"
+                          >
+                            <span className="group-hover:text-primary transition-colors">{s.nama_skill}</span>
+                            <Plus className="w-3.5 h-3.5 text-on-surface-variant group-hover:text-primary shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </button>
+                        ))
+                    ) : (
+                      <div className="p-3 text-center text-xs text-on-surface-variant">
+                        Semua keahlian telah ditambahkan
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-2">
+            {/* Selected Skills List */}
+            <div className="space-y-2.5">
               {editSkills.map((sk, idx) => (
-                <div key={idx} className="p-2.5 bg-surface-container-low rounded-lg border border-card-border flex flex-col gap-2">
+                <div
+                  key={idx}
+                  className="p-3 bg-surface-container-low rounded-xl border border-card-border flex flex-col gap-2 shadow-2xs"
+                >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-primary">{sk.nama_skill}</span>
+                    <span className="font-bold text-xs text-primary flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      {sk.nama_skill}
+                    </span>
                     <button
                       type="button"
                       onClick={() => setEditSkills(editSkills.filter((_, i) => i !== idx))}
-                      className="text-error hover:bg-error-container/20 p-1 rounded transition-colors"
+                      className="text-error hover:bg-error-container/20 p-1.5 rounded-lg transition-colors cursor-pointer"
+                      title="Hapus Keahlian"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                   <input
                     type="text"
-                    placeholder="Pengalaman singkat..."
+                    placeholder="Ceritakan pengalaman singkat Anda dengan keahlian ini..."
                     value={sk.deskripsi_pengalaman || ""}
                     onChange={(e) => {
                       const updated = [...editSkills];
                       updated[idx].deskripsi_pengalaman = e.target.value;
                       setEditSkills(updated);
                     }}
-                    className="p-1.5 bg-surface-container-lowest border border-card-border rounded text-[11px] text-on-surface"
+                    className="p-2 bg-surface-container-lowest border border-card-border rounded-lg text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:outline-none"
                   />
                   <input
                     type="url"
-                    placeholder="Link sertifikat / portofolio (opsional)..."
+                    placeholder="Link sertifikat / portofolio online (opsional)..."
                     value={sk.certificate_url || ""}
                     onChange={(e) => {
                       const updated = [...editSkills];
                       updated[idx].certificate_url = e.target.value;
                       setEditSkills(updated);
                     }}
-                    className="p-1.5 bg-surface-container-lowest border border-card-border rounded text-[11px] text-on-surface font-mono"
+                    className="p-2 bg-surface-container-lowest border border-card-border rounded-lg text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:outline-none font-mono text-[11px]"
                   />
                 </div>
               ))}
+              {editSkills.length === 0 && (
+                <div className="p-4 text-center border border-dashed border-card-border rounded-xl text-on-surface-variant text-xs">
+                  Belum ada keahlian yang dipilih. Klik tombol <strong>+ Tambah Keahlian</strong> di atas.
+                </div>
+              )}
             </div>
           </div>
 
@@ -1377,6 +1475,55 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                   )}
                 </div>
               )}
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ───────────── MODAL: LOGOUT CONFIRMATION ───────────── */}
+      {isLogoutConfirmOpen && (
+        <Modal
+          isOpen={isLogoutConfirmOpen}
+          onClose={() => !loggingOut && setIsLogoutConfirmOpen(false)}
+          title="Konfirmasi Keluar Akun"
+        >
+          <div className="flex flex-col gap-4 p-2">
+            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-error-container/20 border border-error/30 text-error">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <p className="text-xs leading-relaxed font-medium">
+                Apakah Anda yakin ingin keluar dari akun CEPAT di perangkat ini?
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-card-border/60">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsLogoutConfirmOpen(false)}
+                disabled={loggingOut}
+                className="text-xs"
+              >
+                Batal
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="text-xs bg-error hover:bg-error/90 text-white font-bold border-none"
+              >
+                {loggingOut ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                    <span>Sedang Keluar...</span>
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="w-3.5 h-3.5 mr-1.5" />
+                    <span>Ya, Keluar Akun</span>
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </Modal>

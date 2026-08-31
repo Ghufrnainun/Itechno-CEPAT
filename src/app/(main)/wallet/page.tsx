@@ -226,33 +226,44 @@ function WalletPageInner() {
   return (
     <div className="flex flex-col h-full bg-surface font-sans">
       {/* Page Header */}
-      <header className="page-header bg-surface-container-lowest border-b border-card-border px-6 py-5 flex items-center justify-between">
-        <div>
-          <h1 className="font-headline text-2xl text-on-surface font-extrabold tracking-tight">
-            Dompet Saldo
-          </h1>
-          <p className="font-body-sm text-sm text-on-surface-variant font-medium mt-0.5">
-            Kelola saldo, pembayaran escrow tugas, dan riwayat pendapatan.
-          </p>
-        </div>
-        <div className="flex items-center gap-2.5">
+      <header className="page-header bg-surface-container-lowest border-b border-card-border px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+        <div className="flex items-center justify-between w-full sm:w-auto">
+          <div>
+            <h1 className="font-headline text-xl sm:text-2xl text-on-surface font-extrabold tracking-tight">
+              Dompet Saldo
+            </h1>
+            <p className="font-body-sm text-xs sm:text-sm text-on-surface-variant font-medium mt-0.5">
+              Kelola saldo, pembayaran escrow tugas, dan riwayat pendapatan.
+            </p>
+          </div>
           <button
             onClick={() => refresh()}
-            className="w-10 h-10 rounded-lg border border-card-border hover:bg-surface-container flex items-center justify-center transition-colors duration-150 cursor-pointer text-on-surface-variant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="w-10 h-10 rounded-xl border border-card-border hover:bg-surface-container flex sm:hidden items-center justify-center transition-colors duration-150 cursor-pointer text-on-surface-variant shrink-0"
             title="Refresh Saldo"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
-          <Button onClick={() => setIsWithdrawOpen(true)} variant="secondary" icon={<ArrowDownToLine className="w-4 h-4" />}>
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button
+            onClick={() => refresh()}
+            className="w-10 h-10 rounded-xl border border-card-border hover:bg-surface-container hidden sm:flex items-center justify-center transition-colors duration-150 cursor-pointer text-on-surface-variant shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            title="Refresh Saldo"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+          <Button onClick={() => setIsWithdrawOpen(true)} variant="secondary" className="flex-1 sm:flex-initial min-h-[42px] font-bold text-xs" icon={<ArrowDownToLine className="w-4 h-4" />}>
             Tarik Saldo
           </Button>
-          <Button onClick={() => setIsTopUpOpen(true)} variant="primary" icon={<PlusCircle className="w-4 h-4" />}>
+          <Button onClick={() => setIsTopUpOpen(true)} variant="primary" className="flex-1 sm:flex-initial min-h-[42px] font-bold text-xs" icon={<PlusCircle className="w-4 h-4" />}>
             Top Up
           </Button>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto w-full p-4 md:p-6 lg:p-8 flex flex-col gap-6">
+      {/* Main Content Area with bottom clearance */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="max-w-4xl mx-auto w-full p-4 md:p-6 lg:p-8 flex flex-col gap-6 pb-36 lg:pb-12">
         {/* Balance Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Saldo Tersedia */}
@@ -587,6 +598,7 @@ function WalletPageInner() {
             </div>
           </div>
         </Modal>
+        </div>
       </div>
     </div>
   );

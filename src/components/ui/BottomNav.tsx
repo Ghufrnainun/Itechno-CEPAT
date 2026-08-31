@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useUnreadChat } from "@/hooks/useUnreadChat";
 import { useCurrentRole } from "@/app/(main)/layout";
@@ -15,9 +15,19 @@ interface BottomNavProps {
 
 export function BottomNav({ role }: BottomNavProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user } = useCurrentRole();
   const { unreadCount } = useNotifications();
   const { unreadCount: chatUnreadCount } = useUnreadChat();
+
+  // Hide BottomNav when inside task detail, task new, dispute detail, or active chat conversation
+  const isInsideActiveChatRoom = pathname === "/chat" && Boolean(searchParams.get("room"));
+  const isInsideTaskSubpage = pathname.startsWith("/task/");
+  const isInsideDisputeDetailPage = pathname.startsWith("/disputes/") && pathname !== "/disputes";
+
+  if (isInsideActiveChatRoom || isInsideTaskSubpage || isInsideDisputeDetailPage) {
+    return null;
+  }
 
   const isMyProfileActive =
     pathname === "/profile" ||
@@ -27,7 +37,7 @@ export function BottomNav({ role }: BottomNavProps) {
   return (
     <nav
       aria-label="Navigasi Bawah Mobile"
-      className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-lowest/95 backdrop-blur-md border-t border-card-border flex items-center justify-around z-50 px-2 shadow-lg"
+      className="lg:hidden fixed bottom-0 left-0 right-0 h-[calc(4rem+env(safe-area-inset-bottom,0px))] pb-[env(safe-area-inset-bottom,0px)] bg-surface-container-lowest/95 backdrop-blur-md border-t border-card-border flex items-center justify-around z-50 px-2 shadow-lg"
     >
       <Link
         href="/dashboard"
@@ -86,7 +96,7 @@ export function BottomNav({ role }: BottomNavProps) {
         <MessageSquare className="w-5 h-5 mb-0.5" />
         Chat
         {chatUnreadCount > 0 && (
-          <span className="absolute top-1 right-2.5 w-4 h-4 bg-primary text-white text-[9px] font-bold flex items-center justify-center rounded-full font-mono tabular-nums">
+          <span className="absolute top-1 right-2.5 w-4 h-4 bg-primary text-white text-[9px] font-bold flex items-center justify-center rounded-full font-mono tabular-nums animate-badge-pop">
             {chatUnreadCount}
           </span>
         )}
@@ -105,7 +115,7 @@ export function BottomNav({ role }: BottomNavProps) {
         <Bell className="w-5 h-5 mb-0.5" />
         Notif
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-2.5 w-4 h-4 bg-primary text-white text-[9px] font-bold flex items-center justify-center rounded-full font-mono tabular-nums">
+          <span className="absolute top-1 right-2.5 w-4 h-4 bg-primary text-white text-[9px] font-bold flex items-center justify-center rounded-full font-mono tabular-nums animate-badge-pop">
             {unreadCount}
           </span>
         )}

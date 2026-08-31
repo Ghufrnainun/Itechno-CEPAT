@@ -8,6 +8,7 @@ import { Task } from "@/types/database";
 import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
 import { TaskCard } from "@/features/task/components/TaskCard";
 import { TaskInspector } from "@/features/task/components/TaskInspector";
+import { FeedSkeleton, TaskCardSkeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -30,7 +31,13 @@ function CariTugasPageContent() {
   const { coords, loading: locLoading } = useGeolocation();
   const { showToast } = useToast();
 
-  const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const [viewMode, setViewMode] = useState<"list" | "map">(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("view") === "map") return "map";
+    }
+    return "list";
+  });
   const [tasks, setTasks] = useState<(Task & { distance?: number })[]>([]);
   const [categories, setCategories] = useState<{ id_category: string; nama_kategori: string }[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -213,7 +220,7 @@ function CariTugasPageContent() {
   return (
     <div className="flex flex-col flex-1 min-h-0 font-sans bg-surface relative">
       {/* ───────────── UNIFIED STICKY HEADER ───────────── */}
-      <header className="sticky top-0 z-30 bg-surface-container-lowest border-b border-card-border px-3 sm:px-6 py-3 flex flex-col gap-2.5 shadow-2xs">
+      <header className="sticky top-0 z-30 bg-surface-container-lowest/95 backdrop-blur-md border-b border-card-border px-3.5 sm:px-6 py-3 flex flex-col gap-2.5 shadow-2xs">
         {/* Row 1: Title & Dual Mode Toggle */}
         <div className="flex items-center justify-between gap-2">
           <div>
@@ -226,11 +233,11 @@ function CariTugasPageContent() {
           </div>
 
           {/* View Mode Toggle: [Daftar | Peta] */}
-          <div className="flex items-center bg-surface-container-low border border-card-border rounded-xl p-1 shadow-2xs shrink-0">
+          <div className="flex items-center bg-surface-container-low border border-card-border/80 rounded-xl p-1 shadow-2xs shrink-0">
             <button
               onClick={() => setViewMode("list")}
               className={cn(
-                "flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer",
+                "flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer",
                 viewMode === "list"
                   ? "bg-primary text-on-primary shadow-xs"
                   : "text-on-surface-variant hover:text-on-surface"
@@ -242,7 +249,7 @@ function CariTugasPageContent() {
             <button
               onClick={() => setViewMode("map")}
               className={cn(
-                "flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer",
+                "flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer",
                 viewMode === "map"
                   ? "bg-primary text-on-primary shadow-xs"
                   : "text-on-surface-variant hover:text-on-surface"
@@ -257,13 +264,13 @@ function CariTugasPageContent() {
         {/* Row 2: Search Bar + Saved Filter */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/60" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/60" />
             <input
               type="text"
-              placeholder="Cari tugas mikro (desain, input data, jaga booth)..."
+              placeholder="Cari tugas (desain, input data, logistik)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 sm:pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-surface-container-low border border-card-border rounded-xl text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none transition-colors"
+              className="w-full pl-10 pr-3.5 py-2 text-base sm:text-xs bg-surface-container-low border border-card-border/80 rounded-xl text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest focus:outline-none transition-colors min-h-[42px]"
             />
           </div>
 
@@ -271,7 +278,7 @@ function CariTugasPageContent() {
             type="button"
             onClick={() => setFilterSavedOnly(!filterSavedOnly)}
             className={cn(
-              "px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-bold border transition-colors flex items-center gap-1.5 cursor-pointer shrink-0",
+              "px-3.5 py-2 rounded-xl text-xs font-bold border transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 min-h-[42px]",
               filterSavedOnly
                 ? "bg-primary/10 border-primary text-primary"
                 : "bg-surface-container-low border-card-border text-on-surface-variant hover:text-on-surface"
@@ -284,7 +291,7 @@ function CariTugasPageContent() {
           </button>
 
           {viewMode === "map" && (
-            <div className="hidden sm:flex items-center gap-2 bg-surface-container-low border border-card-border px-3 py-1.5 rounded-xl shrink-0">
+            <div className="hidden sm:flex items-center gap-2 bg-surface-container-low border border-card-border px-3 py-1.5 rounded-xl shrink-0 min-h-[42px]">
               <span className="text-[11px] font-bold text-on-surface-variant">Radius:</span>
               <span className="font-mono text-xs font-bold text-primary tabular-nums">{radius} km</span>
               <input
@@ -305,10 +312,10 @@ function CariTugasPageContent() {
           <button
             onClick={() => setSelectedCategory("all")}
             className={cn(
-              "px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer shrink-0 border",
+              "px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer shrink-0 border min-h-[34px] flex items-center justify-center",
               selectedCategory === "all"
-                ? "bg-primary text-on-primary border-primary font-bold shadow-xs"
-                : "bg-surface-container-low text-on-surface-variant border-card-border hover:border-primary/40"
+                ? "bg-primary text-on-primary border-primary font-bold shadow-2xs"
+                : "bg-surface-container-low text-on-surface-variant border-card-border/70 hover:border-primary/40"
             )}
           >
             Semua Kategori
@@ -318,10 +325,10 @@ function CariTugasPageContent() {
               key={cat.id_category}
               onClick={() => setSelectedCategory(cat.id_category)}
               className={cn(
-                "px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer shrink-0 border",
+                "px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer shrink-0 border min-h-[34px] flex items-center justify-center",
                 selectedCategory === cat.id_category
-                  ? "bg-primary text-on-primary border-primary font-bold shadow-xs"
-                  : "bg-surface-container-low text-on-surface-variant border-card-border hover:border-primary/40"
+                  ? "bg-primary text-on-primary border-primary font-bold shadow-2xs"
+                  : "bg-surface-container-low text-on-surface-variant border-card-border/70 hover:border-primary/40"
               )}
             >
               {cat.nama_kategori}
@@ -336,10 +343,10 @@ function CariTugasPageContent() {
           /* ───────────── LIST VIEW ───────────── */
           <div className="flex-1 flex flex-col md:flex-row min-h-0">
             {/* Task Grid */}
-            <div className="flex-1 overflow-y-auto p-3 sm:p-6 pb-28 lg:pb-12 custom-scrollbar flex flex-col gap-3">
-              <div className="flex items-center justify-between mb-0.5">
-                <span className="text-[11px] sm:text-xs font-bold text-on-surface-variant font-mono">
-                  {displayedTasks.length} TUGAS TERSEDIA
+            <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 pb-28 lg:pb-12 custom-scrollbar flex flex-col gap-3.5">
+              <div className="flex items-center justify-between px-0.5 mb-0.5">
+                <span className="text-xs font-semibold text-on-surface-variant">
+                  {displayedTasks.length} tugas tersedia di sekitarmu
                 </span>
                 {loading && (
                   <span className="text-xs text-primary font-bold flex items-center gap-1.5 font-mono">
@@ -348,7 +355,9 @@ function CariTugasPageContent() {
                 )}
               </div>
 
-              {displayedTasks.length === 0 && !loading ? (
+              {loading ? (
+                <FeedSkeleton />
+              ) : displayedTasks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center gap-3 bg-surface-container-lowest border border-card-border rounded-2xl">
                   <MapPinOff className="w-10 h-10 text-on-surface-variant/40" />
                   <h3 className="font-headline font-bold text-sm sm:text-base text-on-surface">Tidak ada tugas ditemukan</h3>
@@ -364,7 +373,7 @@ function CariTugasPageContent() {
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4">
                   {displayedTasks.map((task) => (
                     <TaskCard
                       key={task.id_task}
@@ -389,38 +398,31 @@ function CariTugasPageContent() {
               </div>
             )}
 
-            {/* Mobile Inspector Drawer/Modal */}
+            {/* Mobile Inspector Bottom Sheet */}
             {selectedTask && (
-              <div className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end">
-                <div className="bg-surface-container-lowest rounded-t-2xl border-t border-card-border max-h-[85vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom-5">
-                  <div className="p-3 border-b border-card-border flex items-center justify-between bg-surface-container-low shrink-0">
-                    <span className="font-headline font-bold text-xs text-on-surface uppercase tracking-wider">
-                      Detail Tugas
-                    </span>
-                    <button
-                      onClick={() => setSelectedTask(null)}
-                      className="p-1 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="overflow-y-auto custom-scrollbar p-1 pb-24">
-                    <TaskInspector
-                      task={selectedTask}
-                      onClose={() => setSelectedTask(null)}
-                      onApply={() => handleApply(selectedTask.id_task)}
-                      isApplied={appliedTaskIds.includes(selectedTask.id_task)}
-                    />
-                  </div>
+              <div
+                onClick={() => setSelectedTask(null)}
+                className="lg:hidden fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex flex-col justify-end animate-backdrop-fade"
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-surface-container-lowest rounded-t-3xl border-t border-card-border max-h-[90dvh] h-[90dvh] flex flex-col overflow-hidden animate-sheet-slide-up shadow-2xl"
+                >
+                  <TaskInspector
+                    task={selectedTask}
+                    onClose={() => setSelectedTask(null)}
+                    onApply={() => handleApply(selectedTask.id_task)}
+                    isApplied={appliedTaskIds.includes(selectedTask.id_task)}
+                  />
                 </div>
               </div>
             )}
           </div>
         ) : (
           /* ───────────── MAP VIEW ───────────── */
-          <div className="flex-1 min-h-0 flex flex-col md:flex-row relative bg-surface">
+          <div className="flex-1 min-h-0 flex flex-col md:flex-row relative bg-surface h-full">
             {/* Background Map Layer */}
-            <div className="h-[35vh] sm:h-[45vh] md:h-full md:flex-1 relative z-0 order-1 md:order-2">
+            <div className="flex-1 h-full w-full relative z-0 order-1 md:order-2 min-h-[calc(100dvh-200px)] md:min-h-0">
               <MapPickerWrapper
                 center={{ latitude: coords.latitude, longitude: coords.longitude }}
                 tasks={displayedTasks}
@@ -431,14 +433,53 @@ function CariTugasPageContent() {
                   if (clicked) setSelectedTask(clicked);
                 }}
               />
-              <div className="absolute top-3 left-3 md:left-6 z-10 bg-surface-container-lowest/95 backdrop-blur border border-card-border shadow-xs rounded-lg px-2.5 py-1 font-mono text-[11px] sm:text-xs flex items-center gap-2 font-bold text-on-surface">
+
+              {/* Floating Map Radar Badge */}
+              <div className="absolute top-3 left-3 md:left-6 z-10 bg-surface-container-lowest/95 backdrop-blur border border-card-border shadow-xs rounded-xl px-3 py-1.5 font-mono text-xs flex items-center gap-2 font-bold text-on-surface">
                 <div className="w-2 h-2 rounded-full bg-primary inline-block" />
                 <span>Radar ({displayedTasks.length} Tugas • {radius} km)</span>
               </div>
+
+              {/* Floating View List Button on Mobile (when no task is actively previewed) */}
+              {!selectedTask && (
+                <button
+                  onClick={() => setViewMode("list")}
+                  className="md:hidden absolute bottom-5 left-1/2 -translate-x-1/2 z-20 bg-primary text-on-primary px-4 py-2.5 rounded-full font-bold text-xs shadow-lg flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform whitespace-nowrap"
+                >
+                  <List className="w-4 h-4" />
+                  <span>Lihat Daftar ({displayedTasks.length})</span>
+                </button>
+              )}
+
+              {/* Floating Task Preview Card on Mobile when a Pin is Selected */}
+              {selectedTask && (
+                <div className="md:hidden absolute bottom-5 left-3.5 right-3.5 z-30 animate-in slide-in-from-bottom-3">
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedTask(null);
+                      }}
+                      className="absolute -top-2.5 -right-1.5 z-40 w-6 h-6 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center shadow-md cursor-pointer text-xs"
+                      aria-label="Tutup Preview"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                    <TaskCard
+                      task={selectedTask}
+                      isSelected={true}
+                      onClick={() => {
+                        router.push(`/task/${selectedTask.id_task}`);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Left/Bottom Task List */}
-            <aside className="flex-1 md:w-[360px] bg-surface-container-lowest border-t md:border-t-0 md:border-r border-card-border shadow-xs z-10 flex flex-col order-2 md:order-1 min-h-0">
+            {/* Desktop Left Task List */}
+            <aside className="hidden md:flex md:w-[360px] bg-surface-container-lowest border-r border-card-border shadow-xs z-10 flex-col order-1 min-h-0">
               <div className="p-3 border-b border-card-border bg-surface-container-low flex items-center justify-between shrink-0">
                 <h3 className="font-headline text-xs font-bold text-on-surface uppercase tracking-wider">
                   Daftar Tugas Radar
@@ -448,7 +489,13 @@ function CariTugasPageContent() {
                 </span>
               </div>
               <div className="flex-1 overflow-y-auto p-3 pb-28 lg:pb-6 flex flex-col gap-2.5 custom-scrollbar">
-                {displayedTasks.length === 0 ? (
+                {loading ? (
+                  <div className="flex flex-col gap-3">
+                    <TaskCardSkeleton />
+                    <TaskCardSkeleton />
+                    <TaskCardSkeleton />
+                  </div>
+                ) : displayedTasks.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-36 text-center px-4 gap-2">
                     <MapPinOff className="w-8 h-8 text-outline-variant/60" />
                     <p className="font-body-sm text-xs text-on-surface-variant">
@@ -467,33 +514,6 @@ function CariTugasPageContent() {
                 )}
               </div>
             </aside>
-
-            {/* Mobile Inspector Drawer for Map View */}
-            {selectedTask && (
-              <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end lg:hidden">
-                <div className="bg-surface-container-lowest rounded-t-2xl border-t border-card-border max-h-[85vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom-5">
-                  <div className="p-3 border-b border-card-border flex items-center justify-between bg-surface-container-low shrink-0">
-                    <span className="font-headline font-bold text-xs text-on-surface uppercase tracking-wider">
-                      Detail Tugas
-                    </span>
-                    <button
-                      onClick={() => setSelectedTask(null)}
-                      className="p-1 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="overflow-y-auto custom-scrollbar p-1 pb-24">
-                    <TaskInspector
-                      task={selectedTask}
-                      onClose={() => setSelectedTask(null)}
-                      onApply={() => handleApply(selectedTask.id_task)}
-                      isApplied={appliedTaskIds.includes(selectedTask.id_task)}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Desktop Task Inspector Overlay */}
             {selectedTask && (

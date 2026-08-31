@@ -156,21 +156,24 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
   return (
     <>
       <div className="w-full h-full bg-surface-container-lowest flex flex-col relative font-sans overflow-hidden">
+        {/* Mobile Sheet Drag Handle */}
+        <div className="w-12 h-1.5 bg-on-surface-variant/20 rounded-full mx-auto mt-2.5 mb-1 lg:hidden shrink-0" />
+
         {/* Top Nav / Action Bar */}
-        <div className="px-4 py-3 flex items-center justify-between border-b border-card-border bg-surface-container-lowest shrink-0">
+        <div className="px-4 py-2.5 sm:py-3 flex items-center justify-between border-b border-card-border bg-surface-container-lowest shrink-0">
           <button 
             onClick={onClose}
             aria-label="Tutup detail tugas"
-            className="text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer w-8 h-8 rounded-lg hover:bg-surface-container-low flex items-center justify-center"
+            className="text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer min-w-[40px] min-h-[40px] rounded-xl hover:bg-surface-container-low flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary/40"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <button
               onClick={() => setIsReportModalOpen(true)}
               title="Laporkan Pelanggaran Tugas ke Admin"
               aria-label="Laporkan Pelanggaran Tugas ke Admin"
-              className="text-on-surface-variant hover:text-error hover:bg-error-container/30 transition-colors w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer"
+              className="text-on-surface-variant hover:text-error hover:bg-error-container/30 transition-colors min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center cursor-pointer focus-visible:ring-2 focus-visible:ring-error/40"
             >
               <Flag className="w-4 h-4" />
             </button>
@@ -178,7 +181,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
               onClick={handleShare}
               title="Bagikan Tugas"
               aria-label="Bagikan Tugas"
-              className="text-on-surface-variant hover:text-primary transition-colors w-8 h-8 rounded-lg hover:bg-surface-container-low flex items-center justify-center cursor-pointer"
+              className="text-on-surface-variant hover:text-primary transition-colors min-w-[40px] min-h-[40px] rounded-xl hover:bg-surface-container-low flex items-center justify-center cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               <Share2 className="w-4 h-4" />
             </button>
@@ -188,13 +191,13 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
               title={isSaved ? "Hapus dari Tersimpan" : "Simpan Tugas"}
               aria-label={isSaved ? "Hapus dari Tersimpan" : "Simpan Tugas"}
               aria-pressed={isSaved}
-              className={`transition-colors w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer disabled:opacity-50 ${
+              className={`transition-colors min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center cursor-pointer disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary/40 ${
                 isSaved
                   ? "text-primary bg-primary/10 hover:bg-primary/15"
                   : "text-on-surface-variant hover:text-primary hover:bg-surface-container-low"
               }`}
             >
-              <Bookmark className={`w-4 h-4 ${isSaved ? "fill-primary" : ""}`} />
+              <Bookmark className={`w-4.5 h-4.5 ${isSaved ? "fill-primary" : ""}`} />
             </button>
           </div>
         </div>
@@ -369,7 +372,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
       </div>
 
         {/* Bottom CTA Fixed */}
-        <div className="p-4 bg-surface-container-lowest border-t border-card-border flex flex-col gap-2.5">
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-surface-container-lowest border-t border-card-border flex flex-col gap-2.5 shrink-0 z-10">
           {isApplied ? (
             <div className="flex flex-col gap-2 p-3 bg-surface-container-low border border-card-border rounded-xl">
               <div className="flex items-center gap-1.5 text-primary font-bold text-xs">
@@ -393,6 +396,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
                 fullWidth
                 icon={<Eye className="w-3.5 h-3.5" />}
                 onClick={() => router.push(`/task/${task.id_task}`)}
+                className="min-h-[44px]"
               >
                 Lihat Detail Halaman Tugas
               </Button>
@@ -402,7 +406,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
               <Button 
                 variant="secondary"
                 size="lg"
-                className="flex-1"
+                className="flex-1 min-h-[48px]"
                 onClick={handleInitChat}
                 disabled={isStartingChat}
                 icon={isStartingChat ? undefined : <MessageSquare className="w-4 h-4" />}
@@ -412,7 +416,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
               <Button 
                 variant="primary"
                 size="lg"
-                className="flex-1"
+                className="flex-1 min-h-[48px]"
                 onClick={onApply}
               >
                 Ambil Tugas Ini

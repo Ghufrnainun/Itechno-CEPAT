@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useCurrentRole } from "@/app/(main)/layout";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { Button } from "@/components/ui/Button";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Skeleton, TaskCardSkeleton } from "@/components/ui/Skeleton";
 import { formatCurrency } from "@/lib/utils/format";
 import MapPickerWrapper from "@/features/task/components/MapPickerWrapper";
 import {
@@ -31,6 +31,9 @@ import {
   Bookmark,
   History,
   Download,
+  ShieldCheck,
+  ClipboardList,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
@@ -124,14 +127,11 @@ export default function DashboardPage() {
       {/* ───────────── HEADER ───────────── */}
       <header className="page-header bg-surface-container-lowest border-b border-card-border px-4 sm:px-6 lg:px-8 py-4 sm:py-5 flex flex-row items-center justify-between gap-3 sm:gap-4">
         <div>
-          <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
-            <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider border border-primary/20 flex items-center gap-1">
-              <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-              {getGreeting()}
-            </span>
-            <span className="text-on-surface-variant text-xs">•</span>
-            <span className="text-[11px] sm:text-xs font-semibold text-on-surface-variant font-mono">
-              Area Kampus
+          <div className="flex items-center gap-2 text-xs text-on-surface-variant font-medium mb-1">
+            <span>{getGreeting()}</span>
+            <span className="opacity-40">•</span>
+            <span className="flex items-center gap-1 font-mono text-[11px] font-semibold text-primary">
+              <MapPin className="w-3 h-3 shrink-0" /> Area Kampus
             </span>
           </div>
 
@@ -171,9 +171,10 @@ export default function DashboardPage() {
                 variant="primary"
                 size="sm"
                 icon={<Plus className="w-3.5 h-3.5" />}
-                className="min-h-[38px] sm:min-h-[44px] text-xs font-bold px-3.5 sm:px-5 shadow-xs"
+                className="min-h-[38px] sm:min-h-[44px] text-xs font-bold px-3 sm:px-5 shadow-xs whitespace-nowrap"
               >
-                Post Tugas Baru
+                <span className="hidden sm:inline">Post Tugas Baru</span>
+                <span className="sm:hidden">Post Tugas</span>
               </Button>
             </Link>
           ) : (
@@ -182,7 +183,7 @@ export default function DashboardPage() {
                 variant="primary"
                 size="sm"
                 icon={<Search className="w-3.5 h-3.5" />}
-                className="min-h-[38px] sm:min-h-[44px] text-xs font-bold px-3.5 sm:px-5 shadow-xs"
+                className="min-h-[38px] sm:min-h-[44px] text-xs font-bold px-3.5 sm:px-5 shadow-xs whitespace-nowrap"
               >
                 Cari Tugas
               </Button>
@@ -224,58 +225,112 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          {/* Mobile Quick Action Strip (Gojek/Grab style 5 items) */}
-          <div className="grid grid-cols-5 gap-2 mt-3 p-3 bg-surface-container-lowest border border-card-border rounded-2xl shadow-xs">
-            <Link
-              href="/schedule"
-              className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
-            >
-              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-2xs">
-                <Calendar className="w-5 h-5" />
-              </div>
-              <span className="text-[10px] font-bold text-on-surface leading-tight">Jadwal</span>
-            </Link>
+          {/* Mobile Quick Action Strip (Role Aware) */}
+          {role === "requester" ? (
+            <div className="grid grid-cols-5 gap-2 mt-3 p-3 bg-surface-container-lowest border border-card-border rounded-2xl shadow-xs">
+              <Link
+                href="/schedule"
+                className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
+              >
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-2xs">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold text-on-surface leading-tight">Jadwal</span>
+              </Link>
 
-            <Link
-              href="/leaderboard"
-              className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
-            >
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shadow-2xs">
-                <Trophy className="w-5 h-5" />
-              </div>
-              <span className="text-[10px] font-bold text-on-surface leading-tight">Peringkat</span>
-            </Link>
+              <Link
+                href="/tugas"
+                className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
+              >
+                <div className="w-10 h-10 rounded-xl bg-secondary-container/50 text-secondary flex items-center justify-center shadow-2xs">
+                  <ClipboardList className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold text-on-surface leading-tight">Kelola</span>
+              </Link>
 
-            <Link
-              href="/saved"
-              className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
-            >
-              <div className="w-10 h-10 rounded-xl bg-secondary-container/50 text-secondary flex items-center justify-center shadow-2xs">
-                <Bookmark className="w-5 h-5" />
-              </div>
-              <span className="text-[10px] font-bold text-on-surface leading-tight">Tersimpan</span>
-            </Link>
+              <Link
+                href="/task/new"
+                className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
+              >
+                <div className="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center shadow-xs">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold text-on-surface leading-tight">Post</span>
+              </Link>
 
-            <Link
-              href="/history/riwayat"
-              className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
-            >
-              <div className="w-10 h-10 rounded-xl bg-surface-container text-on-surface-variant flex items-center justify-center shadow-2xs">
-                <History className="w-5 h-5" />
-              </div>
-              <span className="text-[10px] font-bold text-on-surface leading-tight">Riwayat</span>
-            </Link>
+              <Link
+                href="/disputes"
+                className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shadow-2xs">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold text-on-surface leading-tight">Bantuan</span>
+              </Link>
 
-            <Link
-              href="/wallet"
-              className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
-            >
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shadow-2xs">
-                <Wallet className="w-5 h-5" />
-              </div>
-              <span className="text-[10px] font-bold text-on-surface leading-tight">Dompet</span>
-            </Link>
-          </div>
+              <Link
+                href="/wallet"
+                className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
+              >
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shadow-2xs">
+                  <Wallet className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold text-on-surface leading-tight">Dompet</span>
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-5 gap-2 mt-3 p-3 bg-surface-container-lowest border border-card-border rounded-2xl shadow-xs">
+              <Link
+                href="/schedule"
+                className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
+              >
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-2xs">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold text-on-surface leading-tight">Jadwal</span>
+              </Link>
+
+              <Link
+                href="/leaderboard"
+                className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shadow-2xs">
+                  <Trophy className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold text-on-surface leading-tight">Peringkat</span>
+              </Link>
+
+              <Link
+                href="/saved"
+                className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
+              >
+                <div className="w-10 h-10 rounded-xl bg-secondary-container/50 text-secondary flex items-center justify-center shadow-2xs">
+                  <Bookmark className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold text-on-surface leading-tight">Tersimpan</span>
+              </Link>
+
+              <Link
+                href="/history/riwayat"
+                className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
+              >
+                <div className="w-10 h-10 rounded-xl bg-surface-container text-on-surface-variant flex items-center justify-center shadow-2xs">
+                  <History className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold text-on-surface leading-tight">Riwayat</span>
+              </Link>
+
+              <Link
+                href="/wallet"
+                className="flex flex-col items-center gap-1.5 p-1 text-center hover:opacity-80 transition-opacity"
+              >
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shadow-2xs">
+                  <Wallet className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold text-on-surface leading-tight">Dompet</span>
+              </Link>
+            </div>
+          )}
         </section>
 
         {/* ───────────── ESSENTIAL OVERVIEW (2 Clean Cards) ───────────── */}
@@ -299,13 +354,13 @@ export default function DashboardPage() {
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-3 border-t border-card-border/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-card-border/80">
               <span className="text-xs text-on-surface-variant font-medium">
                 Dapat langsung ditarik atau digunakan
               </span>
               <Link
                 href="/wallet"
-                className="text-xs text-primary font-bold hover:underline flex items-center gap-1 font-mono"
+                className="text-xs text-primary font-bold hover:underline flex items-center gap-0.5 font-mono shrink-0 self-start sm:self-auto"
               >
                 Buka Dompet <ChevronRight className="w-3.5 h-3.5" />
               </Link>
@@ -332,7 +387,7 @@ export default function DashboardPage() {
               </span>
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-card-border/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-card-border/80">
               <span className="text-xs text-on-surface-variant font-medium">
                 {myActiveTasks.length > 0
                   ? "Cek status perkembangan tugasmu"
@@ -340,96 +395,180 @@ export default function DashboardPage() {
               </span>
               {role === "worker" ? (
                 <Link
-                  href="/cari-tugas"
-                  className="text-xs text-primary font-bold hover:underline flex items-center gap-1 font-mono"
+                  href="/history/riwayat"
+                  className="text-xs text-primary font-bold hover:underline flex items-center gap-0.5 font-mono shrink-0 self-start sm:self-auto"
                 >
-                  Ambil Tugas <ChevronRight className="w-3.5 h-3.5" />
+                  Cek Tugas <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
               ) : (
                 <Link
                   href="/tugas"
-                  className="text-xs text-primary font-bold hover:underline flex items-center gap-1 font-mono"
+                  className="text-xs text-primary font-bold hover:underline flex items-center gap-0.5 font-mono shrink-0 self-start sm:self-auto"
                 >
-                  Kelola <ChevronRight className="w-3.5 h-3.5" />
+                  Cek Tugas <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
               )}
             </div>
           </div>
         </section>
 
-        {/* ───────────── NEARBY OPPORTUNITIES + RADAR MAP ───────────── */}
+        {/* ───────────── MAIN SECTION: FEATURED / ACTIVE MONITORING + RADAR MAP ───────────── */}
         <section className="grid grid-cols-1 xl:grid-cols-5 gap-4 md:gap-5">
-          {/* Featured Task Card (col-span 3) */}
-          <div className="xl:col-span-3 rounded-2xl bg-surface-container-lowest border border-card-border shadow-xs flex flex-col overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-card-border bg-surface-container-low flex justify-between items-center shrink-0">
-              <div className="flex items-center gap-2">
-                <Compass className="w-4 h-4 text-primary" />
-                <h2 className="text-xs font-bold text-on-surface font-headline uppercase tracking-wider">
-                  Peluang Terdekat Unggulan
-                </h2>
-              </div>
-              <Link href="/cari-tugas" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-                <span>Lihat Semua</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            {loading ? (
-              <div className="p-6 flex flex-col gap-3">
-                <Skeleton className="h-6 w-3/4 rounded-md" />
-                <Skeleton className="h-4 w-1/2 rounded" />
-                <Skeleton className="h-12 w-full rounded-xl" />
-              </div>
-            ) : featuredTask ? (
-              <div className="flex-1 p-5 sm:p-6 flex flex-col justify-between gap-4">
-                <div>
-                  <div className="flex justify-between items-start mb-2 gap-3">
-                    <h3 className="text-base sm:text-lg font-extrabold text-on-surface font-headline leading-snug">
-                      {featuredTask.title}
-                    </h3>
-                    <div className="text-sm sm:text-base font-bold text-primary font-mono shrink-0 bg-primary/10 px-3 py-1 rounded-lg border border-primary/20 tabular-nums">
-                      {formatCurrency(featuredTask.compensation)}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-on-surface-variant text-xs font-semibold mb-2.5">
-                    <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-                    <span className="text-primary font-mono tabular-nums">
-                      {featuredTask.distance
-                        ? `${featuredTask.distance.toFixed(1)} km dari posisimu`
-                        : "Area Kampus"}
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-on-surface-variant leading-relaxed line-clamp-2">
-                    {featuredTask.description}
-                  </p>
+          {/* Featured / Active Monitoring Card (col-span 3) */}
+          {role === "requester" ? (
+            <div className="xl:col-span-3 rounded-2xl bg-surface-container-lowest border border-card-border shadow-xs flex flex-col overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-card-border bg-surface-container-low flex justify-between items-center shrink-0">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="w-4 h-4 text-primary" />
+                  <h2 className="text-xs font-bold text-on-surface font-headline uppercase tracking-wider">
+                    Tugas Terakhir Diposting
+                  </h2>
                 </div>
+                <Link href="/tugas" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                  <span>Kelola Semua ({myActiveTasks.length})</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
 
-                <div className="pt-3.5 flex items-center justify-between border-t border-card-border mt-1">
-                  <span className="text-xs text-on-surface-variant font-medium flex items-center gap-1.5">
-                    <Store className="w-3.5 h-3.5 text-on-surface-variant" />
-                    {featuredTask.requester_name || "UMKM Sekitar"}
-                  </span>
-                  <Link href={`/task/${featuredTask.id_task}`}>
-                    <Button variant="primary" size="sm" className="min-h-[38px] text-xs font-bold">
-                      Lihat Rincian Tugas
+              {loading ? (
+                <div className="p-6 flex flex-col gap-3">
+                  <Skeleton className="h-6 w-3/4 rounded-md" />
+                  <Skeleton className="h-4 w-1/2 rounded" />
+                  <Skeleton className="h-12 w-full rounded-xl" />
+                </div>
+              ) : myActiveTasks.length > 0 ? (
+                <div className="flex-1 p-5 sm:p-6 flex flex-col justify-between gap-4">
+                  <div>
+                    <div className="flex justify-between items-start mb-2 gap-3">
+                      <h3 className="text-base sm:text-lg font-extrabold text-on-surface font-headline leading-snug">
+                        {myActiveTasks[0].judul_tugas || myActiveTasks[0].title}
+                      </h3>
+                      <div className="text-sm sm:text-base font-bold text-primary font-mono shrink-0 bg-primary/10 px-3 py-1 rounded-lg border border-primary/20 tabular-nums">
+                        {formatCurrency(myActiveTasks[0].kompensasi || myActiveTasks[0].compensation || 0)}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-on-surface-variant text-xs font-semibold mb-2.5">
+                      <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider bg-secondary-container/50 text-secondary border border-secondary/20 font-mono">
+                        {myActiveTasks[0].status === "open"
+                          ? "Menunggu Pelamar"
+                          : myActiveTasks[0].status === "accepted" || myActiveTasks[0].status === "in_progress"
+                          ? "Sedang Dikerjakan"
+                          : "Selesai"}
+                      </span>
+                      {myActiveTasks[0].status === "open" && (
+                        <span className="text-primary font-mono font-bold text-xs flex items-center gap-1">
+                          <Users className="w-3.5 h-3.5" />
+                          {myActiveTasks[0].applicant_count ?? myActiveTasks[0].applicants?.length ?? 0} Pelamar
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-on-surface-variant leading-relaxed line-clamp-2">
+                      {myActiveTasks[0].deskripsi_tugas || myActiveTasks[0].description || "Pantau progres lamaran, pilih kandidat terbaik, dan kelola konfirmasi tugas."}
+                    </p>
+                  </div>
+
+                  <div className="pt-3.5 flex items-center justify-between border-t border-card-border mt-1">
+                    <span className="text-xs text-on-surface-variant font-medium">
+                      {myActiveTasks[0].status === "open"
+                        ? "Pilih worker terbaik dari daftar pelamar"
+                        : "Tugas sedang berjalan aktif"}
+                    </span>
+                    <Link href={`/task/${myActiveTasks[0].id_tasks || myActiveTasks[0].id_task}`}>
+                      <Button variant="primary" size="sm" className="min-h-[38px] text-xs font-bold">
+                        Kelola Pelamar &amp; Tugas
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-3">
+                  <ClipboardList className="w-10 h-10 text-on-surface-variant/40" />
+                  <h3 className="font-headline font-bold text-sm text-on-surface">Belum Ada Tugas Aktif</h3>
+                  <p className="text-xs text-on-surface-variant max-w-sm leading-relaxed">
+                    Mulai posting pekerjaan mikro baru untuk mendapatkan bantuan cepat dari mahasiswa terdekat di kampus.
+                  </p>
+                  <Link href="/task/new">
+                    <Button variant="primary" size="sm" icon={<Plus className="w-3.5 h-3.5" />}>
+                      Post Tugas Baru
                     </Button>
                   </Link>
                 </div>
-              </div>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-3">
-                <SearchX className="w-10 h-10 text-on-surface-variant/40" />
-                <p className="text-xs font-medium text-on-surface-variant">Belum ada tugas terdekat di radius 2km.</p>
-                <Link href="/cari-tugas">
-                  <Button variant="secondary" size="sm">
-                    Jelajahi Semua Area
-                  </Button>
+              )}
+            </div>
+          ) : (
+            <div className="xl:col-span-3 rounded-2xl bg-surface-container-lowest border border-card-border shadow-xs flex flex-col overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-card-border bg-surface-container-low flex justify-between items-center shrink-0">
+                <div className="flex items-center gap-2">
+                  <Compass className="w-4 h-4 text-primary" />
+                  <h2 className="text-xs font-bold text-on-surface font-headline uppercase tracking-wider">
+                    Peluang Terdekat Unggulan
+                  </h2>
+                </div>
+                <Link href="/cari-tugas" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                  <span>Lihat Semua</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
-            )}
-          </div>
+
+              {loading ? (
+                <div className="p-6 flex flex-col gap-3">
+                  <Skeleton className="h-6 w-3/4 rounded-md" />
+                  <Skeleton className="h-4 w-1/2 rounded" />
+                  <Skeleton className="h-12 w-full rounded-xl" />
+                </div>
+              ) : featuredTask ? (
+                <div className="flex-1 p-5 sm:p-6 flex flex-col justify-between gap-4">
+                  <div>
+                    <div className="flex justify-between items-start mb-2 gap-3">
+                      <h3 className="text-base sm:text-lg font-extrabold text-on-surface font-headline leading-snug">
+                        {featuredTask.title}
+                      </h3>
+                      <div className="text-sm sm:text-base font-bold text-primary font-mono shrink-0 bg-primary/10 px-3 py-1 rounded-lg border border-primary/20 tabular-nums">
+                        {formatCurrency(featuredTask.compensation)}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-on-surface-variant text-xs font-semibold mb-2.5">
+                      <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span className="text-primary font-mono tabular-nums">
+                        {featuredTask.distance
+                          ? `${featuredTask.distance.toFixed(1)} km dari posisimu`
+                          : "Area Kampus"}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-on-surface-variant leading-relaxed line-clamp-2">
+                      {featuredTask.description}
+                    </p>
+                  </div>
+
+                  <div className="pt-3.5 flex items-center justify-between border-t border-card-border mt-1">
+                    <span className="text-xs text-on-surface-variant font-medium flex items-center gap-1.5">
+                      <Store className="w-3.5 h-3.5 text-on-surface-variant" />
+                      {featuredTask.requester_name || "UMKM Sekitar"}
+                    </span>
+                    <Link href={`/task/${featuredTask.id_task}`}>
+                      <Button variant="primary" size="sm" className="min-h-[38px] text-xs font-bold">
+                        Lihat Rincian Tugas
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-3">
+                  <SearchX className="w-10 h-10 text-on-surface-variant/40" />
+                  <p className="text-xs font-medium text-on-surface-variant">Belum ada tugas terdekat di radius 2km.</p>
+                  <Link href="/cari-tugas">
+                    <Button variant="secondary" size="sm">
+                      Jelajahi Semua Area
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Mini Radar Map (col-span 2) */}
           <div className="xl:col-span-2 rounded-2xl bg-surface-container-lowest border border-card-border shadow-xs flex flex-col h-64 xl:h-full min-h-[260px] overflow-hidden relative">
@@ -468,7 +607,7 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* ───────────── SECONDARY FEATURE WIDGETS: JADWAL & LEADERBOARD ───────────── */}
+        {/* ───────────── SECONDARY FEATURE WIDGETS: JADWAL & ROLE-SPECIFIC CARD ───────────── */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Widget 1: Jadwal & Agenda */}
           <Link
@@ -480,11 +619,8 @@ export default function DashboardPage() {
                 <Calendar className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-headline font-bold text-sm text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
-                  Jadwal & Agenda Tugas
-                  <span className="font-mono text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-md">
-                    {scheduledCount} Agenda
-                  </span>
+                <h3 className="font-headline font-bold text-sm text-on-surface group-hover:text-primary transition-colors">
+                  Jadwal &amp; Agenda Tugas
                 </h3>
                 <p className="text-xs text-on-surface-variant mt-0.5">
                   Pantau kalender jadwal pengerjaan dan deadline tugas aktif.
@@ -496,79 +632,160 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          {/* Widget 2: Peringkat & Streak */}
-          <Link
-            href="/leaderboard"
-            className="group rounded-2xl bg-surface-container-lowest border border-card-border p-5 shadow-xs hover:border-primary/40 transition-all flex items-center justify-between gap-4 cursor-pointer"
-          >
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
-                <Trophy className="w-5 h-5" />
+          {/* Widget 2: Role Specific (Disputes for Requester, Leaderboard for Worker) */}
+          {role === "requester" ? (
+            <Link
+              href="/disputes"
+              className="group rounded-2xl bg-surface-container-lowest border border-card-border p-5 shadow-xs hover:border-primary/40 transition-all flex items-center justify-between gap-4 cursor-pointer"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-headline font-bold text-sm text-on-surface group-hover:text-amber-600 transition-colors">
+                    Pusat Resolusi &amp; Bantuan
+                  </h3>
+                  <p className="text-xs text-on-surface-variant mt-0.5">
+                    Pantau penyelesaian sengketa, komplain, dan jaminan dana escrow.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-headline font-bold text-sm text-on-surface group-hover:text-amber-600 transition-colors flex items-center gap-1.5">
-                  Papan Peringkat & Streak
-                  <span className="font-mono text-[10px] font-bold bg-amber-500/10 text-amber-700 px-2 py-0.5 rounded-md flex items-center gap-0.5">
-                    <Flame className="w-3 h-3 text-amber-500" /> XP Bulanan
-                  </span>
-                </h3>
-                <p className="text-xs text-on-surface-variant mt-0.5">
-                  Lihat top worker berprestasi dan jaga streak harianmu.
-                </p>
+              <div className="p-2 rounded-lg text-on-surface-variant group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all shrink-0">
+                <ArrowRight className="w-4 h-4" />
               </div>
-            </div>
-            <div className="p-2 rounded-lg text-on-surface-variant group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all shrink-0">
-              <ArrowRight className="w-4 h-4" />
-            </div>
-          </Link>
+            </Link>
+          ) : (
+            <Link
+              href="/leaderboard"
+              className="group rounded-2xl bg-surface-container-lowest border border-card-border p-5 shadow-xs hover:border-primary/40 transition-all flex items-center justify-between gap-4 cursor-pointer"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+                  <Trophy className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-headline font-bold text-sm text-on-surface group-hover:text-amber-600 transition-colors">
+                    Papan Peringkat &amp; Streak
+                  </h3>
+                  <p className="text-xs text-on-surface-variant mt-0.5">
+                    Lihat top worker berprestasi dan jaga streak harianmu.
+                  </p>
+                </div>
+              </div>
+              <div className="p-2 rounded-lg text-on-surface-variant group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all shrink-0">
+                <ArrowRight className="w-4 h-4" />
+              </div>
+            </Link>
+          )}
         </section>
 
-        {/* ───────────── MORE NEARBY TASKS (Grid) ───────────── */}
-        {recommendedTasks.length > 0 && (
-          <section className="bg-surface-container-lowest border border-card-border rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-card-border/80 pb-3">
-              <h3 className="font-headline text-sm font-bold text-on-surface">
-                Tugas Lainnya di Sekitar Kampus
-              </h3>
-              <Link href="/cari-tugas" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-                <span>Lihat Semua ({tasks.length})</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
+        {/* ───────────── MORE TASKS GRID (Role-Specific) ───────────── */}
+        {role === "requester" ? (
+          myActiveTasks.length > 1 && (
+            <section className="bg-surface-container-lowest border border-card-border rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b border-card-border/80 pb-3">
+                <h3 className="font-headline text-sm font-bold text-on-surface">
+                  Tugas Aktif Saya Lainnya
+                </h3>
+                <Link href="/tugas" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                  <span>Lihat Semua ({myActiveTasks.length})</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-              {recommendedTasks.slice(0, 3).map((task) => (
-                <Link key={task.id_task} href={`/task/${task.id_task}`}>
-                  <div className="group bg-surface-container-low/60 border border-card-border/80 rounded-xl p-4 hover:border-primary/40 hover:bg-surface-container-low transition-all duration-150 cursor-pointer flex flex-col justify-between h-full gap-3 shadow-2xs min-h-[140px]">
-                    <div>
-                      <div className="flex justify-between items-start gap-2 mb-1.5">
-                        <h4 className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-2 leading-snug">
-                          {task.title}
-                        </h4>
-                        <span className="text-xs font-mono font-bold text-primary shrink-0 bg-primary/10 px-2.5 py-0.5 rounded-lg border border-primary/20 tabular-nums">
-                          {formatCurrency(task.compensation)}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {myActiveTasks.slice(1, 4).map((task) => (
+                  <Link key={task.id_tasks || task.id_task} href={`/task/${task.id_tasks || task.id_task}`}>
+                    <div className="group bg-surface-container-low/60 border border-card-border/80 rounded-xl p-4 hover:border-primary/40 hover:bg-surface-container-low transition-all duration-150 cursor-pointer flex flex-col justify-between h-full gap-3 shadow-2xs min-h-[140px]">
+                      <div>
+                        <div className="flex justify-between items-start gap-2 mb-1.5">
+                          <h4 className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                            {task.judul_tugas || task.title}
+                          </h4>
+                          <span className="text-xs font-mono font-bold text-primary shrink-0 bg-primary/10 px-2.5 py-0.5 rounded-lg border border-primary/20 tabular-nums">
+                            {formatCurrency(task.kompensasi || task.compensation || 0)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed">
+                          {task.deskripsi_tugas || task.description}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs text-on-surface-variant pt-2.5 border-t border-card-border/60 font-mono">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <Users className="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
+                          {task.applicant_count ?? task.applicants?.length ?? 0} Pelamar
+                        </span>
+                        <span className="text-xs font-semibold text-primary">
+                          Detail &gt;
                         </span>
                       </div>
-                      <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed">
-                        {task.description}
-                      </p>
                     </div>
-
-                    <div className="flex items-center justify-between text-xs text-on-surface-variant pt-2.5 border-t border-card-border/60 font-mono">
-                      <span className="flex items-center gap-1.5 font-medium">
-                        <Store className="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
-                        {task.requester_name || "UMKM"}
-                      </span>
-                      <span className="flex items-center gap-1 text-primary font-bold tabular-nums">
-                        <Footprints className="w-3.5 h-3.5 shrink-0" />
-                        {task.distance ? `${task.distance.toFixed(1)} km` : "Dekat"}
-                      </span>
-                    </div>
-                  </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )
+        ) : (
+          loading ? (
+            <section className="bg-surface-container-lowest border border-card-border rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b border-card-border/80 pb-3">
+                <Skeleton className="h-5 w-48 rounded" />
+                <Skeleton className="h-4 w-20 rounded" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                <TaskCardSkeleton />
+                <TaskCardSkeleton />
+                <TaskCardSkeleton />
+              </div>
+            </section>
+          ) : recommendedTasks.length > 0 ? (
+            <section className="bg-surface-container-lowest border border-card-border rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b border-card-border/80 pb-3">
+                <h3 className="font-headline text-sm font-bold text-on-surface">
+                  Tugas Lainnya di Sekitar Kampus
+                </h3>
+                <Link href="/cari-tugas" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                  <span>Lihat Semua ({tasks.length})</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
-              ))}
-            </div>
-          </section>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {recommendedTasks.slice(0, 3).map((task) => (
+                  <Link key={task.id_task} href={`/task/${task.id_task}`}>
+                    <div className="group bg-surface-container-low/60 border border-card-border/80 rounded-xl p-4 hover:border-primary/40 hover:bg-surface-container-low transition-all duration-150 cursor-pointer flex flex-col justify-between h-full gap-3 shadow-2xs min-h-[140px]">
+                      <div>
+                        <div className="flex justify-between items-start gap-2 mb-1.5">
+                          <h4 className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                            {task.title}
+                          </h4>
+                          <span className="text-xs font-mono font-bold text-primary shrink-0 bg-primary/10 px-2.5 py-0.5 rounded-lg border border-primary/20 tabular-nums">
+                            {formatCurrency(task.compensation)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed">
+                          {task.description}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs text-on-surface-variant pt-2.5 border-t border-card-border/60 font-mono">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <Store className="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
+                          {task.requester_name || "UMKM"}
+                        </span>
+                        <span className="flex items-center gap-1 text-primary font-bold tabular-nums">
+                          <Footprints className="w-3.5 h-3.5 shrink-0" />
+                          {task.distance ? `${task.distance.toFixed(1)} km` : "Dekat"}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null
         )}
       </div>
     </div>
