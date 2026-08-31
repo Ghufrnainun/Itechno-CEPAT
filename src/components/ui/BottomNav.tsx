@@ -13,7 +13,7 @@ interface BottomNavProps {
   role: "worker" | "requester";
 }
 
-export function BottomNav({ role }: BottomNavProps) {
+function BottomNavContent({ role }: BottomNavProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useCurrentRole();
@@ -135,5 +135,13 @@ export function BottomNav({ role }: BottomNavProps) {
         Profil
       </Link>
     </nav>
+  );
+}
+
+export function BottomNav(props: BottomNavProps) {
+  return (
+    <React.Suspense fallback={null}>
+      <BottomNavContent {...props} />
+    </React.Suspense>
   );
 }

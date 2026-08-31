@@ -169,7 +169,9 @@ export default function MainAppLayout({
             </main>
 
             {/* Mobile Bottom Navigation */}
-            <BottomNav role={role} />
+            <React.Suspense fallback={null}>
+              <BottomNav role={role} />
+            </React.Suspense>
           </div>
         </div>
       </ToastProvider>
