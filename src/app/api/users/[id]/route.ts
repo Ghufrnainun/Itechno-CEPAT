@@ -41,14 +41,22 @@ export async function GET(
     const adminAuth = await verifyAdminToken(request);
 
     const isAdmin = adminAuth.valid;
-    const isOwner = authUser?.id === dbUser.id_user || authUser?.email === dbUser.email;
+    const isOwner = authUser?.id === dbUser.auth_id || authUser?.email === dbUser.email;
 
-    // Hide PII only if the user is completely unauthenticated (not logged in)
-    // Logged-in users can see contact info so they can communicate
-    if (!authUser && !isAdmin) {
+    // Sanitize sensitive private data & PII if not the owner or an admin
+    if (!isOwner && !isAdmin) {
+      dbUser.fcm_token = null;
+      dbUser.auth_id = null;
+      dbUser.total_balance = 0;
+      dbUser.held_balance = 0;
+      dbUser.is_banned = false;
+      dbUser.ban_type = null;
+      dbUser.ban_reason = null;
+      dbUser.banned_at = null;
+      dbUser.banned_until = null;
       dbUser.email = "[Disembunyikan]";
-      dbUser.no_telpon = "[Disembunyikan]";
-      dbUser.alamat = "[Disembunyikan]";
+      dbUser.no_telpon = null;
+      dbUser.alamat = null;
     }
 
     return NextResponse.json({

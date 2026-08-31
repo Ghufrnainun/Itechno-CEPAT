@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import FeedClient from "./FeedClient";
 
@@ -26,9 +27,13 @@ export default async function FeedPage() {
     },
   });
 
+  const userCondition = userId 
+    ? Prisma.sql`AND t.id_requester != ${userId}` 
+    : Prisma.empty;
+
   // Fetch initial newest tasks (without geolocation)
   // Geolocation-based sorting will be handled by the client when it hydrates
-  const initialTasksData = await prisma.$queryRawUnsafe(`
+  const initialTasksData = await prisma.$queryRaw`
       SELECT 
         t.id_tasks as id_task, 
         t.id_requester,
@@ -64,10 +69,10 @@ export default async function FeedPage() {
       LEFT JOIN "User" u ON t.id_requester = u.id_user
       WHERE 
         st.nama_status = 'OPEN'
-        ${userId ? `AND t.id_requester != '${userId}'` : ''}
+        ${userCondition}
       ORDER BY t.created_at DESC
       LIMIT 10
-  `);
+  `;
 
   // Transform raw data to match the expected Task format in client
   const initialTasks = (initialTasksData as any[]).map(t => ({

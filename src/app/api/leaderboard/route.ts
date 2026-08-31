@@ -40,7 +40,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate monthly leaderboard and current user's rank in one query
-    const results: any[] = await prisma.$queryRawUnsafe(`
+    const targetUserId = currentUserId || '00000000-0000-0000-0000-000000000000';
+    const results: any[] = await prisma.$queryRaw`
       WITH RankedScores AS (
         SELECT 
           u.id_user,
@@ -52,14 +53,14 @@ export async function GET(request: NextRequest) {
           COALESCE(SUM(x.xp_amount), 0)::int AS xp,
           RANK() OVER (ORDER BY COALESCE(SUM(x.xp_amount), 0) DESC, u.total_completed DESC, u.rating_avg DESC)::int as rank
         FROM "User" u
-        LEFT JOIN "XPLog" x ON u.id_user = x.id_user AND x.created_at >= $1 AND x.created_at <= $5
-        WHERE u.id_role = $2
+        LEFT JOIN "XPLog" x ON u.id_user = x.id_user AND x.created_at >= ${startDate} AND x.created_at <= ${endDate}
+        WHERE u.id_role = ${workerRole.id_role}
         GROUP BY u.id_user
       )
       SELECT * FROM RankedScores
-      WHERE rank <= $3 OR id_user = $4
+      WHERE rank <= ${limit} OR id_user = ${targetUserId}
       ORDER BY rank ASC
-    `, startDate, workerRole.id_role, limit, currentUserId || '00000000-0000-0000-0000-000000000000', endDate);
+    `;
 
     // Separate top users and current user
     const topUsers = results.filter(r => r.rank <= limit);
