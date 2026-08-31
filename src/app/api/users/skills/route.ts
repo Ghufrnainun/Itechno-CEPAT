@@ -1,24 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-        },
-      }
-    );
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    if (!authUser) {
+    const supabase = await createClient();
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    if (authError || !authUser) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
@@ -33,22 +21,23 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { skills } = body; // Array of { id_skill_master, deskripsi_pengalaman, certificate_url }
 
-    // Hapus skill user yang lama (jika ada) biar data fresh
-    await prisma.skillsUser.deleteMany({
-      where: { id_user: dbUser.id_user }
-    });
-
-    // Insert skill user yang baru
-    if (skills && Array.isArray(skills) && skills.length > 0) {
-      await prisma.skillsUser.createMany({
-        data: skills.map((s: any) => ({
-          id_user: dbUser.id_user,
-          id_skills_master: s.id_skill_master,
-          deskripsi_pengalaman: s.deskripsi_pengalaman || null,
-          certificate_url: s.certificate_url || null
-        }))
+    // Jalankan penghapusan dan penambahan skills baru secara atomik dalam satu transaksi
+    await prisma.$transaction(async (tx) => {
+      await tx.skillsUser.deleteMany({
+        where: { id_user: dbUser.id_user }
       });
-    }
+
+      if (skills && Array.isArray(skills) && skills.length > 0) {
+        await tx.skillsUser.createMany({
+          data: skills.map((s: any) => ({
+            id_user: dbUser.id_user,
+            id_skills_master: s.id_skill_master,
+            deskripsi_pengalaman: s.deskripsi_pengalaman || null,
+            certificate_url: s.certificate_url || null
+          }))
+        });
+      }
+    });
 
     return NextResponse.json({ success: true, message: 'Skills berhasil disimpan' });
   } catch (error) {

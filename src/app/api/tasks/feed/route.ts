@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 import { z } from 'zod'
 
@@ -52,33 +53,44 @@ export async function GET(request: NextRequest) {
     }
 
     const { lat, lng, radius, q, id_category, sort, page, limit } = parsed.data
-    const searchString = q ? `%${q.replace(/'/g, "''")}%` : `%`
     const offset = (page - 1) * limit
-
     const hasLocation = lat != null && lng != null
-    let orderByClause = hasLocation ? 'distance ASC' : 't.created_at DESC'
-    if (sort === 'price_desc') orderByClause = 't.kompensasi DESC'
-    if (sort === 'price_asc') orderByClause = 't.kompensasi ASC'
-    if (sort === 'newest') orderByClause = 't.created_at DESC'
 
-    /**
-     * Prisma $queryRawUnsafe is required here for dynamic ORDER BY interpolation.
-     * SQL injection is mitigated by strictly validating the `sort` parameter via Zod enum,
-     * and parameterizing `id_category` as a strict UUID.
-     */
+    let orderByClause = hasLocation ? Prisma.sql`ORDER BY distance ASC` : Prisma.sql`ORDER BY t.created_at DESC`
+    if (sort === 'price_desc') orderByClause = Prisma.sql`ORDER BY t.kompensasi DESC`
+    if (sort === 'price_asc') orderByClause = Prisma.sql`ORDER BY t.kompensasi ASC`
+    if (sort === 'newest') orderByClause = Prisma.sql`ORDER BY t.created_at DESC`
+
     const categoryCondition = id_category 
-      ? `AND t.id_category = '${id_category}'` 
-      : ''
+      ? Prisma.sql`AND t.id_category = ${id_category}` 
+      : Prisma.empty
       
     const distanceSelect = hasLocation 
-      ? `(ST_Distance(t.lokasi_geo, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography) / 1000.0) AS distance`
-      : `NULL AS distance`
+      ? Prisma.sql`(ST_Distance(t.lokasi_geo, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography) / 1000.0) AS distance`
+      : Prisma.sql`NULL AS distance`
       
     const distanceCondition = (hasLocation && radius != null)
-      ? `AND ST_DWithin(t.lokasi_geo, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, ${radius})`
-      : ``
+      ? Prisma.sql`AND ST_DWithin(t.lokasi_geo, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, ${radius})`
+      : Prisma.empty
 
-    const querySql = `
+    const userCondition = userId 
+      ? Prisma.sql`AND t.id_requester != ${userId}` 
+      : Prisma.empty
+
+    const searchCondition = q
+      ? Prisma.sql`AND (
+          t.judul_tugas ILIKE ${`%${q}%`} OR 
+          t.deskripsi_tugas ILIKE ${`%${q}%`} OR
+          c.nama_kategori ILIKE ${`%${q}%`} OR
+          EXISTS (
+            SELECT 1 FROM "TaskRequirements" tr
+            JOIN "SkillsMaster" sm ON tr.id_skill_master = sm.id_skill_master
+            WHERE tr.id_tasks = t.id_tasks AND sm.nama_skill ILIKE ${`%${q}%`}
+          )
+        )`
+      : Prisma.empty
+
+    const tasks = await prisma.$queryRaw`
       SELECT 
         t.id_tasks as id_task, 
         t.id_requester,
@@ -121,28 +133,14 @@ export async function GET(request: NextRequest) {
       LEFT JOIN "User" u ON t.id_requester = u.id_user
       WHERE 
         st.nama_status = 'OPEN'
-        ${userId ? `AND t.id_requester != '${userId}'` : ''}
+        ${userCondition}
         ${distanceCondition}
-        AND (
-          ${q ? 'true' : 'false'} = false OR 
-          t.judul_tugas ILIKE '${searchString}' OR 
-          t.deskripsi_tugas ILIKE '${searchString}' OR
-          c.nama_kategori ILIKE '${searchString}' OR
-          EXISTS (
-            SELECT 1 FROM "TaskRequirements" tr
-            JOIN "SkillsMaster" sm ON tr.id_skill_master = sm.id_skill_master
-            WHERE tr.id_tasks = t.id_tasks AND sm.nama_skill ILIKE '${searchString}'
-          )
-        )
+        ${searchCondition}
         ${categoryCondition}
-      ORDER BY ${orderByClause}
+      ${orderByClause}
       LIMIT ${limit}
       OFFSET ${offset}
     `
-
-    // Execute raw SQL query safely (variables pre-validated by Zod)
-    
-    const tasks = await prisma.$queryRawUnsafe(querySql)
 
     return NextResponse.json({
       success: true,

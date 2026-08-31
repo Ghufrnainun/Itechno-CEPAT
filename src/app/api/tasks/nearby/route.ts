@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 import { z } from 'zod'
 
@@ -55,18 +56,20 @@ export async function GET(request: NextRequest) {
     }
 
     const { lat: latitude, lng: longitude, radius: radiusMeters, q: query } = parsed.data
-    const userCondition = userId ? `AND t.id_requester != '${userId}'` : ''
-    const safeSearchString = query ? `%${query.replace(/'/g, "''")}%` : ''
-    const searchCondition = safeSearchString
-      ? `AND (t.judul_tugas ILIKE '${safeSearchString}' OR t.deskripsi_tugas ILIKE '${safeSearchString}')`
-      : ''
+    const userCondition = userId 
+      ? Prisma.sql`AND t.id_requester != ${userId}` 
+      : Prisma.empty
+
+    const searchCondition = query
+      ? Prisma.sql`AND (t.judul_tugas ILIKE ${`%${query}%`} OR t.deskripsi_tugas ILIKE ${`%${query}%`})`
+      : Prisma.empty
 
     /**
      * Execute PostGIS spatial query for radius-based filtering.
      * Uses SRID 4326 (WGS 84) to cast coordinates into geography points.
      * Only returns lightweight marker data (coordinates & icons) for 'OPEN' tasks.
      */
-    const querySql = `
+    const nearbyTasks = await prisma.$queryRaw`
       SELECT 
         t.id_tasks as id_task, 
         ST_Y(t.lokasi_geo::geometry) as latitude,
@@ -86,8 +89,6 @@ export async function GET(request: NextRequest) {
         )
         ${searchCondition}
     `
-
-    const nearbyTasks = await prisma.$queryRawUnsafe(querySql)
 
     return NextResponse.json({
       success: true,
