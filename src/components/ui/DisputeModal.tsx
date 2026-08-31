@@ -37,8 +37,27 @@ interface DisputeModalProps {
   taskId: string;
   taskTitle: string;
   counterpartName?: string;
+  userRole?: 'requester' | 'worker';
   onSuccess?: () => void;
 }
+
+const REQUESTER_REASONS = [
+  'Hasil kerja tidak sesuai kesepakatan',
+  'Pekerja tidak dapat dihubungi / tidak hadir',
+  'Kualitas pekerjaan jauh di bawah standar yang disepakati',
+  'Pekerja membatalkan tugas secara sepihak',
+  'Pelanggaran etika atau kecurangan',
+  'Lainnya',
+];
+
+const WORKER_REASONS = [
+  'Pemberi tugas menolak menyelesaikan tugas / lepas tanggung jawab',
+  'Pemberi tugas tidak dapat dihubungi setelah tugas selesai',
+  'Kompensasi atau instruksi diubah sepihak oleh pemberi tugas',
+  'Pemberi tugas meminta revisi di luar kesepakatan awal',
+  'Pelanggaran etika atau perlakuan tidak pantas',
+  'Lainnya',
+];
 
 export function DisputeModal({
   isOpen,
@@ -46,15 +65,25 @@ export function DisputeModal({
   taskId,
   taskTitle,
   counterpartName,
+  userRole = 'requester',
   onSuccess,
 }: DisputeModalProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [reason, setReason] = useState('Hasil kerja tidak sesuai kesepakatan');
+  const reasonsList = userRole === 'worker' ? WORKER_REASONS : REQUESTER_REASONS;
+
+  const [reason, setReason] = useState(reasonsList[0]);
   const [description, setDescription] = useState('');
   const [evidenceMode, setEvidenceMode] = useState<'upload' | 'url'>('upload');
   const [evidenceUrl, setEvidenceUrl] = useState('');
+
+  // Sinkronkan reason awal saat modal dibuka atau role berubah
+  React.useEffect(() => {
+    if (isOpen) {
+      setReason(userRole === 'worker' ? WORKER_REASONS[0] : REQUESTER_REASONS[0]);
+    }
+  }, [isOpen, userRole]);
 
   // Image Upload & Compression State
   const [compressing, setCompressing] = useState(false);
@@ -219,14 +248,13 @@ export function DisputeModal({
             )}
 
             <div>
-              <Label required>Alasan Pengajuan Sengketa</Label>
+              <Label required>Alasan Pengajuan Sengketa ({userRole === 'worker' ? 'Sisi Pekerja' : 'Sisi Pemberi Tugas'})</Label>
               <Select value={reason} onChange={(e) => setReason(e.target.value)}>
-                <option value="Hasil kerja tidak sesuai kesepakatan">Hasil kerja tidak sesuai kesepakatan</option>
-                <option value="Pekerja tidak dapat dihubungi / tidak hadir">Pekerja tidak dapat dihubungi / tidak hadir</option>
-                <option value="Pemberi tugas menolak menyelesaikan tugas">Pemberi tugas menolak menyelesaikan tugas</option>
-                <option value="Kompensasi atau instruksi diubah sepihak">Kompensasi atau instruksi diubah sepihak</option>
-                <option value="Pelanggaran etika atau kecurangan">Pelanggaran etika atau kecurangan</option>
-                <option value="Lainnya">Lainnya</option>
+                {reasonsList.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
               </Select>
             </div>
 

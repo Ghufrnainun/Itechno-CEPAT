@@ -4,7 +4,7 @@ export class GamificationService {
   /**
    * Adds XP to a user and calculates level ups.
    */
-  static async addXP(userId: string, amount: number) {
+  static async addXP(userId: string, amount: number, source: string = "SYSTEM") {
     try {
       const user = await prisma.user.findUnique({
         where: { id_user: userId },
@@ -16,6 +16,7 @@ export class GamificationService {
       const newXP = user.xp + amount;
       const newLevel = Math.floor(Math.sqrt(newXP / 100)) + 1;
 
+      // Update User
       const updatedUser = await prisma.user.update({
         where: { id_user: userId },
         data: {
@@ -23,6 +24,28 @@ export class GamificationService {
           level: newLevel,
         },
       });
+
+      // Add to XPLog
+      await prisma.xPLog.create({
+        data: {
+          id_user: userId,
+          xp_amount: amount,
+          source: source,
+        },
+      });
+
+      // Auto-Cleanup: Hapus log yang umurnya lebih dari 1 tahun
+      const now = new Date();
+      const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+      
+      // Fire and forget cleanup
+      prisma.xPLog.deleteMany({
+        where: {
+          created_at: {
+            lt: oneYearAgo,
+          },
+        },
+      }).catch((e: unknown) => console.error("[GamificationService] Cleanup error:", e));
 
       return updatedUser;
     } catch (error) {

@@ -1447,6 +1447,7 @@ export default function TaskDetailPage() {
         onClose={() => setIsDisputeModalOpen(false)}
         taskId={task.id_tasks}
         taskTitle={task.judul_tugas}
+        userRole={role}
         counterpartName={
           role === "requester"
             ? task.applicants.find((a) => a.status === "accepted")?.worker?.nama_lengkap

@@ -179,7 +179,7 @@ export function DialogContent({
 export function DialogHeader({ children, className }: { children: React.ReactNode; className?: string }) {
   const { onOpenChange } = useDialog();
   return (
-    <div className={cn("px-6 py-4.5 border-b border-card-border bg-surface-container-low/50 flex justify-between items-center shrink-0", className)}>
+    <div className={cn("px-6 py-4.5 border-b border-card-border bg-surface-container-low/50 flex justify-between items-center shrink-0 rounded-t-2xl", className)}>
       <div className="flex-1 pr-4">{children}</div>
       <DialogClose />
     </div>
@@ -212,7 +212,7 @@ export function DialogBody({ children, className }: { children: React.ReactNode;
 
 export function DialogFooter({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("px-6 py-4 border-t border-card-border/80 bg-surface-container-low/30 flex items-center justify-end gap-3 shrink-0", className)}>
+    <div className={cn("px-6 py-4 border-t border-card-border/80 bg-surface-container-low/30 flex items-center justify-end gap-3 shrink-0 rounded-b-2xl", className)}>
       {children}
     </div>
   );

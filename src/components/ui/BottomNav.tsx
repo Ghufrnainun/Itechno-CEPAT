@@ -67,20 +67,6 @@ export function BottomNav({ role }: BottomNavProps) {
       )}
 
       <Link
-        href="/leaderboard"
-        aria-label="Leaderboard"
-        className={cn(
-          "flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-1 rounded-lg text-[11px] font-medium transition-[color,transform] duration-150 active:scale-90 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none",
-          pathname === "/leaderboard"
-            ? "text-primary font-bold scale-105"
-            : "text-on-surface-variant hover:text-on-surface"
-        )}
-      >
-        <Trophy className="w-5 h-5 mb-0.5" />
-        Rank
-      </Link>
-
-      <Link
         href="/notifications"
         aria-label="Notifikasi"
         className={cn(
