@@ -5,7 +5,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useId,
   useMemo,
   useState,
   type ReactNode,
@@ -18,7 +17,6 @@ type Variant = "pill" | "underline" | "segment";
 type Ctx = {
   value: string;
   setValue: (v: string) => void;
-  layoutId: string;
   variant: Variant;
 };
 
@@ -55,7 +53,6 @@ export function Tabs({
   className?: string;
 }) {
   const [internal, setInternal] = useState(defaultValue ?? "");
-  const layoutId = useId();
   const reduce = useReducedMotion();
   const controlled = value !== undefined;
   const current = controlled ? value : internal;
@@ -67,16 +64,15 @@ export function Tabs({
     [controlled, onValueChange],
   );
   const contextValue = useMemo(
-    () => ({ value: current, setValue, layoutId, variant }),
-    [current, layoutId, setValue, variant],
+    () => ({ value: current, setValue, variant }),
+    [current, setValue, variant],
   );
   return (
     <MotionConfig transition={reduce ? { duration: 0 } : transition}>
       <TabsCtx.Provider value={contextValue}>
-        {/* layoutRoot scopes projection to the Tabs wrapper */}
-        <motion.div layoutRoot className={className}>
+        <div className={className}>
           {children}
-        </motion.div>
+        </div>
       </TabsCtx.Provider>
     </MotionConfig>
   );
@@ -108,7 +104,7 @@ export function TabsTrigger({
   className?: string;
   indicatorClassName?: string;
 }) {
-  const { value: current, setValue, layoutId, variant } = useTabs();
+  const { value: current, setValue, variant } = useTabs();
   const active = current === value;
 
   if (variant === "underline") {
@@ -127,8 +123,7 @@ export function TabsTrigger({
       >
         <span className="relative z-10 inline-flex items-center gap-1.5">{children}</span>
         {active ? (
-          <motion.span
-            layoutId={layoutId}
+          <span
             className={cn(
               "absolute -bottom-px left-0 right-0 h-0.5 bg-primary rounded-full z-10",
               indicatorClassName,
@@ -158,8 +153,7 @@ export function TabsTrigger({
       )}
     >
       {active && (
-        <motion.span
-          layoutId={layoutId}
+        <span
           className={cn(
             "absolute inset-0 z-0 bg-surface-container-lowest border border-card-border/80 shadow-xs pointer-events-none rounded-lg",
             indicatorClassName,
