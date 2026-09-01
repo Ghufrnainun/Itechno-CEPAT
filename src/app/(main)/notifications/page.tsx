@@ -170,7 +170,7 @@ export default function NotificationsPage() {
       </header>
 
       {/* Main Content with Scroll Container & Clearance */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar [scrollbar-gutter:stable]">
         <div className="max-w-4xl mx-auto w-full p-4 md:p-6 lg:p-8 flex flex-col gap-5 pb-36 lg:pb-12">
           {/* Filter Navigation Tabs */}
           <div className="flex items-center justify-between border-b border-card-border pb-2">

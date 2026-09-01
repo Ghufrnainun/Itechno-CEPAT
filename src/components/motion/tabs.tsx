@@ -120,7 +120,8 @@ export function TabsTrigger({
         onClick={() => setValue(value)}
         className={cn(
           "relative isolate px-3.5 pb-2.5 pt-1.5 -mb-px text-xs font-bold transition-colors min-h-[38px] inline-flex items-center justify-center gap-2 cursor-pointer font-sans select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
-          active ? "text-primary font-bold" : "text-on-surface-variant hover:text-on-surface font-medium",
+          "font-bold",
+          active ? "text-primary" : "text-on-surface-variant hover:text-on-surface",
           className,
         )}
       >
@@ -138,7 +139,7 @@ export function TabsTrigger({
     );
   }
 
-  const radiusClass = "rounded-lg";
+  const radiusClass = variant === "segment" ? "rounded-lg" : "rounded-full";
 
   return (
     <button
@@ -149,9 +150,10 @@ export function TabsTrigger({
       className={cn(
         "relative isolate inline-flex items-center justify-center whitespace-nowrap px-4 py-2 text-xs font-bold font-sans outline-none cursor-pointer select-none transition-colors duration-150 min-h-[36px]",
         radiusClass,
+        "font-bold",
         active
-          ? "text-primary font-bold"
-          : "text-on-surface-variant hover:text-on-surface font-medium",
+          ? "text-primary"
+          : "text-on-surface-variant hover:text-on-surface",
         className,
       )}
     >
