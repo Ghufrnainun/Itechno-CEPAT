@@ -44,7 +44,14 @@ export async function POST(request: NextRequest) {
     const fileId = crypto.randomUUID();
     const fileName = `${authUser.id}/${fileId}.${ext}`;
 
-    const { error: uploadError } = await supabase.storage
+    // Gunakan Service Role Key untuk bypass RLS (karena authUser udah divalidasi di atas)
+    const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
+    const supabaseAdmin = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { error: uploadError } = await supabaseAdmin.storage
       .from("portfolios")
       .upload(fileName, buffer, {
         contentType: isJpeg ? "image/jpeg" : isPng ? "image/png" : "image/webp",
@@ -59,7 +66,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data } = supabase.storage.from("portfolios").getPublicUrl(fileName);
+    const { data } = supabaseAdmin.storage.from("portfolios").getPublicUrl(fileName);
 
     return NextResponse.json({
       success: true,
