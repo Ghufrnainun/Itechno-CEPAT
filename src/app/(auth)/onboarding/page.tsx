@@ -22,6 +22,10 @@ function StepContact({
   setPhone,
   univ,
   setUniv,
+  tagline,
+  setTagline,
+  alamat,
+  setAlamat,
   onNext,
   error,
 }: {
@@ -29,6 +33,10 @@ function StepContact({
   setPhone: (v: string) => void;
   univ: string;
   setUniv: (v: string) => void;
+  tagline: string;
+  setTagline: (v: string) => void;
+  alamat: string;
+  setAlamat: (v: string) => void;
   onNext: () => void;
   error: string;
 }) {
@@ -78,6 +86,34 @@ function StepContact({
             onChange={(e) => setUniv(e.target.value)}
           />
         </div>
+
+        <div>
+          <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">
+            Profesi / Peran{" "}
+            <span className="text-on-surface-variant/40 normal-case font-normal tracking-normal">
+              (opsional)
+            </span>
+          </label>
+          <Input
+            type="text"
+            placeholder="Contoh: UI/UX Designer / Mahasiswa"
+            value={tagline}
+            onChange={(e) => setTagline(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">
+            Domisili / Alamat{" "}
+            <span className="text-error normal-case font-normal tracking-normal">*</span>
+          </label>
+          <Input
+            type="text"
+            placeholder="Contoh: Yogyakarta / Sleman"
+            value={alamat}
+            onChange={(e) => setAlamat(e.target.value)}
+          />
+        </div>
       </div>
 
       <button
@@ -100,7 +136,6 @@ function StepProfile({
   availableSkills,
   selectedSkills,
   toggleSkill,
-  updateSkillDetail,
   onBack,
   onSubmit,
   loading,
@@ -109,9 +144,8 @@ function StepProfile({
   bio: string;
   setBio: (v: string) => void;
   availableSkills: { id_skill_master: string; nama_skill: string; icon: string | null }[];
-  selectedSkills: { id_skill_master: string; nama_skill: string; icon: string | null; deskripsi_pengalaman: string; certificate_url: string }[];
+  selectedSkills: { id_skill_master: string; nama_skill: string; icon: string | null }[];
   toggleSkill: (skill: { id_skill_master: string; nama_skill: string; icon: string | null }) => void;
-  updateSkillDetail: (skillId: string, field: 'deskripsi_pengalaman' | 'certificate_url', val: string) => void;
   onBack: () => void;
   onSubmit: () => void;
   loading: boolean;
@@ -203,38 +237,7 @@ function StepProfile({
             })}
           </div>
 
-          {selectedSkills.length > 0 && (
-            <div className="flex flex-col gap-3">
-              <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mt-2">
-                Detail Keahlian{" "}
-                <span className="text-on-surface-variant/40 normal-case font-normal tracking-normal">
-                  (opsional)
-                </span>
-              </label>
-              {selectedSkills.map((skill) => {
-                return (
-                  <div key={skill.id_skill_master} className="p-3.5 border border-card-border rounded-xl bg-surface-container-lowest flex flex-col gap-2.5 shadow-xs">
-                    <p className="text-xs font-bold text-primary flex items-center gap-2 capitalize font-sans tracking-wide">
-                      {renderIcon(skill.icon, "w-4 h-4 text-primary")}
-                      {skill.nama_skill}
-                    </p>
-                    <textarea
-                      className="w-full p-2.5 text-base sm:text-xs rounded-lg border border-card-border bg-surface-container-low text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none min-h-[60px] placeholder:text-on-surface-variant/50"
-                      placeholder="Ceritakan pengalamanmu..."
-                      value={skill.deskripsi_pengalaman}
-                      onChange={(e) => updateSkillDetail(skill.id_skill_master, 'deskripsi_pengalaman', e.target.value)}
-                    />
-                    <Input
-                      type="url"
-                      placeholder="Link Sertifikat / Portofolio"
-                      value={skill.certificate_url}
-                      onChange={(e) => updateSkillDetail(skill.id_skill_master, 'certificate_url', e.target.value)}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          {/* Removed Detail Keahlian section as it's no longer used */}
         </div>
       </div>
 
@@ -280,8 +283,10 @@ function OnboardingContent() {
   const [bio, setBio] = useState("");
   const [univ, setUniv] = useState("");
   const [phone, setPhone] = useState("");
+  const [tagline, setTagline] = useState("");
+  const [alamat, setAlamat] = useState("");
   const [availableSkills, setAvailableSkills] = useState<{ id_skill_master: string; nama_skill: string; icon: string | null }[]>([]);
-  const [selectedSkills, setSelectedSkills] = useState<{ id_skill_master: string; nama_skill: string; icon: string | null; deskripsi_pengalaman: string; certificate_url: string }[]>([]);
+  const [selectedSkills, setSelectedSkills] = useState<{ id_skill_master: string; nama_skill: string; icon: string | null }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -309,19 +314,19 @@ function OnboardingContent() {
         }
         return prev;
       } else {
-        return [...prev, { ...skill, deskripsi_pengalaman: "", certificate_url: "" }];
+        return [...prev, { ...skill }];
       }
     });
-  };
-
-  const updateSkillDetail = (skillId: string, field: 'deskripsi_pengalaman' | 'certificate_url', val: string) => {
-    setSelectedSkills(prev => prev.map(s => s.id_skill_master === skillId ? { ...s, [field]: val } : s));
   };
 
   const goToStep2 = () => {
     setError("");
     if (phone.trim().length < 8) {
       setError("Nomor WhatsApp minimal 8 digit.");
+      return;
+    }
+    if (alamat.trim().length < 3) {
+      setError("Harap isi domisili/alamat kamu.");
       return;
     }
     setStep(2);
@@ -348,6 +353,8 @@ function OnboardingContent() {
           pendidikan_terakhir: univ,
           no_telpon: phone,
           role,
+          tagline,
+          alamat,
         }),
       });
 
@@ -409,6 +416,10 @@ function OnboardingContent() {
             setPhone={setPhone}
             univ={univ}
             setUniv={setUniv}
+            tagline={tagline}
+            setTagline={setTagline}
+            alamat={alamat}
+            setAlamat={setAlamat}
             onNext={goToStep2}
             error={error}
           />
@@ -420,7 +431,6 @@ function OnboardingContent() {
             availableSkills={availableSkills}
             selectedSkills={selectedSkills}
             toggleSkill={toggleSkill}
-            updateSkillDetail={updateSkillDetail}
             onBack={() => {
               setError("");
               setStep(1);

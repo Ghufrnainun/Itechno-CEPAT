@@ -5,7 +5,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useId,
   useMemo,
   useState,
   type ReactNode,
@@ -18,7 +17,6 @@ type Variant = "pill" | "underline" | "segment";
 type Ctx = {
   value: string;
   setValue: (v: string) => void;
-  layoutId: string;
   variant: Variant;
 };
 
@@ -55,7 +53,6 @@ export function Tabs({
   className?: string;
 }) {
   const [internal, setInternal] = useState(defaultValue ?? "");
-  const layoutId = useId();
   const reduce = useReducedMotion();
   const controlled = value !== undefined;
   const current = controlled ? value : internal;
@@ -67,25 +64,24 @@ export function Tabs({
     [controlled, onValueChange],
   );
   const contextValue = useMemo(
-    () => ({ value: current, setValue, layoutId, variant }),
-    [current, layoutId, setValue, variant],
+    () => ({ value: current, setValue, variant }),
+    [current, setValue, variant],
   );
   return (
     <MotionConfig transition={reduce ? { duration: 0 } : transition}>
       <TabsCtx.Provider value={contextValue}>
-        {/* layoutRoot scopes projection to the Tabs wrapper */}
-        <motion.div layoutRoot className={className}>
+        <div className={className}>
           {children}
-        </motion.div>
+        </div>
       </TabsCtx.Provider>
     </MotionConfig>
   );
 }
 
 const listClasses: Record<Variant, string> = {
-  pill: "inline-flex items-center gap-1 rounded-full bg-surface-container-low border border-card-border p-1 max-w-full overflow-x-auto no-scrollbar shadow-xs",
+  pill: "inline-flex items-center gap-1 rounded-xl bg-surface-container-low border border-card-border p-1 max-w-full overflow-x-auto no-scrollbar shadow-xs",
   underline: "inline-flex items-center gap-2 border-b border-card-border max-w-full overflow-x-auto no-scrollbar",
-  segment: "inline-flex items-center gap-1 rounded-full bg-surface-container-low border border-card-border p-1 max-w-full overflow-x-auto no-scrollbar shadow-xs",
+  segment: "inline-flex items-center gap-1 rounded-xl bg-surface-container-low border border-card-border p-1 max-w-full overflow-x-auto no-scrollbar shadow-xs",
 };
 
 export function TabsList({ children, className }: { children: ReactNode; className?: string }) {
@@ -108,7 +104,7 @@ export function TabsTrigger({
   className?: string;
   indicatorClassName?: string;
 }) {
-  const { value: current, setValue, layoutId, variant } = useTabs();
+  const { value: current, setValue, variant } = useTabs();
   const active = current === value;
 
   if (variant === "underline") {
@@ -120,14 +116,14 @@ export function TabsTrigger({
         onClick={() => setValue(value)}
         className={cn(
           "relative isolate px-3.5 pb-2.5 pt-1.5 -mb-px text-xs font-bold transition-colors min-h-[38px] inline-flex items-center justify-center gap-2 cursor-pointer font-sans select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
-          active ? "text-primary font-bold" : "text-on-surface-variant hover:text-on-surface font-medium",
+          "font-bold",
+          active ? "text-primary" : "text-on-surface-variant hover:text-on-surface",
           className,
         )}
       >
         <span className="relative z-10 inline-flex items-center gap-1.5">{children}</span>
         {active ? (
-          <motion.span
-            layoutId={layoutId}
+          <span
             className={cn(
               "absolute -bottom-px left-0 right-0 h-0.5 bg-primary rounded-full z-10",
               indicatorClassName,
@@ -138,7 +134,7 @@ export function TabsTrigger({
     );
   }
 
-  const radiusClass = "rounded-full";
+  const radiusClass = variant === "segment" ? "rounded-lg" : "rounded-full";
 
   return (
     <button
@@ -149,19 +145,17 @@ export function TabsTrigger({
       className={cn(
         "relative isolate inline-flex items-center justify-center whitespace-nowrap px-4 py-2 text-xs font-bold font-sans outline-none cursor-pointer select-none transition-colors duration-150 min-h-[36px]",
         radiusClass,
+        "font-bold",
         active
-          ? "text-primary font-bold"
-          : "text-on-surface-variant hover:text-on-surface font-medium",
+          ? "text-primary"
+          : "text-on-surface-variant hover:text-on-surface",
         className,
       )}
     >
       {active && (
-        <motion.span
-          layoutId={layoutId}
-          style={{ borderRadius: 9999 }}
+        <span
           className={cn(
-            "absolute inset-0 z-0 bg-surface-container-lowest border border-card-border/80 shadow-xs pointer-events-none",
-            radiusClass,
+            "absolute inset-0 z-0 bg-surface-container-lowest border border-card-border/80 shadow-xs pointer-events-none rounded-lg",
             indicatorClassName,
           )}
         />

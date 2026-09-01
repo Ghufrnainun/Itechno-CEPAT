@@ -18,7 +18,7 @@ export function SdgImpact() {
           initial={reduce ? false : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 mb-8"
+          className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border border-white/10 bg-white/5 mb-8"
         >
           <Leaf size={14} weight="duotone" className="text-primary" />
           <span className="text-xs font-semibold tracking-widest uppercase text-white/70">Misi Kami</span>

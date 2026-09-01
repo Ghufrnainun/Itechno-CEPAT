@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
       prisma.userReport.count({ where: { status: 'resolved' } }),
     ]);
 
-    const formattedReports = reports.map((r) => ({
+    const formattedReports = reports.map((r: any) => ({
       id: r.id_report,
       kategori: r.kategori,
       subjek: r.subjek,

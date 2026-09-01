@@ -6,7 +6,7 @@ export function SdgBadge({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/40 border border-secondary/20 shrink-0",
+        "inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary-container/40 border border-secondary/20 shrink-0",
         className
       )}
     >

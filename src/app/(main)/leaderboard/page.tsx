@@ -217,9 +217,6 @@ export default function LeaderboardPage() {
               <h1 className="font-headline font-extrabold text-2xl sm:text-3xl text-on-surface tracking-tight">
                 Peringkat Pekerja
               </h1>
-              <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold font-mono">
-                <Sparkles className="w-3 h-3" /> Musim Bulanan
-              </span>
             </div>
             <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">
               Kumpulkan XP dari penyelesaian tugas dan streak harian untuk naik peringkat.
@@ -450,7 +447,7 @@ export default function LeaderboardPage() {
 
                       {/* Podium Title */}
                       <div className="flex items-center gap-2 mb-6 text-center z-10">
-                        <span className="px-3 py-1 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-600 text-[11px] font-bold font-mono uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="px-3 py-1 rounded-lg bg-amber-400/15 border border-amber-400/30 text-amber-600 text-[11px] font-bold font-mono uppercase tracking-wider flex items-center gap-1.5">
                           <Crown className="w-3.5 h-3.5" /> Podium Teratas
                         </span>
                       </div>
@@ -486,7 +483,7 @@ export default function LeaderboardPage() {
                                     {rank2.nama_lengkap}
                                   </p>
                                 </Link>
-                                <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full bg-slate-200/60 text-slate-700 text-[10px] font-mono font-bold">
+                                <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-slate-200/60 text-slate-700 text-[10px] font-mono font-bold">
                                   {formatNumber(rank2.xp)} XP
                                 </span>
                               </div>
@@ -541,7 +538,7 @@ export default function LeaderboardPage() {
                                   {rank1.nama_lengkap}
                                 </p>
                               </Link>
-                              <span className="inline-block mt-0.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-700 text-[11px] font-mono font-bold">
+                              <span className="inline-block mt-0.5 px-2.5 py-0.5 rounded-md bg-amber-400/20 text-amber-700 text-[11px] font-mono font-bold">
                                 {formatNumber(rank1.xp)} XP
                               </span>
                             </div>
@@ -587,7 +584,7 @@ export default function LeaderboardPage() {
                                     {rank3.nama_lengkap}
                                   </p>
                                 </Link>
-                                <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full bg-amber-600/15 text-amber-700 text-[10px] font-mono font-bold">
+                                <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-amber-600/15 text-amber-700 text-[10px] font-mono font-bold">
                                   {formatNumber(rank3.xp)} XP
                                 </span>
                               </div>
@@ -632,7 +629,7 @@ export default function LeaderboardPage() {
                             <h3 className="font-headline font-bold text-sm sm:text-base text-on-surface">
                               {myUser.nama_lengkap}
                             </h3>
-                            <span className="font-mono font-extrabold text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            <span className="font-mono font-extrabold text-xs px-2 py-0.5 rounded-md bg-primary/10 text-primary">
                               #{myRank || "-"}
                             </span>
                           </div>

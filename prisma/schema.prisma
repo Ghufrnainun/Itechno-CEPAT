@@ -168,9 +168,6 @@ model SkillsUser {
   id_skills_user       String       @id @default(uuid())
   id_user              String
   id_skills_master     String
-  deskripsi_pengalaman String?
-  portofolio_url       String?
-  certificate_url      String?
   skills_master        SkillsMaster @relation(fields: [id_skills_master], references: [id_skill_master], onDelete: Cascade)
   user                 User         @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
 

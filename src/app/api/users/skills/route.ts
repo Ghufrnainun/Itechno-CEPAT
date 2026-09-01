@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { skills } = body; // Array of { id_skill_master, deskripsi_pengalaman, certificate_url }
+    const { skills } = body; // Array of { id_skill_master }
 
     // Jalankan penghapusan dan penambahan skills baru secara atomik dalam satu transaksi
     await prisma.$transaction(async (tx) => {
@@ -31,9 +31,7 @@ export async function POST(request: NextRequest) {
         await tx.skillsUser.createMany({
           data: skills.map((s: any) => ({
             id_user: dbUser.id_user,
-            id_skills_master: s.id_skill_master,
-            deskripsi_pengalaman: s.deskripsi_pengalaman || null,
-            certificate_url: s.certificate_url || null
+            id_skills_master: s.id_skill_master
           }))
         });
       }

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const unreadOnly = searchParams.get('unread') === 'true'
     const page = parseInt(searchParams.get('page') || '1', 10)
-    const limit = parseInt(searchParams.get('limit') || '20', 10)
+    const limit = parseInt(searchParams.get('limit') || '50', 10)
 
     // 4. Fetch notifikasi via Service
     const result = await notificationService.getUserNotifications(
@@ -47,6 +47,8 @@ export async function GET(request: NextRequest) {
       success: true,
       data: result.notifications,
       unreadCount: result.unreadCount,
+      totalCount: result.totalCount,
+      readCount: result.readCount,
       pagination: result.pagination,
     })
   } catch (error) {

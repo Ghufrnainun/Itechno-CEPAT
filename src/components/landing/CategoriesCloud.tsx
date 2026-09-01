@@ -78,7 +78,7 @@ export function CategoriesCloud() {
                 style={{ animationDelay: `${cat.delay * 2}ms` }}
               >
                 <div className={cn(
-                  "flex items-center gap-2 rounded-full border shadow-xs backdrop-blur-sm transition-all duration-150",
+                  "flex items-center gap-2 rounded-xl border shadow-xs backdrop-blur-sm transition-all duration-150",
                   cat.color,
                   sizeClasses
                 )}>

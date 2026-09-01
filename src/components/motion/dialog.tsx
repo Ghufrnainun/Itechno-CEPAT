@@ -228,7 +228,7 @@ export function DialogContent({
 
 export function DialogHeader({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("px-4 sm:px-6 py-3 sm:py-4.5 border-b border-card-border bg-surface-container-low/40 flex justify-between items-center shrink-0", className)}>
+    <div className={cn("px-4 sm:px-6 py-3 sm:py-4.5 border-b border-card-border flex justify-between items-center shrink-0", className)}>
       <div className="flex-1 pr-3">{children}</div>
       <DialogClose />
     </div>
@@ -261,7 +261,7 @@ export function DialogBody({ children, className }: { children: React.ReactNode;
 
 export function DialogFooter({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("px-4 sm:px-6 py-3.5 sm:py-4 border-t border-card-border/80 bg-surface-container-low/30 flex items-center justify-end gap-3 shrink-0", className)}>
+    <div className={cn("px-4 sm:px-6 py-3.5 sm:py-4 border-t border-card-border/80 flex items-center justify-end gap-3 shrink-0", className)}>
       {children}
     </div>
   );

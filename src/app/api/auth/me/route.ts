@@ -57,11 +57,8 @@ export async function GET(request: NextRequest) {
         skills_user: {
           select: {
             id_skills_user: true,
-            deskripsi_pengalaman: true,
-            portofolio_url: true,
-            certificate_url: true,
             skills_master: {
-              select: { nama_skill: true },
+              select: { nama_skill: true, icon: true },
             },
           },
         },
@@ -94,9 +91,7 @@ export async function GET(request: NextRequest) {
         skills: userProfile.skills_user.map((s) => ({
           id: s.id_skills_user,
           nama_skill: s.skills_master.nama_skill,
-          deskripsi_pengalaman: s.deskripsi_pengalaman,
-          portofolio_url: s.portofolio_url,
-          certificate_url: s.certificate_url,
+          icon: s.skills_master.icon,
         })),
       },
     })

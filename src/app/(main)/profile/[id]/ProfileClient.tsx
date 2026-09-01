@@ -46,6 +46,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { renderIcon } from "@/lib/icon-map";
 
 interface ReviewData {
   id_reviews: string;
@@ -65,8 +66,7 @@ interface ReviewData {
 export interface UserSkill {
   id_skill_master: string;
   nama_skill: string;
-  deskripsi_pengalaman: string | null;
-  certificate_url: string | null;
+  icon: string | null;
 }
 
 export interface PortfolioItem {
@@ -110,11 +110,10 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
     initialData?.skills_user?.map((su: any) => ({
       id_skill_master: su.skills_master?.id_skill_master || su.id_skills_master || "",
       nama_skill: su.skills_master?.nama_skill || su.nama_skill || "Keahlian",
-      deskripsi_pengalaman: su.deskripsi_pengalaman || "",
-      certificate_url: su.certificate_url || "",
+      icon: su.skills_master?.icon || su.icon || null,
     })) || initialData?.skills || []
   );
-  const [availableSkills, setAvailableSkills] = useState<{ id_skill_master: string; nama_skill: string }[]>([]);
+  const [availableSkills, setAvailableSkills] = useState<{ id_skill_master: string; nama_skill: string; icon: string | null }[]>([]);
 
   const [activeTab, setActiveTab] = useState<"overview" | "reviews" | "portfolio">("overview");
 
@@ -229,8 +228,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
         initialData.skills_user?.map((su: any) => ({
           id_skill_master: su.skills_master?.id_skill_master || su.id_skills_master || "",
           nama_skill: su.skills_master?.nama_skill || su.nama_skill || "Keahlian",
-          deskripsi_pengalaman: su.deskripsi_pengalaman || "",
-          certificate_url: su.certificate_url || "",
+          icon: su.skills_master?.icon || su.icon || null,
         })) || initialData?.skills || []
       );
     }
@@ -602,9 +600,6 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                       <CheckCircle2 className="w-4.5 h-4.5 text-primary fill-primary/20 shrink-0" />
                     </div>
                   )}
-                  <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-mono font-bold uppercase tracking-wider border border-primary/20">
-                    {roleName}
-                  </span>
                 </div>
 
                 <p className="text-xs sm:text-sm text-on-surface-variant font-medium mt-1 flex items-center gap-1.5">
@@ -746,9 +741,9 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
           <Tabs
             value={activeTab}
             onValueChange={(v) => setActiveTab(v as "overview" | "reviews" | "portfolio")}
-            variant="pill"
+            variant="segment"
           >
-            <TabsList className="w-fit flex-nowrap overflow-x-auto p-1 bg-surface-container-low rounded-2xl border border-card-border">
+            <TabsList className="w-fit flex-nowrap overflow-x-auto p-1 bg-surface-container-low rounded-xl border border-card-border">
               <TabsTrigger value="overview">
                 <User className="w-3.5 h-3.5 shrink-0 text-primary" />
                 <span>Tentang &amp; Keahlian</span>
@@ -766,13 +761,13 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
         </div>
 
         {/* ───────────── TAB CONTENT ───────────── */}
-        <div className="mt-1">
+        <div className="mt-4">
           {activeTab === "overview" && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.15 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start"
             >
               {/* Left 2 Cols: Bio & Skills */}
               <div className="lg:col-span-2 flex flex-col gap-5 sm:gap-6">
@@ -811,27 +806,11 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                             className="p-3.5 bg-surface-container-low/70 rounded-xl border border-card-border flex flex-col justify-between gap-2"
                           >
                             <div>
-                              <div className="inline-flex items-center gap-1.5 bg-primary/10 px-2.5 py-0.5 rounded-full text-xs font-bold text-primary capitalize mb-1 border border-primary/15">
-                                <Sparkles className="w-3 h-3" />
+                              <div className="inline-flex items-center gap-1.5 bg-primary/10 px-2.5 py-1 rounded-lg text-xs font-bold text-primary capitalize mb-1 border border-primary/15">
+                                {renderIcon(skillObj.icon, "w-3 h-3 text-primary")}
                                 <span>{skillObj.nama_skill}</span>
                               </div>
-                              {skillObj.deskripsi_pengalaman && (
-                                <p className="text-xs text-on-surface-variant leading-relaxed">
-                                  {skillObj.deskripsi_pengalaman}
-                                </p>
-                              )}
                             </div>
-                            {skillObj.certificate_url && (
-                              <a
-                                href={skillObj.certificate_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline font-mono"
-                              >
-                                <span>Lihat Sertifikat</span>
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
-                            )}
                           </div>
                         );
                       })}
@@ -845,7 +824,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
               </div>
 
               {/* Right Col: Contact & Shortcuts */}
-              <div className="flex flex-col gap-5 sm:gap-6">
+              <div className="lg:col-span-1 flex flex-col gap-5 sm:gap-6">
                 <div className="bg-surface-container-lowest rounded-2xl p-4 sm:p-6 shadow-xs border border-card-border">
                   <h3 className="font-headline text-base font-bold text-on-surface mb-4 flex items-center gap-2 pb-3 border-b border-card-border">
                     <Mail className="w-4 h-4 text-primary" />
@@ -1005,91 +984,99 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.15 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start"
             >
-              {/* Star Rating Breakdown */}
-              <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-xs border border-card-border h-fit">
-                <h3 className="font-headline text-base font-bold text-on-surface mb-4">Ringkasan Ulasan</h3>
-                <div className="flex items-baseline gap-3 mb-5">
-                  <span className="font-mono text-4xl sm:text-5xl font-black text-on-surface tabular-nums">
-                    {rating.toFixed(1)}
-                  </span>
-                  <div className="flex flex-col">
-                    <RatingStars rating={rating} size="sm" showScore={false} />
-                    <span className="text-xs text-on-surface-variant mt-1 font-mono">
-                      Dari {reviews.length} ulasan
-                    </span>
-                  </div>
-                </div>
+              {/* Review List (2 Cols on Left - matches Overview main content) */}
+              <div className="lg:col-span-2 flex flex-col gap-5 sm:gap-6">
+                <div className="bg-surface-container-lowest rounded-2xl p-4 sm:p-6 shadow-xs border border-card-border flex flex-col">
+                  <h3 className="font-headline text-base font-bold text-on-surface mb-4 pb-3 border-b border-card-border flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-primary" />
+                    Semua Ulasan ({reviews.length})
+                  </h3>
 
-                <div className="space-y-2 border-t border-card-border pt-4">
-                  {ratingStats.breakdown.map((item) => (
-                    <div key={item.stars} className="flex items-center gap-2.5 text-xs">
-                      <span className="w-6 font-mono font-bold text-on-surface flex items-center gap-0.5">
-                        {item.stars}★
-                      </span>
-                      <div className="flex-1 h-2 rounded-full bg-surface-container overflow-hidden">
-                        <div
-                          className="h-full bg-amber-400 rounded-full transition-all duration-300"
-                          style={{ width: `${item.pct}%` }}
-                        />
-                      </div>
-                      <span className="w-8 text-right font-mono text-xs text-on-surface-variant tabular-nums">
-                        {item.count}
-                      </span>
+                  {loadingReviews ? (
+                    <div className="py-12 flex flex-col items-center justify-center gap-2 text-on-surface-variant">
+                      <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                      <span className="text-xs font-medium">Memuat ulasan...</span>
                     </div>
-                  ))}
+                  ) : reviews.length === 0 ? (
+                    <div className="py-12 flex flex-col items-center justify-center gap-2 text-on-surface-variant text-center bg-surface-container-low/50 rounded-xl border border-card-border/60 border-dashed">
+                      <MessageSquare className="w-8 h-8 text-on-surface-variant/30" />
+                      <p className="text-xs font-medium">Belum ada ulasan yang diterima.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3.5">
+                      {reviews.map((rev) => (
+                        <div
+                          key={rev.id_reviews}
+                          className="p-4 bg-surface-container-low/60 rounded-xl border border-card-border"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 bg-primary/10 text-primary font-bold rounded-lg flex items-center justify-center text-xs uppercase font-mono">
+                                {rev.rater?.nama_lengkap?.substring(0, 2) || "AN"}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold text-on-surface">
+                                  {rev.rater?.nama_lengkap || "Pengguna CEPAT"}
+                                </span>
+                                <span className="text-[10px] text-on-surface-variant font-mono">
+                                  {formatTime(rev.created_at)}
+                                </span>
+                              </div>
+                            </div>
+                            <RatingStars rating={rev.rating} size="sm" showScore={false} />
+                          </div>
+                          {rev.comment && (
+                            <p className="text-xs text-on-surface leading-relaxed pl-10.5">
+                              &ldquo;{rev.comment}&rdquo;
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Review List */}
-              <div className="lg:col-span-2 bg-surface-container-lowest rounded-2xl p-6 shadow-xs border border-card-border">
-                <h3 className="font-headline text-base font-bold text-on-surface mb-4 pb-3 border-b border-card-border">
-                  Semua Ulasan ({reviews.length})
-                </h3>
+              {/* Star Rating Breakdown (1 Col on Right - matches Overview sidebar) */}
+              <div className="lg:col-span-1 flex flex-col gap-5 sm:gap-6">
+                <div className="bg-surface-container-lowest rounded-2xl p-4 sm:p-6 shadow-xs border border-card-border h-fit">
+                  <h3 className="font-headline text-base font-bold text-on-surface mb-4 pb-3 border-b border-card-border flex items-center gap-2">
+                    <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                    Ringkasan Ulasan
+                  </h3>
+                  <div className="flex items-baseline gap-3 mb-5">
+                    <span className="font-mono text-4xl sm:text-5xl font-black text-on-surface tabular-nums">
+                      {rating.toFixed(1)}
+                    </span>
+                    <div className="flex flex-col">
+                      <RatingStars rating={rating} size="sm" showScore={false} />
+                      <span className="text-xs text-on-surface-variant mt-1 font-mono">
+                        Dari {reviews.length} ulasan
+                      </span>
+                    </div>
+                  </div>
 
-                {loadingReviews ? (
-                  <div className="py-12 flex flex-col items-center justify-center gap-2 text-on-surface-variant">
-                    <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                    <span className="text-xs font-medium">Memuat ulasan...</span>
-                  </div>
-                ) : reviews.length === 0 ? (
-                  <div className="py-12 flex flex-col items-center justify-center gap-2 text-on-surface-variant text-center bg-surface-container-low/50 rounded-xl border border-card-border/60 border-dashed">
-                    <MessageSquare className="w-8 h-8 text-on-surface-variant/30" />
-                    <p className="text-xs font-medium">Belum ada ulasan yang diterima.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3.5">
-                    {reviews.map((rev) => (
-                      <div
-                        key={rev.id_reviews}
-                        className="p-4 bg-surface-container-low/60 rounded-xl border border-card-border"
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 bg-primary/10 text-primary font-bold rounded-lg flex items-center justify-center text-xs uppercase font-mono">
-                              {rev.rater?.nama_lengkap?.substring(0, 2) || "AN"}
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-xs font-bold text-on-surface">
-                                {rev.rater?.nama_lengkap || "Pengguna CEPAT"}
-                              </span>
-                              <span className="text-[10px] text-on-surface-variant font-mono">
-                                {formatTime(rev.created_at)}
-                              </span>
-                            </div>
-                          </div>
-                          <RatingStars rating={rev.rating} size="sm" showScore={false} />
+                  <div className="space-y-2 border-t border-card-border pt-4">
+                    {ratingStats.breakdown.map((item) => (
+                      <div key={item.stars} className="flex items-center gap-2.5 text-xs">
+                        <span className="w-6 font-mono font-bold text-on-surface flex items-center gap-0.5">
+                          {item.stars}★
+                        </span>
+                        <div className="flex-1 h-2 rounded-full bg-surface-container overflow-hidden">
+                          <div
+                            className="h-full bg-amber-400 rounded-full transition-all duration-300"
+                            style={{ width: `${item.pct}%` }}
+                          />
                         </div>
-                        {rev.comment && (
-                          <p className="text-xs text-on-surface leading-relaxed pl-10.5">
-                            &ldquo;{rev.comment}&rdquo;
-                          </p>
-                        )}
+                        <span className="w-8 text-right font-mono text-xs text-on-surface-variant tabular-nums">
+                          {item.count}
+                        </span>
                       </div>
                     ))}
                   </div>
-                )}
+                </div>
               </div>
             </motion.div>
           )}
@@ -1279,8 +1266,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                                 {
                                   id_skill_master: s.id_skill_master,
                                   nama_skill: s.nama_skill,
-                                  deskripsi_pengalaman: "",
-                                  certificate_url: "",
+                                  icon: s.icon,
                                 },
                               ]);
                               setIsSkillDropdownOpen(false);
@@ -1310,7 +1296,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-xs text-primary flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5" />
+                      {renderIcon(sk.icon, "w-3.5 h-3.5 text-primary")}
                       {sk.nama_skill}
                     </span>
                     <button
@@ -1322,28 +1308,6 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Ceritakan pengalaman singkat Anda dengan keahlian ini..."
-                    value={sk.deskripsi_pengalaman || ""}
-                    onChange={(e) => {
-                      const updated = [...editSkills];
-                      updated[idx].deskripsi_pengalaman = e.target.value;
-                      setEditSkills(updated);
-                    }}
-                    className="p-2 bg-surface-container-lowest border border-card-border rounded-lg text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:outline-none"
-                  />
-                  <input
-                    type="url"
-                    placeholder="Link sertifikat / portofolio online (opsional)..."
-                    value={sk.certificate_url || ""}
-                    onChange={(e) => {
-                      const updated = [...editSkills];
-                      updated[idx].certificate_url = e.target.value;
-                      setEditSkills(updated);
-                    }}
-                    className="p-2 bg-surface-container-lowest border border-card-border rounded-lg text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:outline-none font-mono text-[11px]"
-                  />
                 </div>
               ))}
               {editSkills.length === 0 && (
