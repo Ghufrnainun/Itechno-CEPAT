@@ -106,10 +106,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, message: `Aksi ${action} berhasil diterapkan pada ${validRoomIds.length} obrolan.` })
-  } catch (error: any) {
+  } catch (error) {
     console.error(`[POST /api/chat/action] Error:`, error)
     return NextResponse.json(
-      { success: false, message: 'Terjadi kesalahan.', error: error.message },
+      { success: false, message: 'Terjadi kesalahan internal server.' },
       { status: 500 }
     )
   }

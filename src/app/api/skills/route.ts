@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { verifyAdminToken, unauthorizedResponse } from '@/lib/admin/auth'
 
 export async function GET() {
   try {
@@ -29,12 +30,16 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Admin-only endpoint
+    const adminAuth = await verifyAdminToken(request)
+    if (!adminAuth.valid) return unauthorizedResponse()
+
     const body = await request.json()
     const { nama_skill, icon } = body
 
-    if (!nama_skill) {
+    if (!nama_skill || typeof nama_skill !== 'string' || nama_skill.trim().length < 2 || nama_skill.trim().length > 100) {
       return NextResponse.json(
-        { success: false, message: 'Nama skill wajib diisi.' },
+        { success: false, message: 'Nama skill wajib diisi (2-100 karakter).' },
         { status: 400 }
       )
     }

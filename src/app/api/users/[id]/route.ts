@@ -63,7 +63,7 @@ export async function GET(
       success: true,
       data: dbUser,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error(`[GET /api/users/[id]] Error:`, error);
     return NextResponse.json(
       { success: false, message: "Gagal mengambil profil user." },

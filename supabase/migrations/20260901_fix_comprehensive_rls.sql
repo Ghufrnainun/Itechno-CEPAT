@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- Row Level Security (RLS) Comprehensive Hotfix
 -- Project: CEPAT (Cari Entry Pekerjaan Area Terdekat)
 -- Migration: 20260901_fix_comprehensive_rls.sql
@@ -74,9 +74,9 @@ WITH CHECK (
     SELECT 1 FROM "Task" t
     WHERE t.id_tasks = "ChatRoom".id_tasks
     AND (
-      t.id_requester = public.get_current_user_id() OR 
+      t.id_requester = public.get_current_user_id() OR
       EXISTS (
-        SELECT 1 FROM "TaskApplicants" ta 
+        SELECT 1 FROM "TaskApplicants" ta
         WHERE ta.id_tasks = t.id_tasks AND ta.id_worker = public.get_current_user_id()
       )
     )
@@ -92,7 +92,7 @@ USING (
     SELECT 1 FROM "ChatRoom" c
     WHERE c.id_chat_room = "Message".id_chat_room
     AND (
-      c.id_requester = public.get_current_user_id() OR 
+      c.id_requester = public.get_current_user_id() OR
       c.id_worker = public.get_current_user_id()
     )
   )
@@ -107,7 +107,7 @@ WITH CHECK (
     SELECT 1 FROM "ChatRoom" c
     WHERE c.id_chat_room = "Message".id_chat_room
     AND (
-      c.id_requester = public.get_current_user_id() OR 
+      c.id_requester = public.get_current_user_id() OR
       c.id_worker = public.get_current_user_id()
     )
   )

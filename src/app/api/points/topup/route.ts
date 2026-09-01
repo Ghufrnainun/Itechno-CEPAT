@@ -53,14 +53,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const amount = parseInt(String(body.amount), 10)
+    const rawAmount = body.amount
 
-    if (isNaN(amount) || amount <= 0) {
+    if (typeof rawAmount !== 'number' || !Number.isInteger(rawAmount) || rawAmount <= 0) {
       return NextResponse.json(
-        { success: false, message: 'Nominal top-up tidak valid. Harus berupa angka positif.' },
+        { success: false, message: 'Nominal top-up tidak valid. Harus berupa bilangan bulat positif.' },
         { status: 400 }
       )
     }
+
+    const amount = rawAmount
 
     if (amount > 1_000_000) {
       return NextResponse.json(

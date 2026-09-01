@@ -2,10 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
+import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 
 // POST /api/admin/auth/login
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting — maks 5 percobaan per IP per menit
+    const clientIP = getClientIP(request.headers)
+    const rateLimit = checkRateLimit(clientIP, 'admin:login', { maxRequests: 5, windowSeconds: 60 })
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, message: 'Terlalu banyak percobaan login. Coba lagi dalam 1 menit.' },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const { email, password } = body
 

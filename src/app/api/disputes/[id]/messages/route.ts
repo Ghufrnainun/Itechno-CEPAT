@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { disputeService } from '@/services/dispute.service';
@@ -53,10 +53,10 @@ export async function GET(
       success: true,
       data: dispute.messages,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[GET /api/disputes/[id]/messages] Error:', error);
     return NextResponse.json(
-      { success: false, message: error.message || 'Gagal memuat pesan mediasi.' },
+      { success: false, message: 'Gagal memuat pesan mediasi.' },
       { status: 400 }
     );
   }
@@ -119,10 +119,10 @@ export async function POST(
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error('[POST /api/disputes/[id]/messages] Error:', error);
     return NextResponse.json(
-      { success: false, message: error.message || 'Gagal mengirim pesan.' },
+      { success: false, message: 'Gagal mengirim pesan.' },
       { status: 400 }
     );
   }

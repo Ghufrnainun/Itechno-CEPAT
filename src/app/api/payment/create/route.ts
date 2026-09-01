@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { createSnapTransaction, getClientKey } from '@/lib/midtrans'
@@ -38,9 +38,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user
-    const currentUser = await prisma.user.findUnique({
-      where: { email: authUser.email },
+    // Get user by canonical auth_id
+    const currentUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { auth_id: authUser.id },
+          ...(authUser.email ? [{ email: authUser.email }] : [])
+        ]
+      },
       select: { id_user: true, nama_lengkap: true, email: true },
     })
 
@@ -51,56 +56,74 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate body
+    // Strict integer validation for amount
     const body = await request.json()
-    const amount = parseInt(String(body.amount), 10)
+    const rawAmount = body.amount
 
-    if (isNaN(amount) || amount < 1000) {
+    if (typeof rawAmount !== 'number' || !Number.isInteger(rawAmount) || rawAmount < 1000) {
       return NextResponse.json(
-        { success: false, message: 'Nominal minimal Rp1.000.' },
+        { success: false, message: 'Nominal minimal Rp1.000 (harus berupa bilangan bulat).' },
         { status: 400 }
       )
     }
 
-    if (amount > 10_000_000) {
+    if (rawAmount > 10_000_000) {
       return NextResponse.json(
         { success: false, message: 'Nominal maksimal Rp10.000.000 per transaksi.' },
         { status: 400 }
       )
     }
 
+    const amount = rawAmount
+
     // Generate unique order ID
     const orderId = `TOPUP-${currentUser.id_user.slice(0, 8)}-${Date.now()}`
 
-    // Create Snap transaction
-    const snapResult = await createSnapTransaction({
-      orderId,
-      amount,
-      userName: currentUser.nama_lengkap,
-      userEmail: currentUser.email,
-    })
-
-    // Save to DB as PENDING
+    // 1. Persist payment intent to DB as PENDING FIRST before external gateway call
     await prisma.paymentTransaction.create({
       data: {
         id_user: currentUser.id_user,
         order_id: orderId,
         amount,
-        snap_token: snapResult.token,
-        redirect_url: snapResult.redirect_url,
         status: 'PENDING',
       },
     })
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        snap_token: snapResult.token,
-        redirect_url: snapResult.redirect_url,
-        client_key: getClientKey(),
-        order_id: orderId,
-      },
-    })
+    // 2. Create Snap transaction with gateway
+    try {
+      const snapResult = await createSnapTransaction({
+        orderId,
+        amount,
+        userName: currentUser.nama_lengkap,
+        userEmail: currentUser.email,
+      })
+
+      // 3. Update with snap_token & redirect_url
+      await prisma.paymentTransaction.update({
+        where: { order_id: orderId },
+        data: {
+          snap_token: snapResult.token,
+          redirect_url: snapResult.redirect_url,
+        },
+      })
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          snap_token: snapResult.token,
+          redirect_url: snapResult.redirect_url,
+          client_key: getClientKey(),
+          order_id: orderId,
+        },
+      })
+    } catch (gatewayError) {
+      // If gateway call fails, mark the pending intent as FAILED
+      await prisma.paymentTransaction.update({
+        where: { order_id: orderId },
+        data: { status: 'FAILED' },
+      }).catch(() => {})
+      throw gatewayError
+    }
   } catch (error) {
     console.error('[POST /api/payment/create] Error:', error)
     return NextResponse.json(

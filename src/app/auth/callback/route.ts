@@ -162,8 +162,9 @@ export async function GET(request: Request) {
           return NextResponse.redirect(`${origin}/onboarding`)
         }
 
-        const redirectPath = next ?? '/feed'
-        return NextResponse.redirect(`${origin}${redirectPath}`)
+        // Sanitize redirect target to prevent open redirect vulnerabilities
+        const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/feed'
+        return NextResponse.redirect(`${origin}${safeNext}`)
       }
     }
   }

@@ -48,6 +48,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: 'Already processed.' })
     }
 
+    // Validate gross_amount against stored payment intent
+    const providerAmount = Math.round(parseFloat(notification.gross_amount))
+    if (!isNaN(providerAmount) && providerAmount !== payment.amount) {
+      console.error(`[Midtrans Webhook] Amount mismatch: expected ${payment.amount}, received ${providerAmount}`)
+      return NextResponse.json(
+        { success: false, message: 'Gross amount mismatch.' },
+        { status: 400 }
+      )
+    }
+
     const { transaction_status, fraud_status, payment_type } = notification
 
     // Handle transaction status
@@ -57,14 +67,14 @@ export async function POST(request: NextRequest) {
     ) {
       // For credit card: check fraud status
       if (transaction_status === 'capture' && fraud_status !== 'accept') {
-        await prisma.paymentTransaction.update({
-          where: { order_id: notification.order_id },
-          data: {
-            status: 'FAILED',
-            payment_type,
-            midtrans_response: JSON.parse(JSON.stringify(notification)) as Prisma.InputJsonValue,
-          },
-        })
+        await prisma.$executeRaw`
+          UPDATE "PaymentTransaction"
+          SET status = 'FAILED',
+              payment_type = ${payment_type},
+              midtrans_response = ${JSON.stringify(notification)}::jsonb,
+              updated_at = NOW()
+          WHERE order_id = ${notification.order_id} AND status = 'PENDING'
+        `
         return NextResponse.json({ success: true, message: 'Fraud detected.' })
       }
 
@@ -117,31 +127,33 @@ export async function POST(request: NextRequest) {
       transaction_status === 'cancel' ||
       transaction_status === 'failure'
     ) {
-      await prisma.paymentTransaction.update({
-        where: { order_id: notification.order_id },
-        data: {
-          status: 'FAILED',
-          payment_type,
-          midtrans_response: JSON.parse(JSON.stringify(notification)) as Prisma.InputJsonValue,
-        },
-      })
+      // Monotonic update: only mark FAILED if currently PENDING (cannot downgrade SUCCESS)
+      await prisma.$executeRaw`
+        UPDATE "PaymentTransaction"
+        SET status = 'FAILED',
+            payment_type = ${payment_type},
+            midtrans_response = ${JSON.stringify(notification)}::jsonb,
+            updated_at = NOW()
+        WHERE order_id = ${notification.order_id} AND status = 'PENDING'
+      `
     } else if (transaction_status === 'expire') {
-      await prisma.paymentTransaction.update({
-        where: { order_id: notification.order_id },
-        data: {
-          status: 'EXPIRED',
-          payment_type,
-          midtrans_response: JSON.parse(JSON.stringify(notification)) as Prisma.InputJsonValue,
-        },
-      })
+      // Monotonic update: only mark EXPIRED if currently PENDING
+      await prisma.$executeRaw`
+        UPDATE "PaymentTransaction"
+        SET status = 'EXPIRED',
+            payment_type = ${payment_type},
+            midtrans_response = ${JSON.stringify(notification)}::jsonb,
+            updated_at = NOW()
+        WHERE order_id = ${notification.order_id} AND status = 'PENDING'
+      `
     }
     // 'pending' status — no action needed, payment stays PENDING
 
-    // Midtrans requires 200 OK response
+    // Midtrans requires 200 OK response on successful handling
     return NextResponse.json({ success: true, message: 'OK' })
   } catch (error) {
     console.error('[Midtrans Webhook] Error:', error)
-    // Still return 200 to prevent Midtrans from retrying indefinitely
-    return NextResponse.json({ success: true, message: 'Error handled.' })
+    // Return 500 on unexpected errors so Midtrans will retry on transient failures
+    return NextResponse.json({ success: false, message: 'Internal processing error.' }, { status: 500 })
   }
 }

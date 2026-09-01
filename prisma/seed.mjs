@@ -6,11 +6,11 @@ import { PrismaPg } from "@prisma/adapter-pg";
 dotenv.config({ path: ".env.local" });
 dotenv.config();
 
-if (process.env.NODE_ENV === "production" && !process.env.SEED_AUTH_PASSWORD) {
-  throw new Error("SEED_AUTH_PASSWORD wajib diset pada environment production.");
+if (!process.env.SEED_AUTH_PASSWORD) {
+  throw new Error("SEED_AUTH_PASSWORD wajib diset di semua environment (bukan hanya production). Setel variabel ini sebelum menjalankan seed.");
 }
 
-const password = process.env.SEED_AUTH_PASSWORD ?? "DemoCepat2026!#";
+const password = process.env.SEED_AUTH_PASSWORD;
 const seedAdmin = process.env.SEED_ADMIN === "true";
 
 const demoUsers = [
@@ -212,9 +212,11 @@ try {
     }
   });
 
-  console.log(`Seed selesai. ${demoUsers.length} akun demo, kategori, status, dan 4 dummy tasks siap dipakai. Password: ${password}`);
+  console.log(`Seed selesai. ${demoUsers.length} akun demo, kategori, status, dan 4 dummy tasks siap dipakai.`);
 } catch (err) {
   console.error("Gagal melakukan seed:", err);
+  process.exitCode = 1;
+  throw err;
 } finally {
   await prisma.$disconnect();
 }

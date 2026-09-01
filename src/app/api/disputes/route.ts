@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { disputeService } from '@/services/dispute.service';
@@ -140,10 +140,10 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error('[POST /api/disputes] Error:', error);
     return NextResponse.json(
-      { success: false, message: error.message || 'Gagal mengajukan sengketa.' },
+      { success: false, message: 'Gagal mengajukan sengketa.' },
       { status: 400 }
     );
   }

@@ -66,10 +66,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     })
 
     return NextResponse.json({ success: true, data: messages })
-  } catch (error: any) {
+  } catch (error) {
     console.error(`[GET /api/chat/[roomId]] Error:`, error)
     return NextResponse.json(
-      { success: false, message: 'Terjadi kesalahan.', error: error.message },
+      { success: false, message: 'Terjadi kesalahan internal server.' },
       { status: 500 }
     )
   }
@@ -132,10 +132,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     })
 
     return NextResponse.json({ success: true, data: newMessage })
-  } catch (error: any) {
+  } catch (error) {
     console.error(`[POST /api/chat/[roomId]] Error:`, error)
     return NextResponse.json(
-      { success: false, message: 'Terjadi kesalahan.', error: error.message },
+      { success: false, message: 'Terjadi kesalahan internal server.' },
       { status: 500 }
     )
   }
@@ -184,10 +184,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     })
 
     return NextResponse.json({ success: true, updated_count: result.count })
-  } catch (error: any) {
+  } catch (error) {
     console.error(`[PUT /api/chat/[roomId]] Error:`, error)
     return NextResponse.json(
-      { success: false, message: 'Terjadi kesalahan.', error: error.message },
+      { success: false, message: 'Terjadi kesalahan internal server.' },
       { status: 500 }
     )
   }
@@ -266,10 +266,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       
       return NextResponse.json({ success: true, deleted_count: messages.length })
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error(`[DELETE /api/chat/[roomId]] Error:`, error)
     return NextResponse.json(
-      { success: false, message: 'Terjadi kesalahan.', error: error.message },
+      { success: false, message: 'Terjadi kesalahan internal server.' },
       { status: 500 }
     )
   }

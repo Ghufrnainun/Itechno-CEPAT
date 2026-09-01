@@ -103,10 +103,10 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true, data: processedRooms })
-  } catch (error: any) {
+  } catch (error) {
     console.error('[GET /api/chat] Error:', error)
     return NextResponse.json(
-      { success: false, message: 'Terjadi kesalahan saat mengambil daftar chat.', error: error.message },
+      { success: false, message: 'Terjadi kesalahan saat mengambil daftar chat.' },
       { status: 500 }
     )
   }

@@ -71,10 +71,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, data: chatRoom })
-  } catch (error: any) {
+  } catch (error) {
     console.error('[POST /api/chat/init] Error:', error)
     return NextResponse.json(
-      { success: false, message: 'Terjadi kesalahan saat membuat obrolan.', error: error.message },
+      { success: false, message: 'Terjadi kesalahan saat membuat obrolan.' },
       { status: 500 }
     )
   }
