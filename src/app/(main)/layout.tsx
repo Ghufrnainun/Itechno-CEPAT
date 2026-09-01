@@ -35,12 +35,16 @@ const RoleContext = createContext<RoleContextType | undefined>(undefined);
 function FcmBridge() {
   const { permission, requestPermission } = useFCM();
   const [dismissed, setDismissed] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   
   useEffect(() => {
+    setIsMounted(true);
     if (sessionStorage.getItem('fcm_prompt_dismissed')) {
       setDismissed(true);
     }
   }, []);
+
+  if (!isMounted) return null;
 
   const handleDismiss = () => {
     setDismissed(true);
