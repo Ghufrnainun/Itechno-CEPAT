@@ -100,7 +100,6 @@ function StepProfile({
   availableSkills,
   selectedSkills,
   toggleSkill,
-  updateSkillDetail,
   onBack,
   onSubmit,
   loading,
@@ -109,9 +108,8 @@ function StepProfile({
   bio: string;
   setBio: (v: string) => void;
   availableSkills: { id_skill_master: string; nama_skill: string; icon: string | null }[];
-  selectedSkills: { id_skill_master: string; nama_skill: string; icon: string | null; deskripsi_pengalaman: string; certificate_url: string }[];
+  selectedSkills: { id_skill_master: string; nama_skill: string; icon: string | null }[];
   toggleSkill: (skill: { id_skill_master: string; nama_skill: string; icon: string | null }) => void;
-  updateSkillDetail: (skillId: string, field: 'deskripsi_pengalaman' | 'certificate_url', val: string) => void;
   onBack: () => void;
   onSubmit: () => void;
   loading: boolean;
@@ -203,38 +201,7 @@ function StepProfile({
             })}
           </div>
 
-          {selectedSkills.length > 0 && (
-            <div className="flex flex-col gap-3">
-              <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mt-2">
-                Detail Keahlian{" "}
-                <span className="text-on-surface-variant/40 normal-case font-normal tracking-normal">
-                  (opsional)
-                </span>
-              </label>
-              {selectedSkills.map((skill) => {
-                return (
-                  <div key={skill.id_skill_master} className="p-3.5 border border-card-border rounded-xl bg-surface-container-lowest flex flex-col gap-2.5 shadow-xs">
-                    <p className="text-xs font-bold text-primary flex items-center gap-2 capitalize font-sans tracking-wide">
-                      {renderIcon(skill.icon, "w-4 h-4 text-primary")}
-                      {skill.nama_skill}
-                    </p>
-                    <textarea
-                      className="w-full p-2.5 text-base sm:text-xs rounded-lg border border-card-border bg-surface-container-low text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none min-h-[60px] placeholder:text-on-surface-variant/50"
-                      placeholder="Ceritakan pengalamanmu..."
-                      value={skill.deskripsi_pengalaman}
-                      onChange={(e) => updateSkillDetail(skill.id_skill_master, 'deskripsi_pengalaman', e.target.value)}
-                    />
-                    <Input
-                      type="url"
-                      placeholder="Link Sertifikat / Portofolio"
-                      value={skill.certificate_url}
-                      onChange={(e) => updateSkillDetail(skill.id_skill_master, 'certificate_url', e.target.value)}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          {/* Removed Detail Keahlian section as it's no longer used */}
         </div>
       </div>
 
@@ -281,7 +248,7 @@ function OnboardingContent() {
   const [univ, setUniv] = useState("");
   const [phone, setPhone] = useState("");
   const [availableSkills, setAvailableSkills] = useState<{ id_skill_master: string; nama_skill: string; icon: string | null }[]>([]);
-  const [selectedSkills, setSelectedSkills] = useState<{ id_skill_master: string; nama_skill: string; icon: string | null; deskripsi_pengalaman: string; certificate_url: string }[]>([]);
+  const [selectedSkills, setSelectedSkills] = useState<{ id_skill_master: string; nama_skill: string; icon: string | null }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -309,13 +276,9 @@ function OnboardingContent() {
         }
         return prev;
       } else {
-        return [...prev, { ...skill, deskripsi_pengalaman: "", certificate_url: "" }];
+        return [...prev, { ...skill }];
       }
     });
-  };
-
-  const updateSkillDetail = (skillId: string, field: 'deskripsi_pengalaman' | 'certificate_url', val: string) => {
-    setSelectedSkills(prev => prev.map(s => s.id_skill_master === skillId ? { ...s, [field]: val } : s));
   };
 
   const goToStep2 = () => {
@@ -420,7 +383,6 @@ function OnboardingContent() {
             availableSkills={availableSkills}
             selectedSkills={selectedSkills}
             toggleSkill={toggleSkill}
-            updateSkillDetail={updateSkillDetail}
             onBack={() => {
               setError("");
               setStep(1);
