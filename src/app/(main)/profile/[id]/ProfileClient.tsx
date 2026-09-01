@@ -228,8 +228,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
         initialData.skills_user?.map((su: any) => ({
           id_skill_master: su.skills_master?.id_skill_master || su.id_skills_master || "",
           nama_skill: su.skills_master?.nama_skill || su.nama_skill || "Keahlian",
-          deskripsi_pengalaman: su.deskripsi_pengalaman || "",
-          certificate_url: su.certificate_url || "",
+          icon: su.skills_master?.icon || su.icon || null,
         })) || initialData?.skills || []
       );
     }
