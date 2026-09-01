@@ -37,8 +37,7 @@ INSERT INTO "TaskCategory" ("id_category", "nama_kategori", "icon") VALUES
 (gen_random_uuid()::text, 'Logistik & Kurir', 'Truck'),
 (gen_random_uuid()::text, 'Event & Pertunjukan', 'Mic'),
 (gen_random_uuid()::text, 'Asisten Pribadi', 'User'),
-(gen_random_uuid()::text, 'Pendidikan & Tutor', 'GraduationCap'),
-(gen_random_uuid()::text, 'Lain-lain', 'Box')
+(gen_random_uuid()::text, 'Pendidikan & Tutor', 'GraduationCap')
 ON CONFLICT ("nama_kategori") DO NOTHING;
 
 -- Seed initial Skills Master

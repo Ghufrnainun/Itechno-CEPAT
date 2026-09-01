@@ -60,6 +60,12 @@ try {
 
   console.log("Seeding Categories...");
   const categories = [
+    { nama_kategori: "Desain Grafis", icon: "Palette" },
+    { nama_kategori: "Pemrograman", icon: "Code" },
+    { nama_kategori: "Pekerjaan Rumah", icon: "Home" },
+    { nama_kategori: "Tukang/Servis", icon: "Wrench" },
+    { nama_kategori: "Penulisan", icon: "PenTool" },
+    { nama_kategori: "Lainnya", icon: "Box" },
     { nama_kategori: "Desain & Kreatif", icon: "Palette" },
     { nama_kategori: "Pemrograman & TI", icon: "Code" },
     { nama_kategori: "Fotografi & Videografi", icon: "Camera" },
@@ -71,7 +77,6 @@ try {
     { nama_kategori: "Event & Pertunjukan", icon: "Mic" },
     { nama_kategori: "Asisten Pribadi", icon: "User" },
     { nama_kategori: "Pendidikan & Tutor", icon: "GraduationCap" },
-    { nama_kategori: "Lain-lain", icon: "Box" },
   ];
   const categoryIds = {};
   for (const cat of categories) {
