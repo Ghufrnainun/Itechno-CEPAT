@@ -264,7 +264,7 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
           {chatUnreadCount > 0 && (
             <span className={cn(
               isExpanded
-                ? "bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono tabular-nums"
+                ? "bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-md font-mono tabular-nums"
                 : "absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full ring-2 ring-surface-container-lowest"
             )}>
               {isExpanded ? chatUnreadCount : ""}
@@ -286,7 +286,7 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
           {unreadCount > 0 && (
             <span className={cn(
               isExpanded
-                ? "bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono tabular-nums"
+                ? "bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-md font-mono tabular-nums"
                 : "absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full ring-2 ring-surface-container-lowest"
             )}>
               {isExpanded ? unreadCount : ""}

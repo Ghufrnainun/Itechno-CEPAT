@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 export default function NotificationsPage() {
   const router = useRouter();
   const { showToast } = useToast();
-  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, totalCount, readCount, isLoading, markAsRead, markAllAsRead } = useNotifications();
   const [filterTab, setFilterTab] = useState<"all" | "unread" | "read">("all");
 
   const handleMarkAllAsRead = async () => {
@@ -58,7 +58,9 @@ export default function NotificationsPage() {
 
   const formatTime = (dateStr: string) => {
     try {
-      return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: idLocale });
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return formatDistanceToNow(d, { addSuffix: true, locale: idLocale });
     } catch {
       return dateStr;
     }
@@ -141,7 +143,9 @@ export default function NotificationsPage() {
     return true;
   });
 
-  const readCount = notifications.filter((n) => n.isRead).length;
+  const displayTotal = totalCount > 0 ? totalCount : notifications.length;
+  const displayUnread = unreadCount;
+  const displayRead = readCount > 0 ? readCount : notifications.filter((n) => n.isRead).length;
 
   return (
     <div className="flex flex-col h-full bg-surface font-sans">
@@ -168,114 +172,117 @@ export default function NotificationsPage() {
       {/* Main Content with Scroll Container & Clearance */}
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="max-w-4xl mx-auto w-full p-4 md:p-6 lg:p-8 flex flex-col gap-5 pb-36 lg:pb-12">
-        {/* Filter Navigation Tabs */}
-        <div className="flex items-center justify-between border-b border-card-border pb-2">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setFilterTab("all")}
-              className={cn(
-                "tab-underline font-bold text-xs py-1.5 px-2 cursor-pointer transition-colors duration-150",
-                filterTab === "all" ? "text-primary active" : "text-on-surface-variant hover:text-on-surface"
-              )}
-            >
-              Semua ({notifications.length})
-            </button>
-            <button
-              onClick={() => setFilterTab("unread")}
-              className={cn(
-                "tab-underline font-bold text-xs py-1.5 px-2 flex items-center gap-1.5 cursor-pointer transition-colors duration-150",
-                filterTab === "unread" ? "text-primary active" : "text-on-surface-variant hover:text-on-surface"
-              )}
-            >
-              Belum Dibaca
-              {unreadCount > 0 && (
-                <span className="bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono tabular-nums">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setFilterTab("read")}
-              className={cn(
-                "tab-underline font-bold text-xs py-1.5 px-2 cursor-pointer transition-colors duration-150",
-                filterTab === "read" ? "text-primary active" : "text-on-surface-variant hover:text-on-surface"
-              )}
-            >
-              Sudah Dibaca ({readCount})
-            </button>
+          {/* Filter Navigation Tabs */}
+          <div className="flex items-center justify-between border-b border-card-border pb-2">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setFilterTab("all")}
+                className={cn(
+                  "tab-underline font-bold text-xs py-1.5 px-2 cursor-pointer transition-colors duration-150",
+                  filterTab === "all" ? "text-primary active" : "text-on-surface-variant hover:text-on-surface"
+                )}
+              >
+                Semua ({displayTotal})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterTab("unread")}
+                className={cn(
+                  "tab-underline font-bold text-xs py-1.5 px-2 flex items-center gap-1.5 cursor-pointer transition-colors duration-150",
+                  filterTab === "unread" ? "text-primary active" : "text-on-surface-variant hover:text-on-surface"
+                )}
+              >
+                <span>Belum Dibaca</span>
+                {displayUnread > 0 && (
+                  <span className="bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-md font-mono tabular-nums">
+                    {displayUnread}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterTab("read")}
+                className={cn(
+                  "tab-underline font-bold text-xs py-1.5 px-2 cursor-pointer transition-colors duration-150",
+                  filterTab === "read" ? "text-primary active" : "text-on-surface-variant hover:text-on-surface"
+                )}
+              >
+                Sudah Dibaca ({displayRead})
+              </button>
+            </div>
+          </div>
+
+          {/* Notifications Card List */}
+          <div className="bg-surface-container-lowest border border-card-border rounded-xl divide-y divide-card-border overflow-hidden shadow-xs">
+            {isLoading ? (
+              <div className="p-12 text-center flex flex-col items-center justify-center gap-3">
+                <Loader2 className="w-7 h-7 text-primary animate-spin" />
+                <p className="font-body-sm text-xs text-on-surface-variant font-medium">Memuat notifikasi...</p>
+              </div>
+            ) : filteredNotifications.length === 0 ? (
+              <div className="p-12 text-center flex flex-col items-center justify-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant">
+                  <BellOff className="w-6 h-6" />
+                </div>
+                <p className="font-headline text-sm font-bold text-on-surface">Tidak ada notifikasi</p>
+                <p className="font-body-sm text-xs text-on-surface-variant max-w-xs">
+                  {filterTab === "unread" ? "Semua notifikasi sudah Anda baca." : "Tidak ada notifikasi yang sesuai dengan filter ini."}
+                </p>
+              </div>
+            ) : (
+              filteredNotifications.map((notif: NotificationItem) => (
+                <div
+                  key={notif.id}
+                  className={cn(
+                    "group p-4 flex items-start gap-3.5 transition-[background-color] duration-150 cursor-pointer hover:bg-surface-container-low/60",
+                    notif.isRead
+                      ? "bg-surface-container-lowest"
+                      : "bg-primary/5 border-l-3 border-l-primary"
+                  )}
+                  onClick={() => handleNotificationClick(notif)}
+                >
+                  <div className={cn(
+                    "w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border border-card-border/40",
+                    notif.type === "points" ? "bg-secondary-container/40" :
+                    notif.type === "accept" ? "bg-primary/10" :
+                    notif.type === "apply" ? "bg-amber-500/10" :
+                    notif.type === "review" ? "bg-amber-500/10" :
+                    "bg-surface-container"
+                  )}>
+                    {getIcon(notif.type)}
+                  </div>
+
+                  <div className="flex-grow flex flex-col gap-1 overflow-hidden min-w-0">
+                    <div className="flex justify-between items-start gap-2">
+                      <h3 className={cn(
+                        "font-body-md text-xs group-hover:text-primary transition-colors duration-150 leading-snug",
+                        notif.isRead ? "font-semibold text-on-surface-variant" : "font-bold text-on-surface"
+                      )}>
+                        {notif.title}
+                      </h3>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {!notif.isRead && (
+                          <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                        )}
+                        <span className="font-mono text-[10px] text-on-surface-variant shrink-0 tabular-nums">
+                          {formatTime(notif.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+                      {notif.message}
+                    </p>
+                  </div>
+
+                  <div className="hidden sm:flex items-center text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-[opacity,transform] duration-150 self-center shrink-0">
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
-
-        {/* Notifications Card List */}
-        <div className="bg-surface-container-lowest border border-card-border rounded-xl divide-y divide-card-border overflow-hidden shadow-xs">
-          {isLoading ? (
-            <div className="p-12 text-center flex flex-col items-center justify-center gap-3">
-              <Loader2 className="w-7 h-7 text-primary animate-spin" />
-              <p className="font-body-sm text-xs text-on-surface-variant font-medium">Memuat notifikasi...</p>
-            </div>
-          ) : filteredNotifications.length === 0 ? (
-            <div className="p-12 text-center flex flex-col items-center justify-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant">
-                <BellOff className="w-6 h-6" />
-              </div>
-              <p className="font-headline text-sm font-bold text-on-surface">Tidak ada notifikasi</p>
-              <p className="font-body-sm text-xs text-on-surface-variant max-w-xs">
-                {filterTab === "unread" ? "Semua notifikasi sudah Anda baca." : "Tidak ada notifikasi yang sesuai dengan filter ini."}
-              </p>
-            </div>
-          ) : (
-            filteredNotifications.map((notif: NotificationItem) => (
-              <div
-                key={notif.id}
-                className={cn(
-                  "group p-4 flex items-start gap-3.5 transition-[background-color] duration-150 cursor-pointer hover:bg-surface-container-low/60",
-                  notif.isRead
-                    ? "bg-surface-container-lowest"
-                    : "bg-primary/5 border-l-3 border-l-primary"
-                )}
-                onClick={() => handleNotificationClick(notif)}
-              >
-                <div className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border border-card-border/40",
-                  notif.type === "points" ? "bg-secondary-container/40" :
-                  notif.type === "accept" ? "bg-primary/10" :
-                  notif.type === "apply" ? "bg-amber-500/10" :
-                  notif.type === "review" ? "bg-amber-500/10" :
-                  "bg-surface-container"
-                )}>
-                  {getIcon(notif.type)}
-                </div>
-
-                <div className="flex-grow flex flex-col gap-1 overflow-hidden min-w-0">
-                  <div className="flex justify-between items-start gap-2">
-                    <h3 className={cn(
-                      "font-body-md text-xs group-hover:text-primary transition-colors duration-150 leading-snug",
-                      notif.isRead ? "font-semibold text-on-surface-variant" : "font-bold text-on-surface"
-                    )}>
-                      {notif.title}
-                    </h3>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {!notif.isRead && (
-                        <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
-                      )}
-                      <span className="font-mono text-[10px] text-on-surface-variant shrink-0 tabular-nums">
-                        {formatTime(notif.createdAt)}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
-                    {notif.message}
-                  </p>
-                </div>
-
-                <div className="hidden sm:flex items-center text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-[opacity,transform] duration-150 self-center shrink-0">
-                  <ChevronRight className="w-4 h-4" />
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
       </div>
     </div>
   );

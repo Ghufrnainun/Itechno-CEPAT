@@ -215,7 +215,7 @@ export function DisputeModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent maxWidth="md" className="overflow-visible">
+      <DialogContent maxWidth="md">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0 border border-amber-500/25">
@@ -230,8 +230,8 @@ export function DisputeModal({
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-visible">
-          <DialogBody className="overflow-visible space-y-4">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <DialogBody className="space-y-4">
             {/* Status Alerts */}
             {errorMsg && (
               <div className="p-3.5 rounded-xl bg-error-container/40 border border-error/25 text-error text-xs flex items-center gap-2 font-medium">

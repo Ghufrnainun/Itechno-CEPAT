@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Flag, AlertCircle, CheckCircle2, Send } from 'lucide-react';
+import Link from 'next/link';
+import { Flag, AlertCircle, CheckCircle2, Send, HelpCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import {
   Dialog,
@@ -93,7 +94,7 @@ export function ReportModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent maxWidth="md" className="overflow-visible">
+      <DialogContent maxWidth="md">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-error-container/40 text-error flex items-center justify-center shrink-0 border border-error/25">
@@ -108,8 +109,25 @@ export function ReportModal({
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-visible">
-          <DialogBody className="overflow-visible">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <DialogBody className="space-y-4">
+            {/* Help / FAQ Link Banner */}
+            {!taskId && (
+              <div className="p-3 rounded-xl bg-primary/5 border border-primary/15 flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 text-on-surface-variant min-w-0">
+                  <HelpCircle className="w-4 h-4 text-primary shrink-0" />
+                  <span className="truncate">Butuh jawaban cepat terkait cara kerja CEPAT?</span>
+                </div>
+                <Link
+                  href="/bantuan"
+                  onClick={onClose}
+                  className="font-bold text-primary hover:underline shrink-0 inline-flex items-center gap-1 text-[11px]"
+                >
+                  Pusat Bantuan <ExternalLink className="w-3 h-3" />
+                </Link>
+              </div>
+            )}
+
             {/* Status Alerts */}
             {errorMsg && (
               <div className="p-3.5 rounded-xl bg-error-container/40 border border-error/25 text-error text-xs flex items-center gap-2 font-medium">

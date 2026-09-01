@@ -337,7 +337,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
             <h3 className="font-headline font-bold text-xs uppercase tracking-wider text-on-surface-variant mb-2">Keahlian yang Dibutuhkan</h3>
             <div className="flex flex-wrap gap-1.5">
               {task.skills.map((skill: { id_skill?: string; nama_skill?: string; icon?: string | null }) => (
-                <div key={skill.id_skill || skill.nama_skill} className="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full border border-primary/20">
+                <div key={skill.id_skill || skill.nama_skill} className="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg border border-primary/20">
                   {renderIcon(skill.icon ?? null, "w-3.5 h-3.5 shrink-0")}
                   <span>{skill.nama_skill}</span>
                 </div>

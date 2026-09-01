@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { ChatInput } from './ChatInput';
 import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
 import {
   UploadCloud,
   X,
@@ -49,6 +50,7 @@ interface ChatRoomProps {
 }
 
 export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdded }: ChatRoomProps) {
+  const { showToast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
@@ -317,7 +319,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
       const data = await res.json();
       
       if (!data.success) {
-        alert("Gagal mengirim pesan: " + data.message);
+        showToast("Gagal mengirim pesan: " + (data.message || "Terjadi kesalahan"));
       } else {
         setMessages(prev => {
           if (prev.some(m => m.id_message === data.data.id_message)) return prev;
@@ -329,7 +331,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
       }
     } catch (e) {
       console.error(e);
-      alert("Terjadi kesalahan koneksi.");
+      showToast("Terjadi kesalahan koneksi saat mengirim pesan.");
     }
   };
 

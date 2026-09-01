@@ -34,12 +34,12 @@ export default function AdminModal({
 }: AdminModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent maxWidth="md" className="overflow-visible">
+      <DialogContent maxWidth="md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
-        <DialogBody className="overflow-visible min-h-[220px]">{children}</DialogBody>
+        <DialogBody className="min-h-[220px]">{children}</DialogBody>
 
         {onConfirm && (
           <DialogFooter>

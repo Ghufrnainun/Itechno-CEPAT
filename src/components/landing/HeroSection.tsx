@@ -40,7 +40,7 @@ export function HeroSection() {
         >
           <a
             href="#dampak-sdg"
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-card-border bg-surface-container-lowest/80 backdrop-blur-sm text-xs text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 group shadow-xs"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg border border-card-border bg-surface-container-lowest/80 backdrop-blur-sm text-xs text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 group shadow-xs"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
             <span className="font-semibold text-on-surface">ITechno Cup 2026</span>
@@ -138,7 +138,7 @@ export function HeroSection() {
                 duration: 0.15,
               }}
             >
-              <div className="bg-primary/90 text-on-primary text-xs font-mono px-3 py-1.5 rounded-full shadow-lg whitespace-nowrap backdrop-blur-md border border-primary-container font-semibold flex items-center gap-1.5">
+              <div className="bg-primary/90 text-on-primary text-xs font-mono px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap backdrop-blur-md border border-primary-container font-semibold flex items-center gap-1.5">
                 <Search className="w-3.5 h-3.5" />
                 <span>Cari Tugas</span>
               </div>
@@ -199,7 +199,7 @@ export function HeroSection() {
                   <p className="text-xs text-on-surface-variant mb-2.5">Waroeng Bu Sri • Butuh foto rapi untuk menu online.</p>
                   <div className="flex justify-between items-end border-t border-card-border pt-2">
                     <span className="font-mono text-sm font-bold text-primary tabular-nums">Rp75.000</span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/40 text-secondary text-xs font-bold font-mono uppercase tracking-wider border border-secondary/20">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary-container/40 text-secondary text-xs font-bold font-mono uppercase tracking-wider border border-secondary/20">
                       <Handshake className="w-3 h-3" aria-hidden="true" />
                       Decent Work
                     </span>

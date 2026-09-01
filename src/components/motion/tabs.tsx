@@ -83,9 +83,9 @@ export function Tabs({
 }
 
 const listClasses: Record<Variant, string> = {
-  pill: "inline-flex items-center gap-1 rounded-full bg-surface-container-low border border-card-border p-1 max-w-full overflow-x-auto no-scrollbar shadow-xs",
+  pill: "inline-flex items-center gap-1 rounded-xl bg-surface-container-low border border-card-border p-1 max-w-full overflow-x-auto no-scrollbar shadow-xs",
   underline: "inline-flex items-center gap-2 border-b border-card-border max-w-full overflow-x-auto no-scrollbar",
-  segment: "inline-flex items-center gap-1 rounded-full bg-surface-container-low border border-card-border p-1 max-w-full overflow-x-auto no-scrollbar shadow-xs",
+  segment: "inline-flex items-center gap-1 rounded-xl bg-surface-container-low border border-card-border p-1 max-w-full overflow-x-auto no-scrollbar shadow-xs",
 };
 
 export function TabsList({ children, className }: { children: ReactNode; className?: string }) {
@@ -138,7 +138,7 @@ export function TabsTrigger({
     );
   }
 
-  const radiusClass = "rounded-full";
+  const radiusClass = "rounded-lg";
 
   return (
     <button
@@ -158,10 +158,8 @@ export function TabsTrigger({
       {active && (
         <motion.span
           layoutId={layoutId}
-          style={{ borderRadius: 9999 }}
           className={cn(
-            "absolute inset-0 z-0 bg-surface-container-lowest border border-card-border/80 shadow-xs pointer-events-none",
-            radiusClass,
+            "absolute inset-0 z-0 bg-surface-container-lowest border border-card-border/80 shadow-xs pointer-events-none rounded-lg",
             indicatorClassName,
           )}
         />
