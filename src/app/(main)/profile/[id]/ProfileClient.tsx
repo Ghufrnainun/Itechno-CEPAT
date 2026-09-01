@@ -46,6 +46,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { renderIcon } from "@/lib/icon-map";
 
 interface ReviewData {
   id_reviews: string;
@@ -65,8 +66,7 @@ interface ReviewData {
 export interface UserSkill {
   id_skill_master: string;
   nama_skill: string;
-  deskripsi_pengalaman: string | null;
-  certificate_url: string | null;
+  icon: string | null;
 }
 
 export interface PortfolioItem {
@@ -110,11 +110,10 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
     initialData?.skills_user?.map((su: any) => ({
       id_skill_master: su.skills_master?.id_skill_master || su.id_skills_master || "",
       nama_skill: su.skills_master?.nama_skill || su.nama_skill || "Keahlian",
-      deskripsi_pengalaman: su.deskripsi_pengalaman || "",
-      certificate_url: su.certificate_url || "",
+      icon: su.skills_master?.icon || su.icon || null,
     })) || initialData?.skills || []
   );
-  const [availableSkills, setAvailableSkills] = useState<{ id_skill_master: string; nama_skill: string }[]>([]);
+  const [availableSkills, setAvailableSkills] = useState<{ id_skill_master: string; nama_skill: string; icon: string | null }[]>([]);
 
   const [activeTab, setActiveTab] = useState<"overview" | "reviews" | "portfolio">("overview");
 
@@ -229,8 +228,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
         initialData.skills_user?.map((su: any) => ({
           id_skill_master: su.skills_master?.id_skill_master || su.id_skills_master || "",
           nama_skill: su.skills_master?.nama_skill || su.nama_skill || "Keahlian",
-          deskripsi_pengalaman: su.deskripsi_pengalaman || "",
-          certificate_url: su.certificate_url || "",
+          icon: su.skills_master?.icon || su.icon || null,
         })) || initialData?.skills || []
       );
     }
@@ -809,26 +807,10 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                           >
                             <div>
                               <div className="inline-flex items-center gap-1.5 bg-primary/10 px-2.5 py-1 rounded-lg text-xs font-bold text-primary capitalize mb-1 border border-primary/15">
-                                <Sparkles className="w-3 h-3" />
+                                {renderIcon(skillObj.icon, "w-3 h-3 text-primary")}
                                 <span>{skillObj.nama_skill}</span>
                               </div>
-                              {skillObj.deskripsi_pengalaman && (
-                                <p className="text-xs text-on-surface-variant leading-relaxed">
-                                  {skillObj.deskripsi_pengalaman}
-                                </p>
-                              )}
                             </div>
-                            {skillObj.certificate_url && (
-                              <a
-                                href={skillObj.certificate_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline font-mono"
-                              >
-                                <span>Lihat Sertifikat</span>
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
-                            )}
                           </div>
                         );
                       })}
@@ -1284,8 +1266,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                                 {
                                   id_skill_master: s.id_skill_master,
                                   nama_skill: s.nama_skill,
-                                  deskripsi_pengalaman: "",
-                                  certificate_url: "",
+                                  icon: s.icon,
                                 },
                               ]);
                               setIsSkillDropdownOpen(false);
@@ -1315,7 +1296,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-xs text-primary flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5" />
+                      {renderIcon(sk.icon, "w-3.5 h-3.5 text-primary")}
                       {sk.nama_skill}
                     </span>
                     <button
@@ -1327,28 +1308,6 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Ceritakan pengalaman singkat Anda dengan keahlian ini..."
-                    value={sk.deskripsi_pengalaman || ""}
-                    onChange={(e) => {
-                      const updated = [...editSkills];
-                      updated[idx].deskripsi_pengalaman = e.target.value;
-                      setEditSkills(updated);
-                    }}
-                    className="p-2 bg-surface-container-lowest border border-card-border rounded-lg text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:outline-none"
-                  />
-                  <input
-                    type="url"
-                    placeholder="Link sertifikat / portofolio online (opsional)..."
-                    value={sk.certificate_url || ""}
-                    onChange={(e) => {
-                      const updated = [...editSkills];
-                      updated[idx].certificate_url = e.target.value;
-                      setEditSkills(updated);
-                    }}
-                    className="p-2 bg-surface-container-lowest border border-card-border rounded-lg text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:outline-none font-mono text-[11px]"
-                  />
                 </div>
               ))}
               {editSkills.length === 0 && (

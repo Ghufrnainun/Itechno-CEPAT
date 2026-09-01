@@ -34,6 +34,17 @@ import {
   Shield,
   Mic,
   Gamepad,
+  User,
+  LayoutTemplate,
+  Share2,
+  Feather,
+  Monitor,
+  Zap,
+  BookOpen,
+  Terminal,
+  Headset,
+  Image as LucideImage,
+  Home,
 } from 'lucide-react';
 import React from 'react';
 
@@ -73,6 +84,17 @@ export const ICON_MAP: Record<string, React.ElementType> = {
   Shield,
   Mic,
   Gamepad,
+  User,
+  LayoutTemplate,
+  Share2,
+  Feather,
+  Monitor,
+  Zap,
+  BookOpen,
+  Terminal,
+  Headset,
+  Image: LucideImage,
+  Home,
 };
 
 export function renderIcon(iconName: string | null, className: string = "w-4 h-4") {

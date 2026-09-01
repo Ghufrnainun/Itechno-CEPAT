@@ -59,11 +59,70 @@ try {
   }
 
   console.log("Seeding Categories...");
-  const categories = ["Desain Grafis", "Pemrograman", "Pekerjaan Rumah", "Tukang/Servis", "Penulisan", "Lainnya"];
+  const categories = [
+    { nama_kategori: "Desain Grafis", icon: "Palette" },
+    { nama_kategori: "Pemrograman", icon: "Code" },
+    { nama_kategori: "Pekerjaan Rumah", icon: "Home" },
+    { nama_kategori: "Tukang/Servis", icon: "Wrench" },
+    { nama_kategori: "Penulisan", icon: "PenTool" },
+    { nama_kategori: "Lainnya", icon: "Box" },
+    { nama_kategori: "Desain & Kreatif", icon: "Palette" },
+    { nama_kategori: "Pemrograman & TI", icon: "Code" },
+    { nama_kategori: "Fotografi & Videografi", icon: "Camera" },
+    { nama_kategori: "Penulisan & Penerjemahan", icon: "PenTool" },
+    { nama_kategori: "Administrasi & Data Entry", icon: "FileText" },
+    { nama_kategori: "Pemasaran & Sales", icon: "TrendingUp" },
+    { nama_kategori: "Perbaikan & Tukang", icon: "Wrench" },
+    { nama_kategori: "Logistik & Kurir", icon: "Truck" },
+    { nama_kategori: "Event & Pertunjukan", icon: "Mic" },
+    { nama_kategori: "Asisten Pribadi", icon: "User" },
+    { nama_kategori: "Pendidikan & Tutor", icon: "GraduationCap" },
+  ];
   const categoryIds = {};
   for (const cat of categories) {
-    const c = await prisma.taskCategory.upsert({ where: { nama_kategori: cat }, update: {}, create: { nama_kategori: cat } });
-    categoryIds[cat] = c.id_category;
+    const c = await prisma.taskCategory.upsert({ 
+      where: { nama_kategori: cat.nama_kategori }, 
+      update: { icon: cat.icon }, 
+      create: { nama_kategori: cat.nama_kategori, icon: cat.icon } 
+    });
+    categoryIds[cat.nama_kategori] = c.id_category;
+  }
+
+  console.log("Seeding Skills...");
+  const skillsList = [
+    { nama_skill: "Desain Grafis", icon: "Palette" },
+    { nama_skill: "UI/UX Design", icon: "LayoutTemplate" },
+    { nama_skill: "Web Development", icon: "Code" },
+    { nama_skill: "Mobile App Development", icon: "Smartphone" },
+    { nama_skill: "Data Entry", icon: "Database" },
+    { nama_skill: "Manajemen Media Sosial", icon: "Share2" },
+    { nama_skill: "Fotografi", icon: "Camera" },
+    { nama_skill: "Video Editing", icon: "Video" },
+    { nama_skill: "Copywriting", icon: "Feather" },
+    { nama_skill: "Terjemahan Bahasa", icon: "Languages" },
+    { nama_skill: "SEO & Pemasaran Digital", icon: "TrendingUp" },
+    { nama_skill: "Teknisi Komputer", icon: "Monitor" },
+    { nama_skill: "Perbaikan Listrik", icon: "Zap" },
+    { nama_skill: "Instalasi Pipa", icon: "Wrench" },
+    { nama_skill: "Tutor Matematika", icon: "Calculator" },
+    { nama_skill: "Tutor Bahasa Inggris", icon: "BookOpen" },
+    { nama_skill: "Pengemudi / Kurir", icon: "Truck" },
+    { nama_skill: "Asisten Event", icon: "Users" },
+    { nama_skill: "Pemrograman Python", icon: "Terminal" },
+    { nama_skill: "Akuntansi & Keuangan", icon: "Calculator" },
+    { nama_skill: "Keamanan Siber", icon: "Shield" },
+    { nama_skill: "Customer Service", icon: "Headset" },
+    { nama_skill: "Desain Logo", icon: "Image" },
+    { nama_skill: "Penulisan Artikel", icon: "FileText" },
+    { nama_skill: "Animasi 3D", icon: "Box" },
+    { nama_skill: "Voice Over", icon: "Mic" },
+  ];
+  for (const sk of skillsList) {
+    await prisma.skillsMaster.upsert({ 
+      where: { nama_skill: sk.nama_skill }, 
+      update: { icon: sk.icon }, 
+      create: { nama_skill: sk.nama_skill, icon: sk.icon } 
+    });
   }
 
   console.log("Seeding Users...");
@@ -121,7 +180,7 @@ try {
     ) VALUES (
       gen_random_uuid(), ${userIds.budi}, ${taskStatusIds.OPEN}, 
       'Desain Logo Aplikasi Fintech', 'Butuh desainer handal untuk logo fintech baru. Harus modern dan elegan.',
-      '3 Hari', 150000, ${categoryIds["Desain Grafis"]}, true, 100000, 200000, 
+      '3 Hari', 150000, ${categoryIds["Desain & Kreatif"]}, true, 100000, 200000, 
       1, 3, NOW(), ST_MakePoint(110.367003, -7.782865)::geography
     )
   `;
@@ -134,7 +193,7 @@ try {
     ) VALUES (
       gen_random_uuid(), ${userIds.sari}, ${taskStatusIds.OPEN}, 
       'Perbaiki Pipa Bocor di Dapur', 'Pipa dapur rumah saya bocor parah. Tolong segera datang bawa alat lengkap.',
-      '1 Jam', 50000, ${categoryIds["Tukang/Servis"]}, false, null, null, 
+      '1 Jam', 50000, ${categoryIds["Perbaikan & Tukang"]}, false, null, null, 
       1, 3, NOW(), ST_MakePoint(110.370000, -7.780000)::geography
     )
   `;
@@ -147,7 +206,7 @@ try {
     ) VALUES (
       gen_random_uuid(), ${userIds.citra}, ${taskStatusIds.ACCEPTED}, 
       'Pembuatan Script Web Scraping Python', 'Perlu script untuk scraping data e-commerce. Output format CSV.',
-      '2 Hari', 200000, ${categoryIds["Pemrograman"]}, true, 150000, 250000, 
+      '2 Hari', 200000, ${categoryIds["Pemrograman & TI"]}, true, 150000, 250000, 
       1, 3, NOW(), ST_MakePoint(110.375000, -7.790000)::geography, '{}'
     ) RETURNING id_tasks
   `;
@@ -179,7 +238,7 @@ try {
     ) VALUES (
       gen_random_uuid(), ${userIds.budi}, ${taskStatusIds.COMPLETED}, 
       'Tulis Artikel Blog Teknologi', 'Minta 2 artikel panjang 1000 kata seputar AI.',
-      '4 Hari', 100000, ${categoryIds["Penulisan"]}, false, null, null, 
+      '4 Hari', 100000, ${categoryIds["Penulisan & Penerjemahan"]}, false, null, null, 
       1, 3, NOW() - INTERVAL '5 days', NOW() - INTERVAL '1 days', ST_MakePoint(110.380000, -7.795000)::geography
     ) RETURNING id_tasks
   `;
