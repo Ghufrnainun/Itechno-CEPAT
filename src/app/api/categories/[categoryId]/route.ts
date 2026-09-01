@@ -1,18 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { verifyAdminToken, unauthorizedResponse } from '@/lib/admin/auth'
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ categoryId: string }> }
 ) {
   try {
+    // Admin-only endpoint
+    const adminAuth = await verifyAdminToken(request)
+    if (!adminAuth.valid) return unauthorizedResponse()
+
     const { categoryId } = await params;
     const body = await request.json()
     const { nama_kategori, icon } = body
 
-    if (!nama_kategori) {
+    if (!nama_kategori || typeof nama_kategori !== 'string' || nama_kategori.trim().length < 2 || nama_kategori.trim().length > 100) {
       return NextResponse.json(
-        { success: false, message: 'Nama kategori wajib diisi.' },
+        { success: false, message: 'Nama kategori wajib diisi (2-100 karakter).' },
         { status: 400 }
       )
     }
@@ -70,6 +75,10 @@ export async function DELETE(
   { params }: { params: Promise<{ categoryId: string }> }
 ) {
   try {
+    // Admin-only endpoint
+    const adminAuth = await verifyAdminToken(request)
+    if (!adminAuth.valid) return unauthorizedResponse()
+
     const { categoryId } = await params;
 
     // Check if category exists

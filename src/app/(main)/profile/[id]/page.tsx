@@ -60,11 +60,20 @@ export default async function ProfilePage({
 
     if (dbUser) {
       // PII Protection
-      // Hide PII only if the user is completely unauthenticated (not logged in)
-      if (!authUser) {
+      // Hide PII if the viewer is not the owner of this profile or an admin
+      const isOwner = Boolean(
+        authUser &&
+          (authUser.id === dbUser.auth_id ||
+            authUser.email === dbUser.email ||
+            authUser.id === dbUser.id_user)
+      );
+
+      if (!isOwner) {
         dbUser.email = "[Disembunyikan]";
         dbUser.no_telpon = "[Disembunyikan]";
         dbUser.alamat = "[Disembunyikan]";
+        dbUser.total_balance = 0;
+        dbUser.held_balance = 0;
       }
       
       initialData = dbUser;

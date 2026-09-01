@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
 
-    if (authError || !authUser) {
+    if (authError || !authUser || !authUser.email) {
       return NextResponse.json(
         { success: false, message: 'Unauthorized access.' },
         { status: 401 }

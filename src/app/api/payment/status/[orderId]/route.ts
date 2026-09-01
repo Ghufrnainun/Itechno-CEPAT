@@ -44,10 +44,21 @@ export async function GET(
       )
     }
 
+    // Resolve internal Prisma user by Supabase auth_id
+    const currentUser = await prisma.user.findUnique({
+      where: { auth_id: authUser.id },
+      select: { id_user: true },
+    })
+    if (!currentUser) {
+      return NextResponse.json(
+        { success: false, message: 'Profil pengguna tidak ditemukan.' },
+        { status: 404 }
+      )
+    }
+
     // Find payment
     const payment = await prisma.paymentTransaction.findUnique({
       where: { order_id: orderId },
-      include: { user: { select: { email: true } } },
     })
 
     if (!payment) {
@@ -57,8 +68,8 @@ export async function GET(
       )
     }
 
-    // Verify ownership
-    if (payment.user.email !== authUser.email) {
+    // Verify ownership — compare internal Prisma IDs (both from same User table)
+    if (payment.id_user !== currentUser.id_user) {
       return NextResponse.json(
         { success: false, message: 'Akses ditolak.' },
         { status: 403 }
@@ -81,27 +92,66 @@ export async function GET(
     // Check status from Midtrans API
     try {
       const midtransStatus = await getTransactionStatus(orderId)
-      const { transaction_status, fraud_status, payment_type } = midtransStatus
+      const { transaction_status, fraud_status, payment_type, gross_amount } = midtransStatus
 
       console.log(`[Payment Status Check] Order: ${orderId}, Status: ${transaction_status}, Fraud: ${fraud_status}, Type: ${payment_type}`)
+
+      // Validate provider gross_amount if provided
+      if (gross_amount) {
+        const providerAmount = Math.round(parseFloat(gross_amount))
+        if (!isNaN(providerAmount) && providerAmount !== payment.amount) {
+          console.error(`[Payment Status Check] Amount mismatch: expected ${payment.amount}, received ${providerAmount}`)
+          return NextResponse.json(
+            { success: false, message: 'Gross amount mismatch.' },
+            { status: 400 }
+          )
+        }
+      }
 
       if (
         transaction_status === 'settlement' ||
         (transaction_status === 'capture' && fraud_status === 'accept')
       ) {
-        // SUCCESS — update DB + topup saldo
-        await prisma.paymentTransaction.update({
-          where: { order_id: orderId },
-          data: {
-            status: 'SUCCESS',
-            payment_type,
-            midtrans_response: midtransStatus,
-          },
+        // SUCCESS — update DB + topup saldo via atomic CAS transaction
+        const isWinner = await prisma.$transaction(async (tx) => {
+          const count = await tx.$executeRaw`
+            UPDATE "PaymentTransaction"
+            SET status = 'SUCCESS',
+                payment_type = ${payment_type},
+                midtrans_response = ${JSON.stringify(midtransStatus)}::jsonb,
+                updated_at = NOW()
+            WHERE order_id = ${orderId} AND status = 'PENDING'
+          `
+
+          if (Number(count) === 0) {
+            return false // Sudah diproses oleh webhook paralel
+          }
+
+          // Catat transaksi saldo masuk
+          await tx.transactions.create({
+            data: {
+              id_user: payment.id_user,
+              nominal: payment.amount,
+              tipe_transaksi: 'MASUK',
+              sub_type: 'topup',
+              deskripsi: `Top Up Saldo via Midtrans (${payment.order_id})`,
+            },
+          })
+
+          // Tambah total_balance user
+          await tx.user.update({
+            where: { id_user: payment.id_user },
+            data: { total_balance: { increment: payment.amount } },
+          })
+
+          return true
         })
 
-        await walletService.topUp(payment.id_user, payment.amount)
-
-        console.log(`[Payment Status Check] Saldo updated for user ${payment.id_user}: +${payment.amount}`)
+        if (isWinner) {
+          console.log(`[Payment Status Check] Saldo updated for user ${payment.id_user}: +${payment.amount}`)
+        } else {
+          console.log(`[Payment Status Check] Order ${orderId} already credited by webhook.`)
+        }
 
         return NextResponse.json({
           success: true,
@@ -117,20 +167,30 @@ export async function GET(
         transaction_status === 'cancel' ||
         transaction_status === 'failure'
       ) {
-        await prisma.paymentTransaction.update({
-          where: { order_id: orderId },
-          data: { status: 'FAILED', payment_type, midtrans_response: midtransStatus },
-        })
+        // Monotonic update: only mark FAILED if currently PENDING
+        await prisma.$executeRaw`
+          UPDATE "PaymentTransaction"
+          SET status = 'FAILED',
+              payment_type = ${payment_type},
+              midtrans_response = ${JSON.stringify(midtransStatus)}::jsonb,
+              updated_at = NOW()
+          WHERE order_id = ${orderId} AND status = 'PENDING'
+        `
 
         return NextResponse.json({
           success: true,
           data: { order_id: orderId, status: 'FAILED', amount: payment.amount },
         })
       } else if (transaction_status === 'expire') {
-        await prisma.paymentTransaction.update({
-          where: { order_id: orderId },
-          data: { status: 'EXPIRED', payment_type, midtrans_response: midtransStatus },
-        })
+        // Monotonic update: only mark EXPIRED if currently PENDING
+        await prisma.$executeRaw`
+          UPDATE "PaymentTransaction"
+          SET status = 'EXPIRED',
+              payment_type = ${payment_type},
+              midtrans_response = ${JSON.stringify(midtransStatus)}::jsonb,
+              updated_at = NOW()
+          WHERE order_id = ${orderId} AND status = 'PENDING'
+        `
 
         return NextResponse.json({
           success: true,

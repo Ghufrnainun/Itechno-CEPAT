@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { notificationService } from '@/services/notification.service';
 
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && process.env.NODE_ENV === 'production') {
+    if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
       if (!task.scheduled_at) continue;
       const scheduledTime = new Date(task.scheduled_at).getTime();
       const timeDiffHours = (scheduledTime - now.getTime()) / (1000 * 60 * 60);
+      const reminderWindow = timeDiffHours <= 1.5 ? '1h' : '24h';
 
       const timeLabel =
         timeDiffHours <= 1.5
@@ -54,27 +55,55 @@ export async function GET(request: NextRequest) {
               minute: '2-digit',
             })}`;
 
-      // Reminder ke Requester
-      await notificationService.createNotification({
-        userId: task.id_requester,
-        type: 'reminder',
-        title: '⏰ Pengingat Jadwal Tugas',
-        message: `Tugas "${task.judul_tugas}" dijadwalkan ${timeLabel}. Pastikan Anda siap memantau progresnya.`,
-        data: { taskId: task.id_tasks, scheduled_at: task.scheduled_at.toISOString() },
+      // Idempotency: Cek apakah reminder untuk window ini sudah pernah dikirim ke Requester
+      const alreadySentReq = await prisma.notifications.findFirst({
+        where: {
+          user_id: task.id_requester,
+          type: 'reminder',
+          created_at: { gte: new Date(now.getTime() - (timeDiffHours <= 1.5 ? 2 : 24) * 60 * 60 * 1000) },
+          data: {
+            path: ['taskId'],
+            equals: task.id_tasks,
+          },
+        },
       });
-      remindersSent++;
+
+      if (!alreadySentReq) {
+        await notificationService.createNotification({
+          userId: task.id_requester,
+          type: 'reminder',
+          title: '⏰ Pengingat Jadwal Tugas',
+          message: `Tugas "${task.judul_tugas}" dijadwalkan ${timeLabel}. Pastikan Anda siap memantau progresnya.`,
+          data: { taskId: task.id_tasks, window: reminderWindow, scheduled_at: task.scheduled_at.toISOString() },
+        });
+        remindersSent++;
+      }
 
       // Reminder ke Worker (jika sudah ada worker yang diterima)
       const acceptedWorker = task.applicants[0]?.worker;
       if (acceptedWorker) {
-        await notificationService.createNotification({
-          userId: acceptedWorker.id_user,
-          type: 'reminder',
-          title: '⏰ Pengingat Tugas Terjadwal',
-          message: `Tugas "${task.judul_tugas}" dari ${task.requester.nama_lengkap} dijadwalkan ${timeLabel}. Siapkan diri Anda!`,
-          data: { taskId: task.id_tasks, scheduled_at: task.scheduled_at.toISOString() },
+        const alreadySentWorker = await prisma.notifications.findFirst({
+          where: {
+            user_id: acceptedWorker.id_user,
+            type: 'reminder',
+            created_at: { gte: new Date(now.getTime() - (timeDiffHours <= 1.5 ? 2 : 24) * 60 * 60 * 1000) },
+            data: {
+              path: ['taskId'],
+              equals: task.id_tasks,
+            },
+          },
         });
-        remindersSent++;
+
+        if (!alreadySentWorker) {
+          await notificationService.createNotification({
+            userId: acceptedWorker.id_user,
+            type: 'reminder',
+            title: '⏰ Pengingat Tugas Terjadwal',
+            message: `Tugas "${task.judul_tugas}" dari ${task.requester.nama_lengkap} dijadwalkan ${timeLabel}. Siapkan diri Anda!`,
+            data: { taskId: task.id_tasks, window: reminderWindow, scheduled_at: task.scheduled_at.toISOString() },
+          });
+          remindersSent++;
+        }
       }
     }
 

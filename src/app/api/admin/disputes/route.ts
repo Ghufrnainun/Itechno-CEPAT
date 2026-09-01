@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { disputeService } from '@/services/dispute.service';
@@ -49,10 +49,10 @@ export async function GET(request: NextRequest) {
       pagination: result.pagination,
       stats: result.stats,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[GET /api/admin/disputes] Error:', error);
     return NextResponse.json(
-      { success: false, message: error.message || 'Gagal memuat sengketa admin.' },
+      { success: false, message: 'Gagal memuat sengketa admin.' },
       { status: 500 }
     );
   }

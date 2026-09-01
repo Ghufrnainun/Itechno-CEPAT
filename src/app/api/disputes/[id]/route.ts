@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { disputeService } from '@/services/dispute.service';
@@ -54,10 +54,10 @@ export async function GET(
       success: true,
       data: dispute,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[GET /api/disputes/[id]] Error:', error);
     return NextResponse.json(
-      { success: false, message: error.message || 'Gagal memuat detail sengketa.' },
+      { success: false, message: 'Gagal memuat detail sengketa.' },
       { status: 400 }
     );
   }
@@ -116,10 +116,10 @@ export async function PATCH(
       message: 'Sengketa berhasil diputuskan dan dana escrow telah disesuaikan.',
       data: result,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[PATCH /api/disputes/[id]] Error:', error);
     return NextResponse.json(
-      { success: false, message: error.message || 'Gagal memutuskan sengketa.' },
+      { success: false, message: 'Gagal memutuskan sengketa.' },
       { status: 400 }
     );
   }

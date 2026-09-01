@@ -690,9 +690,33 @@ export const disputeService = {
 
     const task = dispute.task;
     const requesterId = task.id_requester;
-    const compensationAmount = task.kompensasi;
     const workerId =
       dispute.id_reporter === requesterId ? dispute.id_respondent : dispute.id_reporter;
+
+    // Resolve exact slot compensation amount for bidding or fixed-price tasks
+    const rawSlotHeld = await prisma.$queryRaw<Array<{ held_slots_json: string | null }>>`
+      SELECT held_slots_json FROM "Task" WHERE id_tasks = ${task.id_tasks}
+    `;
+    const slotHeldMap: Record<string, number> = (() => {
+      try {
+        return JSON.parse(rawSlotHeld[0]?.held_slots_json ?? '{}') as Record<string, number>;
+      } catch {
+        return {};
+      }
+    })();
+
+    const workerApplicant = workerId ? await prisma.taskApplicants.findFirst({
+      where: {
+        id_tasks: task.id_tasks,
+        id_worker: workerId,
+      },
+      select: { id_task_applicants: true, bid_amount: true },
+    }) : null;
+
+    const compensationAmount =
+      workerApplicant && typeof slotHeldMap[workerApplicant.id_task_applicants] === 'number'
+        ? slotHeldMap[workerApplicant.id_task_applicants]
+        : (workerApplicant?.bid_amount ?? task.kompensasi);
 
     const newStatus =
       favor === 'WORKER'

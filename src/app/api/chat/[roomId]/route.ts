@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
@@ -16,12 +16,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const roomId = resolvedParams.roomId;
     const supabase = await createClient()
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-    if (authError || !authUser) {
+    if (authError || !authUser || !authUser.email) {
       return NextResponse.json({ success: false, message: 'Tidak terautentikasi.' }, { status: 401 })
     }
 
     const currentUser = await prisma.user.findUnique({
-      where: { email: authUser.email! },
+      where: { email: authUser.email },
       select: { id_user: true }
     })
     
@@ -66,10 +66,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     })
 
     return NextResponse.json({ success: true, data: messages })
-  } catch (error: any) {
+  } catch (error) {
     console.error(`[GET /api/chat/[roomId]] Error:`, error)
     return NextResponse.json(
-      { success: false, message: 'Terjadi kesalahan.', error: error.message },
+      { success: false, message: 'Terjadi kesalahan internal server.' },
       { status: 500 }
     )
   }
@@ -81,12 +81,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const roomId = resolvedParams.roomId;
     const supabase = await createClient()
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-    if (authError || !authUser) {
+    if (authError || !authUser || !authUser.email) {
       return NextResponse.json({ success: false, message: 'Tidak terautentikasi.' }, { status: 401 })
     }
 
     const currentUser = await prisma.user.findUnique({
-      where: { email: authUser.email! },
+      where: { email: authUser.email },
       select: { id_user: true }
     })
     
@@ -132,10 +132,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     })
 
     return NextResponse.json({ success: true, data: newMessage })
-  } catch (error: any) {
+  } catch (error) {
     console.error(`[POST /api/chat/[roomId]] Error:`, error)
     return NextResponse.json(
-      { success: false, message: 'Terjadi kesalahan.', error: error.message },
+      { success: false, message: 'Terjadi kesalahan internal server.' },
       { status: 500 }
     )
   }
@@ -147,12 +147,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const roomId = resolvedParams.roomId;
     const supabase = await createClient()
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-    if (authError || !authUser) {
+    if (authError || !authUser || !authUser.email) {
       return NextResponse.json({ success: false, message: 'Tidak terautentikasi.' }, { status: 401 })
     }
 
     const currentUser = await prisma.user.findUnique({
-      where: { email: authUser.email! },
+      where: { email: authUser.email },
       select: { id_user: true }
     })
     
@@ -184,10 +184,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     })
 
     return NextResponse.json({ success: true, updated_count: result.count })
-  } catch (error: any) {
+  } catch (error) {
     console.error(`[PUT /api/chat/[roomId]] Error:`, error)
     return NextResponse.json(
-      { success: false, message: 'Terjadi kesalahan.', error: error.message },
+      { success: false, message: 'Terjadi kesalahan internal server.' },
       { status: 500 }
     )
   }
@@ -199,12 +199,12 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const roomId = resolvedParams.roomId;
     const supabase = await createClient()
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-    if (authError || !authUser) {
+    if (authError || !authUser || !authUser.email) {
       return NextResponse.json({ success: false, message: 'Tidak terautentikasi.' }, { status: 401 })
     }
 
     const currentUser = await prisma.user.findUnique({
-      where: { email: authUser.email! },
+      where: { email: authUser.email },
       select: { id_user: true }
     })
     
@@ -266,10 +266,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       
       return NextResponse.json({ success: true, deleted_count: messages.length })
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error(`[DELETE /api/chat/[roomId]] Error:`, error)
     return NextResponse.json(
-      { success: false, message: 'Terjadi kesalahan.', error: error.message },
+      { success: false, message: 'Terjadi kesalahan internal server.' },
       { status: 500 }
     )
   }

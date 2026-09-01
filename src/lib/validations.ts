@@ -86,8 +86,9 @@ export const registerSchema = z.object({
   password: passwordField,
   nama_lengkap: namaLengkapField,
   username: usernameField,
-  id_role: z.string().uuid('Format role ID tidak valid.').optional(),
+  // id_role intentionally removed — role is always assigned server-side (Requester default)
 })
+
 
 /** Schema untuk POST /api/auth/login */
 export const loginSchema = z.object({

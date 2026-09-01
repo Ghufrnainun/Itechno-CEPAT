@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import crypto from 'crypto'
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -11,8 +12,9 @@ export async function proxy(request: NextRequest) {
       const token = request.cookies.get('admin_token')?.value
       if (token) {
         try {
+          const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
           const session = await prisma.adminSession.findUnique({
-            where: { token },
+            where: { token: hashedToken },
           })
           if (session && new Date() < session.expires_at) {
             return NextResponse.redirect(new URL('/admin/dashboard', request.url))
@@ -38,8 +40,9 @@ export async function proxy(request: NextRequest) {
     }
 
     try {
+      const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
       const session = await prisma.adminSession.findUnique({
-        where: { token },
+        where: { token: hashedToken },
       })
       if (!session || new Date() > session.expires_at) {
         if (pathname.startsWith('/api/admin')) {
@@ -94,13 +97,22 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const protectedPrefixes = ['/dashboard', '/feed', '/cari-tugas', '/chat', '/notifications', '/wallet', '/task', '/profile', '/tugas', '/history']
+  const protectedPrefixes = [
+    '/dashboard', '/feed', '/cari-tugas', '/chat', '/notifications',
+    '/wallet', '/task', '/profile', '/tugas', '/history',
+    '/leaderboard', '/schedule', '/disputes', '/saved'
+  ]
   const isProtectedRoute = protectedPrefixes.some((prefix) => request.nextUrl.pathname.startsWith(prefix))
 
   if (user) {
     try {
+      const orConditions: Array<{ auth_id: string } | { email: string }> = [{ auth_id: user.id }]
+      if (user.email) {
+        orConditions.push({ email: user.email })
+      }
+
       const dbUser = await prisma.user.findFirst({
-        where: { OR: [{ auth_id: user.id }, { email: user.email! }] },
+        where: { OR: orConditions },
         select: {
           id_user: true,
           is_banned: true,
@@ -155,10 +167,9 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!user && isProtectedRoute) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/register'
-    url.search = ''
-    return NextResponse.redirect(url)
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('redirect', pathname + request.nextUrl.search)
+    return NextResponse.redirect(loginUrl)
   }
 
   return supabaseResponse

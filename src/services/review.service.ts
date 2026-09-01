@@ -21,7 +21,7 @@ export const reviewService = {
         applicants: {
           where: {
             status_applicant: {
-              nama_status: { in: ['ACCEPTED', 'accepted', 'Diterima', 'completed', 'Selesai'] },
+              nama_status: { equals: 'accepted', mode: 'insensitive' },
             },
           },
         },
@@ -49,6 +49,17 @@ export const reviewService = {
     // 4. Cek reviewee adalah lawan transaksi yang valid
     if (rater_id === reviewee_id) {
       throw new Error('Anda tidak dapat memberikan ulasan untuk diri sendiri.')
+    }
+
+    if (isRequester) {
+      const isAcceptedWorker = task.applicants.some((app) => app.id_worker === reviewee_id)
+      if (!isAcceptedWorker) {
+        throw new Error('Pemberi tugas hanya dapat memberikan ulasan kepada pekerja yang diterima pada tugas ini.')
+      }
+    }
+
+    if (isWorker && reviewee_id !== task.id_requester) {
+      throw new Error('Pekerja hanya dapat memberikan ulasan kepada pemberi tugas.')
     }
 
     // 5. Cek apakah sudah pernah beri review untuk kombinasi (task, rater, ratee) yang sama

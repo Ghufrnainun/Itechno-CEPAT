@@ -49,7 +49,7 @@ function FcmBridge() {
   
   if (permission === 'default' && !dismissed) {
     return (
-      <div className="fixed bottom-[80px] lg:bottom-6 left-4 right-4 lg:left-6 lg:right-auto lg:w-96 bg-surface-container-lowest border border-card-border shadow-lg rounded-xl p-4 z-30 flex flex-col gap-3 animate-in slide-in-from-bottom-5 font-sans">
+      <div className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px)+12px)] lg:bottom-6 left-4 right-4 lg:left-auto lg:right-6 lg:w-96 bg-surface-container-lowest border border-card-border shadow-lg rounded-xl p-4 z-40 flex flex-col gap-3 animate-in slide-in-from-bottom-5 font-sans">
         <div>
           <h4 className="font-headline font-bold text-sm text-on-surface flex items-center gap-2">
             <BellRing className="w-4.5 h-4.5 text-primary" />

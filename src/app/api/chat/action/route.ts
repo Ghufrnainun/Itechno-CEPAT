@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
@@ -12,12 +12,12 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-    if (authError || !authUser) {
+    if (authError || !authUser || !authUser.email) {
       return NextResponse.json({ success: false, message: 'Tidak terautentikasi.' }, { status: 401 })
     }
 
     const currentUser = await prisma.user.findUnique({
-      where: { email: authUser.email! },
+      where: { email: authUser.email },
       select: { id_user: true }
     })
     
@@ -106,10 +106,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, message: `Aksi ${action} berhasil diterapkan pada ${validRoomIds.length} obrolan.` })
-  } catch (error: any) {
+  } catch (error) {
     console.error(`[POST /api/chat/action] Error:`, error)
     return NextResponse.json(
-      { success: false, message: 'Terjadi kesalahan.', error: error.message },
+      { success: false, message: 'Terjadi kesalahan internal server.' },
       { status: 500 }
     )
   }

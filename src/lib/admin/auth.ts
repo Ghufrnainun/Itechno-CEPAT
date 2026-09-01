@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import crypto from 'crypto'
 
 export interface AdminTokenPayload {
   valid: boolean
@@ -21,8 +22,10 @@ export async function verifyAdminToken(
       return { valid: false }
     }
 
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
+
     const session = await prisma.adminSession.findUnique({
-      where: { token },
+      where: { token: hashedToken },
       include: {
         user: {
           select: {

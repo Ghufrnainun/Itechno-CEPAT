@@ -66,7 +66,7 @@ export function PwaInstallBanner() {
   return (
     <aside
       aria-label="Pasang Aplikasi CEPAT"
-      className="fixed bottom-[88px] lg:bottom-6 left-4 right-4 lg:left-6 lg:right-auto lg:w-96 bg-surface-container-lowest border border-card-border shadow-xl rounded-2xl p-4 z-40 flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-5 duration-300 font-sans"
+      className="fixed bottom-[88px] lg:bottom-6 left-4 right-4 lg:left-auto lg:right-6 lg:w-96 bg-surface-container-lowest border border-card-border shadow-xl rounded-2xl p-4 z-40 flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-5 duration-300 font-sans"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">

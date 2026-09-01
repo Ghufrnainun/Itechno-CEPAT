@@ -2,10 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
+import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 
 // POST /api/admin/auth/login
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting — maks 5 percobaan per IP per menit
+    const clientIP = getClientIP(request.headers)
+    const rateLimit = checkRateLimit(clientIP, 'admin:login', { maxRequests: 5, windowSeconds: 60 })
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, message: 'Terlalu banyak percobaan login. Coba lagi dalam 1 menit.' },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const { email, password } = body
 
@@ -59,8 +70,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 3. Buat AdminSession token
-    const token = crypto.randomBytes(32).toString('hex')
+    // 3. Buat AdminSession token & hash dengan SHA-256 untuk database
+    const rawToken = crypto.randomBytes(32).toString('hex')
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex')
     const expiresAt = new Date()
     expiresAt.setHours(expiresAt.getHours() + 8) // expire dalam 8 jam
 
@@ -69,16 +81,16 @@ export async function POST(request: NextRequest) {
       where: { admin_id: userProfile.id_user },
     })
 
-    // Buat session baru
+    // Buat session baru dengan hashed token
     await prisma.adminSession.create({
       data: {
         admin_id: userProfile.id_user,
-        token,
+        token: hashedToken,
         expires_at: expiresAt,
       },
     })
 
-    // 4. Set httpOnly cookie
+    // 4. Set httpOnly cookie dengan raw token
     const response = NextResponse.json({
       success: true,
       message: 'Login berhasil.',
@@ -92,7 +104,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    response.cookies.set('admin_token', token, {
+    response.cookies.set('admin_token', rawToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

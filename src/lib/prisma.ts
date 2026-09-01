@@ -25,27 +25,8 @@ function createPrismaClient(): PrismaClient {
   return new PrismaClient({ adapter });
 }
 
-function getPrismaInstance(): PrismaClient {
-  if (
-    globalForPrisma.prisma &&
-    typeof (globalForPrisma.prisma as any).dispute?.findFirst === 'function' &&
-    typeof (globalForPrisma.prisma as any).userReport?.findFirst === 'function'
-  ) {
-    return globalForPrisma.prisma;
-  }
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-  const fresh = createPrismaClient();
-  globalForPrisma.prisma = fresh;
-  return fresh;
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
 }
-
-export const prisma = new Proxy({} as PrismaClient, {
-  get(_target, prop) {
-    const instance = getPrismaInstance();
-    const value = (instance as any)[prop];
-    if (typeof value === 'function') {
-      return value.bind(instance);
-    }
-    return value;
-  },
-});

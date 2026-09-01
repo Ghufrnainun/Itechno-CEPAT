@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { email, password, nama_lengkap, username, id_role } = parsed.data
+    const { email, password, nama_lengkap, username } = parsed.data
 
     // --- Cek duplikat username ---
     const existingUser = await prisma.user.findUnique({ where: { username } })
@@ -62,7 +62,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // --- 1. Buat user di Supabase Auth ---
+    // --- 1. Ambil role Requester server-side (TIDAK pernah dipercaya dari caller) ---
+    const defaultRole =
+      (await prisma.role.findFirst({ where: { nama_role: 'Requester' } })) ??
+      (await prisma.role.findFirst())
+
+    if (!defaultRole) {
+      return NextResponse.json(
+        { success: false, message: 'Role tidak ditemukan. Hubungi admin.' },
+        { status: 500 }
+      )
+    }
+
+    // --- 2. Buat user di Supabase Auth ---
     const supabase = await createClient()
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
@@ -71,7 +83,7 @@ export async function POST(request: NextRequest) {
 
     if (authError || !authData.user) {
       return NextResponse.json(
-        { success: false, message: authError?.message ?? 'Gagal membuat akun.' },
+        { success: false, message: 'Gagal membuat akun. Periksa email dan password Anda.' },
         { status: 400 }
       )
     }
@@ -81,39 +93,33 @@ export async function POST(request: NextRequest) {
       await supabase.auth.signInWithPassword({ email, password })
     }
 
-    // --- 2. Ambil default role (Requester) jika tidak disertakan ---
-    let roleId = id_role
-    if (!roleId) {
-      const defaultRole =
-        (await prisma.role.findFirst({ where: { nama_role: 'Requester' } })) ??
-        (await prisma.role.findFirst())
-
-      if (!defaultRole) {
-        return NextResponse.json(
-          { success: false, message: 'Role tidak ditemukan. Hubungi admin.' },
-          { status: 500 }
-        )
-      }
-      roleId = defaultRole.id_role
-    }
-
     // --- 3. Buat profil user di tabel User Prisma ---
-    const newUser = await prisma.user.create({
-      data: {
-        email,
-        username,
-        nama_lengkap,
-        id_role: roleId,
-        auth_id: authData.user.id,
-      },
-      select: {
-        id_user: true,
-        email: true,
-        username: true,
-        nama_lengkap: true,
-        role: { select: { nama_role: true } },
-      },
-    })
+    // Jika Prisma gagal, cleanup Supabase Auth user agar tidak terjadi orphan
+    let newUser: { id_user: string; email: string; username: string; nama_lengkap: string; role: { nama_role: string } }
+    try {
+      newUser = await prisma.user.create({
+        data: {
+          email,
+          username,
+          nama_lengkap,
+          id_role: defaultRole.id_role,
+          auth_id: authData.user.id,
+        },
+        select: {
+          id_user: true,
+          email: true,
+          username: true,
+          nama_lengkap: true,
+          role: { select: { nama_role: true } },
+        },
+      })
+    } catch (prismaError) {
+      // Cleanup: hapus Supabase Auth user agar tidak menjadi orphan
+      try {
+        await supabase.auth.admin.deleteUser(authData.user.id)
+      } catch (_) { /* best-effort cleanup */ }
+      throw prismaError
+    }
 
     // --- 4. Kirim notifikasi selamat datang (fire-and-forget) ---
     try {
