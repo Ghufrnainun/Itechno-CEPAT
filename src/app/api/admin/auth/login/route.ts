@@ -59,8 +59,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 3. Buat AdminSession token
-    const token = crypto.randomBytes(32).toString('hex')
+    // 3. Buat AdminSession token & hash dengan SHA-256 untuk database
+    const rawToken = crypto.randomBytes(32).toString('hex')
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex')
     const expiresAt = new Date()
     expiresAt.setHours(expiresAt.getHours() + 8) // expire dalam 8 jam
 
@@ -69,16 +70,16 @@ export async function POST(request: NextRequest) {
       where: { admin_id: userProfile.id_user },
     })
 
-    // Buat session baru
+    // Buat session baru dengan hashed token
     await prisma.adminSession.create({
       data: {
         admin_id: userProfile.id_user,
-        token,
+        token: hashedToken,
         expires_at: expiresAt,
       },
     })
 
-    // 4. Set httpOnly cookie
+    // 4. Set httpOnly cookie dengan raw token
     const response = NextResponse.json({
       success: true,
       message: 'Login berhasil.',
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    response.cookies.set('admin_token', token, {
+    response.cookies.set('admin_token', rawToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

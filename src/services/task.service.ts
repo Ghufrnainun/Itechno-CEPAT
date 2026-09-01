@@ -1066,38 +1066,44 @@ export const taskService = {
         select: { id_worker: true },
       });
 
-      // Reject pelamar pending yang tersisa
-      await prisma.taskApplicants.updateMany({
-        where: {
-          id_tasks: taskId,
-          status_applicant: { nama_status: { equals: 'pending', mode: 'insensitive' } },
-        },
-        data: { id_status_task_applicants: rejectedStatusId },
-      });
-
-      // Update status task ke 'accepted'
-      await prisma.task.update({
-        where: { id_tasks: taskId },
-        data: {
-          id_status_task: taskAcceptedStatusId,
-          accepted_at: new Date(),
-        },
-      });
-
-      // Jika acceptedWorkers < max_applicants, kembalikan (refund) sisa escrow slot tak terpakai ke requester
+      // Seluruh operasi status update, reject pelamar tersisa, dan refund slot sisa dijalankan atomik
       const rawTaskConfig = await prisma.$queryRaw<Array<{ max_applicants: number }>>`
         SELECT max_applicants FROM "Task" WHERE id_tasks = ${taskId}
       `;
       const maxApplicants = rawTaskConfig[0]?.max_applicants ?? task.max_applicants ?? 1;
       const unusedSlots = maxApplicants - acceptedWorkers.length;
-      if (unusedSlots > 0) {
-        const refundAmount = unusedSlots * task.kompensasi;
-        await prisma.user.update({
-          where: { id_user: task.id_requester },
-          data: { held_balance: { decrement: refundAmount } },
+      const refundAmount = unusedSlots > 0 ? unusedSlots * task.kompensasi : 0;
+
+      await prisma.$transaction(async (tx) => {
+        // 1. Lock baris user requester & task
+        await tx.$queryRaw`SELECT 1 FROM "Task" WHERE id_tasks = ${taskId} FOR UPDATE`;
+
+        // 2. Reject pelamar pending yang tersisa
+        await tx.taskApplicants.updateMany({
+          where: {
+            id_tasks: taskId,
+            status_applicant: { nama_status: { equals: 'pending', mode: 'insensitive' } },
+          },
+          data: { id_status_task_applicants: rejectedStatusId },
         });
-        try {
-          await prisma.transactions.create({
+
+        // 3. Update status task ke 'accepted'
+        await tx.task.update({
+          where: { id_tasks: taskId },
+          data: {
+            id_status_task: taskAcceptedStatusId,
+            accepted_at: new Date(),
+          },
+        });
+
+        // 4. Jika ada sisa slot tak terpakai, refund escrow secara atomik
+        if (unusedSlots > 0 && refundAmount > 0) {
+          await tx.user.update({
+            where: { id_user: task.id_requester },
+            data: { held_balance: { decrement: refundAmount } },
+          });
+
+          await tx.transactions.create({
             data: {
               id_user: task.id_requester,
               nominal: refundAmount,
@@ -1106,8 +1112,8 @@ export const taskService = {
               deskripsi: `Pengembalian sisa escrow (${unusedSlots} slot tidak terpakai) untuk task: ${task.judul_tugas}`,
             },
           });
-        } catch (_) {}
-      }
+        }
+      });
 
       // Notifikasi ke seluruh worker yang diterima bahwa tugas dimulai
       for (const w of acceptedWorkers) {

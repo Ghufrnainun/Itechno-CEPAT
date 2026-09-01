@@ -162,6 +162,43 @@ export function useWallet() {
     [fetchHistory]
   );
 
+  // ── Manual Payment Status Check ──────────────────────────────────────────
+
+  /**
+   * Cek status pembayaran langsung dari Midtrans API (fallback untuk localhost).
+   * Melakukan retry hingga 3x (jeda 1s) jika status masih PENDING.
+   */
+  const checkPaymentStatus = useCallback(
+    async (orderId: string, retries = 3): Promise<PaymentStatus | undefined> => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const res = await fetch(`/api/payment/status/${orderId}`);
+          if (res.ok) {
+            const data = await res.json().catch(() => ({}));
+
+            if (data.success && data.data) {
+              const status = data.data.status as PaymentStatus;
+              if (status === "SUCCESS") {
+                await fetchBalance();
+                await fetchHistory();
+                return status;
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error checking payment status:", err);
+        }
+        if (i < retries - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+      await fetchBalance();
+      await fetchHistory();
+      return undefined;
+    },
+    [fetchBalance, fetchHistory]
+  );
+
   // ── Midtrans Payment (Snap popup) ────────────────────────────────────────
 
   /**
@@ -232,44 +269,7 @@ export function useWallet() {
         setIsPaymentLoading(false);
       }
     },
-    [fetchBalance, fetchHistory] // eslint-disable-line react-hooks/exhaustive-deps
-  );
-
-  // ── Manual Payment Status Check ──────────────────────────────────────────
-
-  /**
-   * Cek status pembayaran langsung dari Midtrans API (fallback untuk localhost).
-   * Melakukan retry hingga 3x (jeda 1s) jika status masih PENDING.
-   */
-  const checkPaymentStatus = useCallback(
-    async (orderId: string, retries = 3): Promise<PaymentStatus | undefined> => {
-      for (let i = 0; i < retries; i++) {
-        try {
-          const res = await fetch(`/api/payment/status/${orderId}`);
-          if (res.ok) {
-            const data = await res.json().catch(() => ({}));
-
-            if (data.success && data.data) {
-              const status = data.data.status as PaymentStatus;
-              if (status === "SUCCESS") {
-                await fetchBalance();
-                await fetchHistory();
-                return status;
-              }
-            }
-          }
-        } catch (err) {
-          console.error("Error checking payment status:", err);
-        }
-        if (i < retries - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
-      }
-      await fetchBalance();
-      await fetchHistory();
-      return undefined;
-    },
-    [fetchBalance, fetchHistory]
+    [checkPaymentStatus]
   );
 
   // ── Refresh all ──────────────────────────────────────────────────────────

@@ -217,7 +217,7 @@ Setelah migrasi database selesai, jalankan:
 npm run db:seed
 ```
 
-Semua akun memakai password `Password123!` secara default:
+Semua akun demo menggunakan password yang dikonfigurasi melalui `SEED_AUTH_PASSWORD` (default development: `DemoCepat2026!#`):
 
 | Nama | Email | Role |
 | --- | --- | --- |
@@ -226,7 +226,7 @@ Semua akun memakai password `Password123!` secara default:
 | Sari Lestari | `sari@cepat.com` | Requester |
 | Rina Maharani | `rina@cepat.com` | Worker |
 
-Password demo bisa diubah lewat `SEED_AUTH_PASSWORD`.
+Password akun demo dapat diatur sesuai kebutuhan melalui environment variable `SEED_AUTH_PASSWORD`.
 
 #### 4️⃣ Run Development Server
 ```bash

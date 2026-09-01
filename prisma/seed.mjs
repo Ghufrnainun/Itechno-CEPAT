@@ -6,14 +6,19 @@ import { PrismaPg } from "@prisma/adapter-pg";
 dotenv.config({ path: ".env.local" });
 dotenv.config();
 
-const password = process.env.SEED_AUTH_PASSWORD ?? "Password123!";
+if (process.env.NODE_ENV === "production" && !process.env.SEED_AUTH_PASSWORD) {
+  throw new Error("SEED_AUTH_PASSWORD wajib diset pada environment production.");
+}
+
+const password = process.env.SEED_AUTH_PASSWORD ?? "DemoCepat2026!#";
+const seedAdmin = process.env.SEED_ADMIN === "true";
+
 const demoUsers = [
-  { email: "admin@itechno.id", username: "admin_itechno", nama_lengkap: "Super Admin ITechno", role: "Admin" },
+  ...(seedAdmin ? [{ email: "admin@itechno.id", username: "admin_itechno", nama_lengkap: "Super Admin ITechno", role: "Admin" }] : []),
   { email: "budi@cepat.com", username: "budi", nama_lengkap: "Budi Santoso", role: "Requester" },
   { email: "andi@cepat.com", username: "andi", nama_lengkap: "Andi Pratama", role: "Worker" },
   { email: "sari@cepat.com", username: "sari", nama_lengkap: "Sari Lestari", role: "Requester" },
   { email: "rina@cepat.com", username: "rina", nama_lengkap: "Rina Maharani", role: "Worker" },
-  // Tambahan akun demo untuk cold start
   { email: "joko@cepat.com", username: "joko", nama_lengkap: "Joko Widodo", role: "Worker" },
   { email: "maya@cepat.com", username: "maya", nama_lengkap: "Maya Anggraini", role: "Worker" },
   { email: "citra@cepat.com", username: "citra", nama_lengkap: "Citra Kirana", role: "Requester" },

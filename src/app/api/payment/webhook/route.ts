@@ -68,22 +68,50 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, message: 'Fraud detected.' })
       }
 
-      // SUCCESS — Topup saldo via walletService
-      await prisma.paymentTransaction.update({
-        where: { order_id: notification.order_id },
-        data: {
-          status: 'SUCCESS',
-          payment_type,
-          midtrans_response: JSON.parse(JSON.stringify(notification)) as Prisma.InputJsonValue,
-        },
+      // SUCCESS — Topup saldo via atomic CAS transaction (mencegah double-credit race)
+      const isWinner = await prisma.$transaction(async (tx) => {
+        const count = await tx.$executeRaw`
+          UPDATE "PaymentTransaction"
+          SET status = 'SUCCESS',
+              payment_type = ${payment_type},
+              midtrans_response = ${JSON.stringify(notification)}::jsonb,
+              updated_at = NOW()
+          WHERE order_id = ${notification.order_id} AND status = 'PENDING'
+        `
+
+        if (Number(count) === 0) {
+          return false // Sudah diproses oleh polling status paralel
+        }
+
+        // Catat transaksi saldo masuk
+        await tx.transactions.create({
+          data: {
+            id_user: payment.id_user,
+            nominal: payment.amount,
+            tipe_transaksi: 'MASUK',
+            sub_type: 'topup',
+            deskripsi: `Top Up Saldo via Midtrans (${payment.order_id})`,
+          },
+        })
+
+        // Tambah total_balance user
+        await tx.user.update({
+          where: { id_user: payment.id_user },
+          data: { total_balance: { increment: payment.amount } },
+        })
+
+        return true
       })
 
-      // Reuse existing walletService.topUp — atomic increment balance + log transaction
-      await walletService.topUp(payment.id_user, payment.amount)
-
-      console.log(
-        `[Midtrans Webhook] SUCCESS: ${notification.order_id} — Rp${payment.amount.toLocaleString('id-ID')}`
-      )
+      if (isWinner) {
+        console.log(
+          `[Midtrans Webhook] SUCCESS: ${notification.order_id} — Rp${payment.amount.toLocaleString('id-ID')}`
+        )
+      } else {
+        console.log(
+          `[Midtrans Webhook] ALREADY PROCESSED: ${notification.order_id}`
+        )
+      }
     } else if (
       transaction_status === 'deny' ||
       transaction_status === 'cancel' ||

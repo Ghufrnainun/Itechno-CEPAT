@@ -40,14 +40,14 @@ export async function POST(request: NextRequest) {
     // Auth check
     const supabase = await createClient()
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-    if (authError || !authUser) {
-      return NextResponse.json({ success: false, message: 'Tidak terautentikasi.' }, { status: 401 })
+    if (authError || !authUser || !authUser.email) {
+      return NextResponse.json({ success: false, message: 'Tidak terautentikasi atau email tidak tersedia.' }, { status: 401 })
     }
 
     // Ambil user dari Prisma
     const currentUser = await prisma.user.findUnique({
-      where: { email: authUser.email! },
-      select: { id_user: true, nama_lengkap: true, total_balance: true },
+      where: { email: authUser.email },
+      select: { id_user: true, nama_lengkap: true, total_balance: true, held_balance: true },
     })
     if (!currentUser) {
       return NextResponse.json({ success: false, message: 'Profil pengguna tidak ditemukan.' }, { status: 404 })
@@ -66,10 +66,10 @@ export async function POST(request: NextRequest) {
     // Cek saldo cukup untuk total escrow (kompensasi × max_applicants)
     const maxApplicants = parsed.data.max_applicants ?? 1;
     const totalEscrowNeeded = parsed.data.kompensasi * maxApplicants;
-    const availableBalance = currentUser.total_balance; // service cek held_balance secara internal
+    const availableBalance = currentUser.total_balance - currentUser.held_balance;
     if (availableBalance < totalEscrowNeeded) {
       return NextResponse.json(
-        { success: false, message: `Saldo tidak mencukupi untuk mengunci total escrow ${totalEscrowNeeded.toLocaleString('id-ID')} poin (${maxApplicants} worker × ${parsed.data.kompensasi.toLocaleString('id-ID')} poin). Saldo kamu: ${currentUser.total_balance.toLocaleString('id-ID')} poin.` },
+        { success: false, message: `Saldo yang dapat digunakan (${availableBalance.toLocaleString('id-ID')} poin) tidak mencukupi untuk mengunci total escrow ${totalEscrowNeeded.toLocaleString('id-ID')} poin (${maxApplicants} worker × ${parsed.data.kompensasi.toLocaleString('id-ID')} poin).` },
         { status: 400 }
       )
     }

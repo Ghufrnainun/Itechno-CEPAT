@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { notificationService } from '@/services/notification.service'
@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
 
-    if (authError || !authUser) {
+    if (authError || !authUser || !authUser.email) {
       return NextResponse.json(
         { success: false, message: 'Tidak terautentikasi. Silakan login terlebih dahulu.' },
         { status: 401 }
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     // 2. Ambil User ID dari Prisma
     const currentUser = await prisma.user.findUnique({
-      where: { email: authUser.email! },
+      where: { email: authUser.email },
       select: { id_user: true },
     })
 

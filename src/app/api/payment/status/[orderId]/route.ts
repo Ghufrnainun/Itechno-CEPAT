@@ -47,7 +47,6 @@ export async function GET(
     // Find payment
     const payment = await prisma.paymentTransaction.findUnique({
       where: { order_id: orderId },
-      include: { user: { select: { email: true } } },
     })
 
     if (!payment) {
@@ -57,8 +56,8 @@ export async function GET(
       )
     }
 
-    // Verify ownership
-    if (payment.user.email !== authUser.email) {
+    // Verify ownership — use auth UUID (always present) rather than email (can be undefined for OAuth users)
+    if (payment.id_user !== authUser.id) {
       return NextResponse.json(
         { success: false, message: 'Akses ditolak.' },
         { status: 403 }
@@ -89,19 +88,46 @@ export async function GET(
         transaction_status === 'settlement' ||
         (transaction_status === 'capture' && fraud_status === 'accept')
       ) {
-        // SUCCESS — update DB + topup saldo
-        await prisma.paymentTransaction.update({
-          where: { order_id: orderId },
-          data: {
-            status: 'SUCCESS',
-            payment_type,
-            midtrans_response: midtransStatus,
-          },
+        // SUCCESS — update DB + topup saldo via atomic CAS transaction
+        const isWinner = await prisma.$transaction(async (tx) => {
+          const count = await tx.$executeRaw`
+            UPDATE "PaymentTransaction"
+            SET status = 'SUCCESS',
+                payment_type = ${payment_type},
+                midtrans_response = ${JSON.stringify(midtransStatus)}::jsonb,
+                updated_at = NOW()
+            WHERE order_id = ${orderId} AND status = 'PENDING'
+          `
+
+          if (Number(count) === 0) {
+            return false // Sudah diproses oleh webhook paralel
+          }
+
+          // Catat transaksi saldo masuk
+          await tx.transactions.create({
+            data: {
+              id_user: payment.id_user,
+              nominal: payment.amount,
+              tipe_transaksi: 'MASUK',
+              sub_type: 'topup',
+              deskripsi: `Top Up Saldo via Midtrans (${payment.order_id})`,
+            },
+          })
+
+          // Tambah total_balance user
+          await tx.user.update({
+            where: { id_user: payment.id_user },
+            data: { total_balance: { increment: payment.amount } },
+          })
+
+          return true
         })
 
-        await walletService.topUp(payment.id_user, payment.amount)
-
-        console.log(`[Payment Status Check] Saldo updated for user ${payment.id_user}: +${payment.amount}`)
+        if (isWinner) {
+          console.log(`[Payment Status Check] Saldo updated for user ${payment.id_user}: +${payment.amount}`)
+        } else {
+          console.log(`[Payment Status Check] Order ${orderId} already credited by webhook.`)
+        }
 
         return NextResponse.json({
           success: true,

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { applyTaskSchema } from '@/lib/validations/task.schema'
@@ -19,12 +19,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Auth check
     const supabase = await createClient()
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-    if (authError || !authUser) {
+    if (authError || !authUser || !authUser.email) {
       return NextResponse.json({ success: false, message: 'Tidak terautentikasi.' }, { status: 401 })
     }
 
     const currentUser = await prisma.user.findUnique({
-      where: { email: authUser.email! },
+      where: { email: authUser.email },
       select: { id_user: true },
     })
     if (!currentUser) {
@@ -60,12 +60,12 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   try {
     const supabase = await createClient()
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-    if (authError || !authUser) {
+    if (authError || !authUser || !authUser.email) {
       return NextResponse.json({ success: false, message: 'Tidak terautentikasi.' }, { status: 401 })
     }
 
     const currentUser = await prisma.user.findUnique({
-      where: { email: authUser.email! },
+      where: { email: authUser.email },
       select: { id_user: true },
     })
     if (!currentUser) {
@@ -92,12 +92,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const supabase = await createClient()
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-    if (authError || !authUser) {
+    if (authError || !authUser || !authUser.email) {
       return NextResponse.json({ success: false, message: 'Tidak terautentikasi.' }, { status: 401 })
     }
 
     const currentUser = await prisma.user.findUnique({
-      where: { email: authUser.email! },
+      where: { email: authUser.email },
       select: { id_user: true },
     })
     if (!currentUser) {

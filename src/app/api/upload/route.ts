@@ -25,35 +25,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Ukuran file maksimal 5MB." }, { status: 400 });
     }
 
-    // Validate type
-    const validTypes = ["image/jpeg", "image/png", "image/webp"];
-    if (!validTypes.includes(file.type)) {
-      return NextResponse.json({ success: false, message: "Format file tidak didukung. Gunakan JPG, PNG, atau WEBP." }, { status: 400 });
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    // Validate magic bytes header
+    const isJpeg = buffer.length > 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+    const isPng = buffer.length > 4 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47;
+    const isWebp = buffer.length > 12 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP';
+
+    if (!isJpeg && !isPng && !isWebp) {
+      return NextResponse.json(
+        { success: false, message: "Format file tidak valid. Hanya gambar JPG, PNG, atau WEBP asli yang diizinkan." },
+        { status: 400 }
+      );
     }
 
-    const fileExt = file.name.split(".").pop() || "jpg";
-    const fileName = `portfolio_${authUser.id}_${Date.now()}.${fileExt}`;
+    const ext = isJpeg ? "jpg" : isPng ? "png" : "webp";
+    const fileId = crypto.randomUUID();
+    const fileName = `${authUser.id}/${fileId}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
       .from("portfolios")
-      .upload(fileName, file, { upsert: true });
-
-    let publicUrl = "";
+      .upload(fileName, buffer, {
+        contentType: isJpeg ? "image/jpeg" : isPng ? "image/png" : "image/webp",
+        upsert: false,
+      });
 
     if (uploadError) {
-      console.error("[Upload API] Supabase upload failed, falling back to base64. Error:", uploadError);
-      // Fallback if bucket is not created
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      publicUrl = `data:${file.type};base64,${buffer.toString("base64")}`;
-    } else {
-      const { data } = supabase.storage.from("portfolios").getPublicUrl(fileName);
-      publicUrl = data.publicUrl;
+      console.error("[Upload API] Supabase upload failed:", uploadError);
+      return NextResponse.json(
+        { success: false, message: "Gagal menyimpan file ke storage. Silakan coba lagi." },
+        { status: 500 }
+      );
     }
+
+    const { data } = supabase.storage.from("portfolios").getPublicUrl(fileName);
 
     return NextResponse.json({
       success: true,
-      url: publicUrl,
+      url: data.publicUrl,
     });
 
   } catch (error) {

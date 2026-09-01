@@ -33,7 +33,7 @@ const FAQ_CATEGORIES = [
       },
       {
         q: "Apakah bisa punya dua peran sekaligus?",
-        a: "Untuk saat ini, satu akun hanya untuk satu peran. Kalau kamu ingin posting tugas sekaligus menerima tugas, pilih peran yang paling sering kamu gunakan. Kami sedang mempertimbangkan fitur dual-role di pembaruan mendatang.",
+        a: "Tentu saja! Satu akun CEPAT mendukung dual-role. Kamu dapat beralih antara peran Pekerja (Worker) untuk mencari penghasilan dan Pemberi Tugas (Requester) untuk memposting lowongan kapan saja melalui tombol pengalih peran di sidebar atau menu profil.",
       },
       {
         q: "Kenapa saya perlu mengizinkan akses lokasi?",
