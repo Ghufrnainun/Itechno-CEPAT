@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { TaskCardSkeleton } from "@/components/ui/Skeleton";
 import { Modal } from "@/components/ui/Modal";
+import { useToast } from "@/components/ui/Toast";
 import { Tabs, TabsList, TabsTrigger } from "@/components/motion/tabs";
 import { TaskStatus } from "@/types/database";
 import {
@@ -59,6 +60,7 @@ const FILTERS: { label: string; status: string | null; icon: React.ComponentType
 
 function TaskManagementCard({ task, onRefresh }: { task: RequesterTask; onRefresh: () => void }) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [cancelling, setCancelling] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
@@ -69,10 +71,13 @@ function TaskManagementCard({ task, onRefresh }: { task: RequesterTask; onRefres
       const res = await fetch(`/api/tasks/${task.id_tasks}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
+        showToast("Tugas berhasil dibatalkan.");
         onRefresh();
       } else {
-        alert(data.message || "Gagal membatalkan task.");
+        showToast(data.message || "Gagal membatalkan task.");
       }
+    } catch {
+      showToast("Terjadi kesalahan saat membatalkan task.");
     } finally {
       setCancelling(false);
     }
@@ -309,7 +314,7 @@ export default function KelolaTaskPage() {
       </header>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6">
+        <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6 pb-36 lg:pb-12">
 
           {/* Summary stats */}
           <div className="grid grid-cols-3 gap-4">

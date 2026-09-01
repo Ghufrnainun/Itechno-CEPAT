@@ -79,7 +79,7 @@ function WorkerHistoryCard({ task }: { task: WorkerTask }) {
           <div className="flex flex-col items-end gap-1.5 shrink-0">
             <Badge status={task.task_status as TaskStatus} />
             <span className={cn(
-              "text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider font-mono",
+              "text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider font-mono",
               task.application_status === "accepted" ? "text-secondary bg-secondary-container/50 border-secondary/30" :
               task.application_status === "rejected" ? "text-error bg-error-container/40 border-error/30" :
               "text-tertiary bg-tertiary-container/40 border-tertiary/30"
@@ -221,7 +221,7 @@ export default function RiwayatPage() {
       </header>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6">
+        <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6 pb-36 lg:pb-12">
 
           {/* Summary stats */}
           <div className="grid grid-cols-3 gap-4">

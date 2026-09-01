@@ -38,7 +38,7 @@ export function Badge({ status, className }: BadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-label-sm text-[11px] font-semibold tracking-wider uppercase",
+        "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-label-sm text-[11px] font-bold tracking-wider uppercase",
         variantStyle,
         className
       )}
