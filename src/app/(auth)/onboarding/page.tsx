@@ -22,6 +22,10 @@ function StepContact({
   setPhone,
   univ,
   setUniv,
+  tagline,
+  setTagline,
+  alamat,
+  setAlamat,
   onNext,
   error,
 }: {
@@ -29,6 +33,10 @@ function StepContact({
   setPhone: (v: string) => void;
   univ: string;
   setUniv: (v: string) => void;
+  tagline: string;
+  setTagline: (v: string) => void;
+  alamat: string;
+  setAlamat: (v: string) => void;
   onNext: () => void;
   error: string;
 }) {
@@ -76,6 +84,34 @@ function StepContact({
             placeholder="Contoh: UGM / UMKM Lokal / Freelancer"
             value={univ}
             onChange={(e) => setUniv(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">
+            Profesi / Peran{" "}
+            <span className="text-on-surface-variant/40 normal-case font-normal tracking-normal">
+              (opsional)
+            </span>
+          </label>
+          <Input
+            type="text"
+            placeholder="Contoh: UI/UX Designer / Mahasiswa"
+            value={tagline}
+            onChange={(e) => setTagline(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">
+            Domisili / Alamat{" "}
+            <span className="text-error normal-case font-normal tracking-normal">*</span>
+          </label>
+          <Input
+            type="text"
+            placeholder="Contoh: Yogyakarta / Sleman"
+            value={alamat}
+            onChange={(e) => setAlamat(e.target.value)}
           />
         </div>
       </div>
@@ -247,6 +283,8 @@ function OnboardingContent() {
   const [bio, setBio] = useState("");
   const [univ, setUniv] = useState("");
   const [phone, setPhone] = useState("");
+  const [tagline, setTagline] = useState("");
+  const [alamat, setAlamat] = useState("");
   const [availableSkills, setAvailableSkills] = useState<{ id_skill_master: string; nama_skill: string; icon: string | null }[]>([]);
   const [selectedSkills, setSelectedSkills] = useState<{ id_skill_master: string; nama_skill: string; icon: string | null }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -287,6 +325,10 @@ function OnboardingContent() {
       setError("Nomor WhatsApp minimal 8 digit.");
       return;
     }
+    if (alamat.trim().length < 3) {
+      setError("Harap isi domisili/alamat kamu.");
+      return;
+    }
     setStep(2);
   };
 
@@ -311,6 +353,8 @@ function OnboardingContent() {
           pendidikan_terakhir: univ,
           no_telpon: phone,
           role,
+          tagline,
+          alamat,
         }),
       });
 
@@ -372,6 +416,10 @@ function OnboardingContent() {
             setPhone={setPhone}
             univ={univ}
             setUniv={setUniv}
+            tagline={tagline}
+            setTagline={setTagline}
+            alamat={alamat}
+            setAlamat={setAlamat}
             onNext={goToStep2}
             error={error}
           />
