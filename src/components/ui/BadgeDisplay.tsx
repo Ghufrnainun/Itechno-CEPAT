@@ -19,7 +19,7 @@ export function BadgeDisplay({ badge }: { badge: BadgeProps }) {
 
   return (
     <div className="flex flex-col items-center gap-2 p-3 border border-card-border bg-surface-container-low rounded-xl shadow-sm text-center">
-      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+      <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
         {badge.icon_url ? (
           <img src={badge.icon_url} alt={badge.nama_badge} className="w-6 h-6" />
         ) : (

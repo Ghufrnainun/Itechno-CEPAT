@@ -96,7 +96,7 @@ export function StreakReminderCard({ className }: { className?: string }) {
                       🔥 Streak {current} Hari Aktif!
                     </h3>
                     {bonus > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tertiary/15 text-tertiary text-[10px] font-mono font-bold border border-tertiary/20">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-tertiary/15 text-tertiary text-[10px] font-mono font-bold border border-tertiary/20">
                         <Zap className="w-2.5 h-2.5" />+{bonus} XP Bonus
                       </span>
                     )}

@@ -211,9 +211,6 @@ export default function SchedulePage() {
               <h1 className="font-headline font-extrabold text-xl sm:text-2xl text-on-surface tracking-tight">
                 Jadwal Tugas
               </h1>
-              <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold font-mono">
-                {tasks.length} Terjadwal
-              </span>
             </div>
             <p className="text-xs text-on-surface-variant mt-0.5">
               Kelola waktu pelaksanaan tugas Anda secara terorganisir
@@ -465,7 +462,7 @@ export default function SchedulePage() {
                       </p>
                     </div>
 
-                    <span className="px-2.5 py-1 rounded-full bg-surface-container-low border border-card-border text-xs font-mono font-bold text-on-surface">
+                    <span className="px-2.5 py-1 rounded-md bg-surface-container-low border border-card-border text-xs font-mono font-bold text-on-surface">
                       {tasksForSelectedDate.length} Tugas
                     </span>
                   </div>

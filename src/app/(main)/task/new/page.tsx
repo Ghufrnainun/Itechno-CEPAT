@@ -482,8 +482,8 @@ export default function NewTaskPage() {
             </p>
           </div>
 
-          {/* Minimalist Escrow Pill */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-low border border-card-border shadow-2xs">
+          {/* Minimalist Escrow Badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-surface-container-low border border-card-border shadow-2xs">
             <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
             <div className="flex items-center gap-2 text-xs">
               <span className="font-semibold text-on-surface whitespace-nowrap">Escrow Protected</span>
@@ -820,7 +820,7 @@ export default function NewTaskPage() {
                           return (
                             <div
                               key={id}
-                              className="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container-low border border-card-border text-on-surface rounded-full text-xs font-medium transition-all"
+                              className="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container-low border border-card-border text-on-surface rounded-lg text-xs font-medium transition-all"
                             >
                               <span>{s.nama_skill}</span>
                               <button
@@ -1359,7 +1359,7 @@ export default function NewTaskPage() {
                         Transparansi dana &amp; saldo
                       </span>
                     </div>
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-bold border border-emerald-500/20">
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 text-[10px] font-bold border border-emerald-500/20">
                       Bebas Biaya
                     </span>
                   </div>

@@ -96,31 +96,31 @@ export default function DisputesListPage() {
     switch (status) {
       case "OPEN":
         return (
-          <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 text-xs font-bold font-mono">
+          <span className="px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20 text-xs font-bold font-mono">
             Menunggu Respon
           </span>
         );
       case "IN_REVIEW":
         return (
-          <span className="px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20 text-xs font-bold font-mono">
+          <span className="px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-600 border border-blue-500/20 text-xs font-bold font-mono">
             Dalam Mediasi
           </span>
         );
       case "RESOLVED_FAVOR_WORKER":
         return (
-          <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-bold font-mono">
+          <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-bold font-mono">
             Selesai (Hak Pekerja)
           </span>
         );
       case "RESOLVED_FAVOR_REQUESTER":
         return (
-          <span className="px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-600 border border-teal-500/20 text-xs font-bold font-mono">
+          <span className="px-2.5 py-1 rounded-md bg-teal-500/10 text-teal-600 border border-teal-500/20 text-xs font-bold font-mono">
             Selesai (Refund Pembuat)
           </span>
         );
       case "CLOSED":
         return (
-          <span className="px-2.5 py-1 rounded-full bg-slate-500/10 text-slate-600 border border-slate-500/20 text-xs font-bold font-mono">
+          <span className="px-2.5 py-1 rounded-md bg-slate-500/10 text-slate-600 border border-slate-500/20 text-xs font-bold font-mono">
             Ditutup
           </span>
         );
@@ -137,9 +137,6 @@ export default function DisputesListPage() {
               <h1 className="font-headline font-extrabold text-xl sm:text-2xl text-on-surface tracking-tight">
                 Pusat Sengketa &amp; Mediasi
               </h1>
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 text-xs font-bold font-mono">
-                {disputes.length} Total
-              </span>
             </div>
             <p className="text-xs text-on-surface-variant mt-0.5">
               Penyelesaian resmi permasalahan tugas secara transparan dan terawasi Admin

@@ -304,7 +304,7 @@ export default function DisputeDetailPage() {
                 <h1 className="font-headline font-bold text-lg sm:text-xl text-on-surface">
                   Ruang Mediasi Sengketa
                 </h1>
-                <span className="font-mono text-xs font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                <span className="font-mono text-xs font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
                   #{dispute.id_dispute.substring(0, 8)}
                 </span>
               </div>

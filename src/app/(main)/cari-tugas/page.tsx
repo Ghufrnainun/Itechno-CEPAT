@@ -444,7 +444,7 @@ function CariTugasPageContent() {
               {!selectedTask && (
                 <button
                   onClick={() => setViewMode("list")}
-                  className="md:hidden absolute bottom-5 left-1/2 -translate-x-1/2 z-20 bg-primary text-on-primary px-4 py-2.5 rounded-full font-bold text-xs shadow-lg flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform whitespace-nowrap"
+                  className="md:hidden absolute bottom-5 left-1/2 -translate-x-1/2 z-20 bg-primary text-on-primary px-4 py-2.5 rounded-xl font-bold text-xs shadow-lg flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform whitespace-nowrap"
                 >
                   <List className="w-4 h-4" />
                   <span>Lihat Daftar ({displayedTasks.length})</span>
@@ -484,7 +484,7 @@ function CariTugasPageContent() {
                 <h3 className="font-headline text-xs font-bold text-on-surface uppercase tracking-wider">
                   Daftar Tugas Radar
                 </h3>
-                <span className="bg-primary/10 text-primary border border-primary/20 text-xs px-2.5 py-0.5 rounded-full font-mono font-bold tabular-nums">
+                <span className="bg-primary/10 text-primary border border-primary/20 text-xs px-2.5 py-0.5 rounded-md font-mono font-bold tabular-nums">
                   {displayedTasks.length}
                 </span>
               </div>

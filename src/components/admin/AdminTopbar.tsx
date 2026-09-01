@@ -366,7 +366,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
         <h1 className="font-headline font-bold text-lg text-on-surface tracking-tight">
           {title}
         </h1>
-        <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase bg-primary/10 text-primary border border-primary/20">
+        <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold tracking-wider uppercase bg-primary/10 text-primary border border-primary/20">
           Super Admin
         </span>
       </div>
@@ -652,7 +652,7 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                   <Bell className="w-4 h-4 text-[var(--primary)]" />
                   <span className="text-xs font-bold text-on-surface">Notifikasi Admin</span>
                   {unreadCount > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-100 text-rose-700">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-rose-100 text-rose-700">
                       {unreadCount} Baru
                     </span>
                   )}

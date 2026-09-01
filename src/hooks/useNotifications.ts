@@ -18,13 +18,14 @@ export interface NotificationItem {
 export function useNotifications() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await fetch("/api/notifications");
+      const res = await fetch("/api/notifications?limit=100");
       if (!res.ok) {
         if (res.status === 401) {
           // User tidak logged in, stop silently
@@ -38,6 +39,7 @@ export function useNotifications() {
       if (data.success) {
         setNotifications(data.data || []);
         setUnreadCount(data.unreadCount || 0);
+        setTotalCount(data.totalCount || (data.data || []).length);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Terjadi kesalahan.";
@@ -168,6 +170,8 @@ export function useNotifications() {
   return {
     notifications,
     unreadCount,
+    totalCount,
+    readCount: Math.max(0, totalCount - unreadCount),
     isLoading,
     error,
     refetch: fetchNotifications,

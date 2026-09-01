@@ -391,7 +391,7 @@ function WalletPageInner() {
                         <td className="px-4 py-3">
                           <span
                             className={cn(
-                              "inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider font-mono",
+                              "inline-block px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider font-mono",
                               getBadgeStyle(tx.sub_type)
                             )}
                           >

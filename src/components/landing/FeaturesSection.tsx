@@ -86,7 +86,7 @@ export function FeaturesSection() {
                   <MapPin size={28} weight="duotone" />
                 </div>
                 <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-outline-variant text-xs font-mono font-semibold text-on-surface-variant mb-4 shadow-sm">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-outline-variant text-xs font-mono font-semibold text-on-surface-variant mb-4 shadow-sm">
                     <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                     Area Sekitar
                   </div>
@@ -136,7 +136,7 @@ export function FeaturesSection() {
                     <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shadow-sm">
                       <ShieldCheck size={24} weight="duotone" />
                     </div>
-                    <span className="px-3 py-1 bg-green-50 text-green-700 border border-green-200/50 text-xs font-extrabold tracking-widest rounded-full uppercase shadow-sm">Aman</span>
+                    <span className="px-3 py-1 bg-green-50 text-green-700 border border-green-200/50 text-xs font-extrabold tracking-widest rounded-md uppercase shadow-sm">Aman</span>
                  </div>
                  <div>
                    <h3 className="font-headline text-xl font-extrabold text-on-surface mb-2 tracking-tight">Escrow Otomatis</h3>

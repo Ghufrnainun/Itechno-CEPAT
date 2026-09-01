@@ -125,9 +125,9 @@ export function ProfileSkeleton() {
           </div>
           <Skeleton className="h-4 w-full max-w-lg rounded" />
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-2">
-            <Skeleton className="h-6 w-20 rounded-full" />
-            <Skeleton className="h-6 w-24 rounded-full" />
-            <Skeleton className="h-6 w-28 rounded-full" />
+            <Skeleton className="h-6 w-20 rounded-md" />
+            <Skeleton className="h-6 w-24 rounded-md" />
+            <Skeleton className="h-6 w-28 rounded-md" />
           </div>
         </div>
       </div>

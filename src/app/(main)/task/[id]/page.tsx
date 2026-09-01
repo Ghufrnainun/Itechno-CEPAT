@@ -580,7 +580,7 @@ export default function TaskDetailPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge status={taskStatus} />
                   {task.is_bidding && (
-                    <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 text-[10px] font-mono font-bold uppercase tracking-wider">
+                    <span className="px-2.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20 text-[10px] font-mono font-bold uppercase tracking-wider">
                       Sealed Bidding
                     </span>
                   )}
@@ -690,7 +690,7 @@ export default function TaskDetailPage() {
                     </span>
                   </div>
                 </div>
-                <span className="self-start sm:self-center px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold shrink-0 font-mono">
+                <span className="self-start sm:self-center px-2.5 py-1 rounded-md bg-primary/10 text-primary text-[11px] font-bold shrink-0 font-mono">
                   Terjadwal
                 </span>
               </div>
@@ -704,7 +704,7 @@ export default function TaskDetailPage() {
                   {task.requirements.map((skill: any) => (
                     <span
                       key={skill.id_skill}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-semibold"
                     >
                       {renderIcon(skill.icon, "w-3 h-3 shrink-0")}
                       <span>{skill.nama_skill}</span>
@@ -786,7 +786,7 @@ export default function TaskDetailPage() {
                   <Users className="w-4 h-4 text-primary" />
                   <span>Daftar Pelamar ({task.applicants.length})</span>
                 </h3>
-                <span className="font-mono text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-2.5 py-0.5 rounded-full">
+                <span className="font-mono text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-2.5 py-0.5 rounded-md">
                   Worker Diterima: {task.applicants.filter(a => a.status === "accepted").length} / {task.max_applicants ?? 1}
                 </span>
               </div>
@@ -904,7 +904,7 @@ export default function TaskDetailPage() {
             <div className="flex flex-col gap-4 bg-surface-container-lowest border border-card-border rounded-xl p-4 md:p-6 shadow-xs">
               <div className="flex items-center justify-between border-b border-card-border pb-3">
                 <h3 className="font-headline text-sm font-bold text-on-surface">Ulasan &amp; Rating Transaksi</h3>
-                <span className="font-mono text-xs text-on-surface-variant bg-surface-container px-2.5 py-0.5 rounded-full font-semibold tabular-nums">
+                <span className="font-mono text-xs text-on-surface-variant bg-surface-container px-2.5 py-0.5 rounded-md font-semibold tabular-nums">
                   {task.reviews.length} Ulasan
                 </span>
               </div>
@@ -1560,6 +1560,39 @@ export default function TaskDetailPage() {
         taskId={task.id_tasks}
         taskTitle={task.judul_tugas}
       />
+
+      {/* Modal: Batalkan / Mundur dari Tugas */}
+      <Modal
+        isOpen={isCancelTaskModalOpen}
+        onClose={() => setIsCancelTaskModalOpen(false)}
+        title={cancelTaskMode === "worker" ? "Mundur dari Tugas" : "Batalkan Task"}
+      >
+        <div className="flex flex-col gap-4 font-sans text-xs">
+          <p className="text-on-surface leading-relaxed">
+            {cancelTaskMode === "worker"
+              ? `Apakah Anda yakin ingin mengundurkan diri dari tugas "${task.judul_tugas}"? Tindakan ini akan membatalkan status pengerjaan Anda.`
+              : `Apakah Anda yakin ingin membatalkan tugas "${task.judul_tugas}"? Task yang dibatalkan tidak dapat dikembalikan, dan dana kompensasi di escrow akan dikembalikan ke saldo dompet Anda.`}
+          </p>
+          <div className="flex justify-end gap-2 pt-3 border-t border-card-border">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsCancelTaskModalOpen(false)}
+              disabled={actionLoading}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={executeCancelTask}
+              disabled={actionLoading}
+            >
+              {actionLoading ? "Memproses..." : cancelTaskMode === "worker" ? "Ya, Mundur" : "Ya, Batalkan Task"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* ───────────── MOBILE STICKY BOTTOM ACTION BAR (Thumb Reach) ───────────── */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 p-3.5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-surface-container-lowest/95 backdrop-blur-md border-t border-card-border flex items-center justify-between gap-2.5 z-[100] shadow-2xl">
