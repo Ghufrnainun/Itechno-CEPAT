@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(self)',
+            value: 'camera=(), microphone=(), geolocation=(self), clipboard-write=(self "https://app.sandbox.midtrans.com" "https://app.midtrans.com")',
           },
           {
             key: 'Strict-Transport-Security',
