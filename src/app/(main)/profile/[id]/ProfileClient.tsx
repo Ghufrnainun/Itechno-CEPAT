@@ -46,6 +46,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { renderIcon } from "@/lib/icon-map";
 
 interface ReviewData {
   id_reviews: string;
@@ -65,6 +66,7 @@ interface ReviewData {
 export interface UserSkill {
   id_skill_master: string;
   nama_skill: string;
+  icon: string | null;
 }
 
 export interface PortfolioItem {
@@ -108,9 +110,10 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
     initialData?.skills_user?.map((su: any) => ({
       id_skill_master: su.skills_master?.id_skill_master || su.id_skills_master || "",
       nama_skill: su.skills_master?.nama_skill || su.nama_skill || "Keahlian",
+      icon: su.skills_master?.icon || su.icon || null,
     })) || initialData?.skills || []
   );
-  const [availableSkills, setAvailableSkills] = useState<{ id_skill_master: string; nama_skill: string }[]>([]);
+  const [availableSkills, setAvailableSkills] = useState<{ id_skill_master: string; nama_skill: string; icon: string | null }[]>([]);
 
   const [activeTab, setActiveTab] = useState<"overview" | "reviews" | "portfolio">("overview");
 
@@ -808,7 +811,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                           >
                             <div>
                               <div className="inline-flex items-center gap-1.5 bg-primary/10 px-2.5 py-0.5 rounded-full text-xs font-bold text-primary capitalize mb-1 border border-primary/15">
-                                <Sparkles className="w-3 h-3" />
+                                {renderIcon(skillObj.icon, "w-3 h-3 text-primary")}
                                 <span>{skillObj.nama_skill}</span>
                               </div>
                             </div>
@@ -1259,6 +1262,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                                 {
                                   id_skill_master: s.id_skill_master,
                                   nama_skill: s.nama_skill,
+                                  icon: s.icon,
                                 },
                               ]);
                               setIsSkillDropdownOpen(false);
@@ -1288,7 +1292,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-xs text-primary flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5" />
+                      {renderIcon(sk.icon, "w-3.5 h-3.5 text-primary")}
                       {sk.nama_skill}
                     </span>
                     <button

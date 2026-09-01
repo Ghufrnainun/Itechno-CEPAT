@@ -63,6 +63,7 @@ export async function GET(
         skills: user.skills_user.map((s) => ({
           id: s.id_skills_user,
           nama_skill: s.skills_master.nama_skill,
+          icon: s.skills_master.icon,
         })),
         stats: {
           total_tasks_posted: user._count.tasks_posted,
