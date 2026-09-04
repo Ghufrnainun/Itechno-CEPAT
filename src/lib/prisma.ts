@@ -12,10 +12,15 @@ function createPrismaClient(): PrismaClient {
     globalForPrisma.pool ??
     new Pool({
       connectionString: process.env.DATABASE_URL!,
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
+      max: 10,
+      idleTimeoutMillis: 10000,
+      connectionTimeoutMillis: 15000,
     });
+
+  pool.on('error', (err) => {
+    // Tangani socket disconnect pada koneksi idle tanpa melempar uncaught error
+    console.warn('[pg.Pool] Idle connection notice (reconnecting):', err.message);
+  });
 
   if (!globalForPrisma.pool) {
     globalForPrisma.pool = pool;

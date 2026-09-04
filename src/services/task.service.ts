@@ -564,16 +564,35 @@ export const taskService = {
       );
     }
 
-    // Kuota pelamar: task bidding terbuka untuk banyak penawar (sealed bids),
-    // task harga tetap mengikuti kuota worker. Cap bidding mencegah spam.
+    // Kuota pelamar: task bidding terbuka untuk banyak penawar (sealed bids, max 25).
+    // Untuk task harga tetap: cek apakah kuota pekerja yang diterima (accepted) sudah penuh.
+    // Jika belum penuh, izinkan pelamar baru mendaftar (dengan batas antrean pending 25).
     const BIDDING_APPLICANT_CAP = 25;
     if (!existing) {
       if (isBidding) {
         if (task._count.applicants >= BIDDING_APPLICANT_CAP) {
           throw new Error(`Task ini sudah menerima jumlah penawaran maksimal (${BIDDING_APPLICANT_CAP} bid).`);
         }
-      } else if (task._count.applicants >= maxApplicants) {
-        throw new Error(`Tugas ini sudah mencapai kuota maksimal (${maxApplicants} pelamar).`);
+      } else {
+        const acceptedCount = await prisma.taskApplicants.count({
+          where: {
+            id_tasks: taskId,
+            status_applicant: { nama_status: { equals: 'ACCEPTED', mode: 'insensitive' } },
+          },
+        });
+        if (acceptedCount >= maxApplicants) {
+          throw new Error(`Tugas ini sudah memiliki pekerja yang cukup (${maxApplicants} pekerja telah diterima).`);
+        }
+
+        const pendingCount = await prisma.taskApplicants.count({
+          where: {
+            id_tasks: taskId,
+            status_applicant: { nama_status: { equals: 'PENDING', mode: 'insensitive' } },
+          },
+        });
+        if (pendingCount >= 25) {
+          throw new Error('Tugas ini sedang meninjau batas maksimal antrean pelamar (25 pelamar).');
+        }
       }
     }
 

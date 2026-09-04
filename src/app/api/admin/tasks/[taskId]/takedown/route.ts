@@ -13,12 +13,18 @@ export async function POST(
 
     const { taskId } = await params
 
-    // Cek task exists
+    // Cek task exists beserta pelamar dan statusnya
     const task = await prisma.task.findUnique({
       where: { id_tasks: taskId },
       include: {
         status_task: true,
         requester: { select: { id_user: true, nama_lengkap: true, held_balance: true, total_balance: true } },
+        applicants: {
+          include: {
+            status_applicant: { select: { nama_status: true } },
+            worker: { select: { id_user: true, nama_lengkap: true } },
+          },
+        },
       },
     })
 
@@ -45,31 +51,87 @@ export async function POST(
       )
     }
 
-    // Cari status "CANCELLED" case-insensitive
-    const cancelledStatus = await prisma.statusTask.findFirst({
-      where: { nama_status: { equals: 'CANCELLED', mode: 'insensitive' } },
-    })
+    // Cari status "CANCELLED" dan status applicant "REJECTED"
+    const [cancelledStatus, rejectedStatus] = await Promise.all([
+      prisma.statusTask.findFirst({
+        where: { nama_status: { equals: 'CANCELLED', mode: 'insensitive' } },
+      }),
+      prisma.statusTaskApplicants.findFirst({
+        where: { nama_status: { equals: 'REJECTED', mode: 'insensitive' } },
+      }),
+    ])
 
-    if (!cancelledStatus) {
+    if (!cancelledStatus || !rejectedStatus) {
       return NextResponse.json(
-        { success: false, message: 'Status "CANCELLED" tidak ditemukan di database.' },
+        { success: false, message: 'Status database (CANCELLED/REJECTED) tidak lengkap.' },
         { status: 500 }
       )
     }
 
+    const activeApplicants = task.applicants.filter((a) => {
+      const s = a.status_applicant?.nama_status?.toUpperCase()
+      return s === 'ACCEPTED' || s === 'PENDING'
+    })
+    const acceptedWorkers = task.applicants.filter(
+      (a) => a.status_applicant?.nama_status?.toUpperCase() === 'ACCEPTED'
+    )
+
     let actualRefund = 0
 
-    // Jalankan dalam satu transaksi
+    // Jalankan dalam satu transaksi atomik dengan row lock
     await prisma.$transaction(async (tx) => {
+      // 0. Pessimistic row locking
+      const lockedTask = await tx.$queryRaw<Array<{ id_status_task: string; held_slots_json: string | null }>>`
+        SELECT id_status_task, held_slots_json FROM "Task" WHERE id_tasks = ${taskId} FOR UPDATE
+      `
+      if (lockedTask[0]?.id_status_task === cancelledStatus.id_status_task) {
+        return
+      }
+
       // 1. Update status task → CANCELLED
       await tx.task.update({
         where: { id_tasks: taskId },
-        data: { id_status_task: cancelledStatus.id_status_task },
+        data: {
+          id_status_task: cancelledStatus.id_status_task,
+          held_slots_json: null,
+        },
       })
 
-      // 2. Jika ada held_balance (escrow), refund ke requester
-      const escrowAmount = task.kompensasi * task.max_applicants
-      actualRefund = Math.min(task.requester.held_balance, escrowAmount)
+      // 2. Tolak seluruh pelamar aktif (ACCEPTED & PENDING)
+      if (activeApplicants.length > 0) {
+        await tx.taskApplicants.updateMany({
+          where: {
+            id_tasks: taskId,
+            id_status_task_applicants: { not: rejectedStatus.id_status_task_applicants },
+          },
+          data: {
+            id_status_task_applicants: rejectedStatus.id_status_task_applicants,
+            alasan_penolakan: 'Tugas telah di-takedown oleh Admin Platform',
+            worker_confirmed: false,
+          },
+        })
+      }
+
+      // 3. Kalkulasi refund escrow secara akurat (mendukung task bidding & slot multi-worker)
+      const slotMap: Record<string, number> = (() => {
+        try {
+          return JSON.parse(lockedTask[0]?.held_slots_json ?? task.held_slots_json ?? '{}')
+        } catch {
+          return {}
+        }
+      })()
+
+      let totalEscrowToRefund = 0
+      for (const workerApp of acceptedWorkers) {
+        totalEscrowToRefund +=
+          typeof slotMap[workerApp.id_task_applicants] === 'number'
+            ? slotMap[workerApp.id_task_applicants]
+            : task.kompensasi
+      }
+      const unfilledSlots = Math.max(0, task.max_applicants - acceptedWorkers.length)
+      totalEscrowToRefund += unfilledSlots * task.kompensasi
+
+      actualRefund = Math.min(task.requester.held_balance, totalEscrowToRefund)
 
       if (actualRefund > 0) {
         await tx.user.update({
@@ -86,15 +148,16 @@ export async function POST(
             nominal: actualRefund,
             tipe_transaksi: 'MASUK',
             sub_type: 'refund',
-            deskripsi: `Refund escrow dari task yang di-takedown admin: "${task.judul_tugas}"`,
+            deskripsi: `Refund escrow takedown admin: "${task.judul_tugas}"`,
           },
         })
       }
 
-      // 3. Notifikasi ke requester
-      const notificationMsg = actualRefund > 0
-        ? `Task "${task.judul_tugas}" telah dihapus oleh admin platform. Escrow sebesar ${actualRefund.toLocaleString('id-ID')} poin telah dikembalikan ke saldo Anda.`
-        : `Task "${task.judul_tugas}" telah dihapus oleh admin platform.`
+      // 4. Notifikasi ke requester
+      const notificationMsg =
+        actualRefund > 0
+          ? `Task "${task.judul_tugas}" telah di-takedown oleh admin platform. Escrow sebesar ${actualRefund.toLocaleString('id-ID')} poin telah dikembalikan ke saldo Anda.`
+          : `Task "${task.judul_tugas}" telah di-takedown oleh admin platform.`
 
       await tx.notifications.create({
         data: {
@@ -105,11 +168,25 @@ export async function POST(
           data: { task_id: taskId },
         },
       })
+
+      // 5. Notifikasi ke SELURUH pekerja yang sebelumnya diterima (ACCEPTED)
+      for (const workerApp of acceptedWorkers) {
+        await tx.notifications.create({
+          data: {
+            user_id: workerApp.id_worker,
+            type: 'system',
+            title: 'Tugas Dibatalkan oleh Admin ⚠️',
+            message: `Tugas "${task.judul_tugas}" telah di-takedown oleh admin platform. Status pengerjaan tugas dibatalkan.`,
+            data: { task_id: taskId },
+          },
+        })
+      }
     })
 
-    const responseMsg = actualRefund > 0
-      ? `Task "${task.judul_tugas}" berhasil di-takedown dan escrow ${actualRefund.toLocaleString('id-ID')} poin dikembalikan ke requester.`
-      : `Task "${task.judul_tugas}" berhasil di-takedown.`
+    const responseMsg =
+      actualRefund > 0
+        ? `Task "${task.judul_tugas}" berhasil di-takedown, lamaran ${activeApplicants.length} pekerja ditolak, dan escrow ${actualRefund.toLocaleString('id-ID')} poin dikembalikan ke requester.`
+        : `Task "${task.judul_tugas}" berhasil di-takedown dan lamaran ${activeApplicants.length} pekerja ditolak.`
 
     return NextResponse.json({
       success: true,

@@ -41,15 +41,26 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
-    const { data: { user: authUser } } = await supabase.auth.getUser()
-    let userId = null;
-    if (authUser?.email) {
-      const dbUser = await prisma.user.findUnique({
-        where: { email: authUser.email },
-        select: { id_user: true }
-      });
-      if (dbUser) userId = dbUser.id_user;
+    let userId = request.headers.get('x-user-db-id')
+    if (!userId) {
+      const email = request.headers.get('x-auth-user-email')
+      if (email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email },
+          select: { id_user: true }
+        })
+        if (dbUser) userId = dbUser.id_user
+      } else {
+        const supabase = await createClient()
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        if (authUser?.email) {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: authUser.email },
+            select: { id_user: true }
+          })
+          if (dbUser) userId = dbUser.id_user
+        }
+      }
     }
 
     const { lat, lng, radius, q, id_category, sort, page, limit } = parsed.data

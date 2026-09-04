@@ -143,10 +143,8 @@ function CariTugasPageContent() {
   }, [coords.latitude, coords.longitude, radius, debouncedSearch, selectedCategory, viewMode, showToast]);
 
   useEffect(() => {
-    if (!locLoading) {
-      fetchTasks();
-    }
-  }, [locLoading, fetchTasks]);
+    fetchTasks();
+  }, [fetchTasks]);
 
   // Handle URL filter params
   useEffect(() => {

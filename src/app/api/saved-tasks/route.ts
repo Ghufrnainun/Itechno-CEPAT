@@ -13,33 +13,38 @@ export const revalidate = 0;
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
+    let userId = request.headers.get("x-user-db-id");
 
-    if (authError || !authUser?.email) {
-      return NextResponse.json(
-        { success: false, message: "Tidak terautentikasi." },
-        { status: 401 }
-      );
-    }
+    if (!userId) {
+      const supabase = await createClient();
+      const {
+        data: { user: authUser },
+        error: authError,
+      } = await supabase.auth.getUser();
 
-    const user = await prisma.user.findUnique({
-      where: { email: authUser.email },
-      select: { id_user: true },
-    });
+      if (authError || !authUser?.email) {
+        return NextResponse.json(
+          { success: false, message: "Tidak terautentikasi." },
+          { status: 401 }
+        );
+      }
 
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "User tidak ditemukan." },
-        { status: 404 }
-      );
+      const user = await prisma.user.findUnique({
+        where: { email: authUser.email },
+        select: { id_user: true },
+      });
+
+      if (!user) {
+        return NextResponse.json(
+          { success: false, message: "User tidak ditemukan." },
+          { status: 404 }
+        );
+      }
+      userId = user.id_user;
     }
 
     const savedTasks = await prisma.savedTask.findMany({
-      where: { id_user: user.id_user },
+      where: { id_user: userId },
       orderBy: { created_at: "desc" },
       include: {
         task: {
