@@ -22,13 +22,20 @@ Dokumen ini berisi panduan untuk melakukan pengujian (*testing*) pada *endpoint*
    ```
    *(Secara bawaan berjalan di `http://localhost:3000`)*
 
+4. **Struktur Koleksi Bawaan (`docs/api-cepat`)**
+   Koleksi Bruno yang disediakan mencakup beberapa modul:
+   - `auth/`: Endpoint registrasi (`register`), login (`login`), dan logout (`logout`).
+   - `category/`: Endpoint pengambilan kategori pekerjaan.
+   - `chat/`: Endpoint percakapan real-time.
+   - `task/`: Endpoint feed (`feed`), pencarian berbasis radius (`nearby`), pendaftaran tugas (`apply`), dan manajemen pelamar (`applications`).
+
 ---
 
 ## 2. Menguji API Registrasi (`POST /api/auth/register`)
 
 API ini digunakan untuk membuat akun pengguna baru. Supabase Auth dan profil Prisma akan otomatis terbuat.
 
-1. Di dalam koleksi `CEPAT API`, klik ikon **+ (New Request)**.
+1. Di dalam koleksi `CEPAT API`, Anda dapat menggunakan request bawaan atau klik ikon **+ (New Request)**.
 2. Isi formulir sebagai berikut:
    - **Name**: `Auth - Register`
    - **Method**: `POST`
@@ -70,15 +77,14 @@ API ini digunakan untuk membuat akun pengguna baru. Supabase Auth dan profil Pri
 
 ## 3. Menguji API Login (`POST /api/auth/login`)
 
-API ini digunakan untuk melakukan proses autentikasi (masuk) ke dalam aplikasi. Jika sukses, API akan mengembalikan sesi (token) dari Supabase beserta data profil Prisma pengguna.
+API ini digunakan untuk melakukan proses autentikasi (masuk) ke dalam aplikasi. Jika sukses, API akan mengembalikan sesi (token) dari Supabase beserta data profil Prisma pengguna, serta menyetel auth cookies pada sesi HTTP.
 
-1. Di dalam koleksi `CEPAT API`, klik ikon **+ (New Request)**.
-2. Isi formulir sebagai berikut:
+1. Buka request `auth/login` yang sudah ada atau buat baru:
    - **Name**: `Auth - Login`
    - **Method**: `POST`
    - **URL**: `http://localhost:3000/api/auth/login`
-3. Masuk ke *tab* **Body** di bawah kolom URL, dan pilih format **JSON**.
-4. Masukkan *payload* JSON berikut ke dalam editor (gunakan data yang sama dengan saat mendaftar):
+2. Masuk ke *tab* **Body** di bawah kolom URL, dan pilih format **JSON**.
+3. Masukkan *payload* JSON berikut ke dalam editor (gunakan data yang sama dengan saat mendaftar):
 
    ```json
    {
@@ -87,7 +93,7 @@ API ini digunakan untuk melakukan proses autentikasi (masuk) ke dalam aplikasi. 
    }
    ```
 
-5. Klik tombol **▶ Send**.
+4. Klik tombol **▶ Send**.
 
 **Ekspektasi Respons Sukses (200 OK):**
 ```json
@@ -118,31 +124,37 @@ API ini digunakan untuk melakukan proses autentikasi (masuk) ke dalam aplikasi. 
 ---
 ## 4. Menguji API Profil (`GET /api/auth/me`)
 
-API ini digunakan untuk melihat data profil *user* yang sedang aktif.
+API ini digunakan untuk melihat data profil *user* yang sedang aktif berdasarkan sesi Supabase Auth yang tersimpan pada cookies.
 
-1. Buat permintaan baru dengan klik **+ (New Request)**.
-2. Isi:
+1. Buat permintaan baru atau buka request profil:
    - **Name**: `Auth - Get Profile`
    - **Method**: `GET`
    - **URL**: `http://localhost:3000/api/auth/me`
-3. Masuk ke *tab* **Headers**.
-4. Tambahkan *header* berikut untuk mensimulasikan sesi (*karena login Supabase asli berbasis Cookie/JWT, untuk versi tes kita buat simulasi x-auth-id terlebih dahulu sesuai kode di `route.ts`*):
-   - **Name**: `x-auth-id`
-   - **Value**: Masukkan UUID *auth_id* milik Anda yang sudah masuk ke *database* atau token dari Supabase (tergantung implementasi akhir Anda).
-5. Klik **▶ Send**.
+2. **Autentikasi**:
+   - Karena endpoint ini membaca sesi melalui cookie Supabase SSR (`@/lib/supabase/server`), pastikan Bruno mengaktifkan *Cookie Jar* (otomatis aktif di Bruno). Cookie dari respon login akan otomatis dikirimkan pada request ini.
+3. Klik **▶ Send**.
 
 **Ekspektasi Respons Sukses (200 OK):**
 ```json
 {
   "success": true,
   "data": {
-    "id_user": "uuid",
-    "id_role": "uuid",
-    "nama_role": "Requester",
+    "id": "uuid-prisma",
     "email": "testuser1@example.com",
     "username": "budisantoso1",
     "nama_lengkap": "Budi Santoso",
+    "avatar_url": null,
+    "bio": null,
+    "pendidikan_terakhir": null,
+    "alamat": null,
+    "no_telpon": null,
+    "rating_avg": 0,
+    "total_completed": 0,
     "total_balance": 0,
+    "role": {
+      "id_role": "uuid",
+      "nama_role": "Requester"
+    },
     "skills": []
   }
 }

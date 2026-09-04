@@ -22,10 +22,11 @@ Untuk menerapkan perubahan skema atau menginisialisasi database:
    npx prisma migrate dev --name <nama_perubahan>
    ```
 
-2. **Terapkan Kebijakan Row Level Security (RLS)**:
+2. **Terapkan Kebijakan Row Level Security (RLS) & Storage Bucket**:
    ```bash
-   # Eksekusi skrip kebijakan keamanan RLS terkini
+   # Eksekusi skrip kebijakan keamanan RLS & Supabase storage bucket
    npx prisma db execute --file=supabase/migrations/20260831_comprehensive_rls_policies.sql
+   npx prisma db execute --file=supabase/migrations/20260901_create_portfolios_bucket.sql
    npx prisma db execute --file=supabase/migrations/20260901_fix_comprehensive_rls.sql
    npx prisma db execute --file=supabase/migrations/20260901_fix_user_task_direct_rls.sql
    ```
@@ -61,5 +62,6 @@ Untuk menerapkan perubahan skema atau menginisialisasi database:
 | `20260813_user_reports_schema.sql` | 13 Agustus 2026 | Skema penyimpanan tiket pengaduan pengguna dan izin akses moderator. |
 | `20260829_init_postgis.sql` | 29 Agustus 2026 | Inisialisasi ekstensi `postgis` dan indeks spasial GIST untuk query radius `lokasi_geo`. |
 | `20260831_comprehensive_rls_policies.sql` | 31 Agustus 2026 | Kebijakan RLS komprehensif untuk relasi Task, Applicants, Reviews, dan Chat. |
+| `20260901_create_portfolios_bucket.sql` | 01 September 2026 | Inisialisasi storage bucket Supabase `portfolios` dan kebijakan akses publik untuk upload galeri karya worker. |
 | `20260901_fix_comprehensive_rls.sql` | 01 September 2026 | Penyempurnaan RLS policy untuk sinkronisasi JWT `auth.uid()` dengan ID profil `User.id_user`. |
 | `20260901_fix_user_task_direct_rls.sql` | 01 September 2026 | Optimasi akses query langsung requester dan worker pada entitas task aktif. |

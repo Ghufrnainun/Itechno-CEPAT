@@ -39,7 +39,7 @@ Data layer dikelola secara terpadu melalui **Prisma ORM 7** sebagai *single sour
 │              SUPABASE (POSTGRESQL + POSTGIS)            │  │     EKSTERNAL SERVICES    │
 │  ┌────────────────────┐  ┌───────────────────────────┐  │  │ - Midtrans Snap (Topup)   │
 │  │ Prisma ORM Schema  │  │ PostGIS Spatial Extension │  │  │ - Firebase Admin FCM Push │
-│  │ (24 Model Tabel)   │  │ ST_DWithin Radius Query   │  │  │ - Vercel Cron (Reminders) │
+│  │ (28 Model Tabel)   │  │ ST_DWithin Radius Query   │  │  │ - Vercel Cron (Reminders) │
 │  ├────────────────────┤  ├───────────────────────────┤  │  └───────────────────────────┘
 │  │ Supabase Auth      │  │ Supabase Storage (Buckets)│  │
 │  │ (auth.users)       │  │ (portfolio & dispute docs)│  │
@@ -55,16 +55,17 @@ Data layer dikelola secara terpadu melalui **Prisma ORM 7** sebagai *single sour
 Itechno/
 ├── public/
 │   ├── icons/                   # PWA icons (192x192, 512x512, maskable)
+│   ├── sw.js                    # PWA Service Worker (offline fallback & caching)
 │   ├── firebase-messaging-sw.js # FCM background push notification service worker
 │   └── images/ & assets/
 │
 ├── prisma/
-│   ├── schema.prisma            # Single source of truth skema database (24 model)
+│   ├── schema.prisma            # Single source of truth skema database (28 model)
 │   ├── seed.mjs                 # Comprehensive seed script (data demo realistis)
 │   └── migrations/              # Riwayat migrasi skema Prisma
 │
 ├── supabase/
-│   └── migrations/              # SQL migrasi RLS policies, triggers & PostGIS
+│   └── migrations/              # SQL migrasi RLS policies, storage bucket, triggers & PostGIS
 │
 ├── docs/                        # Dokumentasi menyeluruh proyek
 │   ├── api-cepat/               # Bruno API testing collections
@@ -77,14 +78,16 @@ Itechno/
 │   │   ├── (auth)/              # Autentikasi pengguna biasa
 │   │   │   ├── login/
 │   │   │   ├── register/
-│   │   │   └── onboarding/
+│   │   │   └── onboarding/      # 2-step onboarding (kontak & keahlian)
 │   │   │
 │   │   ├── (main)/              # Area aplikasi pengguna utama (Unified Requester/Worker)
 │   │   │   ├── dashboard/       # Overview statistik & ringkasan aktivitas
 │   │   │   ├── cari-tugas/      # Peta interaktif Leaflet + Feed penemuan tugas mikro
+│   │   │   ├── feed/            # Redirect permanen ke /cari-tugas
 │   │   │   ├── task/
 │   │   │   │   ├── [id]/        # Detail tugas, pelamar, escrow status, pengerjaan
 │   │   │   │   └── new/         # Pembuatan tugas baru (Fixed / Bidding lelang)
+│   │   │   ├── tugas/           # Manajemen tugas pemberi (Tugas Saya & pelamar)
 │   │   │   ├── chat/            # Real-time direct chat & task coordination
 │   │   │   ├── disputes/        # Dispute resolution center (pengajuan & mediasi)
 │   │   │   ├── schedule/        # Kalender & timeline jadwal penugasan
@@ -92,7 +95,7 @@ Itechno/
 │   │   │   ├── profile/         # Profil publik, showcase portofolio, review & skill
 │   │   │   ├── wallet/          # Dompet, mutasi saldo, escrow status, top-up Midtrans
 │   │   │   ├── saved/           # Bookmark daftar tugas yang disimpan
-│   │   │   ├── history/         # Riwayat pekerjaan terselesaikan & ulasan
+│   │   │   ├── history/         # Riwayat pekerjaan terselesaikan (/history/riwayat)
 │   │   │   └── notifications/   # Pusat notifikasi pengguna
 │   │   │
 │   │   ├── (admin)/             # Portal pengurus & konsol tata kelola platform
@@ -107,33 +110,49 @@ Itechno/
 │   │   │       └── disputes/    # Mediasi dan resolusi perselisihan
 │   │   │
 │   │   ├── api/                 # 22 Kelompok REST Route Handlers
-│   │   │   ├── admin/           # Auth, stats, users, tasks, reports, disputes, search
+│   │   │   ├── admin/           # Auth, stats, users, tasks, reports, disputes, search, notifications
 │   │   │   ├── auth/            # Register, login, logout, me
-│   │   │   ├── tasks/           # CRUD, nearby, feed, scheduled, apply, bids, status
-│   │   │   ├── disputes/        # Create dispute, evidence upload, message, resolve
-│   │   │   ├── payment/         # Midtrans transaction create, status, webhook
-│   │   │   ├── leaderboard/     # Skor berbobot, XP, streaks, level
-│   │   │   ├── portfolio/       # Galeri karya & portofolio pekerja
-│   │   │   ├── saved-tasks/     # Bookmark tugas
-│   │   │   ├── cron/            # Scheduler pengingat tugas (schedule-reminder)
-│   │   │   ├── upload/          # Upload media ke Supabase Storage
-│   │   │   ├── wallet/          # Log transaksi dan saldo escrow
-│   │   │   ├── chat/            # Kamar obrolan dan pesan
-│   │   │   ├── notifications/   # Realtime notification sync
-│   │   │   ├── reviews/         # Rating dua arah
-│   │   │   ├── reports/         # Aduan laporan pengguna
-│   │   │   └── skills/          # Master skill query
+│   │   │   ├── categories/      # Master kategori tugas (public & admin CRUD)
+│   │   │   ├── chat/            # Kamar obrolan, init, pesan, & batch action
+│   │   │   ├── cron/            # schedule-reminder & notifications automated scheduler
+│   │   │   ├── disputes/        # Sengketa, bukti, pesan mediasi, & admin resolution
+│   │   │   ├── health/          # Database keep-alive check
+│   │   │   ├── leaderboard/     # Skor berbobot peringkat pengerja
+│   │   │   ├── notifications/   # Sinkronisasi notifikasi, baca, & hapus
+│   │   │   ├── payment/         # Midtrans Snap transaction create, status, webhook SHA-512
+│   │   │   ├── points/          # Saldo dompet internal (balance, history, topup simulasi)
+│   │   │   ├── portfolio/       # Galeri karya & portofolio pekerja (CRUD)
+│   │   │   ├── reports/         # Pengaduan kendala pengguna
+│   │   │   ├── reviews/         # Ulasan & penilaian bintang (mutual rating)
+│   │   │   ├── roles/           # Master role query
+│   │   │   ├── saved-tasks/     # Bookmark tugas & check bulk IDs
+│   │   │   ├── skills/          # Master skill query & admin CRUD
+│   │   │   ├── tasks/           # CRUD, nearby, feed, scheduled, apply, bids, status, applicants
+│   │   │   ├── upload/          # Upload media ke Supabase Storage (portfolios bucket)
+│   │   │   ├── users/           # me, ping (presence), avatar, skills
+│   │   │   ├── wallet/          # Saldo escrow holding (/api/wallet/escrow)
+│   │   │   └── xp/              # xp logs history & kalender streak harian
 │   │   │
+│   │   ├── offline/             # Halaman fallback offline PWA
+│   │   ├── bantuan/             # Pusat bantuan dan FAQ pengguna
+│   │   ├── kebijakan-privasi/   # Halaman kebijakan privasi
+│   │   ├── syarat-ketentuan/    # Syarat dan ketentuan layanan
+│   │   ├── auth/callback/       # OAuth Supabase callback route
 │   │   ├── manifest.ts          # Native PWA Web App Manifest
 │   │   ├── layout.tsx           # Root layout dengan font & dynamic providers
 │   │   └── globals.css          # Tailwind CSS v4 & theme variables
 │   │
+│   ├── features/                # Modul fitur domain spesifik
+│   │   ├── task/components/     # TaskCard, MapPicker, MapPickerWrapper, TaskInspector
+│   │   ├── chat/components/     # ChatRoom, ChatList, ChatInput
+│   │   └── auth/components/     # RoleCard
+│   │
 │   ├── components/
-│   │   ├── admin/               # AdminSidebar, AdminTopbar, KPICard, DataTable, Drawers
+│   │   ├── admin/               # AdminSidebar, AdminTopbar, AdminSelect, KPICard, DataTable, Drawers
 │   │   ├── landing/             # Hero, USP, SDG narrative, CTA
-│   │   ├── task/                # TaskCard, TaskDetail, TaskBiddingModal, MapComponents
+│   │   ├── task/                # ReviewModal
 │   │   ├── motion/              # Motion wrappers untuk transisi halus
-│   │   └── ui/                  # Button, Modal, Drawer, Badges, Tabs, Avatar
+│   │   └── ui/                  # Button, Modal, Drawer, Badges, Tabs, Avatar, Skeleton, StreakCalendar
 │   │
 │   ├── services/                # Heavy business logic terisolasi
 │   │   ├── task.service.ts      # Siklus hidup task, kuota, bidding, Model C escrow
@@ -148,10 +167,11 @@ Itechno/
 │   │   ├── midtrans.ts          # Midtrans Snap & Core API client
 │   │   ├── supabase/            # Client browser, server & middleware helpers
 │   │   ├── firebase/            # Firebase web & admin config
-│   │   ├── validations.ts       # Zod schemas terpadu
+│   │   ├── validations/         # Zod schemas (task, review, notification)
+│   │   ├── validations.ts       # Auth Zod schemas & sanitasi email
 │   │   └── rate-limit.ts        # In-memory sliding window rate limiter
 │   │
-│   └── types/                   # TypeScript interfaces & database mappings
+│   └── types/                   # TypeScript interfaces & database mappings (`database.ts`)
 ```
 
 ---

@@ -74,14 +74,18 @@ MIDTRANS_CLIENT_KEY=SB-Mid-client-...
 NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=SB-Mid-client-...
 MIDTRANS_IS_PRODUCTION=false
 
-# App Settings
-NEXT_PUBLIC_BASE_URL=https://cepat.vercel.app
+# App Settings & Cron Security
+NEXT_PUBLIC_BASE_URL=https://cepat-steel.vercel.app
 NEXT_PUBLIC_DEFAULT_RADIUS=2000
+CRON_SECRET=super-secret-cron-key-123
+SEED_AUTH_PASSWORD="DemoCepat2026!#"
 ```
 
 ---
 
 ## 4. Konfigurasi Vercel (`vercel.json`)
+
+Untuk menjadwalkan eksekusi otomatis pada Vercel Serverless:
 
 ```json
 {
@@ -89,6 +93,10 @@ NEXT_PUBLIC_DEFAULT_RADIUS=2000
     {
       "path": "/api/cron/schedule-reminder",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/notifications",
+      "schedule": "0 */6 * * *"
     }
   ]
 }

@@ -12,31 +12,30 @@ Dokumen ini memetakan alur pengguna (*User Journey*), transisi antar layar (*Scr
                         ┌──────────┴──────────┐
                         ▼ (User Baru)         ▼ (User Lama)
               [ L1.5: Onboarding ]            │
-              Step 1 – Tinjau Peran           │
-              Step 2 – Kontak & Institusi     │
-              Step 3 – Bio & Keahlian         │
+              Langkah 1 – Kontak & Instansi   │
+              Langkah 2 – Bio & Keahlian      │
                         │                     │
                         └──────────┬──────────┘
                                    ▼
                        [ L2: Unified Dashboard ]
                                    │
-     ┌──────────────────┬──────────┴──────────┬──────────────────┐
-     ▼                  ▼                     ▼                  ▼
-[ L3A: Buat Task ] [ L3B: Cari Tugas ]  [ L3C: Jadwal ]   [ L3D: Leaderboard ]
- (Fixed/Bidding      (Peta Leaflet +      (/schedule       (Peringkat XP,
-  + Escrow Lock)       Feed Radius)        Kalender)       Badges, Streaks)
-     │                  │                     │                  │
-     │                  ▼                     │                  │
-     │         [ L4: Apply / Bidding ]        │                  │
-     │          (Pitch + Sealed-Bid)          │                  │
-     │                  │                     │                  │
-     └──────────┬───────┴─────────────────────┘                  │
-                ▼                                                ▼
-     [ L5: Evaluasi Pelamar & Approval ]               [ L3E: Portofolio Profil ]
-     (Auto-Refund Selisih Escrow Model C)               (/profile/[id] Showcase)
-                │
-                ▼
-     [ L6: In-App Chat & Pelacakan Task ]
+     ┌──────────────┬──────────────┼──────────────┬──────────────┬──────────────┐
+     ▼              ▼              ▼              ▼              ▼              ▼
+[ L3A: Buat Task ] [ L3B: Cari ] [ L3C: Jadwal ] [ L3D: Ranking ][ L3E: Profil ][ L3F: Tugas Saya ]
+ (Fixed/Bidding    (Peta Leaflet+   (/schedule    (/leaderboard)  (/profile/[id])  (/tugas Kelola
+  + Escrow Lock)    Feed Radius)     Kalender)    XP & Badges)       Showcase)      & Pelamar)
+     │              │              │              │              │              │
+     │              ▼              │              │              │              │
+     │     [ L4: Apply / Bidding ] │              │              │              │
+     │      (Pitch + Sealed-Bid)   │              │              │              │
+     │              │              │              │              │              │
+     └──────┬───────┴──────────────┘              │              │              │
+            ▼                                     │              │              │
+ [ L5: Evaluasi Pelamar & Approval ] ─────────────┼──────────────┼──────────────┘
+ (Auto-Refund Selisih Escrow Model C)             │              │
+            │                                     │              │
+            ▼                                     │              │
+ [ L6: In-App Chat & Pelacakan Task ]             │              │
                 │
      ┌──────────┴─────────────────────────────┐
      ▼ (Pengerjaan Normal)                    ▼ (Terjadi Ketidaksesuaian)

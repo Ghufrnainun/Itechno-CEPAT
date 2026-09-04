@@ -35,19 +35,20 @@ src/
 │   │
 │   └── api/
 │       └── admin/                         # Backend Route Handlers Khusus Admin
-│           ├── auth/                      # Login, logout, status sesi
+│           ├── auth/                      # Login, logout, status sesi (/me)
 │           ├── stats/                     # KPI stats, tren harian, distribusi status
-│           ├── users/                     # List, detail profil, suspend (perm/temp), unban, warn
-│           ├── tasks/                     # List, detail, take-down, force complete
-│           ├── reports/                   # List aduan, filter status, update resolusi
-│           ├── disputes/                  # List sengketa, mediasi, penetapan favor worker/requester
+│           ├── users/                     # List, detail profil ([userId]), suspend, unban, warn, reset-pw
+│           ├── tasks/                     # List, detail ([taskId]), takedown, force-complete
+│           ├── reports/                   # List aduan, filter status, update resolusi ([reportId])
+│           ├── disputes/                  # List seluruh sengketa (resolusi via /api/disputes/[id])
 │           ├── search/                    # Global search debounced untuk menu, user, task, kategori
-│           └── notifications/             # Polling & FCM sync notifikasi admin
+│           └── notifications/             # Polling & sync notifikasi aduan admin
 │
 ├── components/
 │   └── admin/
 │       ├── AdminSidebar.tsx               # Collapsible sidebar dengan route indicators
 │       ├── AdminTopbar.tsx                # Topbar dengan Global Search (Ctrl+K), FCM Bell Counter
+│       ├── AdminSelect.tsx                # Custom select dropdown component untuk filter & form
 │       ├── KPICard.tsx                    # Reusable stat metric card berdesain anti-side-stripe
 │       ├── DataTable.tsx                  # Reusable paginated data table
 │       ├── StatusBadge.tsx                # Badges status standar
@@ -106,10 +107,10 @@ src/
   - Integrasi tautan langsung: Membuka URL `/admin/reports?id=<reportId>` otomatis memunculkan detail laporan terkait.
 
 ### 3.7 🛡️ Manajemen Sengketa & Resolusi Escrow (`/admin/disputes`)
-- **Panel Mediasi**: Menangani tiket sengketa antara Requester dan Worker.
+- **Panel Mediasi**: Menangani tiket sengketa antara Requester dan Worker (mengambil data via `GET /api/admin/disputes`).
 - **Pemeriksaan Bukti**: Meninjau bukti foto dan deskripsi sanggahan dari kedua belah pihak.
-- **Penetapan Resolusi Finansial**:
-  - Menetapkan keputusan sepihak: `RESOLVED_FAVOR_WORKER` (dana escrow dicairkan ke worker) atau `RESOLVED_FAVOR_REQUESTER` (dana escrow di-refund ke requester).
+- **Penetapan Resolusi Finansial (`PATCH /api/disputes/[id]`)**:
+  - Menetapkan keputusan resmi admin: `RESOLVED_FAVOR_WORKER` (dana escrow dicairkan ke worker) atau `RESOLVED_FAVOR_REQUESTER` (dana escrow di-refund ke requester).
   - Eksekusi transaksi dilakukan otomatis dan tercatat pada log mutasi.
 
 ### 3.8 🔍 Global Search Bar & Notifikasi Real-time FCM (`AdminTopbar.tsx`)

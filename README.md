@@ -478,31 +478,33 @@ GET  /api/auth/me          # Profil akun pengguna aktif
 #### Manajemen Tugas & Bidding
 
 ```http
-GET    /api/tasks          # Daftar tugas publik terpaginasi
-POST   /api/tasks          # Pembuatan tugas baru + penguncian escrow
-GET    /api/tasks/nearby   # Query geospasial radius PostGIS (lat, lng, radius)
-GET    /api/tasks/scheduled # Kalender jadwal penugasan
-GET    /api/tasks/:id      # Detail spesifik tugas
-POST   /api/tasks/:id/apply # Pengajuan lamaran & sealed-bid penawaran
-GET    /api/tasks/:id/bids # Daftar tawaran masuk untuk requester
-POST   /api/tasks/:id/status # Transisi status (start, submit, complete, cancel)
+GET    /api/tasks            # Daftar tugas publik terpaginasi
+POST   /api/tasks            # Pembuatan tugas baru + penguncian escrow
+GET    /api/tasks/nearby     # Query geospasial radius PostGIS (lat, lng, radius)
+GET    /api/tasks/scheduled  # Kalender jadwal penugasan
+GET    /api/tasks/:id        # Detail spesifik tugas
+POST   /api/tasks/:id/apply  # Pengajuan lamaran & sealed-bid penawaran
+GET    /api/tasks/:id/bids   # Daftar tawaran masuk untuk requester
+PATCH  /api/tasks/:id/status # Transisi status (start, submit, complete, cancel)
 ```
 
 #### Dompet & Pembayaran Midtrans
 
 ```http
-GET    /api/wallet         # Rincian saldo dompet & riwayat mutasi transaksi
-POST   /api/payment/create # Pembuatan Snap token top-up Midtrans
-GET    /api/payment/status # Pengecekan status pembayaran order_id
-POST   /api/payment/webhook # Webhook notifikasi IPN dengan verifikasi SHA-512
+GET    /api/points/balance   # Rincian saldo dompet aktif & saldo tertahan (held balance)
+GET    /api/points/history   # Riwayat mutasi transaksi saldo/poin
+GET    /api/wallet/escrow    # Ringkasan dana tertahan di escrow per tugas
+POST   /api/payment/create   # Pembuatan Snap token top-up Midtrans
+GET    /api/payment/status   # Pengecekan status pembayaran order_id
+POST   /api/payment/webhook  # Webhook notifikasi IPN dengan verifikasi SHA-512
 ```
 
 #### Pusat Sengketa (Dispute Center)
 
 ```http
-GET    /api/disputes       # Daftar tiket sengketa pengguna
-POST   /api/disputes       # Pembukaan laporan sengketa baru
-GET    /api/disputes/:id   # Rincian perkara, berkas bukti, & pesan mediasi
+GET    /api/disputes         # Daftar tiket sengketa pengguna
+POST   /api/disputes         # Pembukaan laporan sengketa baru
+GET    /api/disputes/:id     # Rincian perkara, berkas bukti, & pesan mediasi
 POST   /api/disputes/:id/evidence # Pengunggahan bukti teks/foto
 POST   /api/disputes/:id/messages # Pengiriman pesan mediasi sengketa
 ```
@@ -510,11 +512,12 @@ POST   /api/disputes/:id/messages # Pengiriman pesan mediasi sengketa
 #### Gamifikasi & Portofolio
 
 ```http
-GET    /api/leaderboard    # Peringkat pekerja berdasarkan skor pembobotan berimbang
-GET    /api/xp             # Detail level, XP log, daily streak, & lencana
-GET    /api/portfolio      # Galeri karya portofolio pekerja
-POST   /api/portfolio      # Penambahan item galeri karya baru
-POST   /api/upload         # Upload berkas gambar ke Supabase Storage Bucket
+GET    /api/leaderboard      # Peringkat pekerja berdasarkan skor pembobotan berimbang
+GET    /api/xp/history       # Riwayat perolehan XP dan level
+GET    /api/xp/calendar      # Kalender keaktifan XP harian
+GET    /api/portfolio        # Galeri karya portofolio pekerja
+POST   /api/portfolio        # Penambahan item galeri karya baru
+POST   /api/upload           # Upload berkas gambar ke Supabase Storage Bucket
 ```
 
 ### Example Request

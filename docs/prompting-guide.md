@@ -16,8 +16,14 @@ Dokumen ini menjelaskan cara efektif menggunakan file-file di folder `docs/` unt
 | `design.md`         | Color palette, typography, komponen UI       | Styling, membuat komponen baru, memastikan konsistensi visual |
 | `techstack.md`      | Dependencies, env vars, alasan pemilihan     | Install package, konfigurasi, troubleshoot dependency        |
 | `conventions.md`    | Naming, patterns, code style rules           | Menulis kode baru, review kode, memastikan konsistensi       |
+| `user-flow.md`      | Peta halaman, alur autentikasi & status task | Merancang alur navigasi user, UX flow, state machine tugas   |
+| `admin-dashboard.md`| Arsitektur admin, moderasi, sengketa, metrics| Mengembangkan modul admin dashboard, moderasi, dispute       |
+| `migrations.md`     | Urutan migrasi Prisma, SQL triggers, RLS     | Setup database baru, migrasi schema, seeding data            |
 | `deployment.md`     | Vercel, Supabase, Firebase setup & scripts   | Deploy, environment setup, CI/CD, pre-submission checklist   |
 | `strategy.md`       | Penilaian, narasi SDG, USP, demo scenario    | README, landing page, presentasi, strategi kompetisi         |
+| `api-testing-bruno.md` | Panduan pengujian endpoint API via Bruno  | Testing interaktif endpoint, simulasi cookie auth lokal      |
+| `api-cepat/`        | Koleksi request Bruno berbasis file          | Membuka dan mengeksekusi request test di Bruno               |
+| `implementation_plan.md` | Checklist dan status implementasi teknis | Meninjau roadmap fitur, integrasi sistem, dan checklist      |
 
 ---
 
