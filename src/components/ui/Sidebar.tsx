@@ -4,8 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useNotifications } from "@/hooks/useNotifications";
-import { useUnreadChat } from "@/hooks/useUnreadChat";
+import { useCurrentRole } from "@/app/(main)/layout";
 import {
   Briefcase,
   PlusCircle,
@@ -48,8 +47,7 @@ interface SidebarProps {
 export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { unreadCount } = useNotifications();
-  const { unreadCount: chatUnreadCount } = useUnreadChat();
+  const { unreadCount = 0, chatUnreadCount = 0 } = useCurrentRole();
   const { canInstall, promptInstall } = usePwaInstall();
   const [loggingOut, setLoggingOut] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);

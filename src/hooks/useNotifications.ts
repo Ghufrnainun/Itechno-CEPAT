@@ -100,7 +100,7 @@ export function useNotifications() {
       const channelName = `user-notifications-${prismaUserId}`;
       
       // Hapus channel lama jika ada
-      const existingChannel = supabase.getChannels().find((ch) => ch.topic === `realtime:${channelName}`);
+      const existingChannel = supabase.getChannels().find((ch: any) => ch.topic === `realtime:${channelName}`);
       if (existingChannel) {
         await supabase.removeChannel(existingChannel);
       }
@@ -111,14 +111,14 @@ export function useNotifications() {
       channel = supabase
         .channel(uniqueChannelName)
         .on(
-          "postgres_changes",
+          "postgres_changes" as any,
           {
             event: "*",
             schema: "public",
             table: "Notifications",
             filter: `user_id=eq.${prismaUserId}`,
           },
-          (payload) => {
+          (payload: any) => {
             if (!isMounted) return;
             
             if (payload.eventType === 'INSERT') {
@@ -154,7 +154,7 @@ export function useNotifications() {
           }
         );
 
-      channel.subscribe();
+      channel?.subscribe();
     }
 
     initRealtime();

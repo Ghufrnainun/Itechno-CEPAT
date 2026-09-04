@@ -13,12 +13,11 @@ function AnimatedCounter({ target, suffix = "", label }: CounterProps) {
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.5 });
   const reduce = useReducedMotion();
-  const [display, setDisplay] = useState("0");
 
   useEffect(() => {
-    if (!isInView) return;
+    if (!isInView || !ref.current) return;
     if (reduce) {
-      setDisplay(target);
+      ref.current.textContent = target + suffix;
       return;
     }
 
@@ -27,6 +26,7 @@ function AnimatedCounter({ target, suffix = "", label }: CounterProps) {
     const prefix = target.replace(/[0-9.<]/g, "").replace(".", "");
     const duration = 1200;
     const startTime = performance.now();
+    let animationFrameId: number;
 
     function tick(now: number) {
       const elapsed = now - startTime;
@@ -34,26 +34,35 @@ function AnimatedCounter({ target, suffix = "", label }: CounterProps) {
       const eased = 1 - Math.pow(1 - progress, 4); // ease-out-quart
       const current = numericTarget * eased;
 
+      let val = "";
       if (target.startsWith("<")) {
-        setDisplay("<" + (isInteger ? Math.round(current).toString() : current.toFixed(1)));
+        val = "<" + (isInteger ? Math.round(current).toString() : current.toFixed(1));
       } else {
-        setDisplay(prefix + (isInteger ? Math.round(current).toString() : current.toFixed(1)));
+        val = prefix + (isInteger ? Math.round(current).toString() : current.toFixed(1));
+      }
+
+      if (ref.current) {
+        ref.current.textContent = val + suffix;
       }
 
       if (progress < 1) {
-        requestAnimationFrame(tick);
-      } else {
-        setDisplay(target);
+        animationFrameId = requestAnimationFrame(tick);
+      } else if (ref.current) {
+        ref.current.textContent = target + suffix;
       }
     }
 
-    requestAnimationFrame(tick);
-  }, [isInView, target, reduce]);
+    animationFrameId = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [isInView, target, suffix, reduce]);
 
   return (
     <div className="flex flex-col items-center gap-1.5 px-3 py-2 md:py-0">
       <span ref={ref} className="text-3xl md:text-4xl font-extrabold text-primary font-headline tracking-tight tabular-nums">
-        {display}{suffix}
+        0{suffix}
       </span>
       <span className="text-xs text-on-surface-variant font-medium text-center leading-snug max-w-[160px]">
         {label}

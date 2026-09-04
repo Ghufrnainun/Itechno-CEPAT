@@ -6,6 +6,8 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { ToastProvider } from "@/components/ui/Toast";
 import { useFCM } from "@/hooks/useFCM";
 import { usePresencePing } from "@/hooks/usePresencePing";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useUnreadChat } from "@/hooks/useUnreadChat";
 import { BellRing } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PwaInstallBanner } from "@/components/ui/PwaInstallBanner";
@@ -28,6 +30,8 @@ interface RoleContextType {
   setRole: (role: Role) => void;
   toggleRole: () => void;
   user: UserProfileData | null;
+  unreadCount: number;
+  chatUnreadCount: number;
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
@@ -100,8 +104,12 @@ export default function MainAppLayout({
   const [role, setRoleState] = useState<Role>("worker");
   const [user, setUser] = useState<UserProfileData | null>(null);
 
-  // Initialize online presence pinging
-  usePresencePing(60000); // 1 minute interval
+  // Initialize online presence pinging (default 3 menit dengan cooldown 2 menit)
+  usePresencePing();
+
+  // Ambil count notifikasi dan chat sekali di level layout agar tidak dobel WebSocket channel
+  const { unreadCount } = useNotifications();
+  const { unreadCount: chatUnreadCount } = useUnreadChat();
 
   useEffect(() => {
     const saved = localStorage.getItem("cepat_role") as Role;
@@ -151,7 +159,7 @@ export default function MainAppLayout({
   };
 
   return (
-    <RoleContext.Provider value={{ role, setRole, toggleRole, user }}>
+    <RoleContext.Provider value={{ role, setRole, toggleRole, user, unreadCount, chatUnreadCount }}>
       <ToastProvider>
         <PwaInstallBanner />
         <FcmBridge />

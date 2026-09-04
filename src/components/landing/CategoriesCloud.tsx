@@ -50,7 +50,7 @@ export function CategoriesCloud() {
           <p className="text-sm md:text-base text-on-surface-variant leading-relaxed mb-6">
             Mulai dari foto produk UMKM, entri data, jaga booth, hingga bantuan logistik harian. Durasi terukur, kompensasi transparan, dan lokasi dekat.
           </p>
-          <Link href="/login" className="inline-flex items-center gap-1.5 text-primary text-xs font-bold hover:underline">
+          <Link href="/cari-tugas" className="inline-flex items-center gap-1.5 text-primary text-xs font-bold hover:underline">
             Lihat semua kategori
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
@@ -74,8 +74,7 @@ export function CategoriesCloud() {
                 viewport={{ once: true, amount: 0.1 }}
                 transition={{ delay: cat.delay / 1000, duration: 0.4 }}
                 whileHover={reduce ? undefined : { scale: 1.05, y: -4 }}
-                className="animate-float cursor-default"
-                style={{ animationDelay: `${cat.delay * 2}ms` }}
+                className="cursor-default"
               >
                 <div className={cn(
                   "flex items-center gap-2 rounded-xl border shadow-xs backdrop-blur-sm transition-all duration-150",
