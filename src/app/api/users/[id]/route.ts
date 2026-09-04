@@ -56,7 +56,7 @@ export async function GET(
       dbUser.banned_until = null;
       dbUser.email = "[Disembunyikan]";
       dbUser.no_telpon = null;
-      dbUser.alamat = null;
+      // dbUser.alamat tetap dipertahankan sebagai domisili
     }
 
     return NextResponse.json({

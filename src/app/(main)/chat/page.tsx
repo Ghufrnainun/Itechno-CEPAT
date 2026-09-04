@@ -45,6 +45,16 @@ function ChatContent() {
         
         if (data.success) {
           setRooms(data.data);
+
+          const targetUserId = searchParams.get('userId');
+          if (targetUserId && !initialRoomId) {
+            const matchedRoom = data.data.find(
+              (r: any) => r.worker?.id_user === targetUserId || r.requester?.id_user === targetUserId
+            );
+            if (matchedRoom) {
+              setSelectedRoomId(matchedRoom.id_chat_room);
+            }
+          }
           
           if (data.data.length > 0) {
             const firstRoom = data.data[0];
@@ -73,11 +83,12 @@ function ChatContent() {
 
   useEffect(() => {
      if (currentUserId === "") {
-        supabase.auth.getUser().then(async ({ data: { user } }) => {
+        supabase.auth.getUser().then(async (res: { data: { user: any } }) => {
+           const user = res?.data?.user;
            if (user) {
-              const res = await fetch('/api/users/me').catch(() => null);
-              if (res && res.ok) {
-                 const json = await res.json();
+              const resMe = await fetch('/api/users/me').catch(() => null);
+              if (resMe && resMe.ok) {
+                 const json = await resMe.json();
                  if (json.success) setCurrentUserId(json.data.id_user);
               }
            }

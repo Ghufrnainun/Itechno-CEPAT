@@ -71,7 +71,7 @@ export default async function ProfilePage({
       if (!isOwner) {
         dbUser.email = "[Disembunyikan]";
         dbUser.no_telpon = "[Disembunyikan]";
-        dbUser.alamat = "[Disembunyikan]";
+        // dbUser.alamat tetap dipertahankan sebagai informasi domisili/kota publik
         dbUser.total_balance = 0;
         dbUser.held_balance = 0;
       }

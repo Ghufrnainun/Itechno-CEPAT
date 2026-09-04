@@ -160,14 +160,12 @@ export default function KebijakanPrivasiPage() {
             </h2>
             <p className="text-sm text-on-surface-variant leading-relaxed">
               Jika kamu punya pertanyaan tentang kebijakan ini atau ingin
-              mengajukan permintaan terkait data pribadimu, hubungi kami di{" "}
-              <a
-                href="mailto:privasi@cepat.id"
-                className="text-primary hover:underline font-medium"
-              >
-                privasi@cepat.id
-              </a>
-              . Kami akan merespons dalam 5 hari kerja.
+              mengajukan permintaan terkait data pribadimu, sampaikan melalui{" "}
+              <Link href="/bantuan" className="text-primary hover:underline font-medium">
+                Pusat Bantuan
+              </Link>{" "}
+              atau fitur Laporan di aplikasi (email kontak:{" "}
+              <span className="text-primary font-medium font-mono">privasi@cepat.id</span>). Kami akan merespons dalam 5 hari kerja.
             </p>
           </section>
         </div>

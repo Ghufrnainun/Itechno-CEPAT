@@ -100,7 +100,7 @@ Kami menyediakan platform sebagaimana adanya. Gunakan dengan pertimbangan sendir
     content: `Jika ada perselisihan antara pemberi tugas dan pekerja, langkah yang kami sarankan:
 
 1. Coba selesaikan langsung melalui fitur chat in-app.
-2. Jika tidak berhasil, hubungi kami di bantuan@cepat.id dengan menyertakan ID tugas dan ringkasan masalah.
+2. Jika tidak berhasil, ajukan aduan melalui menu Laporkan Masalah atau Pusat Sengketa di aplikasi dengan menyertakan ID tugas dan ringkasan masalah.
 3. Kami akan meninjau riwayat percakapan dan data tugas, lalu memberikan rekomendasi penyelesaian dalam 3 hari kerja.
 
 Keputusan akhir dari tim CEPAT bersifat final dalam konteks penggunaan platform ini.`,
@@ -176,14 +176,12 @@ export default function SyaratKetentuanPage() {
         {/* Contact */}
         <div className="mt-10 p-4 rounded-xl bg-surface-container border border-outline-variant">
           <p className="text-sm text-on-surface-variant">
-            Ada pertanyaan tentang ketentuan ini? Hubungi kami di{" "}
-            <a
-              href="mailto:bantuan@cepat.id"
-              className="text-primary hover:underline font-medium"
-            >
-              bantuan@cepat.id
-            </a>
-            .
+            Ada pertanyaan tentang ketentuan ini? Ajukan melalui menu{" "}
+            <Link href="/bantuan" className="text-primary hover:underline font-medium">
+              Pusat Bantuan
+            </Link>{" "}
+            atau laporkan langsung via fitur Laporan di aplikasi (email kontak:{" "}
+            <span className="text-primary font-medium font-mono">bantuan@cepat.id</span>).
           </p>
         </div>
 

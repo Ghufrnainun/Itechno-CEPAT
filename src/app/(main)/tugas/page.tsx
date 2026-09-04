@@ -12,6 +12,7 @@ import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { Tabs, TabsList, TabsTrigger } from "@/components/motion/tabs";
 import { TaskStatus } from "@/types/database";
+import { useCurrentRole } from "../layout";
 import {
   Plus,
   Banknote,
@@ -26,6 +27,7 @@ import {
   CheckCircle2,
   XCircle,
   ClipboardList,
+  Briefcase,
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -226,7 +228,7 @@ function TaskManagementCard({ task, onRefresh }: { task: RequesterTask; onRefres
 
 // ─── Empty State ─────────────────────────────────────────────────────────────
 
-function EmptyState({ activeFilter }: { activeFilter: string | null }) {
+function EmptyState({ activeFilter, role }: { activeFilter: string | null; role: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
       <div className="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center text-on-surface-variant">
@@ -243,15 +245,26 @@ function EmptyState({ activeFilter }: { activeFilter: string | null }) {
         <p className="font-body-sm text-xs text-on-surface-variant mt-1">
           {activeFilter === "completed"
             ? "Task yang sudah selesai akan muncul di sini."
+            : role === "worker"
+            ? "Anda belum memposting tugas sebagai Requester. Cari tugas untuk dikerjakan atau post tugas baru."
             : "Mulai posting tugas baru untuk menemukan worker terbaik."}
         </p>
       </div>
       {activeFilter !== "completed" && (
-        <Link href="/task/new">
-          <Button variant="primary" size="sm" icon={<Plus className="w-4 h-4" />}>
-            Post Tugas Baru
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2 mt-1">
+          {role === "worker" && (
+            <Link href="/cari-tugas">
+              <Button variant="outline" size="sm" icon={<Briefcase className="w-4 h-4" />}>
+                Cari Tugas
+              </Button>
+            </Link>
+          )}
+          <Link href="/task/new">
+            <Button variant="primary" size="sm" icon={<Plus className="w-4 h-4" />}>
+              Post Tugas Baru
+            </Button>
+          </Link>
+        </div>
       )}
     </div>
   );
@@ -260,6 +273,7 @@ function EmptyState({ activeFilter }: { activeFilter: string | null }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function KelolaTaskPage() {
+  const { role } = useCurrentRole();
   const [tasks, setTasks] = useState<RequesterTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
@@ -316,6 +330,35 @@ export default function KelolaTaskPage() {
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6 pb-36 lg:pb-12">
 
+          {/* Worker notice banner */}
+          {role === "worker" && (
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                  <Briefcase className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="font-semibold text-on-surface">Anda sedang dalam mode Worker</p>
+                  <p className="text-on-surface-variant text-[11px] mt-0.5">
+                    Halaman ini menampilkan tugas yang Anda kelola sebagai Requester. Mau mencari tugas untuk dikerjakan?
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Link href="/cari-tugas">
+                  <Button variant="secondary" size="sm">
+                    Cari Tugas
+                  </Button>
+                </Link>
+                <Link href="/history/riwayat">
+                  <Button variant="outline" size="sm">
+                    Riwayat Tugas
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
+
           {/* Summary stats */}
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-surface-container-lowest border border-card-border rounded-xl p-4 text-center shadow-xs">
@@ -361,7 +404,7 @@ export default function KelolaTaskPage() {
               <TaskCardSkeleton />
             </div>
           ) : filteredTasks.length === 0 ? (
-            <EmptyState activeFilter={activeFilter} />
+            <EmptyState activeFilter={activeFilter} role={role} />
           ) : (
             <div className="flex flex-col gap-3">
               {filteredTasks.map((task) => (

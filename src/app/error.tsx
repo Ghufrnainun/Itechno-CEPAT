@@ -81,23 +81,31 @@ export default function ErrorPage({ error, reset }: ErrorProps) {
             </Link>
           </div>
 
-          {/* Technical Details Accordion */}
-          <div className="pt-3 border-t border-card-border text-left">
-            <button
-              type="button"
-              onClick={() => setShowDetails(!showDetails)}
-              className="w-full flex items-center justify-between text-[11px] text-on-surface-variant hover:text-on-surface font-mono py-1.5 transition-colors cursor-pointer"
-            >
-              <span>Rincian Teknis {error.digest && `(Digest: ${error.digest})`}</span>
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showDetails ? "rotate-180" : ""}`} />
-            </button>
+          {/* Technical Details Accordion (Only in Development) */}
+          {process.env.NODE_ENV === "development" ? (
+            <div className="pt-3 border-t border-card-border text-left">
+              <button
+                type="button"
+                onClick={() => setShowDetails(!showDetails)}
+                className="w-full flex items-center justify-between text-[11px] text-on-surface-variant hover:text-on-surface font-mono py-1.5 transition-colors cursor-pointer"
+              >
+                <span>Rincian Teknis (Mode Dev) {error.digest && `(Digest: ${error.digest})`}</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showDetails ? "rotate-180" : ""}`} />
+              </button>
 
-            {showDetails && (
-              <div className="mt-2 p-3 rounded-lg bg-surface-container-low border border-card-border font-mono text-[11px] text-error break-all overflow-x-auto max-h-36 custom-scrollbar leading-relaxed">
-                {error.message || "An unknown client runtime error occurred."}
-              </div>
-            )}
-          </div>
+              {showDetails && (
+                <div className="mt-2 p-3 rounded-lg bg-surface-container-low border border-card-border font-mono text-[11px] text-error break-all overflow-x-auto max-h-36 custom-scrollbar leading-relaxed">
+                  {error.message || "An unknown client runtime error occurred."}
+                </div>
+              )}
+            </div>
+          ) : error.digest ? (
+            <div className="pt-3 border-t border-card-border text-center">
+              <span className="text-[11px] text-on-surface-variant/60 font-mono">
+                Kode Insiden: {error.digest}
+              </span>
+            </div>
+          ) : null}
         </div>
       </main>
 

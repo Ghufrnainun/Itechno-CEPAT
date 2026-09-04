@@ -55,24 +55,20 @@ export function HeroSection() {
           className="animate-appear"
           style={{ animationDelay: "150ms" }}
         >
-          <h1 className="font-headline text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.08] text-on-surface">
+          <h1 className="font-headline text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.12] text-on-surface">
             Tugas kecil di sekitar kampus,
             <br className="hidden sm:block" />
-            <span className="relative inline-block mt-1 sm:mt-0">
-              mulai dari{" "}
-              <span className="relative inline-flex overflow-hidden align-bottom h-[1.15em]">
-                {/* Invisible spacer to perfectly set container width */}
-                <span className="invisible whitespace-nowrap opacity-0 pointer-events-none">
-                  survei lapangan
-                </span>
+            <span className="inline-flex items-center justify-center flex-wrap gap-x-2.5 mt-1 sm:mt-0">
+              <span>mulai dari</span>
+              <span className="relative inline-flex items-center justify-center overflow-hidden min-h-[1.15em] text-primary">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={ROTATING_WORDS[wordIndex]}
-                    initial={reduce ? false : { y: 30, opacity: 0 }}
+                    initial={reduce ? false : { y: 24, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    exit={reduce ? undefined : { y: -30, opacity: 0 }}
-                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute left-0 text-primary whitespace-nowrap"
+                    exit={reduce ? undefined : { y: -24, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                    className="inline-block text-primary whitespace-nowrap"
                   >
                     {ROTATING_WORDS[wordIndex]}
                   </motion.span>
@@ -84,7 +80,7 @@ export function HeroSection() {
 
         {/* Subtitle */}
         <p
-          className="animate-appear text-sm md:text-base text-on-surface-variant max-w-[560px] leading-relaxed font-sans"
+          className="animate-appear text-sm md:text-base text-on-surface-variant max-w-[560px] leading-relaxed font-sans mx-auto"
           style={{ animationDelay: "300ms" }}
         >
           CEPAT menghubungkan mahasiswa dengan UMKM lokal yang butuh bantuan
@@ -93,7 +89,7 @@ export function HeroSection() {
 
         {/* CTAs */}
         <div
-          className="animate-appear flex flex-col sm:flex-row gap-3 w-full sm:w-auto pt-2"
+          className="animate-appear flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto pt-2 mx-auto"
           style={{ animationDelay: "500ms" }}
         >
           <Link href="/register?role=requester" className="block w-full sm:w-auto">
@@ -120,7 +116,7 @@ export function HeroSection() {
 
         {/* App Mockup Preview - Double Bezel Architecture */}
         <div
-          className="animate-appear animate-float w-full max-w-[680px] mt-6 md:mt-10"
+          className="animate-appear animate-float w-full max-w-[680px] mt-6 md:mt-10 mx-auto"
           style={{ animationDelay: "700ms" }}
         >
           {/* Outer Shell */}
@@ -162,7 +158,12 @@ export function HeroSection() {
   
               {/* Mini Radar Map */}
               <div className="h-[140px] relative bg-surface-container overflow-hidden">
-                <svg className="w-full h-full absolute inset-0" xmlns="http://www.w3.org/2000/svg">
+                <svg
+                  className="w-full h-full absolute inset-0"
+                  viewBox="0 0 680 140"
+                  preserveAspectRatio="xMidYMid slice"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
                   <defs>
                     <pattern id="heroGrid" width="40" height="40" patternUnits="userSpaceOnUse">
                       <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" className="text-card-border" strokeWidth="1" />
