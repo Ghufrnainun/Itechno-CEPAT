@@ -115,7 +115,7 @@ interface TaskDetail {
 export default function TaskDetailPage() {
   const router = useRouter();
   const { id } = useParams();
-  const { role } = useCurrentRole();
+  const { role, user } = useCurrentRole();
   const { showToast } = useToast();
 
   const [task, setTask] = useState<TaskDetail | null>(null);
@@ -863,7 +863,26 @@ export default function TaskDetailPage() {
                           {/* Tombol Chat Sejajar di Pojok Kiri */}
                           <button
                             type="button"
-                            onClick={() => router.push(`/chat?userId=${app.id_worker}`)}
+                            onClick={async () => {
+                              try {
+                                const resInit = await fetch('/api/chat/init', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    id_tasks: task.id_tasks,
+                                    id_worker: app.id_worker,
+                                  }),
+                                });
+                                const dataInit = await resInit.json();
+                                if (dataInit.success && dataInit.data?.id_chat_room) {
+                                  router.push(`/chat?room=${dataInit.data.id_chat_room}`);
+                                } else {
+                                  router.push(`/chat?userId=${app.id_worker}`);
+                                }
+                              } catch {
+                                router.push(`/chat?userId=${app.id_worker}`);
+                              }
+                            }}
                             className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border border-primary/30 text-primary hover:bg-primary/10 cursor-pointer transition-colors duration-150"
                           >
                             <MessageSquare className="w-3.5 h-3.5" />
@@ -1603,21 +1622,28 @@ export default function TaskDetailPage() {
             size="lg"
             onClick={async () => {
               try {
-                const partnerId = role === "requester"
-                  ? task.applicants.find(a => a.status === "accepted")?.worker?.id_user
-                  : task.requester?.id_user;
-                if (!partnerId) return;
-                const res = await fetch("/api/chat/rooms", {
+                const acceptedApplicant = task.applicants?.find(a => a.status === "accepted");
+                const workerId = role === "requester"
+                  ? (acceptedApplicant?.worker?.id_user || acceptedApplicant?.id_worker)
+                  : user?.id_user;
+                if (!workerId) {
+                  router.push("/chat");
+                  return;
+                }
+                const res = await fetch("/api/chat/init", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ partner_id: partnerId, task_id: task.id_tasks }),
+                  body: JSON.stringify({ id_tasks: task.id_tasks, id_worker: workerId }),
                 });
                 const json = await res.json();
-                if (json.success) {
+                if (json.success && json.data?.id_chat_room) {
                   router.push(`/chat?room=${json.data.id_chat_room}`);
+                } else {
+                  router.push("/chat");
                 }
               } catch (e) {
                 console.error(e);
+                router.push("/chat");
               }
             }}
             className="px-4 min-h-[46px]"

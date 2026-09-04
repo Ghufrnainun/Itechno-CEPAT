@@ -11,13 +11,20 @@ interface SpotlightCardProps {
 
 function SpotlightCard({ children, className = "" }: SpotlightCardProps) {
   const divRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const spotlightRef = useRef<HTMLDivElement>(null);
   const [opacity, setOpacity] = useState(0);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!divRef.current) return;
-    const rect = divRef.current.getBoundingClientRect();
-    setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    const el = divRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    el.style.setProperty("--x", `${x}px`);
+    el.style.setProperty("--y", `${y}px`);
+    if (spotlightRef.current) {
+      spotlightRef.current.style.background = `radial-gradient(400px circle at ${x}px ${y}px, rgba(15, 118, 110, 0.06), transparent 40%)`;
+    }
   };
 
   return (
@@ -28,17 +35,12 @@ function SpotlightCard({ children, className = "" }: SpotlightCardProps) {
         onMouseEnter={() => setOpacity(1)}
         onMouseLeave={() => setOpacity(0)}
         className="relative h-full spotlight-card rounded-xl border border-white/60 bg-white/80 backdrop-blur-xl p-6 md:p-8 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_4px_12px_rgba(0,0,0,0.03)] overflow-hidden"
-        style={{
-          // @ts-ignore - Custom properties used by CSS
-          "--x": `${position.x}px`,
-          "--y": `${position.y}px`,
-        }}
       >
         <div
-          className="pointer-events-none absolute inset-0 rounded-inherit opacity-0 transition-opacity duration-300 z-0"
+          ref={spotlightRef}
+          className="pointer-events-none absolute inset-0 rounded-inherit transition-opacity duration-300 z-0"
           style={{
             opacity,
-            background: `radial-gradient(400px circle at ${position.x}px ${position.y}px, rgba(15, 118, 110, 0.06), transparent 40%)`,
           }}
         />
         <div className="relative z-10 h-full flex flex-col">{children}</div>

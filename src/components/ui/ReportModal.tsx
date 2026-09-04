@@ -123,7 +123,7 @@ export function ReportModal({
                   onClick={onClose}
                   className="font-bold text-primary hover:underline shrink-0 inline-flex items-center gap-1 text-[11px]"
                 >
-                  Pusat Bantuan <ExternalLink className="w-3 h-3" />
+                  Pusat Bantuan →
                 </Link>
               </div>
             )}

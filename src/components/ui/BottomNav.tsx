@@ -3,8 +3,6 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useNotifications } from "@/hooks/useNotifications";
-import { useUnreadChat } from "@/hooks/useUnreadChat";
 import { useCurrentRole } from "@/app/(main)/layout";
 import { Home, ClipboardList, ListFilter, Bell, MessageSquare, User, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,9 +14,7 @@ interface BottomNavProps {
 function BottomNavContent({ role }: BottomNavProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user } = useCurrentRole();
-  const { unreadCount } = useNotifications();
-  const { unreadCount: chatUnreadCount } = useUnreadChat();
+  const { user, unreadCount = 0, chatUnreadCount = 0 } = useCurrentRole();
 
   // Hide BottomNav when inside task detail, task new, dispute detail, or active chat conversation
   const isInsideActiveChatRoom = pathname === "/chat" && Boolean(searchParams.get("room"));

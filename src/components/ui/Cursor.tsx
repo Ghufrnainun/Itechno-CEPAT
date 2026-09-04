@@ -49,18 +49,23 @@ export function Cursor({
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    // Abaikan kursor custom pada perangkat sentuh (touchscreen)
+    const isTouch = window.matchMedia('(pointer: coarse)').matches;
+    if (isTouch) return;
+
     if (!attachToParent) {
       document.body.style.cursor = 'none';
     }
 
+    let isInside = !attachToParent;
+
     const updatePosition = (e: MouseEvent) => {
+      if (!isInside && attachToParent) return;
       cursorX.set(e.clientX);
       cursorY.set(e.clientY);
       onPositionChange?.(e.clientX, e.clientY);
     };
 
-    // Selalu binding ke window agar pergerakan mouse tidak patah-patah 
-    // meskipun kursor bergerak sangat cepat keluar dari batas parent.
     window.addEventListener('mousemove', updatePosition, { passive: true });
 
     if (attachToParent) {
@@ -68,8 +73,16 @@ export function Cursor({
       if (parent) {
         parent.style.cursor = 'none';
 
-        const handleMouseEnter = () => setIsVisible(true);
-        const handleMouseLeave = () => setIsVisible(false);
+        const handleMouseEnter = (e: MouseEvent) => {
+          isInside = true;
+          cursorX.set(e.clientX);
+          cursorY.set(e.clientY);
+          setIsVisible(true);
+        };
+        const handleMouseLeave = () => {
+          isInside = false;
+          setIsVisible(false);
+        };
 
         parent.addEventListener('mouseenter', handleMouseEnter);
         parent.addEventListener('mouseleave', handleMouseLeave);

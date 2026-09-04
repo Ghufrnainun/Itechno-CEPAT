@@ -1,21 +1,43 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LayoutDashboard, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 export function LandingNavbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const { scrollY } = useScroll();
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setIsScrolled(latest > 50);
   });
+
+  useEffect(() => {
+    try {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data }) => {
+        setIsLoggedIn(Boolean(data?.user));
+      });
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setIsLoggedIn(Boolean(session?.user));
+      });
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    } catch (e) {
+      console.error("[LandingNavbar] Auth check error:", e);
+      setIsLoggedIn(false);
+    }
+  }, []);
 
   return (
     <>
@@ -48,23 +70,34 @@ export function LandingNavbar() {
 
           {/* Desktop Links */}
           <div className="hidden md:flex items-center gap-6 font-sans">
-            <a href="#cara-kerja" className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors duration-150">Cara Kerja</a>
-            <a href="#fitur" className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors duration-150">Fitur</a>
-            <a href="#untuk-umkm" className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors duration-150">Untuk UMKM</a>
+            <Link href="/#cara-kerja" className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors duration-150">Cara Kerja</Link>
+            <Link href="/#fitur" className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors duration-150">Fitur</Link>
+            <Link href="/#untuk-umkm" className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors duration-150">Untuk UMKM</Link>
           </div>
 
           {/* Desktop CTAs */}
           <div className="hidden md:flex items-center gap-2.5">
-            <Link href="/login">
-              <Button variant="ghost" size="sm">
-                Masuk
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button variant="primary" size="sm">
-                Daftar
-              </Button>
-            </Link>
+            {isLoggedIn ? (
+              <Link href="/dashboard">
+                <Button variant="primary" size="sm" className="gap-2 font-bold shadow-xs">
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  Buka Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm">
+                    Masuk
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button variant="primary" size="sm">
+                    Daftar
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -88,21 +121,32 @@ export function LandingNavbar() {
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-40 bg-surface/98 backdrop-blur-xl flex flex-col items-center justify-center gap-6 px-6 font-sans"
           >
-            <a href="#cara-kerja" onClick={() => setIsOpen(false)} className="text-xl font-bold text-on-surface">Cara Kerja</a>
-            <a href="#fitur" onClick={() => setIsOpen(false)} className="text-xl font-bold text-on-surface">Fitur</a>
-            <a href="#untuk-umkm" onClick={() => setIsOpen(false)} className="text-xl font-bold text-on-surface">Untuk UMKM</a>
+            <Link href="/#cara-kerja" onClick={() => setIsOpen(false)} className="text-xl font-bold text-on-surface">Cara Kerja</Link>
+            <Link href="/#fitur" onClick={() => setIsOpen(false)} className="text-xl font-bold text-on-surface">Fitur</Link>
+            <Link href="/#untuk-umkm" onClick={() => setIsOpen(false)} className="text-xl font-bold text-on-surface">Untuk UMKM</Link>
             
             <div className="flex flex-col w-full max-w-xs gap-3 mt-6">
-              <Link href="/register" onClick={() => setIsOpen(false)}>
-                <Button variant="primary" fullWidth size="lg">
-                  Daftar
-                </Button>
-              </Link>
-              <Link href="/login" onClick={() => setIsOpen(false)}>
-                <Button variant="secondary" fullWidth size="lg">
-                  Masuk
-                </Button>
-              </Link>
+              {isLoggedIn ? (
+                <Link href="/dashboard" onClick={() => setIsOpen(false)}>
+                  <Button variant="primary" fullWidth size="lg" className="gap-2 justify-center">
+                    <LayoutDashboard className="w-4 h-4" />
+                    Buka Dashboard
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/register" onClick={() => setIsOpen(false)}>
+                    <Button variant="primary" fullWidth size="lg">
+                      Daftar
+                    </Button>
+                  </Link>
+                  <Link href="/login" onClick={() => setIsOpen(false)}>
+                    <Button variant="secondary" fullWidth size="lg">
+                      Masuk
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}
@@ -110,3 +154,4 @@ export function LandingNavbar() {
     </>
   );
 }
+
