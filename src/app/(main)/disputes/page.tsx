@@ -51,21 +51,27 @@ interface DisputeItem {
   };
 }
 
+// Module-level SWR Cache for Disputes
+let cachedDisputes: DisputeItem[] = [];
+let hasDisputesLoadedOnce = false;
+
 export default function DisputesListPage() {
   const { user } = useCurrentRole();
-  const [disputes, setDisputes] = useState<DisputeItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [disputes, setDisputes] = useState<DisputeItem[]>(cachedDisputes);
+  const [loading, setLoading] = useState(!hasDisputesLoadedOnce);
   const [activeTab, setActiveTab] = useState<"all" | "active" | "resolved">("all");
 
   useEffect(() => {
     async function loadDisputes() {
-      setLoading(true);
+      if (!hasDisputesLoadedOnce) setLoading(true);
       try {
         const res = await fetch("/api/disputes");
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data)) {
             setDisputes(json.data);
+            cachedDisputes = json.data;
+            hasDisputesLoadedOnce = true;
           }
         }
       } catch (e) {

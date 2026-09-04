@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Trophy,
@@ -102,21 +103,29 @@ function UserAvatar({
   }
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={user.avatar_url}
-      alt={user.nama_lengkap}
-      className={cn("w-full h-full object-cover", className)}
-      onError={() => setErr(true)}
-    />
+    <div className={cn("relative w-full h-full overflow-hidden", className)}>
+      <Image
+        src={user.avatar_url}
+        alt={user.nama_lengkap}
+        fill
+        sizes="56px"
+        className="object-cover"
+        onError={() => setErr(true)}
+      />
+    </div>
   );
 }
 
+// ─── Module-level SWR Cache ──────────────────────────────────────────────
+const leaderboardCache = new Map<string, { users: LeaderboardUser[]; currentUser: LeaderboardUser | null }>();
+
 export default function LeaderboardPage() {
-  const [users, setUsers] = useState<LeaderboardUser[]>([]);
-  const [currentUser, setCurrentUser] = useState<LeaderboardUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [period, setPeriod] = useState<"current" | "last_month">("current");
+  const cachedData = leaderboardCache.get(period);
+
+  const [users, setUsers] = useState<LeaderboardUser[]>(() => cachedData?.users ?? []);
+  const [currentUser, setCurrentUser] = useState<LeaderboardUser | null>(() => cachedData?.currentUser ?? null);
+  const [isLoading, setIsLoading] = useState(() => !cachedData);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   // Main navigation tab
@@ -128,22 +137,23 @@ export default function LeaderboardPage() {
   const [xpPage, setXpPage] = useState(1);
   const [xpTotalPages, setXpTotalPages] = useState(1);
 
-  // Fetch leaderboard data
+  // Fetch leaderboard data with background SWR revalidation
   useEffect(() => {
     let cancelled = false;
 
     const fetchLeaderboard = async () => {
-      setIsLoading(true);
+      if (!leaderboardCache.has(period)) {
+        setIsLoading(true);
+      }
       try {
         const res = await fetch(`/api/leaderboard?period=${period}`);
         const json = await res.json();
         if (!cancelled && json.success) {
-          setUsers(json.data || []);
-          if (json.currentUser) {
-            setCurrentUser(json.currentUser);
-          } else {
-            setCurrentUser(null);
-          }
+          const list = json.data || [];
+          const curr = json.currentUser || null;
+          setUsers(list);
+          setCurrentUser(curr);
+          leaderboardCache.set(period, { users: list, currentUser: curr });
         }
       } catch (error) {
         console.error("Failed to fetch leaderboard", error);

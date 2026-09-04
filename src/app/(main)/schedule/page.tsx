@@ -69,22 +69,29 @@ const MONTH_NAMES = [
 
 const DAY_NAMES = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
+// Module-level SWR Cache for Scheduled Tasks
+const scheduledTasksCache = new Map<string, ScheduledTask[]>();
+
 export default function SchedulePage() {
   const router = useRouter();
   const { role: activeRole } = useCurrentRole();
 
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
-  const [tasks, setTasks] = useState<ScheduledTask[]>([]);
-  const [loading, setLoading] = useState(true);
   const [roleFilter, setRoleFilter] = useState<"all" | "requester" | "worker">("all");
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth(); // 0-indexed
+  const cacheKey = `${currentYear}-${currentMonth + 1}-${roleFilter}`;
 
-  // Fetch scheduled tasks
+  const [tasks, setTasks] = useState<ScheduledTask[]>(() => scheduledTasksCache.get(cacheKey) ?? []);
+  const [loading, setLoading] = useState(() => !scheduledTasksCache.has(cacheKey));
+
+  // Fetch scheduled tasks (SWR: background revalidation)
   const fetchTasks = useCallback(async () => {
-    setLoading(true);
+    if (!scheduledTasksCache.has(cacheKey)) {
+      setLoading(true);
+    }
     try {
       const res = await fetch(
         `/api/tasks/scheduled?year=${currentYear}&month=${currentMonth + 1}&role=${roleFilter}`
@@ -93,6 +100,7 @@ export default function SchedulePage() {
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
           setTasks(json.data);
+          scheduledTasksCache.set(cacheKey, json.data);
         }
       }
     } catch (e) {
@@ -100,19 +108,29 @@ export default function SchedulePage() {
     } finally {
       setLoading(false);
     }
-  }, [currentYear, currentMonth, roleFilter]);
+  }, [currentYear, currentMonth, roleFilter, cacheKey]);
 
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
 
-  // Navigate months
+  // Navigate months (instantly loads cached tasks if visited)
   const handlePrevMonth = () => {
-    setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
+    const nextDate = new Date(currentYear, currentMonth - 1, 1);
+    setCurrentDate(nextDate);
+    const key = `${nextDate.getFullYear()}-${nextDate.getMonth() + 1}-${roleFilter}`;
+    if (scheduledTasksCache.has(key)) {
+      setTasks(scheduledTasksCache.get(key)!);
+    }
   };
 
   const handleNextMonth = () => {
-    setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
+    const nextDate = new Date(currentYear, currentMonth + 1, 1);
+    setCurrentDate(nextDate);
+    const key = `${nextDate.getFullYear()}-${nextDate.getMonth() + 1}-${roleFilter}`;
+    if (scheduledTasksCache.has(key)) {
+      setTasks(scheduledTasksCache.get(key)!);
+    }
   };
 
   const handleToday = () => {

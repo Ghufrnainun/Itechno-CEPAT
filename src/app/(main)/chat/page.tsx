@@ -8,24 +8,31 @@ import { createClient } from "@/lib/supabase/client";
 import { MessageSquare, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
+// Module-level SWR Cache for Chat
+let cachedChatRooms: any[] = [];
+let cachedCurrentChatUserId = "";
+let hasChatLoadedOnce = false;
+
 function ChatContent() {
   const searchParams = useSearchParams();
   const initialRoomId = searchParams.get('room');
   
-  const [rooms, setRooms] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [rooms, setRooms] = useState<any[]>(cachedChatRooms);
+  const [isLoading, setIsLoading] = useState(!hasChatLoadedOnce);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(initialRoomId);
-  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [currentUserId, setCurrentUserId] = useState<string>(cachedCurrentChatUserId);
   const supabase = createClient();
 
   const fetchRooms = async () => {
     try {
-      setIsLoading(true);
+      if (!hasChatLoadedOnce) setIsLoading(true);
       const res = await fetch('/api/chat');
       const data = await res.json();
       
       if (data.success) {
         setRooms(data.data);
+        cachedChatRooms = data.data;
+        hasChatLoadedOnce = true;
       }
     } catch (error) {
       console.error("Gagal meload daftar chat", error);
@@ -45,6 +52,8 @@ function ChatContent() {
         
         if (data.success) {
           setRooms(data.data);
+          cachedChatRooms = data.data;
+          hasChatLoadedOnce = true;
 
           const targetUserId = searchParams.get('userId');
           if (targetUserId && !initialRoomId) {
@@ -60,12 +69,14 @@ function ChatContent() {
             const firstRoom = data.data[0];
             if (firstRoom.requester.id_user === user.id) {
                setCurrentUserId(user.id);
+               cachedCurrentChatUserId = user.id;
             } else {
                const resMe = await fetch('/api/users/me').catch(() => null);
                if (resMe && resMe.ok) {
                  const resMeData = await resMe.json();
                  if (resMeData.success) {
                    setCurrentUserId(resMeData.data.id_user);
+                   cachedCurrentChatUserId = resMeData.data.id_user;
                  }
                }
             }
