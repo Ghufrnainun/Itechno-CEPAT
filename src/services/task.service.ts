@@ -1281,6 +1281,28 @@ export const taskService = {
       })();
 
       if (acceptedWorkers.length > 0) {
+        // Cek apakah ada sengketa yang telah selesai pada task ini
+        const settledDisputes = await prisma.dispute.findMany({
+          where: {
+            id_task: taskId,
+            status: { in: ['RESOLVED_FAVOR_WORKER', 'RESOLVED_FAVOR_REQUESTER', 'CLOSED'] },
+          },
+          select: { id_reporter: true, id_respondent: true },
+        });
+        const settledWorkerIds = new Set(
+          settledDisputes.map((d) => (d.id_reporter === task.id_requester ? d.id_respondent : d.id_reporter))
+        );
+
+        // Hanya cairkan ke worker yang aktif dan belum diselesaikan melalui sengketa
+        const workersToPayout = acceptedWorkers.filter((workerApp) => {
+          if (settledWorkerIds.has(workerApp.id_worker)) return false;
+          // Bila held_slots_json ada, cek apakah slotnya masih aktif
+          if (rawSlotHeld[0]?.held_slots_json && typeof slotHeldMap[workerApp.id_task_applicants] !== 'number') {
+            return false;
+          }
+          return true;
+        });
+
         const txResult = await prisma.$transaction(async (tx) => {
           // 1. Kunci baris Task dengan FOR UPDATE untuk mencegah race condition / double payout
           const lockedTask = await tx.$queryRaw<Array<{ id_status_task: string }>>`
@@ -1291,11 +1313,11 @@ export const taskService = {
             return { alreadyHandled: true };
           }
 
-          for (const workerApp of acceptedWorkers) {
+          for (const workerApp of workersToPayout) {
             const payoutAmount =
               typeof slotHeldMap[workerApp.id_task_applicants] === 'number'
                 ? slotHeldMap[workerApp.id_task_applicants]
-                : task.kompensasi;
+                : (workerApp.bid_amount ?? task.kompensasi);
 
             await tx.user.update({
               where: { id_user: task.id_requester },
@@ -1336,7 +1358,10 @@ export const taskService = {
 
           await tx.task.update({
             where: { id_tasks: taskId },
-            data: updateData,
+            data: {
+              ...updateData,
+              held_slots_json: null,
+            },
           });
 
           return { alreadyHandled: false };
@@ -1347,11 +1372,11 @@ export const taskService = {
         }
 
         // Notifications & Gamification hooks (post-transaction)
-        for (const workerApp of acceptedWorkers) {
+        for (const workerApp of workersToPayout) {
           const payoutAmount =
             typeof slotHeldMap[workerApp.id_task_applicants] === 'number'
               ? slotHeldMap[workerApp.id_task_applicants]
-              : task.kompensasi;
+              : (workerApp.bid_amount ?? task.kompensasi);
 
           try {
             await notificationService.createNotification({
@@ -1640,9 +1665,10 @@ export const taskService = {
       });
 
       return tasks.map((t) => {
-        const acceptedApp = t.applicants.find(
+        const acceptedApps = t.applicants.filter(
           (a) => a.status_applicant?.nama_status?.toLowerCase() === 'accepted'
         );
+        const acceptedApp = acceptedApps[0] || null;
         const workerReview = acceptedApp
           ? t.reviews.find((r) => r.id_rater === acceptedApp.id_worker)
           : (t.reviews[0] ?? null);
@@ -1666,6 +1692,12 @@ export const taskService = {
                 avatar_url: acceptedApp.worker.avatar_url,
               }
             : null,
+          accepted_workers: acceptedApps.map((a) => ({
+            id_user: a.worker.id_user,
+            nama_lengkap: a.worker.nama_lengkap,
+            avatar_url: a.worker.avatar_url,
+            bid_amount: a.bid_amount,
+          })),
           received_rating: workerReview?.rating ?? null,
         };
       });

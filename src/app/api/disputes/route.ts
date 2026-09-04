@@ -1,12 +1,13 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { disputeService } from '@/services/dispute.service';
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit';
 import { z } from 'zod';
 
-const createDisputeSchema = z.object({
+const singleDisputeSchema = z.object({
   taskId: z.string().min(1, 'ID Tugas wajib diisi.'),
+  respondentId: z.string().min(1).optional(),
   reason: z.string().min(3, 'Alasan minimal 3 karakter.').max(100, 'Alasan maksimal 100 karakter.'),
   description: z.string().min(10, 'Deskripsi permasalahan minimal 10 karakter.').max(2000, 'Deskripsi maksimal 2000 karakter.'),
   evidence: z
@@ -17,6 +18,25 @@ const createDisputeSchema = z.object({
       })
     )
     .optional(),
+});
+
+const batchDisputeItemSchema = z.object({
+  respondentId: z.string().min(1, 'ID Pihak Terlapor wajib diisi.'),
+  reason: z.string().min(3, 'Alasan minimal 3 karakter.').max(100, 'Alasan maksimal 100 karakter.'),
+  description: z.string().min(10, 'Deskripsi permasalahan minimal 10 karakter.').max(2000, 'Deskripsi maksimal 2000 karakter.'),
+  evidence: z
+    .array(
+      z.object({
+        type: z.enum(['text', 'image']),
+        content: z.string().min(1),
+      })
+    )
+    .optional(),
+});
+
+const batchDisputeSchema = z.object({
+  taskId: z.string().min(1, 'ID Tugas wajib diisi.'),
+  disputes: z.array(batchDisputeItemSchema).min(1, 'Minimal sertakan 1 tiket sengketa.').max(20),
 });
 
 export async function GET(request: NextRequest) {
@@ -115,7 +135,33 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const parsed = createDisputeSchema.safeParse(body);
+
+    if (body.disputes && Array.isArray(body.disputes)) {
+      const parsed = batchDisputeSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json(
+          { success: false, message: parsed.error.issues[0]?.message || 'Data tidak valid.' },
+          { status: 400 }
+        );
+      }
+
+      const createdDisputes = await disputeService.createBatchDisputes(
+        parsed.data.taskId,
+        user.id_user,
+        parsed.data.disputes
+      );
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: `${createdDisputes.length} tiket sengketa berhasil dibuat. Ruang mediasi telah dibuka.`,
+          data: createdDisputes,
+        },
+        { status: 201 }
+      );
+    }
+
+    const parsed = singleDisputeSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -127,6 +173,7 @@ export async function POST(request: NextRequest) {
     const dispute = await disputeService.createDispute({
       taskId: parsed.data.taskId,
       reporterId: user.id_user,
+      respondentId: parsed.data.respondentId,
       reason: parsed.data.reason,
       description: parsed.data.description,
       evidence: parsed.data.evidence,

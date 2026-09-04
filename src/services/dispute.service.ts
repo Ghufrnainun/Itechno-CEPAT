@@ -6,6 +6,7 @@ import { notificationService } from '@/services/notification.service';
 export interface CreateDisputeInput {
   taskId: string;
   reporterId: string;
+  respondentId?: string;
   reason: string;
   description: string;
   evidence?: { type: 'text' | 'image'; content: string }[];
@@ -45,47 +46,55 @@ export const disputeService = {
     }
 
     const isRequester = task.id_requester === reporterId;
-    const acceptedApplicant = task.applicants.find(
-      (a) => a.status_applicant?.nama_status?.toUpperCase() === 'ACCEPTED'
-    );
-    const workerApplicant = task.applicants.find((a) => a.id_worker === reporterId);
-    const isWorker = Boolean(workerApplicant);
+    const isWorker = task.applicants.some((a) => a.id_worker === reporterId);
 
     if (!isRequester && !isWorker) {
       throw new Error('Hanya pemberi tugas atau pekerja yang berhak mengajukan sengketa.');
     }
 
-    let respondentId = '';
+    let finalRespondentId = input.respondentId?.trim() || '';
     if (isRequester) {
-      const targetWorker = acceptedApplicant || task.applicants[0];
-      if (!targetWorker) {
-        throw new Error('Belum ada pekerja atau pelamar pada tugas ini untuk diajukan sengketa.');
+      if (finalRespondentId) {
+        const validApplicant = task.applicants.find((a) => a.id_worker === finalRespondentId);
+        if (!validApplicant) {
+          throw new Error('Pekerja yang dipilih tidak terdaftar sebagai pelamar/pekerja pada tugas ini.');
+        }
+      } else {
+        const acceptedApplicant = task.applicants.find(
+          (a) => a.status_applicant?.nama_status?.toUpperCase() === 'ACCEPTED'
+        );
+        const targetWorker = acceptedApplicant || task.applicants[0];
+        if (!targetWorker) {
+          throw new Error('Belum ada pekerja atau pelamar pada tugas ini untuk diajukan sengketa.');
+        }
+        finalRespondentId = targetWorker.id_worker;
       }
-      respondentId = targetWorker.id_worker;
     } else {
-      respondentId = task.id_requester;
+      finalRespondentId = task.id_requester;
     }
 
-    // 2. Cek apakah ada sengketa yang masih terbuka / dalam peninjauan untuk tugas ini
+    // 2. Cek apakah ada sengketa yang masih terbuka / dalam peninjauan untuk tugas dan terlapor spesifik ini
     let existingDispute: any = null;
     if (typeof (prisma as any).dispute?.findFirst === 'function') {
       existingDispute = await (prisma as any).dispute.findFirst({
         where: {
           id_task: taskId,
+          id_reporter: reporterId,
+          id_respondent: finalRespondentId,
           status: { in: [DisputeStatus.OPEN, DisputeStatus.IN_REVIEW] },
         },
       });
     } else {
       const raw = await prisma.$queryRaw<Array<{ id_dispute: string }>>`
         SELECT id_dispute FROM "Dispute"
-        WHERE id_task = ${taskId} AND status IN ('OPEN', 'IN_REVIEW')
+        WHERE id_task = ${taskId} AND id_reporter = ${reporterId} AND id_respondent = ${finalRespondentId} AND status IN ('OPEN', 'IN_REVIEW')
         LIMIT 1
       `;
       existingDispute = raw[0] || null;
     }
 
     if (existingDispute) {
-      throw new Error('Tugas ini sudah memiliki pengajuan sengketa yang sedang aktif.');
+      throw new Error('Sudah ada pengajuan sengketa aktif terhadap pihak terkait pada tugas ini.');
     }
 
     // 3. Buat entri Dispute baru
@@ -95,7 +104,7 @@ export const disputeService = {
         data: {
           id_task: taskId,
           id_reporter: reporterId,
-          id_respondent: respondentId,
+          id_respondent: finalRespondentId,
           reason,
           description,
           status: DisputeStatus.OPEN,
@@ -121,7 +130,7 @@ export const disputeService = {
         INSERT INTO "Dispute" (
           id_dispute, id_task, id_reporter, id_respondent, reason, description, status, created_at, updated_at
         ) VALUES (
-          gen_random_uuid()::text, ${taskId}, ${reporterId}, ${respondentId}, ${reason}, ${description}, 'OPEN'::"DisputeStatus", NOW(), NOW()
+          gen_random_uuid()::text, ${taskId}, ${reporterId}, ${finalRespondentId}, ${reason}, ${description}, 'OPEN'::"DisputeStatus", NOW(), NOW()
         )
         RETURNING id_dispute
       `;
@@ -144,7 +153,7 @@ export const disputeService = {
         id_dispute: disputeId,
         id_task: taskId,
         id_reporter: reporterId,
-        id_respondent: respondentId,
+        id_respondent: finalRespondentId,
         reason,
         description,
         status: 'OPEN',
@@ -157,7 +166,7 @@ export const disputeService = {
     try {
       const reporterName = isRequester ? task.requester?.nama_lengkap : 'Pekerja';
       await notificationService.createNotification({
-        userId: respondentId,
+        userId: finalRespondentId,
         type: 'reminder',
         title: '⚠️ Pengajuan Sengketa Tugas',
         message: `${reporterName} telah mengajukan mediasi sengketa untuk tugas "${task.judul_tugas}". Alasan: ${reason}.`,
@@ -165,7 +174,56 @@ export const disputeService = {
       });
     } catch (_) {}
 
+    // 5. Notifikasi ke seluruh Admin
+    try {
+      const adminUsers = await prisma.user.findMany({
+        where: { role: { nama_role: { equals: 'Admin', mode: 'insensitive' } } },
+        select: { id_user: true },
+      });
+      for (const admin of adminUsers) {
+        await notificationService.createNotification({
+          userId: admin.id_user,
+          type: 'dispute' as any,
+          title: '🚨 Tiket Sengketa Baru',
+          message: `Sengketa baru diajukan untuk tugas "${task.judul_tugas}". Alasan: ${reason}.`,
+          data: { disputeId: dispute.id_dispute, taskId: task.id_tasks },
+        });
+      }
+    } catch (_) {}
+
     return dispute;
+  },
+
+  /**
+   * Membuat banyak tiket sengketa sekaligus (batch) untuk multi-worker task.
+   */
+  async createBatchDisputes(
+    taskId: string,
+    reporterId: string,
+    items: Array<{
+      respondentId: string;
+      reason: string;
+      description: string;
+      evidence?: { type: 'text' | 'image'; content: string }[];
+    }>
+  ) {
+    if (!items || items.length === 0) {
+      throw new Error('Daftar sengketa yang diajukan tidak boleh kosong.');
+    }
+
+    const createdList = [];
+    for (const item of items) {
+      const dispute = await this.createDispute({
+        taskId,
+        reporterId,
+        respondentId: item.respondentId,
+        reason: item.reason,
+        description: item.description,
+        evidence: item.evidence,
+      });
+      createdList.push(dispute);
+    }
+    return createdList;
   },
 
   /**
@@ -220,7 +278,52 @@ export const disputeService = {
         }
       }
 
-      return dispute;
+      // Ambil daftar sengketa lain pada tugas yang sama (untuk navigasi berkas terkait)
+      const relatedDisputes = await (prisma as any).dispute.findMany({
+        where: {
+          id_task: dispute.id_task,
+          id_dispute: { not: disputeId },
+        },
+        select: {
+          id_dispute: true,
+          status: true,
+          reason: true,
+          created_at: true,
+          reporter: { select: { id_user: true, nama_lengkap: true, avatar_url: true } },
+          respondent: { select: { id_user: true, nama_lengkap: true, avatar_url: true } },
+        },
+        orderBy: { created_at: 'asc' },
+      });
+
+      const workerId =
+        dispute.id_reporter === dispute.task.id_requester
+          ? dispute.id_respondent
+          : dispute.id_reporter;
+
+      const workerApplicant = workerId
+        ? await prisma.taskApplicants.findFirst({
+            where: { id_tasks: dispute.id_task, id_worker: workerId },
+            select: {
+              id_task_applicants: true,
+              bid_amount: true,
+              applied_at: true,
+              worker_confirmed: true,
+              status_applicant: { select: { nama_status: true } },
+            },
+          })
+        : null;
+
+      const kompensasi_dispute =
+        dispute.task.is_bidding && workerApplicant?.bid_amount != null
+          ? workerApplicant.bid_amount
+          : dispute.task.kompensasi;
+
+      return {
+        ...dispute,
+        kompensasi_dispute,
+        worker_applicant: workerApplicant,
+        relatedDisputes,
+      };
     } else {
       const rawDisputes = await prisma.$queryRaw<any[]>`
         SELECT * FROM "Dispute" WHERE id_dispute = ${disputeId} LIMIT 1
@@ -234,7 +337,7 @@ export const disputeService = {
         }
       }
 
-      const [task, reporter, respondent, evidences, messages] = await Promise.all([
+      const [task, reporter, respondent, evidences, messages, relatedDisputesRaw] = await Promise.all([
         prisma.task.findUnique({
           where: { id_tasks: dispute.id_task },
           include: {
@@ -271,7 +374,49 @@ export const disputeService = {
         prisma.$queryRaw<any[]>`
           SELECT * FROM "DisputeMessage" WHERE id_dispute = ${disputeId} ORDER BY created_at ASC
         `,
+        prisma.$queryRaw<any[]>`
+          SELECT d.id_dispute, d.status, d.reason, d.created_at,
+                 u1.id_user as reporter_id, u1.nama_lengkap as reporter_nama, u1.avatar_url as reporter_avatar,
+                 u2.id_user as respondent_id, u2.nama_lengkap as respondent_nama, u2.avatar_url as respondent_avatar
+          FROM "Dispute" d
+          JOIN "User" u1 ON d.id_reporter = u1.id_user
+          JOIN "User" u2 ON d.id_respondent = u2.id_user
+          WHERE d.id_task = ${dispute.id_task} AND d.id_dispute != ${disputeId}
+          ORDER BY d.created_at ASC
+        `,
       ]);
+
+      const relatedDisputes = relatedDisputesRaw.map((r) => ({
+        id_dispute: r.id_dispute,
+        status: r.status,
+        reason: r.reason,
+        created_at: r.created_at,
+        reporter: { id_user: r.reporter_id, nama_lengkap: r.reporter_nama, avatar_url: r.reporter_avatar },
+        respondent: { id_user: r.respondent_id, nama_lengkap: r.respondent_nama, avatar_url: r.respondent_avatar },
+      }));
+
+      const workerId =
+        dispute.id_reporter === task?.id_requester
+          ? dispute.id_respondent
+          : dispute.id_reporter;
+
+      const workerApplicant = workerId && task
+        ? await prisma.taskApplicants.findFirst({
+            where: { id_tasks: dispute.id_task, id_worker: workerId },
+            select: {
+              id_task_applicants: true,
+              bid_amount: true,
+              applied_at: true,
+              worker_confirmed: true,
+              status_applicant: { select: { nama_status: true } },
+            },
+          })
+        : null;
+
+      const kompensasi_dispute =
+        task?.is_bidding && workerApplicant?.bid_amount != null
+          ? workerApplicant.bid_amount
+          : task?.kompensasi;
 
       return {
         ...dispute,
@@ -280,6 +425,9 @@ export const disputeService = {
         respondent,
         evidences,
         messages,
+        kompensasi_dispute,
+        worker_applicant: workerApplicant,
+        relatedDisputes,
       };
     }
   },
@@ -289,7 +437,7 @@ export const disputeService = {
    */
   async getDisputesByUser(userId: string) {
     if (typeof (prisma as any).dispute?.findMany === 'function') {
-      return (prisma as any).dispute.findMany({
+      const disputes = await (prisma as any).dispute.findMany({
         where: {
           OR: [{ id_reporter: userId }, { id_respondent: userId }],
         },
@@ -297,9 +445,12 @@ export const disputeService = {
           task: {
             select: {
               id_tasks: true,
+              id_requester: true,
               judul_tugas: true,
               kompensasi: true,
+              is_bidding: true,
               status_task: { select: { nama_status: true } },
+              kategori: { select: { id_category: true, nama_kategori: true, icon: true } },
             },
           },
           reporter: { select: { id_user: true, nama_lengkap: true, avatar_url: true } },
@@ -308,13 +459,41 @@ export const disputeService = {
         },
         orderBy: { created_at: 'desc' },
       });
+
+      const taskIds = Array.from(new Set(disputes.map((d: any) => d.id_task))) as string[];
+      const applicants = taskIds.length > 0 ? await prisma.taskApplicants.findMany({
+        where: { id_tasks: { in: taskIds } },
+        select: { id_tasks: true, id_worker: true, bid_amount: true },
+      }) : [];
+
+      const appMap = new Map<string, number | null>();
+      for (const a of applicants) {
+        appMap.set(`${a.id_tasks}_${a.id_worker}`, a.bid_amount);
+      }
+
+      return disputes.map((d: any) => {
+        const workerId = d.id_reporter === d.task?.id_requester ? d.id_respondent : d.id_reporter;
+        const bidAmount = appMap.get(`${d.id_task}_${workerId}`);
+        const kompensasi_dispute = (d.task?.is_bidding && bidAmount != null)
+          ? bidAmount
+          : (d.task?.kompensasi || 0);
+
+        return {
+          ...d,
+          kompensasi_dispute,
+        };
+      });
     } else {
       const rawDisputes = await prisma.$queryRaw<any[]>`
         SELECT
           d.*,
+          t.id_requester,
           t.judul_tugas,
           t.kompensasi,
+          t.is_bidding,
           st.nama_status as status_task_nama,
+          tc.nama_kategori as kategori_nama,
+          tc.icon as kategori_icon,
           u1.nama_lengkap as reporter_nama,
           u1.avatar_url as reporter_avatar,
           u2.nama_lengkap as respondent_nama,
@@ -324,44 +503,68 @@ export const disputeService = {
         FROM "Dispute" d
         JOIN "Task" t ON d.id_task = t.id_tasks
         JOIN "StatusTask" st ON t.id_status_task = st.id_status_task
+        LEFT JOIN "TaskCategory" tc ON t.id_category = tc.id_category
         JOIN "User" u1 ON d.id_reporter = u1.id_user
         JOIN "User" u2 ON d.id_respondent = u2.id_user
         WHERE d.id_reporter = ${userId} OR d.id_respondent = ${userId}
         ORDER BY d.created_at DESC
       `;
 
-      return rawDisputes.map((r) => ({
-        id_dispute: r.id_dispute,
-        id_task: r.id_task,
-        id_reporter: r.id_reporter,
-        id_respondent: r.id_respondent,
-        reason: r.reason,
-        description: r.description,
-        status: r.status,
-        resolution: r.resolution,
-        resolved_at: r.resolved_at,
-        created_at: r.created_at,
-        task: {
-          id_tasks: r.id_task,
-          judul_tugas: r.judul_tugas,
-          kompensasi: r.kompensasi,
-          status_task: { nama_status: r.status_task_nama },
-        },
-        reporter: {
-          id_user: r.id_reporter,
-          nama_lengkap: r.reporter_nama,
-          avatar_url: r.reporter_avatar,
-        },
-        respondent: {
-          id_user: r.id_respondent,
-          nama_lengkap: r.respondent_nama,
-          avatar_url: r.respondent_avatar,
-        },
-        _count: {
-          evidences: r.count_evidences || 0,
-          messages: r.count_messages || 0,
-        },
-      }));
+      const taskIds = Array.from(new Set(rawDisputes.map((d: any) => d.id_task))) as string[];
+      const applicants = taskIds.length > 0 ? await prisma.taskApplicants.findMany({
+        where: { id_tasks: { in: taskIds } },
+        select: { id_tasks: true, id_worker: true, bid_amount: true },
+      }) : [];
+
+      const appMap = new Map<string, number | null>();
+      for (const a of applicants) {
+        appMap.set(`${a.id_tasks}_${a.id_worker}`, a.bid_amount);
+      }
+
+      return rawDisputes.map((r) => {
+        const workerId = r.id_reporter === r.id_requester ? r.id_respondent : r.id_reporter;
+        const bidAmount = appMap.get(`${r.id_task}_${workerId}`);
+        const kompensasi_dispute = (r.is_bidding && bidAmount != null)
+          ? bidAmount
+          : (r.kompensasi || 0);
+
+        return {
+          id_dispute: r.id_dispute,
+          id_task: r.id_task,
+          id_reporter: r.id_reporter,
+          id_respondent: r.id_respondent,
+          reason: r.reason,
+          description: r.description,
+          status: r.status,
+          resolution: r.resolution,
+          resolved_at: r.resolved_at,
+          created_at: r.created_at,
+          kompensasi_dispute,
+          task: {
+            id_tasks: r.id_task,
+            id_requester: r.id_requester,
+            judul_tugas: r.judul_tugas,
+            kompensasi: r.kompensasi,
+            is_bidding: r.is_bidding,
+            status_task: { nama_status: r.status_task_nama },
+            kategori: { nama_kategori: r.kategori_nama, icon: r.kategori_icon },
+          },
+          reporter: {
+            id_user: r.id_reporter,
+            nama_lengkap: r.reporter_nama,
+            avatar_url: r.reporter_avatar,
+          },
+          respondent: {
+            id_user: r.id_respondent,
+            nama_lengkap: r.respondent_nama,
+            avatar_url: r.respondent_avatar,
+          },
+          _count: {
+            evidences: r.count_evidences || 0,
+            messages: r.count_messages || 0,
+          },
+        };
+      });
     }
   },
 
@@ -388,7 +591,7 @@ export const disputeService = {
         ];
       }
 
-      const [items, total, countOpen, countInReview, countResolvedWorker, countResolvedRequester] =
+      const [rawItems, total, countOpen, countInReview, countResolvedWorker, countResolvedRequester] =
         await Promise.all([
           (prisma as any).dispute.findMany({
             where,
@@ -396,9 +599,12 @@ export const disputeService = {
               task: {
                 select: {
                   id_tasks: true,
+                  id_requester: true,
                   judul_tugas: true,
                   kompensasi: true,
+                  is_bidding: true,
                   status_task: { select: { nama_status: true } },
+                  kategori: { select: { id_category: true, nama_kategori: true, icon: true } },
                 },
               },
               reporter: { select: { id_user: true, nama_lengkap: true, email: true, avatar_url: true } },
@@ -415,6 +621,30 @@ export const disputeService = {
           (prisma as any).dispute.count({ where: { status: DisputeStatus.RESOLVED_FAVOR_WORKER } }),
           (prisma as any).dispute.count({ where: { status: DisputeStatus.RESOLVED_FAVOR_REQUESTER } }),
         ]);
+
+      const taskIds = Array.from(new Set(rawItems.map((d: any) => d.id_task))) as string[];
+      const applicants = taskIds.length > 0 ? await prisma.taskApplicants.findMany({
+        where: { id_tasks: { in: taskIds } },
+        select: { id_tasks: true, id_worker: true, bid_amount: true },
+      }) : [];
+
+      const appMap = new Map<string, number | null>();
+      for (const a of applicants) {
+        appMap.set(`${a.id_tasks}_${a.id_worker}`, a.bid_amount);
+      }
+
+      const items = rawItems.map((d: any) => {
+        const workerId = d.id_reporter === d.task?.id_requester ? d.id_respondent : d.id_reporter;
+        const bidAmount = appMap.get(`${d.id_task}_${workerId}`);
+        const kompensasi_dispute = (d.task?.is_bidding && bidAmount != null)
+          ? bidAmount
+          : (d.task?.kompensasi || 0);
+
+        return {
+          ...d,
+          kompensasi_dispute,
+        };
+      });
 
       return {
         items,
@@ -436,9 +666,13 @@ export const disputeService = {
       const rawDisputes = await prisma.$queryRaw<any[]>`
         SELECT
           d.*,
+          t.id_requester,
           t.judul_tugas,
           t.kompensasi,
+          t.is_bidding,
           st.nama_status as status_task_nama,
+          tc.nama_kategori as kategori_nama,
+          tc.icon as kategori_icon,
           u1.nama_lengkap as reporter_nama,
           u1.email as reporter_email,
           u1.avatar_url as reporter_avatar,
@@ -450,6 +684,7 @@ export const disputeService = {
         FROM "Dispute" d
         JOIN "Task" t ON d.id_task = t.id_tasks
         JOIN "StatusTask" st ON t.id_status_task = st.id_status_task
+        LEFT JOIN "TaskCategory" tc ON t.id_category = tc.id_category
         JOIN "User" u1 ON d.id_reporter = u1.id_user
         JOIN "User" u2 ON d.id_respondent = u2.id_user
         ORDER BY d.created_at DESC
@@ -468,40 +703,63 @@ export const disputeService = {
 
       const c = counts[0] || { count: 0, open: 0, in_review: 0, res_worker: 0, res_requester: 0 };
 
-      const items = rawDisputes.map((r) => ({
-        id_dispute: r.id_dispute,
-        id_task: r.id_task,
-        id_reporter: r.id_reporter,
-        id_respondent: r.id_respondent,
-        reason: r.reason,
-        description: r.description,
-        status: r.status,
-        resolution: r.resolution,
-        resolved_at: r.resolved_at,
-        created_at: r.created_at,
-        task: {
-          id_tasks: r.id_task,
-          judul_tugas: r.judul_tugas,
-          kompensasi: r.kompensasi,
-          status_task: { nama_status: r.status_task_nama },
-        },
-        reporter: {
-          id_user: r.id_reporter,
-          nama_lengkap: r.reporter_nama,
-          email: r.reporter_email,
-          avatar_url: r.reporter_avatar,
-        },
-        respondent: {
-          id_user: r.id_respondent,
-          nama_lengkap: r.respondent_nama,
-          email: r.respondent_email,
-          avatar_url: r.respondent_avatar,
-        },
-        _count: {
-          evidences: r.count_evidences || 0,
-          messages: r.count_messages || 0,
-        },
-      }));
+      const taskIds = Array.from(new Set(rawDisputes.map((d: any) => d.id_task))) as string[];
+      const applicants = taskIds.length > 0 ? await prisma.taskApplicants.findMany({
+        where: { id_tasks: { in: taskIds } },
+        select: { id_tasks: true, id_worker: true, bid_amount: true },
+      }) : [];
+
+      const appMap = new Map<string, number | null>();
+      for (const a of applicants) {
+        appMap.set(`${a.id_tasks}_${a.id_worker}`, a.bid_amount);
+      }
+
+      const items = rawDisputes.map((r) => {
+        const workerId = r.id_reporter === r.id_requester ? r.id_respondent : r.id_reporter;
+        const bidAmount = appMap.get(`${r.id_task}_${workerId}`);
+        const kompensasi_dispute = (r.is_bidding && bidAmount != null)
+          ? bidAmount
+          : (r.kompensasi || 0);
+
+        return {
+          id_dispute: r.id_dispute,
+          id_task: r.id_task,
+          id_reporter: r.id_reporter,
+          id_respondent: r.id_respondent,
+          reason: r.reason,
+          description: r.description,
+          status: r.status,
+          resolution: r.resolution,
+          resolved_at: r.resolved_at,
+          created_at: r.created_at,
+          kompensasi_dispute,
+          task: {
+            id_tasks: r.id_task,
+            id_requester: r.id_requester,
+            judul_tugas: r.judul_tugas,
+            kompensasi: r.kompensasi,
+            is_bidding: r.is_bidding,
+            status_task: { nama_status: r.status_task_nama },
+            kategori: { nama_kategori: r.kategori_nama, icon: r.kategori_icon },
+          },
+          reporter: {
+            id_user: r.id_reporter,
+            nama_lengkap: r.reporter_nama,
+            email: r.reporter_email,
+            avatar_url: r.reporter_avatar,
+          },
+          respondent: {
+            id_user: r.id_respondent,
+            nama_lengkap: r.respondent_nama,
+            email: r.respondent_email,
+            avatar_url: r.respondent_avatar,
+          },
+          _count: {
+            evidences: r.count_evidences || 0,
+            messages: r.count_messages || 0,
+          },
+        };
+      });
 
       return {
         items,
@@ -810,8 +1068,20 @@ export const disputeService = {
           },
         });
 
+        // Catat alasan penyelesaian pada pelamar
+        if (workerApplicant) {
+          await tx.taskApplicants.update({
+            where: { id_task_applicants: workerApplicant.id_task_applicants },
+            data: {
+              alasan_penolakan: `Selesai: Sengketa diputuskan memenangkan pekerja: ${resolution}`,
+            },
+          });
+        }
+
+        const remainingSlotsCount = Object.keys(slotHeldMap).length;
+
         // Task hanya berstatus COMPLETED jika seluruh worker aktif lainnya telah selesai
-        if (otherActiveWorkersCount === 0 && completedStatus) {
+        if ((otherActiveWorkersCount === 0 || remainingSlotsCount === 0) && completedStatus) {
           await tx.task.update({
             where: { id_tasks: task.id_tasks },
             data: {

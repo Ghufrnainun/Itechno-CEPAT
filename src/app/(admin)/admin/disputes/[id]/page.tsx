@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Avatar } from '@/components/ui/Avatar';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
 import {
   ShieldAlert,
@@ -55,9 +56,11 @@ interface DisputeDetailData {
     judul_tugas: string;
     deskripsi_tugas?: string;
     kompensasi: number;
+    is_bidding?: boolean;
     status_task: { nama_status: string };
     kategori?: { nama_kategori: string };
   };
+  kompensasi_dispute?: number;
   reporter: DisputeUser;
   respondent: DisputeUser;
   evidences: Array<{
@@ -73,6 +76,14 @@ interface DisputeDetailData {
     message: string;
     is_admin: boolean;
     created_at: string;
+  }>;
+  relatedDisputes?: Array<{
+    id_dispute: string;
+    status: 'OPEN' | 'IN_REVIEW' | 'RESOLVED_FAVOR_WORKER' | 'RESOLVED_FAVOR_REQUESTER' | 'CLOSED';
+    reason: string;
+    created_at: string;
+    reporter: DisputeUser;
+    respondent: DisputeUser;
   }>;
 }
 
@@ -332,8 +343,13 @@ export default function AdminDisputeDetailPage({
                   Nilai Kompensasi Escrow
                 </span>
                 <span className="text-xl sm:text-2xl font-mono font-extrabold text-primary mt-0.5">
-                  {formatCurrency(dispute.task?.kompensasi || 0)}
+                  {formatCurrency(dispute.kompensasi_dispute ?? dispute.task?.kompensasi ?? 0)}
                 </span>
+                {dispute.task?.is_bidding && (
+                  <span className="text-[10px] font-sans font-semibold text-primary/80">
+                    (Penawaran Terpilih)
+                  </span>
+                )}
                 <span className="text-[10px] text-on-surface-variant mt-1">
                   Status Task: <strong className="capitalize">{dispute.task?.status_task?.nama_status || 'Unknown'}</strong>
                 </span>
@@ -715,6 +731,57 @@ export default function AdminDisputeDetailPage({
                     >
                       {actionLoading ? 'Mengeksekusi Keputusan...' : 'Tetapkan Keputusan & Eksekusi Escrow'}
                     </Button>
+                  </div>
+                )}
+
+                {/* Related Disputes Card */}
+                {dispute.relatedDisputes && dispute.relatedDisputes.length > 0 && (
+                  <div className="p-6 rounded-3xl bg-surface-container-lowest border border-card-border shadow-xs flex flex-col gap-3.5">
+                    <div>
+                      <h3 className="font-headline font-bold text-sm text-on-surface">
+                        Sengketa Lain pada Tugas Ini
+                      </h3>
+                      <p className="text-[11px] text-on-surface-variant">
+                        Terdapat {dispute.relatedDisputes.length} berkas sengketa pekerja lainnya untuk tugas yang sama
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-2.5">
+                      {dispute.relatedDisputes.map((rel) => (
+                        <Link
+                          key={rel.id_dispute}
+                          href={`/admin/disputes/${rel.id_dispute}`}
+                          className="p-3.5 rounded-2xl bg-surface-container-low hover:bg-surface-container border border-card-border hover:border-primary/40 transition-all flex items-center justify-between gap-3 group"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <Avatar
+                              src={rel.respondent.avatar_url}
+                              name={rel.respondent.nama_lengkap}
+                              size="sm"
+                              shape="rounded"
+                            />
+                            <div className="flex flex-col min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-xs text-on-surface truncate group-hover:text-primary transition-colors">
+                                  Terlapor: {rel.respondent.nama_lengkap}
+                                </span>
+                                <span className="text-[10px] font-mono text-on-surface-variant">
+                                  #{rel.id_dispute.substring(0, 6)}
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-on-surface-variant truncate">
+                                {rel.reason}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <DisputeStatusBadge status={rel.status} />
+                            <ExternalLink className="w-3.5 h-3.5 text-on-surface-variant group-hover:text-primary transition-colors ml-1" />
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 )}
 
