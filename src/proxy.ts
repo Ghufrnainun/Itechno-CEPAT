@@ -181,6 +181,11 @@ export async function proxy(request: NextRequest) {
 
   // Forward user authentication identity to downstream Server Components & API routes
   const requestHeaders = new Headers(request.headers)
+  // Keamanan: Hapus header identitas yang mungkin disuntikkan secara ilegal oleh client
+  requestHeaders.delete('x-auth-user-id')
+  requestHeaders.delete('x-auth-user-email')
+  requestHeaders.delete('x-user-db-id')
+
   if (user) {
     requestHeaders.set('x-auth-user-id', user.id)
     if (user.email) requestHeaders.set('x-auth-user-email', user.email)
