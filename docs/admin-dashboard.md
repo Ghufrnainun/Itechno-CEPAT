@@ -3,130 +3,132 @@
 ## 1. Ringkasan & Tujuan
 
 **Admin Dashboard** adalah modul panel kelola internal untuk platform **CEPAT (Cari Entry Pekerjaan Area Terdekat)**. Modul ini dirancang khusus untuk:
-1. **Penyisihan & Final ITechno Cup 2026**: Menunjukkan tata kelola platform (*governance*), moderasi konten, serta pemantauan aktivitas real-time secara visual dan profesional kepada dewan juri.
-2. **Operasional Pasca-Kompetisi**: Memiliki arsitektur terisolasi (Route Group `(admin)`) yang siap terhubung dengan Supabase/Prisma API secara seamless.
+1. **Penyisihan & Final ITechno Cup 2026**: Menunjukkan tata kelola platform (*governance*), moderasi konten, transparansi transaksi, serta pemantauan aktivitas real-time secara visual dan profesional kepada dewan juri.
+2. **Operasional Produksi Penuh**: Terhubung langsung ke Prisma ORM dan REST API internal (`/api/admin/*`) dengan sistem otentikasi sesi terproteksi hash SHA-256 (`AdminSession`).
 
 ---
 
-## 2. Arsitektur & Structure Folder
+## 2. Arsitektur & Struktur Folder
 
-Admin Dashboard diisolasi dalam Route Group `(admin)` agar tidak mengganggu layout utama aplikasi user biasa (`(main)` dengan bottom-navigation).
+Admin Dashboard diisolasi secara ketat dalam Route Group `(admin)` agar tidak terpengaruh oleh layout utama aplikasi user biasa (`(main)` dengan bottom navigation).
 
 ```
 src/
 ├── app/
-│   └── (admin)/
-│       ├── layout.tsx                     # Layout terisolasi (Collapsible Sidebar + Topbar)
-│       └── admin/
-│           ├── login/
-│           │   └── page.tsx               # Dedicated Admin Login Portal
-│           ├── dashboard/
-│           │   └── page.tsx               # Overview Analytics & Recharts Data Visualization
-│           ├── users/
-│           │   └── page.tsx               # User Management Table + Slide-over Drawer
-│           ├── tasks/
-│           │   └── page.tsx               # Task Management Table + Status Filters + Drawer
-│           ├── categories/
-│           │   └── page.tsx               # Categories & Skills Management (Tabbed + Modals)
-│           └── reports/
-│               └── page.tsx               # User Reports Management Table + Status Actions + Drawer
+│   ├── (admin)/
+│   │   ├── layout.tsx                     # Layout terisolasi (Collapsible Sidebar + Topbar)
+│   │   └── admin/
+│   │       ├── login/
+│   │       │   └── page.tsx               # Dedicated Admin Login Portal
+│   │       ├── dashboard/
+│   │       │   └── page.tsx               # Analytics Overview & Recharts Visualizations
+│   │       ├── users/
+│   │       │   └── page.tsx               # User Management Table + Slide-over Drawer + Moderation
+│   │       ├── tasks/
+│   │       │   └── page.tsx               # Task Management Table + Status Filters + Takedown
+│   │       ├── categories/
+│   │       │   └── page.tsx               # Categories & Skills Management (Tabbed + Modals)
+│   │       ├── reports/
+│   │       │   └── page.tsx               # User Reports Console + Status Actions + Direct URL
+│   │       └── disputes/
+│   │           └── page.tsx               # Dispute Resolution Center (Mediasi & Escrow Decision)
+│   │
+│   └── api/
+│       └── admin/                         # Backend Route Handlers Khusus Admin
+│           ├── auth/                      # Login, logout, status sesi (/me)
+│           ├── stats/                     # KPI stats, tren harian, distribusi status
+│           ├── users/                     # List, detail profil ([userId]), suspend, unban, warn, reset-pw
+│           ├── tasks/                     # List, detail ([taskId]), takedown, force-complete
+│           ├── reports/                   # List aduan, filter status, update resolusi ([reportId])
+│           ├── disputes/                  # List seluruh sengketa (resolusi via /api/disputes/[id])
+│           ├── search/                    # Global search debounced untuk menu, user, task, kategori
+│           └── notifications/             # Polling & sync notifikasi aduan admin
+│
 ├── components/
 │   └── admin/
-│       ├── AdminSidebar.tsx               # Collapsible sidebar dengan active route state (termasuk Laporan User)
-│       ├── AdminTopbar.tsx                # Topbar dengan Global Search (Ctrl+K), Notifikasi FCM, Bell Counter
-│       ├── KPICard.tsx                    # Reusable stat card (anti-side-stripe pattern)
+│       ├── AdminSidebar.tsx               # Collapsible sidebar dengan route indicators
+│       ├── AdminTopbar.tsx                # Topbar dengan Global Search (Ctrl+K), FCM Bell Counter
+│       ├── AdminSelect.tsx                # Custom select dropdown component untuk filter & form
+│       ├── KPICard.tsx                    # Reusable stat metric card berdesain anti-side-stripe
 │       ├── DataTable.tsx                  # Reusable paginated data table
-│       ├── StatusBadge.tsx                # Badges status task berwarna terstandarisasi
-│       ├── AdminDrawer.tsx                # Slide-over drawer untuk inspeksi cepat tanpa pindah halaman
-│       ├── AdminModal.tsx                 # Dialog modal untuk tindakan CRUD & konfirmasi
-│       └── ThemeToggle.tsx                # Penukar Dark/Light Mode
-└── lib/
-    └── admin/
-        └── mock-data.ts                   # Realistic mock dataset siap swap ke Prisma API
+│       ├── StatusBadge.tsx                # Badges status standar
+│       ├── AdminDrawer.tsx                # Slide-over drawer untuk inspeksi cepat tanpa keluar alur
+│       └── AdminModal.tsx                 # Dialog modal tindakan CRUD & konfirmasi
 ```
 
 ---
 
 ## 3. Fitur Utama & Panduan Penggunaan
 
-### 3.1 🔑 Portal Login Admin (`/admin/login`)
-- **Portal Terpisah**: Menyediakan pintu masuk khusus pengurus platform.
-- **Auto-Redirect Support**: User dengan role `Admin` pada auth flow biasa juga otomatis diarahkan ke `/admin/dashboard`.
+### 3.1 🔑 Portal Login & Keamanan Sesi Admin (`/admin/login`)
+- **Portal Terpisah**: Akses khusus pengelola platform tanpa tercampur dengan alur pengguna umum.
+- **Keamanan Token Sesi**: Menggunakan cookie `admin_token` yang nilainya dicocokkan dengan hash **SHA-256** pada tabel `AdminSession`.
+- **Middleware Guard (`src/proxy.ts`)**: Mencegah akses ke seluruh rute `/admin/*` dan `/api/admin/*` tanpa sesi admin aktif. Pengguna dengan peran `Admin` yang mencoba membuka rute pengguna umum juga otomatis dialihkan ke `/admin/dashboard`.
 
 ### 3.2 📊 Overview Dashboard (`/admin/dashboard`)
 - **5 Kartu KPI Utama**:
-  - `Total Users`: Jumlah total akun terdaftar (Worker, Requester, Dual-Role).
-  - `Total Tasks`: Jumlah seluruh micro-task yang terbuat.
-  - `Active Tasks`: Task berstatus `open`, `accepted`, atau `in_progress`.
-  - `Total Revenue`: Total poin internal yang beredar & tertransaksikan.
-  - `Completion Rate`: Persentase keberhasilan pengerjaan task.
+  - `Total Users`: Jumlah akun terdaftar (akumulasi Worker, Requester, dan Admin).
+  - `Total Tasks`: Jumlah seluruh micro-task yang terbuat di sistem.
+  - `Active Tasks`: Jumlah tugas yang sedang berjalan (`open`, `accepted`, `in_progress`).
+  - `Total Revenue`: Nilai perputaran transaksi saldo dan escrow di dalam platform.
+  - `Completion Rate`: Persentase keberhasilan penyelesaian tugas secara tuntas.
 - **Visualisasi Interaktif (Recharts)**:
-  - *Line Chart*: Tren pembuatan & penyelesaian task harian.
-  - *Donut Chart*: Distribusi status task real-time.
-- **Aktivitas Terbaru**: Feed transaksi micro-task terkini.
+  - *Line Chart*: Tren harian pembuatan vs penyelesaian tugas selama 7 hari terakhir.
+  - *Donut Chart*: Distribusi persentase status tugas real-time.
+- **Aktivitas Terkini**: Tabel 5 transaksi micro-task terbaru dengan status live.
 
-### 3.3 👥 Manajemen Pengguna (`/admin/users`)
-- **Tabel Pengguna**: Menampilkan Avatar, Nama, Username, Email, Role (`Worker`, `Requester`, `Dual-Role`, `Admin`), Rating, Jumlah Task Selesai, Status Penangguhan (`Aktif` vs `Banned`), dan Tanggal Bergabung.
-- **Pencarian & Filter**: Cari cepat berdasarkan nama/email/username dan filter per role.
-- **Slide-over Drawer Detail & Aksi Moderasi**:
-  - Klik baris tabel untuk membuka profil lengkap pengguna, saldo poin, escrow ditahan, skill terverifikasi.
-  - **Suspend User Modal**: Penangguhan Permanent atau Temporary (opsi durasi hari) dengan alasan ban. Terintegrasi penuh dengan Supabase Auth Admin.
-  - **Unsuspend User**: Mencabut status penangguhan akun dan mengaktifkan kembali akses login user.
-  - **Kirim Peringatan (Warning)**: Mengirim notifikasi surat peringatan resmi dari Admin langsung ke inbox user.
-  - **Reset Password**: Mengirim email reset password via Supabase Auth.
+### 3.3 👥 Manajemen & Moderasi Pengguna (`/admin/users`)
+- **Tabel Pengguna Lengkap**: Menampilkan Avatar, Nama, Username, Email, Role, Rating Rata-rata, Tugas Terselesaikan, Status Akun (`Aktif` vs `Banned`), dan Tanggal Registrasi.
+- **Slide-over Drawer Detail**: Klik baris tabel untuk melihat profil mendalam: rincian saldo total & saldo ditahan (escrow), daftar keahlian terverifikasi, dan portofolio.
+- **Aksi Moderasi Pengguna**:
+  - **Suspend User Modal**: Opsi penangguhan **Permanent** atau **Temporary** (pilihan durasi hari) dengan pencatatan alasan ban resmi.
+  - **Auto-Unban**: Middleware `src/proxy.ts` secara otomatis mencabut status ban sementara saat tanggal `banned_until` terlewati.
+  - **Unsuspend User**: Mencabut status ban secara manual dan mengembalikan akses akun.
+  - **Kirim Peringatan (Official Warning)**: Mengirimkan surat peringatan ke kotak notifikasi pengguna.
+  - **Reset Password**: Memicu instruksi pembaruan kata sandi.
 
 ### 3.4 📋 Manajemen Pekerjaan / Task (`/admin/tasks`)
-- **Tabel Pekerjaan**: Menampilkan Judul, Pembuat (Requester), Kategori Skill, Status Badge, Kompensasi (Poin), dan Jumlah Applicant.
-- **Tab Filter Status**: Filter instan berdasarkan status (`Open`, `Accepted`, `In Progress`, `Completed`, `Cancelled`).
-- **Slide-over Drawer Detail**: Klik baris tabel untuk melihat deskripsi lengkap, lokasi geografis (radius), pengerja yang ditunjuk, serta aksi moderasi (Take Down Task, Force Complete).
+- **Tabel Pekerjaan**: Judul tugas, Requester, Kategori Keahlian, Status Badge, Kompensasi / Rentang Budget Bidding, dan Jumlah Pelamar.
+- **Tab Filter Status**: Filter instan berdasarkan siklus status (`All`, `Open`, `Accepted`, `In Progress`, `Completed`, `Cancelled`).
+- **Slide-over Drawer & Aksi Moderasi**:
+  - Menampilkan koordinat geografis lintang/bujur dan radius penugasan.
+  - Daftar pengerja yang melamar / ditunjuk.
+  - Tombol aksi **Take Down Task** (pembatalan darurat dengan pengembalian penuh sisa dana escrow ke requester) dan **Force Complete**.
 
-### 3.5 🏷️ Tata Kelola Kategori & Skills (`/admin/categories`)
-- **Tab Kategori Task**:
-  - List emoji icon, nama kategori, dan jumlah task terkait.
-  - Tambah kategori baru via modal.
-  - Edit nama/icon kategori.
-  - Hapus kategori dengan konfirmasi keamanan.
-- **Tab Master Skill**:
-  - List nama skill master dan jumlah user yang menguasainya.
-  - CRUD master skill secara penuh.
+### 3.5 🏷️ Tata Kelola Kategori & Keahlian (`/admin/categories`)
+- **Tab Kategori Task**: CRUD nama kategori tugas mikro, pengelolaan ikon emoji, dan kalkulasi agregat tugas terkait.
+- **Tab Master Skill**: CRUD master keahlian sistem yang tersedia untuk dipilih oleh pengguna saat melengkapi profil dan spesifikasi penugasan.
 
-### 3.6 🚩 Manajemen Laporan User (`/admin/reports`)
-- **Fitur Konsol Aduan**:
-  - Menampilkan 4 KPI Cards (Total Laporan, Pending, Ditinjau, Selesai).
-  - DataTable laporan pengguna dilengkapi filter status (`pending`, `reviewed`, `resolved`, `rejected`) dan kolom pencarian.
-  - Slide-over Drawer Detail untuk membaca kronologi permasalahan, data profil pelapor, dan mengubah status laporan.
-  - Otomatis membuka modal detail laporan saat diakses via query parameter URL (`?id=<reportId>`).
+### 3.6 🚩 Manajemen Laporan Pengguna (`/admin/reports`)
+- **Konsol Aduan Pengguna**:
+  - 4 Kartu KPI: Total Laporan, Pending, Ditinjau (*Reviewed*), Selesai (*Resolved*).
+  - DataTable laporan dilengkapi penyaringan status (`pending`, `reviewed`, `resolved`, `rejected`) dan kolom pencarian.
+  - Slide-over Drawer untuk menelaah kronologi aduan, subjek, serta profil pelapor.
+  - Integrasi tautan langsung: Membuka URL `/admin/reports?id=<reportId>` otomatis memunculkan detail laporan terkait.
 
-### 3.7 🔍 Global Search Bar & Notifikasi Real-time FCM (`AdminTopbar.tsx`)
-- **Pencarian Global (Ctrl + K / Cmd + K)**:
-  - Pencarian real-time (debounced 200ms) di seluruh database: Menu & Halaman Admin, Data Pengguna, Pekerjaan / Task, dan Kategori.
+### 3.7 🛡️ Manajemen Sengketa & Resolusi Escrow (`/admin/disputes`)
+- **Panel Mediasi**: Menangani tiket sengketa antara Requester dan Worker (mengambil data via `GET /api/admin/disputes`).
+- **Pemeriksaan Bukti**: Meninjau bukti foto dan deskripsi sanggahan dari kedua belah pihak.
+- **Penetapan Resolusi Finansial (`PATCH /api/disputes/[id]`)**:
+  - Menetapkan keputusan resmi admin: `RESOLVED_FAVOR_WORKER` (dana escrow dicairkan ke worker) atau `RESOLVED_FAVOR_REQUESTER` (dana escrow di-refund ke requester).
+  - Eksekusi transaksi dilakukan otomatis dan tercatat pada log mutasi.
+
+### 3.8 🔍 Global Search Bar & Notifikasi Real-time FCM (`AdminTopbar.tsx`)
+- **Pencarian Global (`Ctrl + K` / `Cmd + K`)**:
+  - Pencarian debounced (200 ms) di seluruh database: Halaman Admin, Data Pengguna, Pekerjaan / Tugas, dan Kategori.
   - Navigasi keyboard penuh (`ArrowUp`, `ArrowDown`, `Enter`, `Escape`).
 - **Bell Counter Notifikasi & FCM Push**:
-  - Red counter badge jumlah notifikasi laporan belum dibaca.
-  - Mengintegrasikan listener **Firebase Cloud Messaging (FCM)** untuk push notification browser real-time.
-  - Mengklik notifikasi laporan pada dropdown otomatis mengarahkan ke `/admin/reports?id=<reportId>` dan membuka detail aduan.
+  - Red counter badge jumlah laporan baru yang belum dibaca.
+  - Listener push notification **Firebase Cloud Messaging (FCM)** yang menerima alert saat ada aduan baru dari pengguna.
+  - Mengklik item notifikasi langsung mengarahkan admin ke aduan terkait.
 
 ---
 
 ## 4. Standar UI/UX Impeccable (Anti-AI-Slop Guidelines)
 
-Dashboard ini mengimplementasikan aturan ketat desain `/impeccable`:
-1. **Tidak Ada Side-Stripe Borders**: Mengaburkan keterbatasan desain standar. Kartu metric dan list item menggunakan border penuh dengan tint netral yang presisi.
-2. **Tidak Ada Gradient Text**: Semua judul dan angka teks menggunakan solid color untuk daya baca yang tinggi (*high legibility*).
-3. **Perceptually Uniform Colors (OKLCH Tints)**: Warna netral dan latar belakang disesuaikan dengan kontras `teal` khas brand CEPAT.
-4. **Slide-over Drawers untuk Quick Inspection**: Menjaga alur kerja pengelola (*in-flow context*) tanpa memutus konteks tabel saat memeriksa detail user atau task.
-5. **Dukungan Dark & Light Mode Seamless**: Transisi warna latar belakang dan teks yang natural antara skema terang dan gelap.
-
----
-
-## 5. Pemetaan Data ke Prisma Schema (`prisma/schema.prisma`)
-
-Saat backend siap dihubungkan, mock data pada `src/lib/admin/mock-data.ts` dapat di-swap dengan query Prisma berikut:
-
-| Modul Admin | Model Prisma Terkait |
-|---|---|
-| Users List | `prisma.user.findMany({ include: { role: true, skills_user: true } })` |
-| Tasks List | `prisma.task.findMany({ include: { requester: true, kategori: true, status_task: true } })` |
-| Categories List | `prisma.taskCategory.findMany({ include: { _count: { select: { tasks: true } } } })` |
-| Master Skills | `prisma.skillsMaster.findMany({ include: { _count: { select: { skills_user: true } } } })` |
-| KPI Stats | Combined `prisma.user.count()`, `prisma.task.count()`, etc. |
+Dashboard ini mengimplementasikan aturan desain ketat:
+1. **Tidak Ada Side-Stripe Borders**: Seluruh kartu metrik dan baris tabel menggunakan border penuh dengan kontras tint netral.
+2. **Tidak Ada Gradient Text**: Judul dan angka metrik menggunakan warna solid untuk menjaga daya baca tinggi (*high legibility*).
+3. **Perceptually Uniform Colors (OKLCH Tints)**: Warna netral dan aksen diselaraskan dengan palet `teal` khas brand CEPAT.
+4. **Slide-over Drawers**: Mempertahankan alur kerja pengelola (*in-flow context*) tanpa memutus konteks tabel saat memeriksa detail.
+5. **Dukungan Dark & Light Mode**: Transisi warna latar belakang dan teks natural di seluruh modul admin.

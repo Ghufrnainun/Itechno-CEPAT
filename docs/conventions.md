@@ -36,19 +36,21 @@ const maxRadiusMeters = 5000;  // gunakan SCREAMING_SNAKE untuk constants
 ```
 src/
 ├── app/          # HANYA route files (page.tsx, layout.tsx, route.ts, loading.tsx, error.tsx)
-├── components/   # Reusable UI components
-│   ├── ui/       # Primitives: Button, Input, Card, Modal, Badge, etc.
-│   └── [feature]/ # Feature-specific: task/, map/, profile/, etc.
-├── hooks/        # Custom React hooks
-├── lib/          # Library configs (supabase, firebase, utils)
-├── services/     # Data access & business logic
-└── types/        # TypeScript types, Zod schemas, enums
+├── components/   # Reusable UI components (ui/, admin/, landing/, task/, motion/)
+├── features/     # Modul fitur khusus (auth/, chat/, task/)
+├── hooks/        # Custom React hooks (useGeolocation, useDebounce, dll)
+├── lib/          # Library configs (prisma.ts, midtrans.ts, firebase/, supabase/, utils/)
+├── services/     # Heavy business logic & database transaction layer
+├── types/        # TypeScript types, Zod schemas, enums
+└── proxy.ts      # Next.js Middleware (Admin & Supabase Auth Guards)
 ```
 
 **Aturan:**
-- **Jangan** taruh business logic di komponen React — pindahkan ke `services/`.
+- **Jangan** taruh business logic di komponen React atau Route Handlers langsung — pindahkan ke `services/`.
 - **Jangan** taruh UI components di `app/` — hanya route-level files.
-- **Jangan** taruh Supabase queries langsung di komponen — abstraksi lewat `services/`.
+- **Database Operations**: Gunakan Prisma ORM Client singleton (`@/lib/prisma`) untuk semua operasi data publik. Jangan buat instance Prisma baru.
+- **Atomic Transactions**: Setiap mutasi saldo atau perubahan status tugas yang melibatkan escrow WAJIB dibungkus dalam `prisma.$transaction`.
+- **Case-Insensitivity**: Selalu sertakan `mode: 'insensitive'` pada klausa `where` pencarian string/enum di Prisma.
 - Setiap komponen di `ui/` harus generic dan reusable, tanpa dependency ke data/API spesifik.
 
 ---
@@ -117,13 +119,14 @@ src/app/api/tasks/[id]/apply/route.ts → POST (apply to task)
 ```typescript
 // src/app/api/tasks/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { createTaskSchema } from '@/types/task';
+import { createClient } from '@/lib/supabase/server';
+import { createTaskSchema } from '@/lib/validations/task.schema';
+import { taskService } from '@/services/task.service';
 
 export async function POST(request: NextRequest) {
   try {
     // 1. Auth check
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json(
@@ -143,7 +146,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Business logic (via service)
-    const result = await taskService.create(user.id, parsed.data);
+    const result = await taskService.createTask(user.id, parsed.data);
 
     // 4. Return response
     return NextResponse.json({ success: true, data: result }, { status: 201 });
@@ -165,27 +168,21 @@ export async function POST(request: NextRequest) {
 // ✅ Selalu definisikan return type untuk functions publik
 export function calculateDistance(from: GeoPoint, to: GeoPoint): number { }
 
-// ✅ Gunakan Zod untuk runtime validation + type inference
+// ✅ Gunakan Zod untuk runtime validation + type inference (di src/lib/validations/)
 import { z } from 'zod';
 export const createTaskSchema = z.object({
-  title: z.string().min(5).max(100),
-  description: z.string().min(20).max(1000),
-  category: z.enum(['fotografi', 'data_entry', 'desain_grafis', ...]),
-  lat: z.number().min(-90).max(90),
-  lng: z.number().min(-180).max(180),
-  estimated_time: z.number().min(15),
-  compensation: z.number().min(1),
+  judul_tugas: z.string().min(5).max(100),
+  deskripsi_tugas: z.string().min(20).max(1000),
+  id_category: z.string().uuid(),
+  lokasi_lat: z.number().min(-90).max(90),
+  lokasi_lng: z.number().min(-180).max(180),
+  estimasi_waktu: z.string().optional(),
+  kompensasi: z.number().min(1),
 });
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 
-// ✅ Gunakan enums untuk values yang fixed
-export const TASK_STATUS = {
-  OPEN: 'open',
-  ACCEPTED: 'accepted',
-  IN_PROGRESS: 'in_progress',
-  COMPLETED: 'completed',
-  CANCELLED: 'cancelled',
-} as const;
+// ✅ Gunakan Prisma Client types / src/types/database.ts untuk shared entity types
+import type { Task, StatusTask } from '@prisma/client';
 
 // ❌ Jangan pakai `any` — gunakan `unknown` lalu narrow
 ```
@@ -198,12 +195,12 @@ Gunakan `@/` path alias (configured di `tsconfig.json`):
 
 ```typescript
 // ✅ Good
-import { TaskCard } from '@/components/task/TaskCard';
-import { createServerClient } from '@/lib/supabase/server';
-import type { Task } from '@/types/task';
+import { TaskCard } from '@/features/task/components/TaskCard';
+import { createClient } from '@/lib/supabase/server';
+import type { Task } from '@prisma/client';
 
 // ❌ Bad
-import { TaskCard } from '../../../components/task/TaskCard';
+import { TaskCard } from '../../../features/task/components/TaskCard';
 ```
 
 ---

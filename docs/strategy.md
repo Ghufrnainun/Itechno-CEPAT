@@ -1,141 +1,77 @@
 # Strategi Kompetisi — CEPAT × ITechno Cup 2026
 
-## 1. Fokus Penilaian & Strategi
+## 1. Fokus Penilaian & Eksekusi Strategis
 
 ### Babak Penyisihan (Total 100%)
 
-| Aspek                         | Bobot | Strategi Kita                                                                                                                                               |
-| ----------------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Kesesuaian Tema & Subtema** | 20%   | Narasi SDG 8 harus kuat di README & landing page. Jelaskan koneksi langsung ke pekerjaan layak + pertumbuhan ekonomi                                        |
-| **Inovasi & Orisinalitas**    | 20%   | Pembeda utama: **geo-based micro-tasking** + radius real-time + skill exchange. Belum banyak platform serupa di Indonesia yang fokus mahasiswa + UMKM lokal |
-| **Fungsionalitas Website**    | 20%   | Semua fitur P0 harus berjalan end-to-end tanpa error. Demo scenario: post task → accept → complete → rating                                                 |
-| **UI/UX & Responsivitas**     | 15%   | PWA mobile-first, animasi smooth, map interaktif, skeleton loading. Harus terlihat polished                                                                 |
-| **Implementasi Teknologi**    | 15%   | PostGIS geo-query, Supabase Realtime, FCM push, PWA — tunjukkan teknologi canggih yang dipilih dengan alasan kuat                                           |
-| **Dokumentasi & Repositori**  | 10%   | README sesuai template resmi, kode terorganisir, comments jelas                                                                                             |
-
-> **Insight**: Tema+Subtema & Inovasi = 40% total. Narasi SDG & diferensiasi harus dipersiapkan sejak awal, bukan ditempel belakangan.
-
-### Babak Final (Jika lolos 10 besar)
-
-| Aspek                          | Bobot | Persiapan                                        |
-| ------------------------------ | ----- | ------------------------------------------------ |
-| **Presentasi & Pitching**      | 25%   | Slide ringkas, storytelling kuat, data pendukung |
-| **Live Demo & Fungsionalitas** | 25%   | Demo seamless, skenario realistis, fallback plan |
-| **Inovasi & Dampak Solusi**    | 20%   | Tunjukkan impact nyata, data/proyeksi penggunaan |
-| **Aspek Teknis & Teknologi**   | 20%   | Jelaskan arsitektur, tech choices, scalability   |
-| **Tanya Jawab Dengan Juri**    | 10%   | Siapkan FAQ internal, latihan jawab spontan      |
+| Aspek | Bobot | Strategi Keunggulan CEPAT |
+|---|---|---|
+| **Kesesuaian Tema & Subtema** | 20% | Penyelarasan kuat dengan **SDG 8 (Pekerjaan Layak dan Pertumbuhan Ekonomi)**. Menjawab tantangan riil mahasiswa (kebutuhan penghasilan fleksibel tanpa terikat) dan UMKM lokal (bantuan tugas mikro cepat dan terjangkau). |
+| **Inovasi & Orisinalitas Ide** | 20% | Keunggulan utama: **Hyperlocal radius search (PostGIS)** + **Model C Escrow Auto-Refund** pada sistem lelang tertutup (*Sealed-Bid*) + **Dispute Resolution Center** terpadu. |
+| **Fungsionalitas Website** | 20% | Alur end-to-end tanpa error: Penemuan peta geospasial, penawaran bidding, chat realtime, pengerjaan, pelepasan escrow otomatis, hingga gamifikasi dan ulasan mutual. |
+| **UI/UX & Responsivitas** | 15% | Desain *mobile-first standalone PWA*, antarmuka peta interaktif Leaflet, animasi halus berbasis Motion/GSAP, dan tata letak konsisten anti-AI slop. |
+| **Implementasi Teknologi** | 15% | Arsitektur modern: Next.js 16 App Router, React 19, Prisma ORM 7, PostgreSQL PostGIS, Supabase Realtime Channels, Firebase Cloud Messaging (FCM), dan Midtrans Snap. |
+| **Dokumentasi & Repositori** | 10% | Struktur kode rapi dan modular, kepatuhan dokumentasi etika AI, serta kelengkapan spesifikasi API dan skema basis data di `/docs`. |
 
 ---
 
-## 2. Narasi SDG 8
+## 2. Narasi SDG 8: Pekerjaan Layak & Pertumbuhan Ekonomi Lokal
 
-### Pekerjaan Layak
+### 2.1 Pekerjaan Layak (Decent Work)
+- **Akses Fleksibel**: Mahasiswa dapat memilih pekerjaan mikro sesuai ketersediaan waktu luang di sela jadwal perkuliahan yang dinamis.
+- **Inklusivitas Berbasis Jarak**: Radius terdekat (≤ 2 km) memastikan pekerjaan dapat diakses dengan berjalan kaki atau transportasi ringan tanpa biaya mobilitas tinggi.
+- **Track Record Terverifikasi**: Akumulasi ulasan bintang 5, level XP, dan galeri portofolio menjadi rekam jejak profesional awal bagi mahasiswa sebelum memasuki dunia kerja formal.
 
-- CEPAT membuka **akses pekerjaan fleksibel** bagi mahasiswa yang tidak bisa kerja part-time terikat.
-- Micro-task berbasis lokasi = **pekerjaan inklusif**, tidak perlu transportasi jauh.
-- Sistem rating & reputasi = membangun **track record kerja** sejak masih kuliah.
-
-### Pertumbuhan Ekonomi
-
-- UMKM lokal mendapat **akses tenaga kerja on-demand** tanpa biaya rekrutmen mahal.
-- Sirkulasi ekonomi lokal: poin/kompensasi berputar di **ekosistem komunitas kampus & UMKM sekitar**.
-- Mengurangi **mismatch** antara kebutuhan UMKM dadakan dan ketersediaan tenaga mahasiswa.
-
-### Data Pendukung (untuk README & Presentasi)
-
-- BPS 2024: pengangguran terbuka lulusan perguruan tinggi ~7.9%
-- Survei IDN Times: 73% mahasiswa ingin punya penghasilan tambahan tapi terhalang jadwal kuliah
-- UMKM menyerap 97% tenaga kerja nasional — tapi sulit rekrut bantuan short-term
-- Gig economy global diproyeksikan tumbuh $455B di 2030 (Mastercard)
-
-> **Catatan**: Angka-angka di atas perlu diverifikasi & di-update dengan sumber terbaru sebelum submission.
+### 2.2 Pertumbuhan Ekonomi Lokal (Economic Growth)
+- **Solusi UMKM Cepat**: Pelaku usaha mikro di sekitar area kampus dapat memperoleh bantuan operasional dadakan (seperti foto produk, entri data, penjaga stand) tanpa proses rekrutmen panjang.
+- **Sirkulasi Modal Komunitas**: Kompensasi finansial berputar langsung di ekosistem lokal lingkungan kampus dan UMKM perkotaan.
+- **Kepastian Transaksi Tanpa Fraud**: Sistem saldo escrow melindungi kedua belah pihak dari risiko penipuan atau wanprestasi pembayaran.
 
 ---
 
-## 3. Diferensiasi dari Kompetitor
+## 3. Matriks Komparasi Kompetitif (Diferensiasi Unik)
 
-| Platform Existing    | Kelemahan                                   | Keunggulan CEPAT                          |
-| -------------------- | ------------------------------------------- | ----------------------------------------- |
-| Sribulancer/Fastwork | Fokus freelance jangka panjang, bukan micro | Micro-task dadakan, bisa selesai < 1 hari |
-| Fiverr/Upwork        | Global, mahal, tidak location-based         | Lokal, radius 2km, gratis                 |
-| Grab/GoJek Tasks     | Fokus delivery, bukan skill-based           | Skill exchange, kategori beragam          |
-| Grup WA kampus       | Tidak terstruktur, tidak ada trust system   | Rating, reputasi, status tracking         |
-
-**Unique Selling Point (USP)**:
-
-1. **Hyper-local** — radius GPS terdekat, bukan sekadar filter kota
-2. **Dual-purpose** — micro-freelancing + skill barter
-3. **Trust system** — rating mutual, histori transparan
-4. **Mahasiswa-centric** — flow & UX disesuaikan kehidupan kampus
+| Platform | Keterbatasan Utama | Keunggulan CEPAT |
+|---|---|---|
+| **Sribulancer / Fastwork** | Berorientasi proyek jangka panjang dengan durasi berminggu-minggu; biaya administrasi tinggi. | Fokus pada *micro-task* dadakan yang selesai dalam hitungan jam (< 1 hari). |
+| **Upwork / Fiverr** | Pasar global, kompetisi tinggi, tidak berbasis lokasi fisik. | *Hyperlocal* (radius 2 km dari GPS pengguna), relevan untuk interaksi langsung di lapangan. |
+| **Aplikasi Ojek Online** | Terbatas pada layanan transportasi dan logistik kurir barang. | Berbasis variasi keahlian kreatif & teknis (desain, penulisan, fotografi, riset, IT helper). |
+| **Grup Chat WA / Telegram Kampus** | Informasi tercecer, rawan penipuan pembayaran, tanpa sistem reputasi. | Sistem escrow terpercaya, sealed bidding, riwayat transaksi transparan, dan pusat mediasi sengketa resmi. |
 
 ---
 
-## 4. Demo Scenario (Untuk Penyisihan & Final)
+## 4. Skenario Live Demo (Penyisihan & Babak Final)
 
-### Skenario 1: "UMKM Butuh Foto Produk"
-
+### Skenario 1: UMKM Kuliner Butuh Foto Menu (Mode Bidding & Escrow)
 ```
-1. [Requester] Bu Ani, pemilik toko kue di dekat kampus, login
-2. [Requester] Post task: "Foto 20 produk kue untuk Instagram"
-   - Kategori: Fotografi
-   - Lokasi: auto-detect (pin di map)
-   - Estimasi: 2 jam
-   - Kompensasi: 50 poin
-3. [Worker] Andi, mahasiswa DKV, buka app → lihat task di map view
-   - Jarak: 0.8 km → bisa jalan kaki
-4. [Worker] Andi klik "Apply" + kirim pesan
-5. [Requester] Bu Ani terima notifikasi, lihat profil Andi (rating 4.8, skill: fotografi)
-6. [Requester] Accept Andi → Andi dapat notif push
-7. [Worker] Andi datang, foto produk, update status "In Progress" → "Selesai"
-8. [Requester] Bu Ani konfirmasi selesai → 50 poin transfer ke Andi
-9. [Kedua pihak] Saling kasih rating ⭐⭐⭐⭐⭐
+1. [Requester - Pemilik Kafe Kampus]:
+   - Membuka aplikasi ➔ Buat Tugas Baru.
+   - Judul: "Foto 10 Menu Baru untuk Instagram & Banner".
+   - Mengaktifkan "Mode Bidding": Budget Rp 80.000 – Rp 120.000 (Plafon Rp 120.000 dikunci di escrow).
+   - Penjadwalan: Besok Pukul 10.00 WIB.
+
+2. [Worker - Mahasiswa Desain Komunikasi Visual]:
+   - Membuka halaman Peta (/cari-tugas) ➔ Melihat pin tugas berjarak 600 meter.
+   - Mengajukan tawaran tertutup (Sealed-Bid) sebesar Rp 95.000 + pesan pengalaman.
+
+3. [Requester]:
+   - Menerima notifikasi FCM ➔ Memeriksa profil dan portofolio worker ➔ Menerima bid Rp 95.000.
+   - AUTO-REFUND MODEL C: Selisih Rp 25.000 (120.000 - 95.000) seketika kembali ke dompet Requester.
+
+4. [Koordinasi & Eksekusi]:
+   - Berkoordinasi via In-App Realtime Chat.
+   - Worker hadir tepat waktu, mengambil foto, dan mengunggah berkas bukti kerja.
+
+5. [Penyelesaian & Reputasi]:
+   - Requester menyetujui hasil kerja ➔ Dana Rp 95.000 langsung cair ke dompet Worker.
+   - Worker memperoleh +50 XP dan Daily Streak bertambah.
+   - Saling memberikan ulasan dan rating ⭐⭐⭐⭐⭐.
 ```
 
-### Skenario 2: "Skill Exchange Antar Mahasiswa"
-
+### Skenario 2: Penanganan Sengketa Adil (Dispute Resolution Demo)
 ```
-1. [Requester] Budi butuh bantuan desain poster acara kampus
-   - Kompensasi: 30 poin
-2. [Worker] Citra, mahasiswa desain, accept task
-3. Setelah selesai, Citra juga posting task: "Butuh bantuan compile data survei"
-4. Budi yang punya skill data entry, accept task Citra
-→ Skill exchange ecosystem terbentuk secara natural
+1. Terjadi ketidaksesuaian jumlah hasil pekerjaan antara worker dan requester.
+2. Salah satu pihak membuka tiket di /disputes dan mengunggah tangkapan layar bukti.
+3. Moderator admin meninjau kronologi di /admin/disputes dan menetapkan keputusan adil.
+4. Sistem mengeksekusi pengembalian atau pelepasan dana escrow secara otomatis tanpa sengketa berkepanjangan.
 ```
-
----
-
-## 5. Risiko & Mitigasi
-
-| Risiko                                    | Mitigasi                                               |
-| ----------------------------------------- | ------------------------------------------------------ |
-| Geolocation tidak akurat di indoor        | Fallback: pin manual di map + text alamat              |
-| User base awal sedikit (cold start)       | Seed data: dummy tasks untuk demo, ajak teman uji coba |
-| Penyalahgunaan task (konten tidak pantas) | Kategori terbatas, report button, moderasi (P2)        |
-| FCM tidak work di beberapa browser        | Fallback: in-app notification via Supabase Realtime    |
-| Supabase free tier limit                  | Monitor usage, cukup untuk kompetisi                   |
-
----
-
-## 6. Timeline Internal Tim
-
-| Minggu | Target                                            | PIC                |
-| ------ | ------------------------------------------------- | ------------------ |
-| W1     | Setup project, DB schema, auth flow, profil       | All                |
-| W2     | Task CRUD, geo-query, map view, feed              | Backend + Frontend |
-| W3     | Apply/accept flow, status tracking, notifikasi    | Backend + Frontend |
-| W4     | Rating, poin, PWA setup, FCM                      | All                |
-| W5     | UI polish, responsivitas, animasi, testing        | Frontend + DevOps  |
-| W6     | README, dokumentasi, deploy production, rehearsal | DevOps + All       |
-| Buffer | Bug fixes, edge cases, demo rehearsal             | All                |
-
-> **Deadline submit**: Minggu, 6 September 2026, 23.59 WIB
-
----
-
-## 7. Catatan untuk AI Agent
-
-- Saat generate README, pastikan narasi SDG 8 ada di bagian "Latar Belakang" dengan kuat.
-- Saat generate landing page, tampilkan USP dan koneksi SDG 8 secara visual.
-- Fitur geo/map harus ditonjolkan di demo karena itu **pembeda utama**.
-- Selalu siapkan fallback (pin manual) untuk setiap fitur yang bergantung pada browser API.
-- Jika diminta buat slide presentasi, ikuti format: Masalah → Solusi → Demo → Tech → Dampak → Tim.

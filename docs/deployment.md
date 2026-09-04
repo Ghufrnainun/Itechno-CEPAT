@@ -1,233 +1,126 @@
-# Deployment & DevOps — CEPAT (Cari Entry Pekerjaan Area Terdekat)
+# Panduan Deployment & DevOps — CEPAT (Cari Entry Pekerjaan Area Terdekat)
 
-## 1. Hosting
+## 1. Arsitektur Hosting
 
-### Vercel (Frontend + API)
+### Vercel (Frontend, Route Handlers & Cron Jobs)
+- **Platform**: Vercel (Sesuai panduan resmi ITechno Cup 2026).
+- **Framework Preset**: Next.js 16 (App Router auto-detected).
+- **Domain**: `cepat.vercel.app` atau URL deployment pratinjau otomatis per pull request.
+- **Node.js Runtime**: Versi 20.x atau 22.x LTS.
+- **Automated Cron Jobs**: Dikonfigurasi untuk mengeksekusi `/api/cron/schedule-reminder` secara berkala guna memicu pengingat penugasan.
 
-- **Platform**: Vercel (sesuai anjuran panitia)
-- **Framework preset**: Next.js (auto-detected)
-- **Deploy method**: Git push ke GitHub → auto-deploy
-- **Domain**: `cepat.vercel.app` (default) atau custom domain
-
-### Supabase (Database + Auth + Realtime)
-
-- **Plan**: Free tier (cukup untuk kompetisi)
-- **Region**: Southeast Asia (Singapore) — paling dekat untuk latency rendah
-- **Limits Free tier**:
-  - 500 MB database
-  - 1 GB storage
-  - 50,000 monthly active users
-  - 2 GB bandwidth
-  - Realtime: 200 concurrent connections
+### Supabase (Database PostgreSQL + PostGIS + Storage + Realtime)
+- **Region**: Southeast Asia (Singapore / `ap-southeast-1`) untuk latensi koneksi minimal.
+- **PostGIS Extension**: Wajib diaktifkan di SQL editor Supabase (`CREATE EXTENSION IF NOT EXISTS postgis;`).
+- **Connection Pooling**: Menggunakan PgBouncer port 6543 (`DATABASE_URL`) untuk serverless handler dan direct port 5432 (`DIRECT_URL`) untuk Prisma migrations.
 
 ---
 
-## 2. Environment Setup
-
-### Development
+## 2. Pengaturan Lingkungan Lokal (Local Development)
 
 ```bash
-# 1. Clone repo
+# 1. Clone repositori
 git clone https://github.com/Ghufrnainun/Itechno.git
 cd Itechno
 
-# 2. Install dependencies
+# 2. Pasang dependensi
 npm install
 
-# 3. Copy env template
+# 3. Siapkan variabel lingkungan
 cp .env.example .env.local
-# Isi dengan credentials Supabase & Firebase dev project
+# Lengkapi kredensial Supabase, Firebase, dan Midtrans Sandbox
 
-# 4. Run dev server
+# 4. Generate Prisma Client & Dorong Skema ke DB
+npx prisma generate
+npx prisma db push
+
+# 5. Jalankan Seeding Data Realistis
+npm run db:seed
+
+# 6. Jalankan server lokal
 npm run dev
-# → http://localhost:3000
-```
-
-### Production
-
-Environment variables di-set melalui Vercel Dashboard:
-- Settings → Environment Variables
-- Semua variabel dari `.env.example` harus diisi
-- `SUPABASE_SERVICE_ROLE_KEY` hanya di server (tidak prefix `NEXT_PUBLIC_`)
-
----
-
-## 3. Supabase Setup
-
-### Inisialisasi Database
-
-```bash
-# Install Supabase CLI
-npm install -g supabase
-
-# Login
-supabase login
-
-# Link ke project
-supabase link --project-ref <project-id>
-
-# Enable PostGIS extension (jalankan di SQL Editor Supabase Dashboard)
-# CREATE EXTENSION IF NOT EXISTS postgis;
-
-# Run migrations
-supabase db push
-```
-
-### Migration Files
-
-Simpan di `supabase/migrations/`:
-
-```
-supabase/
-└── migrations/
-    ├── 20260727_001_create_profiles.sql
-    ├── 20260727_002_create_tasks.sql
-    ├── 20260727_003_create_task_applicants.sql
-    ├── 20260727_004_create_reviews.sql
-    ├── 20260727_005_create_notifications.sql
-    ├── 20260727_006_create_point_transactions.sql
-    ├── 20260727_007_enable_rls.sql
-    ├── 20260727_008_create_functions.sql
-    └── 20260727_009_create_triggers.sql
+# Kunjungi http://localhost:3000
 ```
 
 ---
 
-## 4. Firebase Setup (FCM Only)
+## 3. Konfigurasi Variabel Lingkungan (Environment Variables)
 
-### Firebase Console
+Pastikan variabel-variabel berikut telah dikonfigurasi di Vercel Project Settings:
 
-1. Buat project di [Firebase Console](https://console.firebase.google.com/)
-2. Tambahkan web app
-3. Aktifkan Cloud Messaging
-4. Generate VAPID key (Project Settings → Cloud Messaging → Web Push certificates)
-5. Copy config ke `.env.local`
+```env
+# Database
+DATABASE_URL="postgresql://postgres.[ref]:[pwd]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres.[ref]:[pwd]@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
 
-### Service Worker
+# Supabase BaaS
+NEXT_PUBLIC_SUPABASE_URL=https://[ref].supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
-File `public/firebase-messaging-sw.js`:
+# Firebase Cloud Messaging
+NEXT_PUBLIC_FIREBASE_API_KEY=AIza...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=[ref].firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=[ref]
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=1:...
+NEXT_PUBLIC_FIREBASE_VAPID_KEY=...
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-...@[ref].iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 
-```javascript
-importScripts('https://www.gstatic.com/firebasejs/10.x.x/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.x.x/firebase-messaging-compat.js');
+# Midtrans Payment Gateway
+MIDTRANS_SERVER_KEY=SB-Mid-server-...
+MIDTRANS_CLIENT_KEY=SB-Mid-client-...
+NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=SB-Mid-client-...
+MIDTRANS_IS_PRODUCTION=false
 
-firebase.initializeApp({
-  apiKey: '...',
-  authDomain: '...',
-  projectId: '...',
-  messagingSenderId: '...',
-  appId: '...',
-});
-
-const messaging = firebase.messaging();
-
-messaging.onBackgroundMessage((payload) => {
-  const { title, body } = payload.notification;
-  self.registration.showNotification(title, { body });
-});
+# App Settings & Cron Security
+NEXT_PUBLIC_BASE_URL=https://cepat-steel.vercel.app
+NEXT_PUBLIC_DEFAULT_RADIUS=2000
+CRON_SECRET=super-secret-cron-key-123
+SEED_AUTH_PASSWORD="DemoCepat2026!#"
 ```
-
-> **Catatan**: Service worker file harus ada di `public/` root agar bisa diakses di root scope.
 
 ---
 
-## 5. Vercel Deployment
+## 4. Konfigurasi Vercel (`vercel.json`)
 
-### vercel.json (Opsional)
+Untuk menjadwalkan eksekusi otomatis pada Vercel Serverless:
 
 ```json
 {
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "headers": [
+  "crons": [
     {
-      "source": "/firebase-messaging-sw.js",
-      "headers": [
-        { "key": "Service-Worker-Allowed", "value": "/" }
-      ]
+      "path": "/api/cron/schedule-reminder",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/notifications",
+      "schedule": "0 */6 * * *"
     }
   ]
 }
 ```
 
-### Deploy Commands
+---
 
-```bash
-# Preview deploy (dari branch)
-git push origin feature/task-feed
+## 5. Scripts Resmi `package.json`
 
-# Production deploy (merge ke main)
-git checkout main
-git merge feature/task-feed
-git push origin main
-# → Vercel auto-deploys ke production
-```
+| Perintah | Fungsi |
+|---|---|
+| `npm run dev` | Menjalankan server Next.js lokal pada port 3000. |
+| `npm run build` | Melakukan kompilasi produksi Next.js. |
+| `npm run start` | Menjalankan build produksi secara lokal. |
+| `npm run lint` | Menjalankan pemeriksaan ESLint. |
+| `npm run db:seed` | Mengisi database dengan seed data realistis untuk pengujian & demo (`prisma/seed.mjs`). |
+| `npm run postinstall`| Menjalankan `prisma generate` otomatis setelah pemasangan package. |
 
 ---
 
-## 6. Git Branching Strategy
+## 6. Pre-Submission Checklist (ITechno Cup 2026)
 
-```
-main              ← production (auto-deploy ke Vercel)
-├── dev           ← integration branch
-│   ├── feat/auth
-│   ├── feat/task-feed
-│   ├── feat/map-view
-│   ├── feat/notifications
-│   └── fix/radius-query
-```
-
-**Flow:**
-1. Buat branch dari `dev`: `git checkout -b feat/task-feed`
-2. Develop & commit
-3. Push & buat PR ke `dev`
-4. Review → merge ke `dev`
-5. Saat ready release: merge `dev` ke `main`
-
----
-
-## 7. Scripts (package.json)
-
-```json
-{
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "type-check": "tsc --noEmit",
-    "db:migrate": "supabase db push",
-    "db:reset": "supabase db reset",
-    "db:types": "supabase gen types typescript --project-id <id> > src/types/database.ts"
-  }
-}
-```
-
-> `db:types` akan auto-generate TypeScript types dari skema Supabase — sangat berguna untuk type safety.
-
----
-
-## 8. Pre-submission Checklist
-
-Sebelum submit ke ITechno Cup:
-
-- [ ] Semua fitur P0 berfungsi di production URL
-- [ ] README.md sudah mengikuti template resmi ITechno Cup
-- [ ] `.env.example` ada di repo (tanpa values secret)
-- [ ] Tidak ada API key/secret ter-commit
-- [ ] PWA installable (manifest + service worker berjalan)
-- [ ] Responsive di mobile (360px) + desktop (1280px)
-- [ ] Dokumentasi penggunaan AI sudah ada di README
-- [ ] Repo public & link hosting aktif
-- [ ] Map + geolocation berfungsi di production (HTTPS required)
-
----
-
-## 9. Catatan untuk AI Agent
-
-- Jangan pernah hardcode Supabase URL/key di source code — selalu dari `process.env`.
-- Geolocation API hanya berfungsi di HTTPS (production) atau localhost (development).
-- Saat generate migration files, gunakan format: `YYYYMMDD_NNN_description.sql`.
-- Setelah ubah skema database, jalankan `npm run db:types` untuk regenerate TypeScript types.
-- Vercel free tier: 100 GB bandwidth/bulan, 6000 minutes build/bulan — lebih dari cukup untuk kompetisi.
+- [x] Seluruh fitur utama (Fixed/Bidding, PostGIS radius, Chat, Scheduling, Leaderboard, Dispute) berfungsi tanpa kendala di URL production.
+- [x] Halaman `/admin/login` dan dashboard admin berfungsi optimal dengan akun moderator terproteksi.
+- [x] Web App Manifest terdeteksi valid (`src/app/manifest.ts`) dan mendukung mode standalone PWA.
+- [x] Geolocation API beroperasi dengan protokol HTTPS production.
+- [x] Dokumentasi README.md lengkap dan mematuhi etika penggunaan AI sesuai regulasi lomba.
