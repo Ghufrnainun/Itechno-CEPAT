@@ -1,15 +1,14 @@
 <div align="center">
-
+  
 # CEPAT (Cari Entry Pekerjaan Area Terdekat)
 ### Hyperlocal Micro-Task & Freelancing Platform for Inclusive Digital Economy
 
-[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_Site-success?style=for-the-badge)](https://[URL_DEMO])
-[![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://[URL_REPO])
-[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_Site-success?style=for-the-badge)](https://cepat-steel.vercel.app/)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/Ghufrnainun/Itechno-CEPAT)
 
 **Submission for ITECHNO CUP 2026 - Web Development**
 
-**By [Nama Tim]**
+**By Tembalang Sakti**
 
 </div>
 
@@ -22,7 +21,6 @@
 - [Demo & Screenshot](#-demo--screenshot)
 - [Teknologi](#-teknologi)
 - [Arsitektur Sistem](#-arsitektur-sistem)
-- [Penggunaan AI & Etika](#-penggunaan-ai--etika)
 - [Instalasi & Setup](#-instalasi--setup)
 - [Penggunaan](#-penggunaan)
 - [API Documentation](#-api-documentation)
@@ -34,26 +32,33 @@
 
 ## 👥 Tim Developer
 
-| Nama | Peran | GitHub |
-|------|-------|--------|
-| **[Nama Lengkap 1]** | Project Lead & Full Stack Developer | [GitHub](https://github.com/[username1]) |
-| **[Nama Lengkap 2]** | Frontend & UI/UX Developer | [GitHub](https://github.com/[username2]) |
-| **[Nama Lengkap 3]** | Backend & Integration Engineer | [GitHub](https://github.com/[username3]) |
+| Nama                     | Peran                               | GitHub                                   |
+| ------------------------ | ----------------------------------- | ---------------------------------------- |
+| **Ghufron Ainun Najib**  | Project Lead & Full Stack Developer | [GitHub](https://github.com/Ghufrnainun) |
+| **Bagaskara**            | Full Stack Developer                | [GitHub](https://github.com/Pakas0)      |
+| **Rajaba Hamim Maududi** | Full Stack Developer                | [GitHub](https://github.com/Hamim688)    |
 
 ---
 
 ## 🎯 Tentang Proyek
 
 ### Latar Belakang
-Banyak mahasiswa membutuhkan pekerjaan sampingan dengan jam kerja fleksibel yang menyesuaikan jadwal kuliah. Di sisi lain, UMKM lokal dan sesama mahasiswa sering membutuhkan bantuan pekerjaan mikro (*micro-tasks*) yang butuh penanganan cepat (seperti foto produk, entri data, atau bantuan acara). Platform freelancing tradisional seringkali terlalu rumit dan tidak memfasilitasi kebutuhan pekerjaan berskala mikro dan berbasis radius lokasi terdekat.
+
+Berdasarkan data BPS, tingkat pengangguran terbuka lulusan perguruan tinggi masih berkisar di angka 7,9%, sementara survei menunjukkan lebih dari 73% mahasiswa aktif memiliki keinginan kuat untuk memperoleh penghasilan tambahan mandiri namun terbentur oleh jadwal perkuliahan yang padat dan dinamis. Di sisi lain, ribuan pelaku Usaha Mikro, Kecil, dan Menengah (UMKM) serta sesama civitas akademika di sekitar kawasan kampus sering kali membutuhkan bantuan pekerjaan mikro (_micro-tasks_) yang mendesak—seperti fotografi produk katalog, entri data administrasi, penjaga stan promosi, hingga bantuan teknis acara.
+
+Platform _freelancing_ konvensional saat ini memiliki kurva adopsi yang tinggi, memungut komisi besar, berfokus pada proyek berdurasi panjang, dan tidak memfasilitasi kebutuhan pekerjaan berskala mikro yang menuntut kedekatan lokasi fisik secara instan.
 
 ### Solusi yang Ditawarkan
-Platform *hyperlocal micro-freelancing* berbasis radius lokasi (hingga 2 km) yang menghubungkan mahasiswa dengan UMKM lokal. Menggunakan sistem dompet terintegrasi (*Escrow System*) untuk menjamin keamanan pembayaran, serta fitur *Realtime Chat* untuk komunikasi langsung.
+
+**CEPAT (Cari Entry Pekerjaan Area Terdekat)** hadir sebagai platform _hyperlocal micro-freelancing & skill exchange_ pertama yang mengintegrasikan radius geospasial presisi (default ≤ 2 km) dengan sistem keamanan finansial **Model C Escrow Balance**. CEPAT menghubungkan mahasiswa dengan UMKM lokal secara langsung untuk pekerjaan mikro yang tuntas dalam hitungan jam.
+
+Platform ini memadukan model penawaran lelang tertutup (_Sealed Bidding_) dengan pengembalian selisih otomatis (_Auto-Refund Escrow_), penjadwalan terotomatisasi, sistem reputasi gamifikasi (XP, Level, Badges, Streaks), pusat mediasi sengketa (_Dispute Center_), dan komunikasi dua arah _In-App Realtime Chat_.
 
 ### Tujuan Proyek
-- 🎯 **Tujuan Utama**: Meningkatkan akses pekerjaan layak dan pertumbuhan ekonomi lokal inklusif (Mendukung **SDG 8**).
-- 📊 **Target Pengguna**: Mahasiswa aktif dan Pelaku UMKM lokal perkotaan.
-- 💡 **Value Proposition**: Pekerjaan mikro cepat berbasis radius terdekat (max 2 km) dengan sistem potong-kunci saldo (*escrow balance*) otomatis yang aman.
+
+- 🎯 **Tujuan Utama**: Memperluas akses peluang kerja inklusif dan memacu perputaran ekonomi lokal perkotaan yang selaras dengan **SDG 8 (Pekerjaan Layak dan Pertumbuhan Ekonomi)**.
+- 📊 **Target Pengguna**: Mahasiswa aktif diploma/sarjana yang membutuhkan fleksibilitas waktu, serta pelaku UMKM lokal dan komunitas sekitar kampus.
+- 💡 **Value Proposition**: Eksekusi pekerjaan mikro ultra-cepat berbasis radius GPS terdekat (≤ 2 km), proteksi pembayaran escrow tanpa risiko penipuan, akun tunggal fleksibel (_Unified Dual-Role_), dan mekanisme lelang hemat biaya bagi requester.
 
 ---
 
@@ -61,178 +66,504 @@ Platform *hyperlocal micro-freelancing* berbasis radius lokasi (hingga 2 km) yan
 
 ### Fitur Utama
 
-| Fitur | Deskripsi | Keunggulan |
-|----------|--------------|---------------|
-| **Unified Account** | Satu akun dapat berperan sebagai Pemberi Kerja (Poster) maupun Pekerja (Tasker). | Fleksibel tanpa perlu registrasi ulang dua peran. |
-| **Interactive Map & Radius Search** | Visualisasi tugas mikro berbasis peta interaktif dengan filter jarak radius terdekat (max 2km). | Memastikan tugas dekat secara geografis dan mudah dijangkau. |
-| **Escrow Balance System** | Saldo Poster dipotong & dikunci saat tugas dibuat, dan otomatis ditransfer ke Tasker setelah disetujui. | Menjamin kepastian pembayaran tanpa risiko penipuan. |
-| **In-App Realtime Chat** | Komunikasi instan dua arah antara Poster & Tasker setelah tugas diambil. | Didukung oleh Supabase Realtime Channels untuk koordinasi cepat. |
-| **Rating & Review System** | Penilaian ulasan & bintang 5 dua arah setelah status tugas `Completed`. | Membangun reputasi dan rasa percaya (*trust*) pengguna. |
+| Fitur                                   | Deskripsi                                                                                                                     | Keunggulan                                                                                                           |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Peta Interaktif & Radius Spasial**    | Visualisasi tugas mikro pada peta Leaflet + OpenStreetMap dengan kalkulasi jarak PostGIS (`ST_DWithin` ≤ 2 km).               | Memastikan tugas terdekat secara geografis, akurat, dan dapat dijangkau tanpa biaya mobilitas tinggi.                |
+| **Sealed Bidding & Auto-Refund Escrow** | Mode lelang tertutup di mana worker mengajukan harga penawaran kustom (`bid_amount`) di dalam batas rentang budget requester. | Saat penawaran disetujui di bawah plafon, **selisih dana langsung di-refund otomatis seketika** ke dompet requester. |
+| **Unified Dual-Role Account**           | Satu akun terpadu dapat bertindak fleksibel sebagai Pemberi Tugas (Requester) maupun Pengerja Tugas (Worker).                 | Kemudahan berganti peran tanpa harus logout atau mendaftarkan dua akun terpisah.                                     |
+| **In-App Realtime Chat**                | Komunikasi pesan instan dua arah antara Requester dan Worker per penugasan tugas.                                             | Didukung oleh Supabase Realtime Channels untuk koordinasi teknis yang responsif dan aman.                            |
+| **Pusat Sengketa (Dispute Center)**     | Fasilitas pembukaan tiket sengketa resmi dengan unggah bukti foto/teks dan mediasi interaktif.                                | Admin dapat mengeksekusi putusan finansial (_favor worker_ atau _favor requester_) secara transparan dan adil.       |
+| **Top-Up Saldo Midtrans Snap**          | Integrasi pembayaran instan berlisensi dengan dukungan QRIS, Virtual Account bank, dan GoPay.                                 | Verifikasi keamanan tanda tangan SHA-512 dengan mutasi saldo dompet seketika.                                        |
+
+### Fitur Tambahan
+
+- **Task Scheduling & Cron Reminder** — Penjadwalan tanggal penugasan di masa depan disertai pengingat otomatis H-24 jam dan H-1 jam via Vercel Cron (`/schedule`).
+- **Gamifikasi, XP & Leaderboard** — Peringkat pekerja terbaik berdasarkan skor pembobotan berimbang, sistem kenaikan level, daily streaks, dan lencana pencapaian (`/leaderboard`).
+- **Worker Portfolio Showcase** — Galeri portofolio publik terintegrasi Supabase Storage untuk memamerkan bukti karya nyata pekerja (`/profile/[id]`).
+- **Bookmark Tugas Tersimpan** — Fitur simpan tugas favorit untuk ditinjau atau dilamar di kemudian waktu (`/saved`).
+- **Admin Governance & Moderation** — Konsol pemantauan metrik KPI, moderasi konten tugas, tata kelola laporan aduan pengguna, dan penangguhan akun permanen/sementara dengan _auto-unban_.
 
 ---
 
 ## 📸 Demo & Screenshot
 
 ### Live Demo
-🔗 **[Kunjungi Website](https://[URL_DEMO])**
 
-### Screenshot Aplikasi
+🔗 **[Kunjungi Website](https://cepat-steel.vercel.app/)**
+
+### Screenshot Aplikasi (6 Fitur Utama)
+
+#### 1. Peta Interaktif & Radius Spasial (`/cari-tugas`)
 
 <div align="center">
-  <img src="[URL_SCREENSHOT_1]" alt="Homepage" width="800"/>
-  <p><em>Homepage - Dashboard Peta Interaktif & Pencarian Radius</em></p>
-
-  <img src="[URL_SCREENSHOT_2]" alt="Task Detail & Escrow" width="800"/>
-  <p><em>Task Detail - Sistem Kunci Saldo Escrow & Form Pengerjaan</em></p>
-
-  <img src="[URL_SCREENSHOT_3]" alt="Realtime Chat" width="800"/>
-  <p><em>In-App Realtime Chat & Task Status Tracker</em></p>
+  <img src="public/docs/1-peta-radius.png" alt="Peta Interaktif & Radius Spasial" width="800"/>
+  <p><em>Visualisasi penemuan tugas mikro berbasis koordinat GPS pengguna dengan filter radius geospasial PostGIS (ST_DWithin ≤ 2 km) dan peta interaktif Leaflet OpenStreetMap.</em></p> 
 </div>
 
-### Video Demo
-📹 **[Link Video Demo](https://[URL_VIDEO])** _(opsional)_
+#### 2. Sealed Bidding & Auto-Refund Escrow (`/task/[id]`)
+
+<div align="center">
+  <img src="public/docs/2-bidding-escrow.png" alt="Sealed Bidding & Auto-Refund Escrow" width="800"/>
+  <p><em>Formulir pengajuan penawaran lelang tertutup (sealed-bid) oleh worker dan panel evaluasi requester dengan auto-refund seketika pada selisih plafon dana escrow Model C saat tawaran diterima.</em></p>
+</div>
+
+#### 3. Unified Dual-Role Account & Dashboard (`/dashboard`)
+
+<div align="center">
+  <img src="public/docs/dashboard.png" alt="Unified Dual-Role Account & Dashboard" width="800"/>
+  <p><em>Antarmuka dashboard terpadu yang memungkinkan satu akun beralih peran secara instan antara Pemberi Tugas (Requester) dan Pengerja (Worker) beserta ringkasan metrik aktivitas live.</em></p>
+</div>
+
+#### 4. In-App Realtime Chat & Koordinasi Tugas (`/chat`)
+
+<div align="center">
+  <img src="public/docs/4-realtime-chat.png" alt="In-App Realtime Chat" width="800"/>
+  <p><em>Ruang percakapan langsung dua arah antara requester dan worker yang ditenagai Supabase Realtime Channels untuk koordinasi teknis, pengiriman media, dan pelacakan status tugas.</em></p>
+</div>
+
+#### 5. Pusat Mediasi Sengketa / Dispute Center (`/disputes`)
+
+<div align="center">
+  <img src="public/docs/5-dispute-center.png" alt="Dispute & Resolution Center" width="800"/>
+  <p><em>Fasilitas pengajuan tiket sengketa resmi dengan pengunggahan dokumen bukti foto kerja, thread mediasi terisolasi, dan penetapan putusan resolusi finansial adil oleh admin.</em></p>
+</div>
+
+#### 6. Top-Up Saldo Dompet Digital Midtrans Snap (`/wallet`)
+
+<div align="center">
+  <img src="public/docs/6-midtrans-wallet.png" alt="Top-Up Saldo Midtrans Snap" width="800"/>
+  <p><em>Panel dompet digital dengan pemisahan saldo aktif dan saldo escrow ditahan, terintegrasi pop-up Midtrans Snap untuk pengisian saldo instan via QRIS, Virtual Account, dan e-Wallet.</em></p>
+</div>
 
 ---
 
-## 🛠️ Teknologi
+## 🛠 Teknologi
 
 ### Tech Stack
 
 #### Frontend
+
 ```
-Framework  : Next.js 14 (App Router)
-UI Library : Tailwind CSS / Lucide React / Leaflet Map
-State Mgmt : React Context / Zustand
-Validation : Zod / React Hook Form
+Framework    : Next.js 16.2.12 (App Router, Server Actions, Middleware Proxy)
+UI Library   : React 19.2.4 & TypeScript 5
+Styling      : Tailwind CSS 4 & PostCSS
+Animasi      : Motion (Framer Motion 12) & GSAP / @gsap/react
+Peta         : Leaflet.js 1.9 & React-Leaflet 5 (OpenStreetMap Tiles)
+Ikon         : Lucide React & @phosphor-icons/react
+Data Viz     : Recharts 3.10.1
+PWA          : Native Next.js 16 Metadata Route (src/app/manifest.ts)
 ```
 
-#### Backend & Database (BaaS)
+#### Backend & Database
+
 ```
-Platform   : Supabase
-Database   : PostgreSQL (PostGIS / Spatial Query)
-Auth       : Supabase Auth (@supabase/ssr)
-Realtime   : Supabase Realtime Channels
-Storage    : Supabase Storage
+Runtime      : Node.js 20.x / 22.x LTS
+ORM Layer    : Prisma ORM 7.9.1 (@prisma/client + @prisma/adapter-pg)
+Database     : PostgreSQL 15+ (Supabase Managed Instance)
+Spasial      : PostGIS Extension (ST_DWithin, ST_Distance, Point WGS84)
+Autentikasi  : Supabase Auth (@supabase/ssr) terpetakan ke tabel User
+Realtime     : Supabase Realtime Channels (WebSocket Streaming)
+Penyimpanan  : Supabase Storage Buckets (Media Portfolio & Dispute Evidences)
 ```
 
 #### DevOps & Tools
+
 ```
-Deployment : Vercel
-CI/CD      : GitHub Actions / Vercel CI
-Testing    : Vitest / Playwright
+Deployment   : Vercel Serverless Edge Network
+Automation   : Vercel Cron Jobs (/api/cron/schedule-reminder)
+Push Notif   : Firebase Cloud Messaging (FCM Web SDK v12 & Firebase Admin v14)
+Payment      : Midtrans Snap & Core API (Sandbox / Production)
+API Testing  : Bruno API Client (Koleksi lengkap di docs/api-cepat/)
+Linting      : ESLint 9 (Flat Config) & Next.js ESLint Plugin
 ```
 
-### 🚫 Deklarasi Bebas Template Instan (Compliance ITECHNO CUP)
-Menanggapi aturan ketat dari panitia lomba, kami mendeklarasikan bahwa platform CEPAT dibangun **100% dari awal (scratch)** dengan menggunakan bahasa pemrograman modern (TypeScript, React/Next.js) dan ditulis secara kustom. Proyek ini **tidak menggunakan** *template* instan, CMS (*Content Management System*), atau *Visual Builder* instan (seperti WordPress, Wix, Shopify, atau Webflow). Semua elemen UI dan alur bisnis (*business logic*) dikembangkan secara mandiri oleh tim untuk menunjukkan kompetensi *engineering* yang orisinal dan sesungguhnya.
+### Alasan Pemilihan Teknologi
+
+| Teknologi                      | Alasan Pemilihan                                                                                                                                                              |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Next.js 16 + React 19**      | Memberikan waktu muat tercepat melalui SSR/Streaming, arsitektur route handlers terpadu, dan kestabilan performa tanpa layout shift.                                          |
+| **Prisma ORM 7 + PostgreSQL**  | Menjadi _single source of truth_ skema data relasional, menjamin integritas transaksi atomik mutasi escrow (`prisma.$transaction`), dan keamanan tipe data end-to-end.        |
+| **PostGIS Spatial Extension**  | Standar industri untuk kalkulasi radius geografis lintang/bujur berkecepatan tinggi dengan pengindeksan spasial GIST.                                                         |
+| **Leaflet.js + OpenStreetMap** | Solusi peta interaktif yang ringan, fleksibel, ramah privasi, dan sepenuhnya bebas dari biaya API pihak ketiga (bebas kuota berbayar).                                        |
+| **Midtrans Snap**              | Gateway pembayaran resmi terpercaya di Indonesia yang memfasilitasi pengisian dompet instan via QRIS, Virtual Account, dan e-Wallet dengan verifikasi hash SHA-512 yang aman. |
+| **Supabase Realtime + FCM**    | Kombinasi transmisi data live ideal: WebSocket latensi rendah untuk obrolan chat aktif, dan Web Push Notification untuk pemberitahuan saat pengguna tidak membuka peramban.   |
+
+### Dependencies Utama
+
+```json
+{
+  "dependencies": {
+    "next": "16.2.12",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "typescript": "^5",
+    "@prisma/client": "^7.9.1",
+    "@prisma/adapter-pg": "^7.9.1",
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.111.0",
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^5.0.0",
+    "midtrans-client": "^1.4.3",
+    "firebase": "^12.16.0",
+    "firebase-admin": "^14.2.0",
+    "motion": "^12.43.0",
+    "recharts": "^3.10.1",
+    "zod": "^4.4.3",
+    "tailwindcss": "^4"
+  }
+}
+```
 
 ---
 
-## 🤖 Penggunaan AI & Etika (Dokumentasi Wajib ITECHNO CUP)
-
-Sesuai dengan regulasi perlombaan ITECHNO CUP 2026, kami mendeklarasikan bahwa Artificial Intelligence (AI) digunakan dalam pengembangan aplikasi **CEPAT** sebagai *Pair-Programming Assistant* dengan batasan dan pertimbangan etis/keamanan yang ketat:
-
-### 1. Penggunaan AI dalam Pengembangan
-- **Code Generation & Boilerplate**: AI digunakan untuk mempercepat pembuatan struktur dasar komponen React (UI), *routing* di Next.js, dan skema validasi Zod.
-- **Vulnerability Scanning & Bug Fixing**: AI bertindak sebagai auditor keamanan untuk menemukan dan menambal celah seperti *Escrow Mismatch*, *Race Condition*, dan celah pada kalkulasi radius *Geo-fence* PostGIS.
-- **Data Seeding**: AI digunakan untuk menyusun *dummy data* (*cold start seed script*) untuk keperluan presentasi dan demo agar *database* memiliki data simulasi realistis tanpa menggunakan data privasi pengguna asli.
-
-### 2. Pertimbangan Etis & Keamanan
-- **Data Privacy (Privasi Data)**: Kami menjamin **tidak ada** satupun data pribadi, kredensial pengguna, atau rahasia lingkungan (*environment variables/secrets*) yang pernah dikirimkan ke model AI publik. Simulasi pengujian murni menggunakan data buatan (*dummy/mock*).
-- **Security & Human-in-the-Loop**: Meskipun AI memberikan rekomendasi kode keamanan (seperti perlindungan algoritma *escrow* dan pelepasan dana), **keputusan akhir dan proses integrasi (Code Review) sepenuhnya diverifikasi oleh anggota tim manusia** (Developer) untuk memastikan tidak ada logika yang rentan terhadap *hacking* atau *fraud*.
-- **Orisinalitas & Hak Cipta**: Keseluruhan arsitektur sistem, desain UI/UX, dan ide dasar platform CEPAT adalah hasil karya orisinal tim. AI hanya bertindak sebagai *copilot* untuk meningkatkan efisiensi *coding*, dan tidak ada kode komersial berhak cipta yang dijiplak.
-
----
-
-## 🏗️ Arsitektur Sistem
+## 🏗 Arsitektur Sistem
 
 ### System Architecture
+
 ```
-+-------------------------------------------------------+
-|                    Client / Browser                   |
-|          (Next.js App Router + Leaflet Maps)          |
-+---------------------------+---------------------------+
-                            |
-           +----------------+----------------+
-           |                                 |
-           v                                 v
-+-----------------------+       +-----------------------+
-|   Next.js Server      |       |    Supabase BaaS      |
-|  (Server Actions &    |       |  (PostgreSQL, Auth,   |
-|   Escrow API Logic)   |       |  Storage, Realtime)   |
-+-----------------------+       +-----------------------+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            KLIEN / BROWSER / PWA                            │
+│    Next.js 16 (React 19) + Tailwind CSS 4 + Motion + Leaflet.js + PWA       │
+└───────────────────────┬─────────────────────────────┬───────────────────────┘
+                        │ HTTPS Requests              │ WebSocket Channel
+                        ▼                             ▼
+┌───────────────────────────────────────────┐  ┌──────────────────────────────┐
+│       EDGE MIDDLEWARE (src/proxy.ts)      │  │      SUPABASE REALTIME       │
+│  - Admin Session SHA-256 Auth Guard       │  │  - Live Task Status Sync     │
+│  - Supabase Auth Session Refresh          │  │  - Direct In-App Chat        │
+│  - User Banned Status & Auto-Unban Check  │  └──────────────────────────────┘
+└───────────────────────┬───────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    NEXT.JS 16 APP ROUTER & SERVICES                         │
+│  - Route Groups: (auth), (main), (admin), api/* (22 Kelompok Endpoints)     │
+│  - Service Layer: task.service, wallet.service, gamification, dispute       │
+└───────────────────────┬─────────────────────────────┬───────────────────────┘
+                        │ Database Queries            │ External Integrations
+                        ▼                             ▼
+┌───────────────────────────────────────────┐  ┌──────────────────────────────┐
+│       SUPABASE (POSTGRESQL + POSTGIS)     │  │      LAYANAN EKSTERNAL       │
+│  - Prisma ORM 7 Schema (24 Model Tabel)   │  │  - Midtrans Snap Gateway     │
+│  - PostGIS ST_DWithin Radius Geospasial   │  │  - Firebase Admin FCM Push   │
+│  - Supabase Auth & Storage Buckets        │  │  - Vercel Automated Cron    │
+└───────────────────────────────────────────┘  └──────────────────────────────┘
 ```
 
+### Database Schema
+
+Skema database mengelola 24 model tabel utama yang dirancang secara relasional dan aman:
+
+- **Entitas Inti**: `User`, `Role`, `Task`, `StatusTask`, `TaskCategory`, `SkillsMaster`, `SkillsUser`, `TaskRequirements`.
+- **Pelamar & Bidding**: `TaskApplicants`, `StatusTaskApplicants`.
+- **Finansial & Dompet**: `Transactions`, `PaymentTransaction` (Midtrans).
+- **Komunikasi & Ulasan**: `ChatRoom`, `Message`, `Reviews`.
+- **Pusat Sengketa**: `Dispute`, `DisputeEvidence`, `DisputeMessage`.
+- **Gamifikasi & Portofolio**: `Badge`, `UserBadge`, `UserStreak`, `XPLog`, `PortfolioItem`, `SavedTask`.
+- **Tata Kelola Admin**: `AdminSession`, `UserReport`.
+
+📖 _Diagram ERD dan rincian tipe data lengkap tersedia di [`docs/database.md`](docs/database.md)._
+
 ### Folder Structure
+
 ```
-project-root/
+Itechno/
+├── public/                     # Aset statis, ikon PWA, & firebase-messaging-sw.js
+├── prisma/
+│   ├── schema.prisma           # Single source of truth skema database (24 model)
+│   ├── seed.mjs                # Skrip seeder data demo realistis
+│   └── migrations/             # Riwayat migrasi skema Prisma
+├── supabase/
+│   └── migrations/             # Skrip SQL kebijakan RLS & inisialisasi PostGIS
+├── docs/                       # Dokumentasi arsitektur, API, & panduan lengkap
+│   ├── api-cepat/              # Koleksi pengujian otomatis Bruno API
+│   └── *.md
 ├── src/
-│   ├── app/           # Next.js App Router (Pages, Layouts, API Routes)
-│   ├── components/    # Reusable UI components & Map components
-│   ├── hooks/         # Custom hooks (Geolocation, Realtime Chat)
-│   ├── lib/           # Supabase client (client.ts, server.ts)
-│   ├── utils/         # Helper functions (Distance calculator, Escrow handler)
-│   └── types/         # TypeScript types & Supabase generated DB types
-├── supabase/          # Supabase CLI config, migrations, & seed files
-├── public/            # Static assets
-└── docs/              # Dokumentasi & Context
+│   ├── proxy.ts                # Next.js Middleware (Admin & Supabase Auth Guards)
+│   ├── app/
+│   │   ├── (auth)/             # Halaman login, register, onboarding
+│   │   ├── (main)/             # Aplikasi user: dashboard, cari-tugas, task, chat, dll
+│   │   ├── (admin)/            # Konsol pengurus: dashboard, users, tasks, reports, disputes
+│   │   ├── api/                # 22 Kelompok REST Route Handlers
+│   │   ├── manifest.ts         # Native PWA Web App Manifest
+│   │   └── globals.css         # Tailwind CSS v4 & theme variables
+│   ├── components/             # Reusable UI primitives, admin components, & map
+│   ├── features/               # Modul fitur khusus (auth, chat, task)
+│   ├── hooks/                  # Custom React hooks (geolocation, debounce, dll)
+│   ├── services/               # Heavy business logic & database transaction layer
+│   ├── lib/                    # Library singletons (prisma, midtrans, supabase, validations)
+│   └── types/                  # TypeScript interfaces & database mappings
 ```
 
 ---
 
-## ⚙️ Instalasi & Setup
+## ⚙ Instalasi & Setup
 
 ### Prerequisites
-- **Node.js** (v18.x atau lebih tinggi)
-- **npm** / **yarn** / **pnpm**
+
+Pastikan perangkat Anda telah terpasang:
+
+- **Node.js** (v20.x atau v22.x LTS direkomendasikan)
+- **npm** (v10.x atau lebih tinggi)
 - **Git**
-- **Akun Supabase**
+- **Proyek Supabase PostgreSQL** (dengan ekstensi `postgis` aktif)
+- **Akun Midtrans Sandbox** (untuk simulasi top-up pembayaran)
 
 ### Langkah Instalasi
 
 #### 1️⃣ Clone Repository
+
 ```bash
-git clone https://github.com/[username]/[repo-name].git
-cd [repo-name]
+git clone https://github.com/Ghufrnainun/Itechno-CEPAT.git
+cd Itechno-CEPAT
 ```
 
 #### 2️⃣ Install Dependencies
+
 ```bash
 npm install
 ```
 
 #### 3️⃣ Setup Environment Variables
-Buat file `.env.local` di root directory:
-```env
-NEXT_PUBLIC_SUPABASE_URL="https://[your-supabase-project-ref].supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="[your-supabase-anon-key]"
-SUPABASE_SERVICE_ROLE_KEY="[your-supabase-service-role-key]"
-NEXT_PUBLIC_SITE_URL="http://localhost:3000"
-```
 
-#### Seed akun demo
-
-Setelah migrasi database selesai, jalankan:
+Salin file `.env.example` menjadi `.env.local` pada direktori root proyek:
 
 ```bash
+cp .env.example .env.local
+```
+
+Isi konfigurasi variabel lingkungan:
+
+```env
+# Database (Prisma + Supabase PostgreSQL)
+DATABASE_URL="postgresql://postgres.[ref]:[password]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
+
+# Supabase Auth, Storage & Realtime
+NEXT_PUBLIC_SUPABASE_URL="https://[ref].supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJ..."
+SUPABASE_SERVICE_ROLE_KEY="eyJ..."
+
+# Firebase Cloud Messaging
+NEXT_PUBLIC_FIREBASE_API_KEY="AIza..."
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="[ref].firebaseapp.com"
+NEXT_PUBLIC_FIREBASE_PROJECT_ID="[ref]"
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="..."
+NEXT_PUBLIC_FIREBASE_APP_ID="1:..."
+NEXT_PUBLIC_FIREBASE_VAPID_KEY="..."
+FIREBASE_CLIENT_EMAIL="firebase-adminsdk-...@[ref].iam.gserviceaccount.com"
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+
+# Midtrans Payment Gateway
+MIDTRANS_SERVER_KEY="SB-Mid-server-..."
+MIDTRANS_CLIENT_KEY="SB-Mid-client-..."
+NEXT_PUBLIC_MIDTRANS_CLIENT_KEY="SB-Mid-client-..."
+MIDTRANS_IS_PRODUCTION=false
+
+# App Settings
+NEXT_PUBLIC_BASE_URL="http://localhost:3000"
+NEXT_PUBLIC_DEFAULT_RADIUS=2000
+```
+
+#### 4️⃣ Setup Database
+
+```bash
+# 1. Generate Prisma Client & sinkronkan skema ke database
+npx prisma generate
+npx prisma db push
+
+# 2. Terapkan aturan Row Level Security (RLS)
+npx prisma db execute --file=supabase/migrations/20260831_comprehensive_rls_policies.sql
+npx prisma db execute --file=supabase/migrations/20260901_fix_comprehensive_rls.sql
+
+# 3. Eksekusi data seed akun demo realistis
 npm run db:seed
 ```
 
-Semua akun demo menggunakan password yang dikonfigurasi melalui `SEED_AUTH_PASSWORD` (default development: `DemoCepat2026!#`):
+Semua akun demo telah terkonfigurasi dengan kata sandi default `DemoCepat2026!#` (dapat diubah melalui variabel `SEED_AUTH_PASSWORD`):
 
-| Nama | Email | Role |
-| --- | --- | --- |
-| Budi Santoso | `budi@cepat.com` | Requester |
-| Andi Pratama | `andi@cepat.com` | Worker |
-| Sari Lestari | `sari@cepat.com` | Requester |
-| Rina Maharani | `rina@cepat.com` | Worker |
+| Nama Akun     | Email Demo       | Peran Utama               |
+| ------------- | ---------------- | ------------------------- |
+| Budi Santoso  | `budi@cepat.com` | Requester (Pemberi Tugas) |
+| Andi Pratama  | `andi@cepat.com` | Worker (Pengerja Tugas)   |
+| Sari Lestari  | `sari@cepat.com` | Requester (Pemberi Tugas) |
+| Rina Maharani | `rina@cepat.com` | Worker (Pengerja Tugas)   |
 
-Password akun demo dapat diatur sesuai kebutuhan melalui environment variable `SEED_AUTH_PASSWORD`.
+#### 5️⃣ Run Development Server
 
-#### 4️⃣ Run Development Server
 ```bash
 npm run dev
 ```
-Aplikasi akan berjalan di `http://localhost:3000`
+
+Buka peramban dan akses aplikasi di `http://localhost:3000`.
+
+---
+
+## 🚀 Penggunaan
+
+### Menjalankan Aplikasi
+
+```bash
+# Mode pengembangan
+npm run dev
+
+# Kompilasi produksi
+npm run build
+
+# Menjalankan build produksi
+npm run start
+
+# Menjalankan linter kode
+npm run lint
+
+# Menjalankan seeding data demo
+npm run db:seed
+```
+
+### User Guide
+
+#### Untuk Pengguna Umum
+
+1. **Registrasi & Onboarding**: Buat akun baru via email di `/register`, lengkapi data profil, nomor WhatsApp, institusi, dan keahlian di `/onboarding`.
+2. **Eksplorasi & Melamar Tugas**:
+   - Buka peta `/cari-tugas` untuk melihat pin tugas mikro aktif dalam radius 2 km.
+   - Pilih tugas, baca deskripsi, dan klik **"Ajukan Lamaran"**.
+   - Jika tugas berjenis _Bidding_, masukkan nominal harga penawaran kustom (`bid_amount`) dan pesan pitching singkat.
+3. **Membuat Tugas & Escrow**:
+   - Buka menu `/task/new`, pilih mode **Harga Tetap** atau **Mode Bidding (Lelang)**, tentukan rentang budget dan lokasi GPS.
+   - Saldo dipotong dan dikunci otomatis di escrow (`budget_max * kuota`).
+   - Evaluasi tawaran yang masuk; terima pengerja terbaik (selisih plafon dana seketika di-refund otomatis).
+4. **Koordinasi & Penyelesaian**:
+   - Koordinasikan detail pekerjaan melalui fitur obrolan instan di `/chat`.
+   - Worker mengunggah bukti pengerjaan (_Work Proof_), requester memverifikasi dan klik **"Selesaikan"**.
+   - Dana escrow cair ke dompet worker, memicu perolehan `+50 XP`, streak harian, dan modal ulasan mutual bintang 5.
+5. **Top-Up Dompet & Penanganan Kendala**:
+   - Isi saldo dompet instan melalui `/wallet` via integrasi Midtrans Snap (QRIS/VA).
+   - Jika terjadi kendala pengerjaan, buka tiket penyelesaian masalah di `/disputes`.
+
+#### Untuk Admin
+
+1. **Akses Portal Admin**: Akses portal terisolasi di `/admin/login`.
+2. **Monitoring Real-time**: Pantau metrik KPI, grafik tren 7 hari, dan distribusi status penugasan di `/admin/dashboard`.
+3. **Pencarian Global (`Ctrl + K`)**: Gunakan bar pencarian instan untuk menavigasi menu, mencari pengguna, tugas, atau kategori.
+4. **Moderasi Pengguna & Konten**:
+   - Kelola status akun di `/admin/users` (tersedia opsi suspend permanen atau penangguhan sementara dengan masa kedaluwarsa otomatis).
+   - Take down tugas yang melanggar aturan di `/admin/tasks`.
+5. **Mediasi Sengketa & Pengaduan**:
+   - Tangani aduan pengguna di `/admin/reports`.
+   - Tinjau kronologi bukti dan tetapkan keputusan finansial sengketa (_favor worker_ atau _favor requester_) di `/admin/disputes`.
+
+---
+
+## 📚 API Documentation
+
+### Base URL
+
+```
+Development: http://localhost:3000/api
+Production:  https://cepat-steel.vercel.app/api
+```
+
+### Endpoints Utama
+
+#### Autentikasi Pengguna
+
+```http
+POST /api/auth/register    # Pendaftaran akun baru + sanitasi email disposable
+POST /api/auth/login       # Login email & kata sandi
+POST /api/auth/logout      # Pembatalan sesi pengguna
+GET  /api/auth/me          # Profil akun pengguna aktif
+```
+
+#### Manajemen Tugas & Bidding
+
+```http
+GET    /api/tasks          # Daftar tugas publik terpaginasi
+POST   /api/tasks          # Pembuatan tugas baru + penguncian escrow
+GET    /api/tasks/nearby   # Query geospasial radius PostGIS (lat, lng, radius)
+GET    /api/tasks/scheduled # Kalender jadwal penugasan
+GET    /api/tasks/:id      # Detail spesifik tugas
+POST   /api/tasks/:id/apply # Pengajuan lamaran & sealed-bid penawaran
+GET    /api/tasks/:id/bids # Daftar tawaran masuk untuk requester
+POST   /api/tasks/:id/status # Transisi status (start, submit, complete, cancel)
+```
+
+#### Dompet & Pembayaran Midtrans
+
+```http
+GET    /api/wallet         # Rincian saldo dompet & riwayat mutasi transaksi
+POST   /api/payment/create # Pembuatan Snap token top-up Midtrans
+GET    /api/payment/status # Pengecekan status pembayaran order_id
+POST   /api/payment/webhook # Webhook notifikasi IPN dengan verifikasi SHA-512
+```
+
+#### Pusat Sengketa (Dispute Center)
+
+```http
+GET    /api/disputes       # Daftar tiket sengketa pengguna
+POST   /api/disputes       # Pembukaan laporan sengketa baru
+GET    /api/disputes/:id   # Rincian perkara, berkas bukti, & pesan mediasi
+POST   /api/disputes/:id/evidence # Pengunggahan bukti teks/foto
+POST   /api/disputes/:id/messages # Pengiriman pesan mediasi sengketa
+```
+
+#### Gamifikasi & Portofolio
+
+```http
+GET    /api/leaderboard    # Peringkat pekerja berdasarkan skor pembobotan berimbang
+GET    /api/xp             # Detail level, XP log, daily streak, & lencana
+GET    /api/portfolio      # Galeri karya portofolio pekerja
+POST   /api/portfolio      # Penambahan item galeri karya baru
+POST   /api/upload         # Upload berkas gambar ke Supabase Storage Bucket
+```
+
+### Example Request
+
+```javascript
+// Contoh: Mengajukan Lamaran dengan Tawaran Bidding Tertutup
+const response = await fetch("/api/tasks/task-uuid-123/apply", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${userAccessToken}`,
+  },
+  body: JSON.stringify({
+    pesan:
+      "Halo, saya siap membantu foto katalog menu kafe Anda. Portofolio terlampir di profil.",
+    bid_amount: 85000,
+  }),
+});
+
+const result = await response.json();
+console.log(result);
+```
+
+📖 _Dokumentasi lengkap seluruh 22 kelompok endpoint API tersedia di [`docs/api.md`](docs/api.md)._
+
+---
+
+## 🧪 Testing
+
+### Running API Tests (Bruno Client)
+
+Pengujian fungsionalitas seluruh alur REST Route Handlers disediakan dalam bentuk koleksi otomatis **Bruno API Client** di direktori [`docs/api-cepat/`](docs/api-cepat):
+
+```bash
+# 1. Buka aplikasi Bruno (https://www.usebruno.com/)
+# 2. Open Collection -> Pilih folder docs/api-cepat/
+# 3. Pilih environment 'Local' (http://localhost:3000/api)
+# 4. Jalankan pengujian otomatis untuk Authentication, Tasks, Bidding, dan Payment
+```
+
+### Code Quality & Validation
+
+```bash
+# Pemeriksaan sintaksis & aturan kode
+npm run lint
+
+# Validasi keabsahan skema Prisma
+npx prisma validate
+```
 
 ---
 
@@ -244,6 +575,6 @@ Proyek ini dilisensikan di bawah [MIT License](LICENSE) - lihat file [LICENSE](L
 
 <div align="center">
 
-**Made with ❤️ by [Nama Tim] for ITECHNO CUP 2026**
+**By Tembalang Sakti for ITECHNO CUP 2026**
 
 </div>

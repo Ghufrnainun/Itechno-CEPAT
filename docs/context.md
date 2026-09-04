@@ -126,22 +126,26 @@ Catatan: flow ini masih barebone, akan di-refine lebih lanjut.
 ## Tech Stack
 
 ```
-Next.js (PWA via next-pwa) + Tailwind CSS
+Next.js 16 (App Router, React 19, PWA Standalone Manifest) + Tailwind CSS 4
    ↓
-Leaflet.js + OpenStreetMap (map interaktif)
+Leaflet.js + OpenStreetMap (Visualisasi peta interaktif tanpa API key berbayar)
    ↓
-Supabase (Postgres + PostGIS untuk geo-query radius, Auth, Realtime untuk update status)
+Prisma ORM 7 + Supabase PostgreSQL + PostGIS (Geo-query radius ST_DWithin)
    ↓
-Firebase Cloud Messaging (push notification — gratis, unlimited di Spark plan)
+Midtrans Snap (Top-up saldo dompet instan: QRIS, VA, e-Wallet)
    ↓
-Vercel (hosting, sesuai anjuran panitia)
+Supabase Realtime (In-app live chat & status broadcast)
+   ↓
+Firebase Cloud Messaging / FCM (Push notification web lintas tab)
+   ↓
+Vercel (Hosting serverless & scheduled automated cron reminders)
 ```
 
 Catatan:
 
-- PWA ditambahkan agar mobile-friendly tanpa perlu develop app native terpisah (service worker + manifest via `next-pwa`).
-- FCM dipilih karena gratis tanpa limit dan sudah familiar bagi tim; alternatif yang dipertimbangkan: OneSignal, Web Push API native, atau Supabase Realtime (terbatas hanya realtime saat tab terbuka, bukan push asli).
-- Komponen inti sistem: geolocation & radius filtering (PostGIS), matching/feed algorithm (jarak + skill + rating), status/notification realtime, sistem rating & reputasi, serta kompensasi (disarankan mulai dari sistem poin internal dulu, bukan payment gateway riil, untuk menyederhanakan MVP).
+- PWA dikonfigurasi melalui native Next.js 16 App Router Metadata Route (`src/app/manifest.ts`) dengan mode `standalone`.
+- Transaksi finansial didukung sistem dompet terintegrasi (Escrow Model C untuk tugas Fixed & Bidding) dan integrasi Midtrans Snap.
+- Komponen inti sistem: geolocation & radius filtering (PostGIS), matching/feed algorithm (jarak + skill + rating), status/notification realtime, sistem rating & reputasi, gamifikasi XP/badges, portofolio showcase, dan dispute resolution center.
 
 ## Catatan Strategis dari Diskusi Sebelumnya
 

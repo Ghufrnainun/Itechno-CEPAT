@@ -2,191 +2,223 @@
 
 ## 1. Ringkasan Arsitektur
 
-CEPAT (Cari Entry Pekerjaan Area Terdekat) menggunakan arsitektur **monolith modular** berbasis Next.js App Router. Semua fitur (frontend, API routes, server actions) berada dalam satu codebase Next.js yang di-deploy ke Vercel. Backend data layer menggunakan Supabase (PostgreSQL + PostGIS + Auth + Realtime). Push notification dihandle oleh Firebase Cloud Messaging (FCM).
+CEPAT (Cari Entry Pekerjaan Area Terdekat) mengadopsi arsitektur **Full-Stack Monolith Modular** berbasis Next.js 16 App Router. Seluruh lapisan antarmuka (SSR & Client Components), API Route Handlers, logika bisnis (*service layer*), dan pipeline otentikasi diintegrasikan dalam satu codebase terstruktur.
+
+Data layer dikelola secara terpadu melalui **Prisma ORM 7** sebagai *single source of truth* untuk basis data PostgreSQL Supabase yang dilengkapi ekstensi geospasial **PostGIS**. Untuk komunikasi real-time, sistem menggunakan kombinasi **Supabase Realtime** (in-app WebSocket) dan **Firebase Cloud Messaging (FCM)** (web push notifications). Transaksi dompet digital didukung oleh integrasi **Midtrans Snap**.
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                      BROWSER / PWA                      │
-│  Next.js Client (React) + Tailwind CSS + Leaflet.js     │
-│  Service Worker (next-pwa) → offline support + FCM      │
-└─────────────┬──────────────────────────┬────────────────┘
-              │ HTTPS                    │ WebSocket
-              ▼                          ▼
-┌─────────────────────────┐  ┌──────────────────────────┐
-│   Next.js API Routes    │  │  Supabase Realtime       │
-│   (Vercel Serverless)   │  │  (WebSocket channel)     │
-│   - /api/tasks/*        │  │  - task status updates   │
-│   - /api/users/*        │  │  - new task broadcasts   │
-│   - /api/reviews/*      │  │  - notification events   │
-│   - /api/notifications/*│  └──────────────────────────┘
-└─────────────┬───────────┘
-              │
-              ▼
-┌─────────────────────────────────────────────────────────┐
-│                    SUPABASE                             │
-│  ┌───────────────┐  ┌──────────┐  ┌──────────────────┐  │
-│  │  PostgreSQL   │  │   Auth   │  │  Storage (opt.)  │  │
-│  │  + PostGIS    │  │  (JWT)   │  │  (avatars, etc)  │  │
-│  └───────────────┘  └──────────┘  └──────────────────┘  │
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                                     KLIEN / BROWSER / PWA                              │
+│  Next.js 16 (React 19) + Tailwind CSS 4 + Motion + Leaflet.js + OSM Tiles             │
+│  PWA Manifest (standalone) + Firebase Messaging Service Worker                        │
+└───────────────────┬─────────────────────────────────┬──────────────────────────────────┘
+                    │ HTTPS Requests                  │ WebSocket Live Channel
+                    ▼                                 ▼
+┌────────────────────────────────────────────────┐  ┌────────────────────────────────────┐
+│         EDGE PROXY / MIDDLEWARE                │  │       SUPABASE REALTIME            │
+│         (src/proxy.ts)                         │  │       (WebSocket Streaming)        │
+│  - Admin Guard & Token Hashing (SHA-256)       │  │  - Task status transitions         │
+│  - Supabase Auth Session Refresh               │  │  - Live applicant broadcasts       │
+│  - User Banned Status & Auto-Unban Check       │  │  - Direct messaging chat rooms     │
+└───────────────────┬────────────────────────────┘  └────────────────────────────────────┘
+                    │
+                    ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                        NEXT.JS 16 APP ROUTER & API HANDLERS                           │
+│  ┌───────────────────────┐  ┌─────────────────────────┐  ┌───────────────────────────┐ │
+│  │     Route Groups      │  │      Service Layer      │  │     Utility & Adapters    │ │
+│  │ - (auth): login/reg   │  │ - task.service.ts       │  │ - lib/prisma.ts           │ │
+│  │ - (main): user apps   │  │ - wallet.service.ts     │  │ - lib/midtrans.ts         │ │
+│  │ - (admin): management │  │ - gamification.service  │  │ - lib/validations.ts (Zod)│ │
+│  │ - api/*: 22 endpoints │  │ - dispute.service.ts    │  │ - lib/firebase/*          │ │
+│  └───────────────────────┘  └─────────────────────────┘  └───────────────────────────┘ │
+└───────────────────┬─────────────────────────────────────────────────┬──────────────────┘
+                    │ Database Queries                                │ External Gateways
+                    ▼                                                 ▼
+┌─────────────────────────────────────────────────────────┐  ┌───────────────────────────┐
+│              SUPABASE (POSTGRESQL + POSTGIS)            │  │     EKSTERNAL SERVICES    │
+│  ┌────────────────────┐  ┌───────────────────────────┐  │  │ - Midtrans Snap (Topup)   │
+│  │ Prisma ORM Schema  │  │ PostGIS Spatial Extension │  │  │ - Firebase Admin FCM Push │
+│  │ (24 Model Tabel)   │  │ ST_DWithin Radius Query   │  │  │ - Vercel Cron (Reminders) │
+│  ├────────────────────┤  ├───────────────────────────┤  │  └───────────────────────────┘
+│  │ Supabase Auth      │  │ Supabase Storage (Buckets)│  │
+│  │ (auth.users)       │  │ (portfolio & dispute docs)│  │
+│  └────────────────────┘  └───────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
-              │
-              ▼ (Server-side trigger / Edge Function)
-┌─────────────────────────────────────────────────────────┐
-│          Firebase Cloud Messaging (FCM)                 │
-│          Push notifications ke device user              │
-└─────────────────────────────────────────────────────────┘
 ```
 
-## 2. Tech Stack Detail
+---
 
-| Layer          | Teknologi                            | Versi Target | Keterangan                                 |
-| -------------- | ------------------------------------ | ------------ | ------------------------------------------ |
-| **Framework**  | Next.js (App Router)                 | 14.x / 15.x  | SSR + API routes + Server Actions          |
-| **PWA**        | next-pwa                             | latest       | Service worker, manifest, offline cache    |
-| **Styling**    | Tailwind CSS                         | 3.x / 4.x    | Utility-first, responsive design           |
-| **Map**        | Leaflet.js + react-leaflet           | latest       | Peta interaktif, tile dari OpenStreetMap   |
-| **Database**   | Supabase (PostgreSQL + PostGIS)      | latest       | Geo-query radius, RLS (Row Level Security) |
-| **Auth**       | Supabase Auth                        | built-in     | Email/password, OAuth (Google), JWT        |
-| **Realtime**   | Supabase Realtime                    | built-in     | WebSocket untuk live status update         |
-| **Push Notif** | Firebase Cloud Messaging             | v9+          | Web push, gratis unlimited (Spark plan)    |
-| **Hosting**    | Vercel                               | -            | Auto-deploy dari GitHub, edge network      |
-| **Language**   | TypeScript                           | 5.x          | Type safety end-to-end                     |
-| **Validation** | Zod                                  | latest       | Schema validation untuk API & forms        |
-| **State Mgmt** | React Context + Zustand (jika perlu) | latest       | Client-side state                          |
-
-## 3. Folder Structure (Rencana)
+## 2. Struktur Folder Codebase Aktual
 
 ```
-cepat/
+Itechno/
 ├── public/
-│   ├── icons/                # PWA icons (192x192, 512x512)
-│   ├── manifest.json         # PWA manifest
-│   └── firebase-messaging-sw.js  # FCM service worker
+│   ├── icons/                   # PWA icons (192x192, 512x512, maskable)
+│   ├── firebase-messaging-sw.js # FCM background push notification service worker
+│   └── images/ & assets/
+│
+├── prisma/
+│   ├── schema.prisma            # Single source of truth skema database (24 model)
+│   ├── seed.mjs                 # Comprehensive seed script (data demo realistis)
+│   └── migrations/              # Riwayat migrasi skema Prisma
+│
+├── supabase/
+│   └── migrations/              # SQL migrasi RLS policies, triggers & PostGIS
+│
+├── docs/                        # Dokumentasi menyeluruh proyek
+│   ├── api-cepat/               # Bruno API testing collections
+│   └── *.md
 │
 ├── src/
-│   ├── app/                  # Next.js App Router
-│   │   ├── (auth)/           # Route group: login, register
+│   ├── proxy.ts                 # Next.js middleware (Admin & User Auth Guard)
+│   │
+│   ├── app/                     # Next.js 16 App Router
+│   │   ├── (auth)/              # Autentikasi pengguna biasa
 │   │   │   ├── login/
-│   │   │   └── register/
-│   │   ├── (dashboard)/      # Route group: authenticated pages
-│   │   │   ├── feed/         # Task feed (list + map view)
+│   │   │   ├── register/
+│   │   │   └── onboarding/
+│   │   │
+│   │   ├── (main)/              # Area aplikasi pengguna utama (Unified Requester/Worker)
+│   │   │   ├── dashboard/       # Overview statistik & ringkasan aktivitas
+│   │   │   ├── cari-tugas/      # Peta interaktif Leaflet + Feed penemuan tugas mikro
 │   │   │   ├── task/
-│   │   │   │   ├── [id]/     # Task detail
-│   │   │   │   └── create/   # Create new task
-│   │   │   ├── profile/
-│   │   │   │   └── [id]/     # User profile
-│   │   │   ├── history/      # Task history
-│   │   │   └── notifications/
-│   │   ├── api/              # API Routes
-│   │   │   ├── tasks/
-│   │   │   ├── users/
-│   │   │   ├── reviews/
-│   │   │   └── notifications/
-│   │   ├── layout.tsx        # Root layout
-│   │   ├── page.tsx          # Landing page
-│   │   └── globals.css
+│   │   │   │   ├── [id]/        # Detail tugas, pelamar, escrow status, pengerjaan
+│   │   │   │   └── new/         # Pembuatan tugas baru (Fixed / Bidding lelang)
+│   │   │   ├── chat/            # Real-time direct chat & task coordination
+│   │   │   ├── disputes/        # Dispute resolution center (pengajuan & mediasi)
+│   │   │   ├── schedule/        # Kalender & timeline jadwal penugasan
+│   │   │   ├── leaderboard/     # Peringkat gamifikasi, badges & level worker
+│   │   │   ├── profile/         # Profil publik, showcase portofolio, review & skill
+│   │   │   ├── wallet/          # Dompet, mutasi saldo, escrow status, top-up Midtrans
+│   │   │   ├── saved/           # Bookmark daftar tugas yang disimpan
+│   │   │   ├── history/         # Riwayat pekerjaan terselesaikan & ulasan
+│   │   │   └── notifications/   # Pusat notifikasi pengguna
+│   │   │
+│   │   ├── (admin)/             # Portal pengurus & konsol tata kelola platform
+│   │   │   ├── layout.tsx       # Collapsible sidebar + topbar dengan Global Search
+│   │   │   └── admin/
+│   │   │       ├── login/       # Portal autentikasi khusus admin
+│   │   │       ├── dashboard/   # Analitik KPI, tren visual Recharts, distribusi status
+│   │   │       ├── users/       # Manajemen user, suspend permanen/sementara, unban
+│   │   │       ├── tasks/       # Moderasi tugas, take-down, force complete
+│   │   │       ├── categories/  # CRUD kategori tugas & master skills
+│   │   │       ├── reports/     # Konsol aduan pengguna & status investigasi
+│   │   │       └── disputes/    # Mediasi dan resolusi perselisihan
+│   │   │
+│   │   ├── api/                 # 22 Kelompok REST Route Handlers
+│   │   │   ├── admin/           # Auth, stats, users, tasks, reports, disputes, search
+│   │   │   ├── auth/            # Register, login, logout, me
+│   │   │   ├── tasks/           # CRUD, nearby, feed, scheduled, apply, bids, status
+│   │   │   ├── disputes/        # Create dispute, evidence upload, message, resolve
+│   │   │   ├── payment/         # Midtrans transaction create, status, webhook
+│   │   │   ├── leaderboard/     # Skor berbobot, XP, streaks, level
+│   │   │   ├── portfolio/       # Galeri karya & portofolio pekerja
+│   │   │   ├── saved-tasks/     # Bookmark tugas
+│   │   │   ├── cron/            # Scheduler pengingat tugas (schedule-reminder)
+│   │   │   ├── upload/          # Upload media ke Supabase Storage
+│   │   │   ├── wallet/          # Log transaksi dan saldo escrow
+│   │   │   ├── chat/            # Kamar obrolan dan pesan
+│   │   │   ├── notifications/   # Realtime notification sync
+│   │   │   ├── reviews/         # Rating dua arah
+│   │   │   ├── reports/         # Aduan laporan pengguna
+│   │   │   └── skills/          # Master skill query
+│   │   │
+│   │   ├── manifest.ts          # Native PWA Web App Manifest
+│   │   ├── layout.tsx           # Root layout dengan font & dynamic providers
+│   │   └── globals.css          # Tailwind CSS v4 & theme variables
 │   │
-│   ├── components/           # Reusable UI components
-│   │   ├── ui/               # Primitives (Button, Input, Card, Modal)
-│   │   ├── layout/           # Header, Footer, Sidebar, BottomNav
-│   │   ├── map/              # MapView, TaskMarker, RadiusCircle
-│   │   ├── task/             # TaskCard, TaskForm, TaskStatusBadge
-│   │   └── profile/          # ProfileCard, SkillTag, RatingStars
+│   ├── components/
+│   │   ├── admin/               # AdminSidebar, AdminTopbar, KPICard, DataTable, Drawers
+│   │   ├── landing/             # Hero, USP, SDG narrative, CTA
+│   │   ├── task/                # TaskCard, TaskDetail, TaskBiddingModal, MapComponents
+│   │   ├── motion/              # Motion wrappers untuk transisi halus
+│   │   └── ui/                  # Button, Modal, Drawer, Badges, Tabs, Avatar
 │   │
-│   ├── hooks/                # Custom React hooks
-│   │   ├── useGeolocation.ts
-│   │   ├── useNearbyTasks.ts
-│   │   ├── useSupabaseAuth.ts
-│   │   └── useRealtimeTask.ts
+│   ├── services/                # Heavy business logic terisolasi
+│   │   ├── task.service.ts      # Siklus hidup task, kuota, bidding, Model C escrow
+│   │   ├── wallet.service.ts    # Transaksi saldo, hold/release/refund atomik
+│   │   ├── gamification.service.ts # Perhitungan XP, level, badge eligibility, streak
+│   │   ├── dispute.service.ts   # Alur sengketa, submit bukti, putusan admin
+│   │   ├── review.service.ts    # Agregasi rating rata-rata & ulasan
+│   │   └── notification.service.ts # Push notif & in-app event triggers
 │   │
-│   ├── lib/                  # Library configs & utilities
-│   │   ├── supabase/
-│   │   │   ├── client.ts     # Browser client
-│   │   │   ├── server.ts     # Server client
-│   │   │   └── middleware.ts # Auth middleware
-│   │   ├── firebase.ts       # FCM config
-│   │   └── utils.ts          # Helper functions
+│   ├── lib/
+│   │   ├── prisma.ts            # Prisma Client singleton dengan adapter pg
+│   │   ├── midtrans.ts          # Midtrans Snap & Core API client
+│   │   ├── supabase/            # Client browser, server & middleware helpers
+│   │   ├── firebase/            # Firebase web & admin config
+│   │   ├── validations.ts       # Zod schemas terpadu
+│   │   └── rate-limit.ts        # In-memory sliding window rate limiter
 │   │
-│   ├── services/             # Business logic / data access
-│   │   ├── task.service.ts
-│   │   ├── user.service.ts
-│   │   ├── review.service.ts
-│   │   ├── notification.service.ts
-│   │   └── geo.service.ts    # PostGIS radius queries
-│   │
-│   └── types/                # TypeScript types & interfaces
-│       ├── task.ts
-│       ├── user.ts
-│       ├── review.ts
-│       └── database.ts       # Supabase generated types
-│
-├── docs/                     # Dokumentasi proyek
-├── tests/                    # Test files
-├── .env.local                # Environment variables (git-ignored)
-├── .env.example              # Template env vars
-├── next.config.js            # Next.js + PWA config
-├── tailwind.config.ts
-├── tsconfig.json
-└── package.json
+│   └── types/                   # TypeScript interfaces & database mappings
 ```
 
-## 4. Alur Data Utama
+---
 
-### 4.1 Posting Task (Requester)
+## 3. Alur Data Utama
 
-```
-User submit form → Client validation (Zod)
-  → POST /api/tasks → Server validation
-    → Insert ke Supabase PostgreSQL (dengan PostGIS point)
-      → Supabase Realtime broadcast "new_task" ke channel area
-        → Worker dalam radius menerima update di feed
-      → (Opsional) FCM push ke worker nearby yang sedang offline
-```
-
-### 4.2 Accept Task (Worker)
+### 3.1 Siklus Tugas & Transaksi Escrow Model C
 
 ```
-Worker klik "Accept" → POST /api/tasks/[id]/accept
-  → Update status task: 'open' → 'accepted'
-  → Assign worker_id ke task
-  → Supabase Realtime notify requester
-  → FCM push ke requester: "Task Anda diterima oleh [worker]"
+Requester Submit Task (Fixed/Bidding)
+  │
+  ├─► Sistem memotong & mengunci saldo: (budget_max * kuota) sebagai Held Escrow
+  │
+  ├─► Task tayang di Peta & Feed (/cari-tugas) via PostGIS ST_DWithin
+  │
+  ├─► Worker mengajukan lamaran (Sealed-Bid / Pitching)
+  │
+  ├─► Requester mengevaluasi dan memilih Worker:
+  │     └─► AUTO-REFUND INSTAN: Selisih (budget_max - bid_accepted) langsung dikembalikan
+  │         ke saldo dompet Requester seketika. Sisa (bid_accepted) tetap di-hold di escrow.
+  │
+  ├─► Status berubah ke ACCEPTED / IN_PROGRESS -> Chat Room aktif
+  │
+  ├─► Worker mengirimkan bukti penyelesaian tugas (Work Proof)
+  │
+  ├─► Requester memverifikasi dan menyetujui hasil pengerjaan:
+  │     └─► ESCROW RELEASE: Dana yang di-hold otomatis ditransfer ke dompet Worker.
+  │     └─► GAMIFICATION TRIGGER: Worker menerima +50 XP, streak harian terupdate.
+  │
+  └─► Kedua pihak saling memberikan ulasan & rating bintang 1–5.
 ```
 
-### 4.3 Geo-query Feed
+### 3.2 Penjadwalan & Pengingat Otomatis (Cron Jobs)
 
-```
-Client ambil posisi GPS (navigator.geolocation)
-  → GET /api/tasks?lat=X&lng=Y&radius=2000
-    → PostGIS query: ST_DWithin(task.location, user_point, radius)
-    → Return sorted by distance + relevance (skill match + rating)
-```
+1. Requester dapat menentukan tanggal & jam pelaksanaan tugas (`scheduled_at` dan `scheduled_end`).
+2. Tugas terjadwal ditampilkan pada kalender pengguna (`/schedule`).
+3. Endpoint `/api/cron/schedule-reminder` dieksekusi secara berkala oleh Vercel Cron untuk mendeteksi tugas H-24 jam dan H-1 jam, lalu memicu notifikasi push FCM dan notifikasi in-app ke kedua belah pihak.
 
-## 5. Keamanan
+### 3.3 Sistem Gamifikasi & Reputasi
 
-- **Row Level Security (RLS)**: Supabase RLS aktif di semua tabel. User hanya bisa CRUD data miliknya sendiri.
-- **Auth JWT**: Setiap API request membawa Supabase JWT token. Server-side middleware memvalidasi token.
-- **Input validation**: Zod schema di client & server untuk mencegah injection.
-- **CORS**: Di-handle oleh Vercel + Supabase config.
-- **Environment secrets**: API keys disimpan di Vercel environment variables, tidak di-commit ke repo.
+* **Leveling Formula**: `Level = floor(sqrt(XP / 100)) + 1`
+* **Pemberian XP**:
+  * Menyelesaikan tugas: `+50 XP`
+  * Menerima rating sempurna 5★: `+25 XP`
+  * Menjaga streak harian: `+10 XP`
+  * Tugas pertama berhasil: `+100 XP Bonus`
+* **Leaderboard Weighted Score**:
+  `Score = (total_completed * 3) + (rating_avg * 20) + (xp * 0.1)`
 
-## 6. Deployment Pipeline
+### 3.4 Pusat Mediasi & Sengketa (Dispute Center)
 
-```
-Developer push ke GitHub
-  → Vercel auto-deploy (preview branch / production main)
-  → Build: next build (SSR + static)
-  → Output: Vercel Edge Network (global CDN)
-```
+1. Jika terjadi ketidaksepakatan pada tugas `IN_PROGRESS` atau `COMPLETED`, salah satu pihak dapat membuka sengketa di `/disputes`.
+2. Kedua pihak mengunggah bukti teks maupun foto (`DisputeEvidence`) dan berkomunikasi dalam ruang mediasi resmi.
+3. Moderator/Admin melalui `/admin/disputes` dapat menelaah kronologi dan menetapkan keputusan:
+   * **RESOLVED_FAVOR_WORKER**: Dana escrow dicairkan ke pekerja.
+   * **RESOLVED_FAVOR_REQUESTER**: Dana escrow dikembalikan penuh ke requester.
 
-- **Preview deploys**: setiap PR mendapat URL preview otomatis.
-- **Production**: merge ke `main` → auto-deploy ke domain production.
-- **Database**: Supabase project terpisah untuk dev vs production (disarankan).
+---
 
-## 7. Catatan Penting untuk AI Agent
+## 4. Keamanan & Tata Kelola
 
-- Gunakan **App Router** (bukan Pages Router). Semua route di `src/app/`.
-- Supabase client ada 2 versi: `client.ts` (browser, `createBrowserClient`) dan `server.ts` (server components/API routes, `createServerClient`).
-- Untuk geo-query, PostGIS extension harus diaktifkan di Supabase dashboard (`CREATE EXTENSION IF NOT EXISTS postgis;`).
-- PWA config ada di `next.config.js` via `next-pwa` wrapper.
-- FCM service worker (`firebase-messaging-sw.js`) harus di `public/` root.
+1. **Proxy Middleware (`src/proxy.ts`)**:
+   * Memvalidasi token sesi admin (`admin_token`) yang di-hash dengan SHA-256 pada tabel `AdminSession`.
+   * Memeriksa status penangguhan akun (`is_banned`). Pengguna yang terkena penangguhan sementara (*temporary ban*) akan otomatis dipulihkan (*auto-unban*) setelah masa berlaku habis.
+2. **Row Level Security (RLS)**:
+   * Aturan RLS ketat diterapkan pada tabel PostgreSQL Supabase melalui file migrasi di `supabase/migrations/`.
+   * Mutasi saldo (`Transactions`) hanya dapat dilakukan melalui fungsi transaksi backend yang atomik.
+3. **Validasi Skema Zod & Anti-XSS**:
+   * Seluruh payload masukan divalidasi oleh skema Zod di sisi server sebelum menyentuh lapisan database.
+   * Proteksi disposable/temporary email (100+ domain terblokir) pada proses registrasi akun.

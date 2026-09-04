@@ -2,186 +2,133 @@
 
 ## 1. Ringkasan Produk
 
-**CEPAT (Cari Entry Pekerjaan Area Terdekat)** adalah platform micro-freelancing & skill exchange berbasis lokasi untuk mahasiswa dan UMKM lokal perkotaan. User bisa posting atau mengambil micro-task dadakan dalam radius terdekat (maks. 2 km).
+**CEPAT (Cari Entry Pekerjaan Area Terdekat)** adalah platform *hyperlocal micro-freelancing & skill exchange* berbasis lokasi untuk mahasiswa dan UMKM lokal perkotaan. Pengguna dapat memposting dan mengambil tugas mikro (*micro-tasks*) dadakan dalam radius terdekat (default ≤ 2 km) dengan jaminan keamanan pembayaran melalui sistem dompet escrow terintegrasi.
 
-**SDG 8** — Pekerjaan Layak dan Pertumbuhan Ekonomi: membuka akses penghasilan fleksibel bagi mahasiswa tanpa terikat jam kerja tetap, sekaligus membantu UMKM mendapatkan tenaga bantuan cepat.
-
----
-
-## 2. Dua Peran Utama
-
-| Peran              | Deskripsi                                                                      |
-| ------------------ | ------------------------------------------------------------------------------ |
-| **Requester**      | Pemberi tugas — posting task, pilih worker, konfirmasi selesai, kasih rating    |
-| **Worker**         | Pengerja — browse task terdekat, apply/accept, kerjakan, terima kompensasi      |
-
-Satu akun bisa berperan sebagai Requester sekaligus Worker (dual-role).
+* **SDG 8 (Pekerjaan Layak dan Pertumbuhan Ekonomi)**: Membuka akses peluang kerja sampingan yang fleksibel bagi mahasiswa tanpa mengganggu jadwal kuliah, sekaligus menyediakan bantuan tenaga operasional cepat dan terjangkau bagi UMKM lokal.
+* **Unified Dual-Role Account**: Satu akun pengguna dapat bertindak fleksibel sebagai **Pemberi Tugas (Requester)** maupun **Pengerja Tugas (Worker)** tanpa memerlukan akun terpisah.
 
 ---
 
-## 3. Fitur Inti (MVP — Babak Penyisihan)
+## 2. Matriks Fitur Lengkap
 
-### 3.1 🔐 Autentikasi & Profil
+### 2.1 🔐 Autentikasi, Akun & Profil Terpadu
 
-| Fitur                     | Deskripsi                                                      | Prioritas |
-| ------------------------- | -------------------------------------------------------------- | --------- |
-| Register / Login          | Email + password via Supabase Auth. Opsi OAuth Google.         | P0        |
-| Profil User               | Nama, foto, bio, daftar skill (tag), universitas/instansi      | P0        |
-| Dual-role toggle          | User bisa switch mode Requester ↔ Worker di satu akun          | P0        |
-| Edit Profil               | Update info personal, skill tags, foto profil                  | P1        |
-
-### 3.2 📋 Manajemen Task (Requester Side)
-
-| Fitur                     | Deskripsi                                                      | Prioritas |
-| ------------------------- | -------------------------------------------------------------- | --------- |
-| Create Task (Fixed/Bidding)| Form: judul, deskripsi, kategori, lokasi, estimasi waktu, kompensasi fixed atau rentang budget bidding (Min-Max) | P0 |
-| Mode Bidding (Sealed-Bid) | Requester menentukan rentang budget min–max. Sistem mengunci escrow sebesar `budget_max * max_applicants`. | P0 |
-| Auto-geolocation          | Lokasi task otomatis dari GPS browser, bisa juga pin manual di map | P0     |
-| Task Status Tracking      | Requester lihat status: open → accepted → in_progress → completed | P0     |
-| Evaluasi & Terima Bid     | Melihat daftar tawaran masuk (sealed dari publik, hanya terlihat oleh requester), menerima worker dengan nominal bid yang diajukan | P0 |
-| Auto-Refund Selisih Escrow| Saat bid diterima di bawah `budget_max`, selisih dana langsung di-refund otomatis ke wallet requester (Model C Escrow) | P0 |
-| Multi-Worker Slot         | Mendukung perekrutan 1 atau banyak worker per task dengan kuota slot | P0     |
-| Konfirmasi Selesai        | Requester konfirmasi task selesai → trigger transfer dana ke worker + ulasan | P0    |
-| Cancel Task               | Requester bisa cancel task → seluruh sisa dana escrow di-refund penuh | P0        |
-
-### 3.3 🔍 Feed & Discovery (Worker Side)
-
-| Fitur                     | Deskripsi                                                      | Prioritas |
-| ------------------------- | -------------------------------------------------------------- | --------- |
-| Feed Task Terdekat        | List view task yang ada dalam radius (default 2km)             | P0        |
-| Indikator Mode Bidding    | Badge visual `Gavel` dan rentang harga `Rp Min – Rp Max` untuk task berorientasi lelang/bidding | P0 |
-| Map View                  | Peta Leaflet + OpenStreetMap dengan marker task terdekat        | P0        |
-| Filter & Sort             | Filter by: kategori skill, kompensasi min, jarak. Sort by: terbaru, terdekat, kompensasi tertinggi | P1 |
-| Pengajuan Bid (Sealed-Bid)| Worker memasukkan harga penawaran dalam batas min–max yang ditentukan requester | P0 |
-| Perbarui & Batal Bid      | Worker dapat memperbarui nominal tawaran yang masih pending atau membatalkan lamaran | P0 |
-| Kuota Percobaan Melamar   | Batas maksimal melamar ulang (default 3x) jika tawaran sebelumnya ditolak/dibatalkan | P1 |
-| Update Status Pengerjaan  | Worker konfirmasi mulai pengerjaan & submit hasil tugas        | P0        |
-
-### 3.4 📍 Geolocation & Radius
-
-| Fitur                     | Deskripsi                                                      | Prioritas |
-| ------------------------- | -------------------------------------------------------------- | --------- |
-| GPS Auto-detect           | Browser Geolocation API untuk ambil posisi user                | P0        |
-| Radius Search             | PostGIS `ST_DWithin` query — default 2km, adjustable           | P0        |
-| Map Interaktif            | Leaflet.js dengan tile OpenStreetMap, marker task, radius circle | P0      |
-| Pin Manual                | User bisa geser pin di map jika GPS tidak akurat               | P1        |
-
-### 3.5 ⭐ Rating & Reputasi
-
-| Fitur                     | Deskripsi                                                      | Prioritas |
-| ------------------------- | -------------------------------------------------------------- | --------- |
-| Rating post-task          | Setelah task selesai, kedua pihak saling kasih rating (1-5 ⭐)  | P0       |
-| Review text (opsional)    | Komentar singkat opsional saat kasih rating                    | P1        |
-| Skor reputasi             | Rata-rata rating ditampilkan di profil                         | P0        |
-| Badge / Level (opsional)  | Gamification: badge untuk milestone tertentu                   | P2        |
-
-### 3.6 💰 Sistem Dompet & Escrow Keamanan Dana
-
-| Fitur                     | Deskripsi                                                      | Prioritas |
-| ------------------------- | -------------------------------------------------------------- | --------- |
-| Saldo Dompet Internal     | Saldo user untuk posting task atau menerima imbalan kerja      | P0        |
-| Escrow Hold (Plafon Max)  | Saldo dipotong & ditahan saat task dibuat (`budget_max * slot`) | P0        |
-| Dynamic Escrow Refund     | Selisih `budget_max - bid_accepted` langsung dikembalikan ke Requester saat kandidat disetujui | P0 |
-| Escrow Release            | Pencairan dana otomatis ke dompet Worker saat pekerjaan disetujui Requester | P0 |
-| Histori Transaksi         | Pencatatan log mutasi: `hold`, `release`, `refund`, `topup`    | P0        |
-| Top-up Saldo (Midtrans)   | Integrasi Midtrans Snap untuk pengisian saldo instan           | P0        |
-
-> **Catatan**: Untuk MVP/penyisihan, gunakan sistem poin internal. Tidak perlu integrasi payment gateway riil.
-
-### 3.7 🔔 Notifikasi
-
-| Fitur                     | Deskripsi                                                      | Prioritas |
-| ------------------------- | -------------------------------------------------------------- | --------- |
-| Realtime in-app           | Supabase Realtime — notif saat task di-apply, di-accept, selesai | P0      |
-| Push notification         | FCM — notif bahkan saat tab tidak terbuka                      | P1        |
-| Notification center       | Halaman list semua notifikasi + status read/unread             | P1        |
-
-### 3.8 📜 Histori Task
-
-| Fitur                     | Deskripsi                                                      | Prioritas |
-| ------------------------- | -------------------------------------------------------------- | --------- |
-| Histori sebagai Requester | Daftar task yang pernah diposting + statusnya                  | P0        |
-| Histori sebagai Worker    | Daftar task yang pernah dikerjakan + rating yang didapat       | P0        |
-
-### 3.9 💬 Chat Antar User
-
-| Fitur                     | Deskripsi                                                      | Prioritas |
-| ------------------------- | -------------------------------------------------------------- | --------- |
-| Realtime Chat             | Direct message antara Requester dan Worker untuk koordinasi tugas | P0      |
-| Chat List & Room          | Tampilan daftar obrolan dan ruang pesan yang intuitif          | P0        |
+| Fitur | Deskripsi Teknis | Status |
+|---|---|---|
+| **Register & Login** | Autentikasi email + password via Supabase Auth terpetakan ke tabel `User.auth_id`. Validasi input ketat dengan pemblokiran 100+ domain email sementara/disposable. | ✅ Aktif |
+| **Onboarding & Profil** | Konfigurasi avatar, bio, nomor WhatsApp/telepon, institusi/universitas, dan seleksi master skills. | ✅ Aktif |
+| **Dual-Role Switching** | Pengguna dapat berganti peran secara dinamis antara Requester dan Worker di antarmuka utama. | ✅ Aktif |
+| **Keamanan Penangguhan (Ban Guard)** | Pemeriksaan status `is_banned` secara otomatis pada middleware `proxy.ts`. Mendukung penangguhan Permanen dan Sementara (*Temporary*) dengan mekanisme *Auto-Unban* saat durasi penangguhan berakhir. | ✅ Aktif |
 
 ---
 
-## 4. Fitur Tambahan (Nice-to-Have / Post-MVP)
+### 2.2 📍 Geolokasi & Peta Penemuan Tugas (`/cari-tugas`)
 
-| Fitur                        | Deskripsi                                                   | Prioritas |
-| ---------------------------- | ----------------------------------------------------------- | --------- |
-| Kategori skill marketplace   | Halaman browse semua kategori skill yang tersedia            | P2        |
-| Search task by keyword       | Full-text search di judul + deskripsi task                   | P2        |
-| Skill exchange (barter)      | Mode khusus: tukar skill tanpa poin (saya bantu X, kamu bantu Y) | P2   |
-| Laporan & moderasi           | User bisa report task/user yang mencurigakan                 | P2        |
-| Admin dashboard              | Panel untuk moderator/admin kelola user & task               | P2        |
-| Dark mode                    | Toggle tema gelap/terang                                     | P2        |
-| Multi-bahasa (i18n)          | Support Bahasa Indonesia + English                           | P3        |
+| Fitur | Deskripsi Teknis | Status |
+|---|---|---|
+| **GPS Auto-Detect** | Deteksi otomatis koordinat lintang/bujur pengguna melalui Browser Geolocation API. | ✅ Aktif |
+| **Pencarian Radius Spasial** | Query geospasial PostgreSQL PostGIS (`ST_DWithin`) untuk memfilter tugas mikro dalam radius default 2000 meter. | ✅ Aktif |
+| **Peta Interaktif Leaflet** | Peta interaktif berbasis Leaflet.js dan tile OpenStreetMap dengan marker dinamis, radius circle, dan pop-up ringkasan tugas. | ✅ Aktif |
+| **Pin Lokasi Manual** | Dukungan penyesuaian posisi secara manual saat membuat tugas untuk memastikan akurasi lokasi indoor. | ✅ Aktif |
+| **Filter & Pengurutan** | Penyaringan berdasarkan kategori keahlian, jarak terdekat, kompensasi tertinggi, dan mode bidding. | ✅ Aktif |
 
 ---
 
-## 5. Prioritas Legend
+### 2.3 💼 Manajemen Tugas & Sistem Bidding Tertutup
 
-| Label | Makna                                              |
-| ----- | -------------------------------------------------- |
-| P0    | **Must have** — wajib ada di MVP penyisihan        |
-| P1    | **Should have** — sangat direkomendasikan          |
-| P2    | **Nice to have** — jika waktu memungkinkan         |
-| P3    | **Future** — setelah kompetisi / iterasi berikutnya |
-
----
-
-## 6. Kategori Skill (Contoh Awal)
-
-Kategori yang bisa dipilih saat posting task:
-
-- 📸 Fotografi & Videografi
-- 💻 Data Entry & Administrasi
-- 🎨 Desain Grafis
-- ✍️ Penulisan & Konten
-- 📦 Jaga Booth / Event Helper
-- 🚚 Kurir / Antar Barang
-- 🔧 Teknis (IT support, setup perangkat)
-- 📱 Social Media Management
-- 📊 Riset & Survei
-- 🎓 Tutoring / Les Privat
-### 3.8 🚩 Fitur Laporan User & Moderasi Admin
-
-| Fitur                     | Deskripsi                                                      | Prioritas |
-| ------------------------- | -------------------------------------------------------------- | --------- |
-| Laporkan Masalah          | Tombol "Laporkan Masalah" di sidebar user biasa + `ReportModal` dialog | P0 |
-| Admin Reports Page        | Konsol aduan `/admin/reports` (KPI Cards, Table, Status filter `pending`, `reviewed`, `resolved`, `rejected`) | P0 |
-| Notifikasi FCM Admin      | Push notification real-time via Firebase FCM & Red Bell badge pada Admin Topbar | P0 |
-| Notifikasi Klik Direct    | Klik notifikasi laporan di topbar langsung navigasi ke `/admin/reports?id=<reportId>` | P0 |
-| Global Search Bar Admin   | Search bar topbar admin (`Ctrl + K`) real-time untuk menu, user, task, dan kategori | P0 |
+| Fitur | Deskripsi Teknis | Status |
+|---|---|---|
+| **Posting Tugas (Fixed Price)** | Requester menentukan kompensasi pasti per pekerja. Escrow mengunci dana sebesar `kompensasi * max_applicants`. | ✅ Aktif |
+| **Mode Bidding (Sealed-Bid)** | Requester menentukan rentang budget (`budget_min` – `budget_max`). Escrow mengunci plafon maksimal `budget_max * max_applicants`. | ✅ Aktif |
+| **Pengajuan Penawaran Worker** | Worker mengajukan harga penawaran kustom (`bid_amount`) dan pesan lamaran. Tawaran bersifat tertutup (hanya dilihat requester). Worker dapat memperbarui nominal tawaran sebelum disetujui. | ✅ Aktif |
+| **Model C Escrow Auto-Refund** | Saat Requester menyetujui worker dengan tawaran `bid_amount` di bawah plafon `budget_max`, selisih dana `(budget_max - bid_amount)` **langsung dikembalikan seketika** ke dompet Requester, dan sisa nominal tetap ditahan di escrow per slot (`held_slots_json`). | ✅ Aktif |
+| **Multi-Worker Slots** | Mendukung kebutuhan banyak pekerja dalam satu tugas dengan pelacakan kuota slot yang terisi. | ✅ Aktif |
+| **Batas Percobaan Melamar** | Pembatasan kuota melamar (maks. 3x) untuk mencegah spamming proposal oleh akun yang sama. | ✅ Aktif |
+| **Bukti Pengerjaan (Work Proof)** | Worker mengunggah catatan dan foto hasil kerja sebelum meminta persetujuan penyelesaian. | ✅ Aktif |
+| **Konfirmasi & Escrow Release** | Requester menyetujui hasil kerja ➔ dana escrow otomatis ditransfer ke dompet pengerja, memicu pemberian XP dan evaluasi ulasan. | ✅ Aktif |
 
 ---
 
-## 7. User Flow Ringkas
+### 2.4 📅 Penjadwalan Tugas & Cron Reminder (`/schedule`)
 
-```
-┌─ REQUESTER ──────────────────────────────────────────┐
-│ Register → Login → Create Task (+ lokasi + poin)     │
-│   → Tunggu applicant → Pilih worker → Track progress │
-│   → Konfirmasi selesai → Kasih rating → Done         │
-└──────────────────────────────────────────────────────┘
+| Fitur | Deskripsi Teknis | Status |
+|---|---|---|
+| **Penjadwalan Waktu** | Requester dapat menentukan tanggal & jam mulai (`scheduled_at`) serta estimasi selesai (`scheduled_end`). | ✅ Aktif |
+| **Tampilan Kalender & Timeline** | Halaman `/schedule` menampilkan kalender penugasan bulanan/mingguan bagi worker dan requester. | ✅ Aktif |
+| **Automated Cron Reminders** | Endpoint `/api/cron/schedule-reminder` dieksekusi berkala (Vercel Cron) untuk mengirim push notif pengingat H-24 jam dan H-1 jam sebelum jadwal dimulai. | ✅ Aktif |
 
-┌─ WORKER ─────────────────────────────────────────────┐
-│ Register → Login → Isi profil skill                  │
-│   → Buka feed (list/map) → Filter → Apply/Accept     │
-│   → Kerjakan → Update status → Terima poin + rating  │
-└──────────────────────────────────────────────────────┘
-```
+---
 
-## 8. Catatan untuk AI Agent
+### 2.5 🏆 Gamifikasi, Reputasi & Leaderboard (`/leaderboard`)
 
-- Saat generate komponen, selalu pertimbangkan **dual-role** (satu user bisa Requester & Worker).
-- Task status flow yang valid: `draft → open → accepted → in_progress → completed → cancelled`. Cancelled hanya dari `open` atau `accepted`.
-- Setiap fitur P0 harus fungsional untuk demo penyisihan.
-- Geo-related features (map, radius, pin) adalah **pembeda utama** — harus bekerja dengan baik dan terlihat impressive di demo.
+| Fitur | Deskripsi Teknis | Status |
+|---|---|---|
+| **Sistem XP & Leveling** | Formula level otomatis: `Level = floor(sqrt(XP / 100)) + 1`. XP bertambah saat menyelesaikan tugas (+50 XP), menerima rating 5★ (+25 XP), dan streak harian (+10 XP). | ✅ Aktif |
+| **Daily Streak Tracker** | Pelacakan login dan pengerjaan beruntun harian (`UserStreak`) untuk mendorong keterlibatan pengguna secara konsisten. | ✅ Aktif |
+| **Badges & Pencapaian** | Sistem pencapaian otomatis (`Badge` & `UserBadge`) untuk milestone tugas, rating, dan pendapatan. | ✅ Aktif |
+| **Peringkat Leaderboard** | Peringkat pekerja terbaik berdasarkan skor pembobotan dinamis: `(total_completed * 3) + (rating_avg * 20) + (xp * 0.1)`. Mendukung filter mingguan, bulanan, dan sepanjang waktu. | ✅ Aktif |
+| **Rating & Ulasan Mutual** | Penilaian bintang 1–5 dua arah disertai komentar dan bukti foto hasil kerja. | ✅ Aktif |
+
+---
+
+### 2.6 ⭐ Portofolio Pekerja & Showcase (`/profile/[id]`)
+
+| Fitur | Deskripsi Teknis | Status |
+|---|---|---|
+| **Galeri Portofolio Publik** | Tab khusus di profil worker untuk menampilkan galeri karya (`PortfolioItem`) dengan preview lightbox dan deskripsi teknis. | ✅ Aktif |
+| **Upload Media Terproteksi** | Unggah gambar hasil kerja terintegrasi langsung dengan Supabase Storage via `/api/upload`. | ✅ Aktif |
+| **Skill Verification Badge** | Badge verifikasi keahlian khusus bagi pekerja yang telah memvalidasi kompetensi. | ✅ Aktif |
+
+---
+
+### 2.7 🛡️ Pusat Sengketa & Mediasi (`/disputes`)
+
+| Fitur | Deskripsi Teknis | Status |
+|---|---|---|
+| **Pembukaan Sengketa** | Pihak yang berselisih pada tugas `IN_PROGRESS` atau `COMPLETED` dapat membuka berkas sengketa resmi. | ✅ Aktif |
+| **Unggah Bukti Sengketa** | Pengunggahan bukti kronologis berupa pesan teks dan tangkapan layar bukti pengerjaan (`DisputeEvidence`). | ✅ Aktif |
+| **Ruang Pesan Mediasi** | Thread komunikasi khusus antara pelapor, terlapor, dan moderator admin (`DisputeMessage`). | ✅ Aktif |
+| **Resolusi Finansial Admin** | Admin menetapkan keputusan: `RESOLVED_FAVOR_WORKER` (dana escrow diteruskan ke worker) atau `RESOLVED_FAVOR_REQUESTER` (dana escrow dikembalikan penuh ke requester). | ✅ Aktif |
+
+---
+
+### 2.8 💰 Dompet Digital, Escrow & Pembayaran Midtrans (`/wallet`)
+
+| Fitur | Deskripsi Teknis | Status |
+|---|---|---|
+| **Saldo Dompet Internal** | Pemisahan saldo tersedia (*usable balance*) dan saldo terkunci (*held escrow balance*). | ✅ Aktif |
+| **Integrasi Midtrans Snap** | Pengisian saldo instan (*top-up*) melalui QRIS, Virtual Account bank, dan e-Wallet dengan callback otomatis. | ✅ Aktif |
+| **Webhook Signature SHA-512** | Validasi keamanan webhook Midtrans menggunakan hashing SHA-512 sebelum memutasi saldo akun. | ✅ Aktif |
+| **Riwayat Transaksi Terperinci** | Log pencatatan transaksi (`Transactions`) mencakup sub-tipe: `topup`, `hold`, `task_payment`, `task_earning`, dan `refund`. | ✅ Aktif |
+
+---
+
+### 2.9 💬 Komunikasi Obrolan Real-time (`/chat`)
+
+| Fitur | Deskripsi Teknis | Status |
+|---|---|---|
+| **Kamar Obrolan Terisolasi** | Kamar chat direct message per penugasan antara requester dan worker (`ChatRoom`). | ✅ Aktif |
+| **Realtime Channel Streaming** | Pengiriman pesan instan, status terbaca (*read receipts*), dan notifikasi suara/visual melalui Supabase Realtime Channels. | ✅ Aktif |
+| **Dukungan Media & Emoji** | Berbagi gambar tugas dan picker emoji bawaan (`emoji-picker-react`). | ✅ Aktif |
+
+---
+
+### 2.10 🔖 Tugas Tersimpan / Bookmarks (`/saved`)
+
+| Fitur | Deskripsi Teknis | Status |
+|---|---|---|
+| **Bookmark Tugas** | Menyimpan tugas favorit untuk ditinjau atau dilamar di lain waktu (`SavedTask`). | ✅ Aktif |
+
+---
+
+### 2.11 🚩 Konsol Tata Kelola & Laporan Admin (`/admin/*`)
+
+| Fitur | Deskripsi Teknis | Status |
+|---|---|---|
+| **Admin Overview & Analitik** | KPI Cards real-time, grafik tren harian pengerjaan, dan visualisasi distribusi status task (Recharts). | ✅ Aktif |
+| **Manajemen & Moderasi Pengguna** | Pencarian cepat, slide-over drawer, penangguhan akun permanen/sementara dengan alasan ban, unban instan, dan surat peringatan resmi. | ✅ Aktif |
+| **Moderasi Tugas** | Filter status tugas, inspeksi detail radius spasial, take-down konten tidak pantas, dan penyelesaian paksa. | ✅ Aktif |
+| **Manajemen Laporan Pengguna (`/admin/reports`)** | Konsol pengaduan pengguna terhubung dengan tombol "Laporkan Masalah", pembaruan status aduan, dan navigasi direct URL (`?id=...`). | ✅ Aktif |
+| **Mediasi Sengketa (`/admin/disputes`)** | Panel kontrol perselisihan untuk penentuan keputusan resolusi escrow secara adil. | ✅ Aktif |
+| **Global Search Bar (`Ctrl + K`)** | Pencarian instan (debounced) di seluruh data menu, pengguna, tugas, dan kategori. | ✅ Aktif |
+| **Notifikasi Real-time FCM Admin** | Bell counter notifikasi laporan masuk yang terhubung dengan listener push notification Firebase FCM. | ✅ Aktif |

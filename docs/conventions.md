@@ -36,19 +36,21 @@ const maxRadiusMeters = 5000;  // gunakan SCREAMING_SNAKE untuk constants
 ```
 src/
 ├── app/          # HANYA route files (page.tsx, layout.tsx, route.ts, loading.tsx, error.tsx)
-├── components/   # Reusable UI components
-│   ├── ui/       # Primitives: Button, Input, Card, Modal, Badge, etc.
-│   └── [feature]/ # Feature-specific: task/, map/, profile/, etc.
-├── hooks/        # Custom React hooks
-├── lib/          # Library configs (supabase, firebase, utils)
-├── services/     # Data access & business logic
-└── types/        # TypeScript types, Zod schemas, enums
+├── components/   # Reusable UI components (ui/, admin/, landing/, task/, motion/)
+├── features/     # Modul fitur khusus (auth/, chat/, task/)
+├── hooks/        # Custom React hooks (useGeolocation, useDebounce, dll)
+├── lib/          # Library configs (prisma.ts, midtrans.ts, firebase/, supabase/, utils/)
+├── services/     # Heavy business logic & database transaction layer
+├── types/        # TypeScript types, Zod schemas, enums
+└── proxy.ts      # Next.js Middleware (Admin & Supabase Auth Guards)
 ```
 
 **Aturan:**
-- **Jangan** taruh business logic di komponen React — pindahkan ke `services/`.
+- **Jangan** taruh business logic di komponen React atau Route Handlers langsung — pindahkan ke `services/`.
 - **Jangan** taruh UI components di `app/` — hanya route-level files.
-- **Jangan** taruh Supabase queries langsung di komponen — abstraksi lewat `services/`.
+- **Database Operations**: Gunakan Prisma ORM Client singleton (`@/lib/prisma`) untuk semua operasi data publik. Jangan buat instance Prisma baru.
+- **Atomic Transactions**: Setiap mutasi saldo atau perubahan status tugas yang melibatkan escrow WAJIB dibungkus dalam `prisma.$transaction`.
+- **Case-Insensitivity**: Selalu sertakan `mode: 'insensitive'` pada klausa `where` pencarian string/enum di Prisma.
 - Setiap komponen di `ui/` harus generic dan reusable, tanpa dependency ke data/API spesifik.
 
 ---

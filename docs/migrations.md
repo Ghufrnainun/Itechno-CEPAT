@@ -1,69 +1,65 @@
-# Panduan Arsitektur Database dan Migrasi
+# Panduan Arsitektur Database & Riwayat Migrasi — CEPAT
 
-## Ringkasan
+## 1. Ringkasan Strategi Arsitektur Database
 
-Backend CEPAT (Cari Entry Pekerjaan Area Terdekat) menggunakan strategi manajemen *database hybrid*. Kita memanfaatkan **Prisma ORM** untuk mendefinisikan skema dan migrasi, yang dipadukan dengan **Supabase** untuk Autentikasi dan *Row Level Security* (RLS).
-
-Dokumen ini menjelaskan tentang pengaturan, arsitektur, dan prosedur *deployment* untuk lapisan *database* kita.
-
-## 1. Strategi Arsitektur
-
-Kita memisahkan peran antara Prisma dan Supabase untuk memaksimalkan efisiensi pengembangan dan keamanan:
-
-- **Prisma (`prisma/schema.prisma`)**: Bertindak sebagai sumber utama (single source of truth) untuk skema `public`. Ini mendefinisikan semua tabel, kolom, constraint, dan relasi.
-- **Supabase Auth (`auth.users`)**: Mengelola kredensial *user* dengan aman. Tabel `public.User` terhubung menggunakan kolom UUID `auth_id` yang dipetakan ke Supabase Auth, sehingga kita tidak perlu menyimpan *password* mentah.
-- **Supabase SQL Migrations (`supabase/migrations/`)**: Berisi *script* SQL murni untuk fitur-fitur lanjutan PostgreSQL yang tidak dikelola secara bawaan oleh Prisma, khususnya aturan *Row Level Security* (RLS) dan ekstensi PostGIS.
-
-## 2. Keamanan dan Row Level Security (RLS)
-
-Semua tabel wajib menerapkan *Row Level Security*. Modifikasi *database* secara langsung dari sisi klien sangat dibatasi.
-- **Verifikasi User**: Terdapat fungsi pembantu (*helper*) yang memetakan JWT Supabase `auth.uid()` ke `User.id_user` internal kita.
-- **Akses Granular**: User hanya bisa memodifikasi datanya sendiri (misalnya: Profil, Tugas, Keahlian).
-- **Transaksi Escrow**: Transaksi keuangan (Tabel `Transactions`) menolak penyisipan data (insert) secara langsung. Transaksi ini ditangani dengan aman melalui fungsi/trigger internal *backend*.
-
-## 3. Pengaturan Development Lokal
-
-Untuk menginisialisasi lapisan *database* secara lokal, jalankan langkah-langkah berikut:
-
-1. **Install Dependencies**:
-   ```bash
-   npm install
-   ```
-
-2. **Environment Variables**:
-   Pastikan Anda memiliki file `.env` di *root* proyek dengan kredensial *database* yang benar:
-   ```env
-   DATABASE_URL="postgresql://[user]:[password]@[host]:6543/postgres?pgbouncer=true"
-   DIRECT_URL="postgresql://[user]:[password]@[host]:5432/postgres"
-   ```
-
-3. **Apply Prisma Schema**:
-   Sinkronisasikan klien Prisma lokal Anda dan terapkan struktur skema dasar:
-   ```bash
-   npx prisma migrate dev
-   ```
-   *(Catatan: Ini akan menerapkan skema hingga migrasi terbaru, termasuk pemetaan `auth_id` yang aman).*
-
-4. **Apply Supabase Policies**:
-   Terapkan aturan RLS lanjutan dengan mengeksekusi SQL mentah langsung ke *database*:
-   ```bash
-   npx prisma db execute --file=supabase/migrations/20260729_enable_rls.sql
-   ```
-
-## 4. Alur Kerja Migrasi
-
-Jika ingin mengubah skema *database* di masa depan, ikuti alur kerja berikut:
-
-- **Untuk Perubahan Tabel/Kolom**: Ubah file `prisma/schema.prisma` dan jalankan `npx prisma migrate dev` untuk membuat migrasi Prisma.
-- **Untuk Perubahan Keamanan/Kebijakan (RLS)**: Jangan masukkan logika RLS ke dalam migrasi Prisma. Sebagai gantinya, ubah atau buat file *script* `.sql` di folder `supabase/migrations/` dan terapkan secara manual atau melalui Supabase CLI.
+Backend CEPAT (Cari Entry Pekerjaan Area Terdekat) menerapkan strategi arsitektur *database hybrid* berkinerja tinggi:
+- **Prisma ORM 7 (`prisma/schema.prisma`)**: Bertindak sebagai sumber kebenaran tunggal (*single source of truth*) untuk skema relasional `public`, pemetaan tipe data, relasi kunci asing, dan operasi transaksi atomik.
+- **Supabase Auth (`auth.users`)**: Mengelola kredensial dan enkripsi sesi autentikasi pengguna secara aman. Entitas profil `public.User` terhubung langsung menggunakan kolom UUID `auth_id`.
+- **Supabase SQL Migrations (`supabase/migrations/`)**: Berisi skrip SQL untuk konfigurasi tingkat lanjut PostgreSQL, khususnya ekstensi geospasial **PostGIS** dan penegakan kebijakan keamanan **Row Level Security (RLS)**.
 
 ---
 
-## 5. Riwayat Migrasi Database
+## 2. Alur Kerja Sinkronisasi & Migrasi
 
-| Nama Migrasi | Tanggal | Deskripsi Perubahan |
+Untuk menerapkan perubahan skema atau menginisialisasi database:
+
+1. **Sinkronisasi Skema Prisma**:
+   ```bash
+   # Terapkan skema Prisma langsung ke basis data PostgreSQL Supabase
+   npx prisma db push
+   
+   # Atau buat migration log formal
+   npx prisma migrate dev --name <nama_perubahan>
+   ```
+
+2. **Terapkan Kebijakan Row Level Security (RLS)**:
+   ```bash
+   # Eksekusi skrip kebijakan keamanan RLS terkini
+   npx prisma db execute --file=supabase/migrations/20260831_comprehensive_rls_policies.sql
+   npx prisma db execute --file=supabase/migrations/20260901_fix_comprehensive_rls.sql
+   npx prisma db execute --file=supabase/migrations/20260901_fix_user_task_direct_rls.sql
+   ```
+
+3. **Inisialisasi Data Demo & Seed**:
+   ```bash
+   npm run db:seed
+   ```
+
+---
+
+## 3. Riwayat Migrasi Database Resmi
+
+### 3.1 Migrasi Skema Prisma (`prisma/migrations/`)
+
+| Direktori Migrasi | Tanggal | Deskripsi Perubahan |
 |---|---|---|
-| `20260729_init` | 29 Juli 2026 | Inisialisasi skema awal PostgreSQL, PostGIS, tabel core (User, Task, Category, Skill, Review). |
-| `20260803_multi_applicant` | 03 Agustus 2026 | Penambahan kolom `max_applicants`, `max_apply_attempts`, `apply_count`, dan pelacakan status multi-worker. |
-| `20260810_chat_and_admin` | 10 Agustus 2026 | Penambahan tabel `ChatRoom`, `Message`, `AdminSession`, dan `UserReport`. |
-| `20260816_task_bidding` | 16 Agustus 2026 | **Task Bidding System (Fase 1)**: Penambahan kolom `is_bidding`, `budget_min`, `budget_max`, `held_slots_json` pada `Task`, dan `bid_amount` pada `TaskApplicants`. |
+| `20260805_wallet_schema` | 05 Agustus 2026 | Penambahan kolom `total_balance`, `held_balance` pada `User`, dan model `Transactions` dengan enum `TransactionType` & `TransactionSubType`. |
+| `20260816_task_bidding` | 16 Agustus 2026 | **Task Bidding System (Fase 1)**: Penambahan kolom `is_bidding`, `budget_min`, `budget_max`, `held_slots_json` pada `Task`, dan `bid_amount` pada `TaskApplicants`. |
+| `20260823_saved_task` | 23 Agustus 2026 | Penambahan model `SavedTask` untuk fitur bookmark tugas tersimpan pengguna. |
+| *Schema Expansion* | 25–31 Agustus 2026 | Integrasi model `Badge`, `UserBadge`, `UserStreak`, `XPLog`, `PortfolioItem`, `PaymentTransaction` (Midtrans), `Dispute`, `DisputeEvidence`, dan `DisputeMessage`. |
+
+---
+
+### 3.2 Migrasi SQL Supabase RLS & PostGIS (`supabase/migrations/`)
+
+| File SQL | Tanggal | Fungsi & Deskripsi |
+|---|---|---|
+| `20260729_chat_features.sql` | 29 Juli 2026 | Struktur tabel dan constraint untuk ruang obrolan chat per penugasan. |
+| `20260729_enable_rls.sql` | 29 Juli 2026 | Mengaktifkan perlindungan Row Level Security dasar pada seluruh tabel publik. |
+| `20260803_add_fcm_token.sql` | 03 Agustus 2026 | Penambahan kolom `fcm_token` pada `User` untuk push notifications. |
+| `20260805_wallet_schema.sql` | 05 Agustus 2026 | Penegakan RLS pada tabel transaksi saldo agar tidak bisa dimanipulasi langsung dari client. |
+| `20260813_user_reports_schema.sql` | 13 Agustus 2026 | Skema penyimpanan tiket pengaduan pengguna dan izin akses moderator. |
+| `20260829_init_postgis.sql` | 29 Agustus 2026 | Inisialisasi ekstensi `postgis` dan indeks spasial GIST untuk query radius `lokasi_geo`. |
+| `20260831_comprehensive_rls_policies.sql` | 31 Agustus 2026 | Kebijakan RLS komprehensif untuk relasi Task, Applicants, Reviews, dan Chat. |
+| `20260901_fix_comprehensive_rls.sql` | 01 September 2026 | Penyempurnaan RLS policy untuk sinkronisasi JWT `auth.uid()` dengan ID profil `User.id_user`. |
+| `20260901_fix_user_task_direct_rls.sql` | 01 September 2026 | Optimasi akses query langsung requester dan worker pada entitas task aktif. |
