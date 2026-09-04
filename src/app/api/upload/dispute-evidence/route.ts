@@ -74,12 +74,24 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const { error: uploadError } = await supabaseAdmin.storage
+    let { error: uploadError } = await supabaseAdmin.storage
       .from('dispute-evidences')
       .upload(fileName, buffer, {
         contentType: isJpeg ? 'image/jpeg' : isPng ? 'image/png' : 'image/webp',
         upsert: false,
       });
+
+    // Auto-create bucket and retry if bucket doesn't exist
+    if (uploadError && (uploadError.message?.toLowerCase().includes('not found') || (uploadError as any).statusCode === '404')) {
+      await supabaseAdmin.storage.createBucket('dispute-evidences', { public: true }).catch(() => null);
+      const retry = await supabaseAdmin.storage
+        .from('dispute-evidences')
+        .upload(fileName, buffer, {
+          contentType: isJpeg ? 'image/jpeg' : isPng ? 'image/png' : 'image/webp',
+          upsert: false,
+        });
+      uploadError = retry.error;
+    }
 
     if (uploadError) {
       console.error('[Upload Dispute Evidence] Storage error:', uploadError);
