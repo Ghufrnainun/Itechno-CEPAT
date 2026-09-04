@@ -554,7 +554,7 @@ p, li, blockquote {
     var(--color-surface-container-low) 100%
   );
   background-size: 200% 100%;
-  animation: skeletonShimmer 1.8s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+  animation: skeletonShimmer 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
 }
 
 .interactive-hover {

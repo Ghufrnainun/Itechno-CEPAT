@@ -53,6 +53,16 @@ export async function GET(request: NextRequest) {
         ? roleParam
         : 'all';
 
+    const countOnly = searchParams.get('count_only') === 'true';
+    if (countOnly) {
+      const count = await taskService.getScheduledTasksCount(user.id_user, { role });
+      return NextResponse.json({
+        success: true,
+        count,
+        data: [],
+      });
+    }
+
     const tasks = await taskService.getScheduledTasks(user.id_user, {
       month,
       year,

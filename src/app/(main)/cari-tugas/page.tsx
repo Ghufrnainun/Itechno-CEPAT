@@ -25,6 +25,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Module-level in-memory cache for instant zero-latency transitions
+let cachedFeedTasks: (Task & { distance?: number })[] = [];
+let cachedCategories: { id_category: string; nama_kategori: string }[] = [];
+let cachedAppliedTaskIds: string[] = [];
+let cachedSavedTaskIds: string[] = [];
+let hasCariTugasLoadedOnce = false;
+
 function CariTugasPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -38,18 +45,18 @@ function CariTugasPageContent() {
     }
     return "list";
   });
-  const [tasks, setTasks] = useState<(Task & { distance?: number })[]>([]);
-  const [categories, setCategories] = useState<{ id_category: string; nama_kategori: string }[]>([]);
+  const [tasks, setTasks] = useState<(Task & { distance?: number })[]>(cachedFeedTasks);
+  const [categories, setCategories] = useState<{ id_category: string; nama_kategori: string }[]>(cachedCategories);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 350);
 
   const [radius, setRadius] = useState<number>(10);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!hasCariTugasLoadedOnce);
 
   const [selectedTask, setSelectedTask] = useState<(Task & { distance?: number }) | null>(null);
-  const [appliedTaskIds, setAppliedTaskIds] = useState<string[]>([]);
-  const [savedTaskIds, setSavedTaskIds] = useState<string[]>([]);
+  const [appliedTaskIds, setAppliedTaskIds] = useState<string[]>(cachedAppliedTaskIds);
+  const [savedTaskIds, setSavedTaskIds] = useState<string[]>(cachedSavedTaskIds);
   const [filterSavedOnly, setFilterSavedOnly] = useState(false);
 
   // Apply Modal state
@@ -64,14 +71,16 @@ function CariTugasPageContent() {
     return tasks.find((t) => t.id_task === taskToApply) ?? selectedTask ?? null;
   }, [tasks, taskToApply, selectedTask]);
 
-  // Load categories
+  // Load categories (cached in-memory)
   useEffect(() => {
+    if (cachedCategories.length > 0) return;
     async function loadCategories() {
       try {
         const res = await fetch("/api/categories");
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
           setCategories(json.data);
+          cachedCategories = json.data;
         }
       } catch (e) {
         console.error("Gagal load kategori:", e);
@@ -91,14 +100,18 @@ function CariTugasPageContent() {
       if (appRes.ok) {
         const appJson = await appRes.json();
         if (appJson.success && Array.isArray(appJson.data)) {
-          setAppliedTaskIds(appJson.data.map((app: any) => app.id_tasks));
+          const ids = appJson.data.map((app: any) => app.id_tasks);
+          cachedAppliedTaskIds = ids;
+          setAppliedTaskIds(ids);
         }
       }
 
       if (savedRes.ok) {
         const savedJson = await savedRes.json();
         if (savedJson.success && Array.isArray(savedJson.data)) {
-          setSavedTaskIds(savedJson.data.map((item: any) => item.task?.id_task || item.id_tasks));
+          const ids = savedJson.data.map((item: any) => item.task?.id_task || item.id_tasks);
+          cachedSavedTaskIds = ids;
+          setSavedTaskIds(ids);
         }
       }
     } catch (e) {
@@ -121,8 +134,10 @@ function CariTugasPageContent() {
   }, [refreshUserData]);
 
   // Load tasks
-  const fetchTasks = useCallback(async () => {
-    setLoading(true);
+  const fetchTasks = useCallback(async (forceLoading = false) => {
+    if (!hasCariTugasLoadedOnce || forceLoading) {
+      setLoading(true);
+    }
     try {
       const categoryId = selectedCategory === "all" ? undefined : selectedCategory;
       const fetched = await getFeedTasks(
@@ -134,6 +149,8 @@ function CariTugasPageContent() {
         "distance_asc"
       );
       setTasks(fetched);
+      cachedFeedTasks = fetched;
+      hasCariTugasLoadedOnce = true;
     } catch (err) {
       console.error("Gagal memuat tugas:", err);
       showToast("Gagal memuat daftar tugas.");
@@ -142,6 +159,7 @@ function CariTugasPageContent() {
     }
   }, [coords.latitude, coords.longitude, radius, debouncedSearch, selectedCategory, viewMode, showToast]);
 
+  // Non-blocking fetch: loads immediately with default/cached coords, updates if GPS updates
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);

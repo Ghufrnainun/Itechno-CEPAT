@@ -15,45 +15,82 @@ export interface NotificationItem {
   createdAt: string;
 }
 
+import { triggerHaptic } from "@/lib/utils/haptics";
+
+// Module-level in-memory SWR cache for instant zero-latency page transitions
+let cachedNotifications: NotificationItem[] = [];
+let cachedUnreadCount = 0;
+let cachedTotalCount = 0;
+let hasLoadedNotificationsOnce = false;
+let activeFetchPromise: Promise<void> | null = null;
+let cachedPrismaUserId: string | null = null;
+
 export function useNotifications() {
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState<number>(0);
-  const [totalCount, setTotalCount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [notifications, setNotifications] = useState<NotificationItem[]>(cachedNotifications);
+  const [unreadCount, setUnreadCount] = useState<number>(cachedUnreadCount);
+  const [totalCount, setTotalCount] = useState<number>(cachedTotalCount);
+  const [isLoading, setIsLoading] = useState<boolean>(!hasLoadedNotificationsOnce);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchNotifications = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const res = await fetch("/api/notifications?limit=100");
-      if (!res.ok) {
-        if (res.status === 401) {
-          // User tidak logged in, stop silently
-          setIsLoading(false);
-          return;
-        }
-        throw new Error("Gagal mengambil notifikasi.");
-      }
-
-      const data = await res.json();
-      if (data.success) {
-        setNotifications(data.data || []);
-        setUnreadCount(data.unreadCount || 0);
-        setTotalCount(data.totalCount || (data.data || []).length);
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Terjadi kesalahan.";
-      setError(msg);
-    } finally {
-      setIsLoading(false);
+  const fetchNotifications = useCallback(async (showLoading = false) => {
+    if (activeFetchPromise) {
+      return activeFetchPromise;
     }
+
+    if (showLoading && !hasLoadedNotificationsOnce) {
+      setIsLoading(true);
+    } else {
+      setIsRefreshing(true);
+    }
+
+    activeFetchPromise = (async () => {
+      try {
+        const res = await fetch("/api/notifications?limit=100");
+        if (!res.ok) {
+          if (res.status === 401) {
+            setIsLoading(false);
+            return;
+          }
+          throw new Error("Gagal mengambil notifikasi.");
+        }
+
+        const data = await res.json();
+        if (data.success) {
+          const items = data.data || [];
+          const unread = data.unreadCount || 0;
+          const total = data.totalCount || items.length;
+
+          cachedNotifications = items;
+          cachedUnreadCount = unread;
+          cachedTotalCount = total;
+          hasLoadedNotificationsOnce = true;
+
+          setNotifications(items);
+          setUnreadCount(unread);
+          setTotalCount(total);
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Terjadi kesalahan.";
+        setError(msg);
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+        activeFetchPromise = null;
+      }
+    })();
+
+    return activeFetchPromise;
   }, []);
 
   const markAsRead = async (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+    triggerHaptic("light");
+    cachedNotifications = cachedNotifications.map((n) =>
+      n.id === id ? { ...n, isRead: true } : n
     );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
+    cachedUnreadCount = Math.max(0, cachedUnreadCount - 1);
+    setNotifications(cachedNotifications);
+    setUnreadCount(cachedUnreadCount);
 
     try {
       await fetch(`/api/notifications/${id}/read`, { method: "PATCH" });
@@ -63,7 +100,10 @@ export function useNotifications() {
   };
 
   const markAllAsRead = async () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    triggerHaptic("success");
+    cachedNotifications = cachedNotifications.map((n) => ({ ...n, isRead: true }));
+    cachedUnreadCount = 0;
+    setNotifications(cachedNotifications);
     setUnreadCount(0);
 
     try {
@@ -72,6 +112,21 @@ export function useNotifications() {
       console.warn("Gagal menandai semua notifikasi dibaca di server:", err);
     }
   };
+
+  // Window Focus & Visibility Change Revalidation
+  useEffect(() => {
+    const handleRevalidate = () => {
+      if (document.visibilityState === "visible") {
+        fetchNotifications(false);
+      }
+    };
+    window.addEventListener("focus", handleRevalidate);
+    document.addEventListener("visibilitychange", handleRevalidate);
+    return () => {
+      window.removeEventListener("focus", handleRevalidate);
+      document.removeEventListener("visibilitychange", handleRevalidate);
+    };
+  }, [fetchNotifications]);
 
   // Setup Supabase Realtime Listener
   useEffect(() => {
@@ -85,15 +140,18 @@ export function useNotifications() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !isMounted) return;
 
-      // Ambil Prisma user_id (berbeda dengan Supabase auth user.id)
-      let prismaUserId: string | null = null;
-      try {
-        const res = await fetch("/api/users/me");
-        if (res.ok) {
-          const json = await res.json();
-          prismaUserId = json.data?.id_user || null;
-        }
-      } catch (_) { /* fallback: realtime won't work but app still functional */ }
+      // Ambil Prisma user_id (berbeda dengan Supabase auth user.id), gunakan cache jika ada
+      let prismaUserId: string | null = cachedPrismaUserId;
+      if (!prismaUserId) {
+        try {
+          const res = await fetch("/api/users/me");
+          if (res.ok) {
+            const json = await res.json();
+            prismaUserId = json.data?.id_user || null;
+            cachedPrismaUserId = prismaUserId;
+          }
+        } catch (_) { /* fallback: realtime won't work but app still functional */ }
+      }
 
       if (!prismaUserId || !isMounted) return;
 
@@ -134,22 +192,26 @@ export function useNotifications() {
                 createdAt: newNotif.created_at || new Date().toISOString(),
               };
 
-              setNotifications((prev) => [formatted, ...prev]);
-              setUnreadCount((prev) => prev + 1);
+              cachedNotifications = [formatted, ...cachedNotifications.filter(n => n.id !== formatted.id)];
+              cachedUnreadCount += 1;
+              cachedTotalCount += 1;
+
+              setNotifications([...cachedNotifications]);
+              setUnreadCount(cachedUnreadCount);
+              setTotalCount(cachedTotalCount);
+              triggerHaptic("medium");
             } else if (payload.eventType === 'UPDATE') {
               const updated = payload.new as any;
               const targetId = updated.id_notifications || updated.id;
               
-              setNotifications((prev) => {
-                const isCurrentlyUnread = prev.find(n => n.id === targetId)?.isRead === false;
-                
-                // Jika dari belum dibaca menjadi dibaca
-                if (isCurrentlyUnread && updated.is_read) {
-                  setUnreadCount((count) => Math.max(0, count - 1));
-                }
-                
-                return prev.map(n => n.id === targetId ? { ...n, isRead: updated.is_read } : n);
-              });
+              const isCurrentlyUnread = cachedNotifications.find(n => n.id === targetId)?.isRead === false;
+              if (isCurrentlyUnread && updated.is_read) {
+                cachedUnreadCount = Math.max(0, cachedUnreadCount - 1);
+              }
+
+              cachedNotifications = cachedNotifications.map(n => n.id === targetId ? { ...n, isRead: updated.is_read } : n);
+              setNotifications([...cachedNotifications]);
+              setUnreadCount(cachedUnreadCount);
             }
           }
         );
@@ -173,6 +235,7 @@ export function useNotifications() {
     totalCount,
     readCount: Math.max(0, totalCount - unreadCount),
     isLoading,
+    isRefreshing,
     error,
     refetch: fetchNotifications,
     markAsRead,

@@ -1,6 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { triggerHaptic } from "@/lib/utils/haptics";
+
+// Module-level in-memory SWR cache for instant navigation
+let cachedBalance: WalletBalance | null = null;
+let cachedTransactions: TransactionItem[] = [];
+let cachedPagination: WalletPagination | null = null;
+let hasLoadedWalletOnce = false;
 
 // ─── Types (mirroring wallet.service.ts untuk client-side) ──────────────────
 
@@ -64,11 +71,11 @@ declare global {
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
 export function useWallet() {
-  const [balance, setBalance] = useState<WalletBalance | null>(null);
-  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
-  const [pagination, setPagination] = useState<WalletPagination | null>(null);
+  const [balance, setBalance] = useState<WalletBalance | null>(cachedBalance);
+  const [transactions, setTransactions] = useState<TransactionItem[]>(cachedTransactions);
+  const [pagination, setPagination] = useState<WalletPagination | null>(cachedPagination);
   const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!hasLoadedWalletOnce);
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +90,10 @@ export function useWallet() {
         throw new Error("Gagal mengambil saldo.");
       }
       const data = await res.json().catch(() => ({}));
-      if (data.success && data.data) setBalance(data.data);
+      if (data.success && data.data) {
+        cachedBalance = data.data;
+        setBalance(data.data);
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Gagal mengambil saldo.";
       setError(msg);
@@ -101,8 +111,10 @@ export function useWallet() {
       }
       const data = await res.json().catch(() => ({}));
       if (data.success) {
-        setTransactions(data.transactions ?? []);
-        setPagination(data.pagination ?? null);
+        cachedTransactions = data.transactions ?? [];
+        cachedPagination = data.pagination ?? null;
+        setTransactions(cachedTransactions);
+        setPagination(cachedPagination);
       }
     } catch (err) {
       const msg =
@@ -115,9 +127,12 @@ export function useWallet() {
 
   useEffect(() => {
     const init = async () => {
-      setIsLoading(true);
+      if (!hasLoadedWalletOnce) {
+        setIsLoading(true);
+      }
       setError(null);
-      await Promise.all([fetchBalance(), fetchHistory()]);
+      await Promise.allSettled([fetchBalance(), fetchHistory()]);
+      hasLoadedWalletOnce = true;
       setIsLoading(false);
     };
     init();
@@ -148,7 +163,11 @@ export function useWallet() {
         }
 
         // Update balance optimistically dari response (no extra round-trip)
-        if (data.data) setBalance(data.data);
+        if (data.data) {
+          cachedBalance = data.data;
+          setBalance(data.data);
+          triggerHaptic("success");
+        }
 
         // Refresh history to show the new transaction
         await fetchHistory();

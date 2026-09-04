@@ -29,9 +29,13 @@ interface SavedTaskItem {
   };
 }
 
+// Module-level SWR Cache for Saved Tasks
+let cachedSavedTasks: SavedTaskItem[] = [];
+let hasSavedLoadedOnce = false;
+
 export default function SavedTasksPage() {
-  const [items, setItems] = useState<SavedTaskItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [items, setItems] = useState<SavedTaskItem[]>(cachedSavedTasks);
+  const [isLoading, setIsLoading] = useState(!hasSavedLoadedOnce);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const { showToast } = useToast();
 
@@ -43,6 +47,8 @@ export default function SavedTasksPage() {
         const json = await res.json();
         if (!cancelled && json.success) {
           setItems(json.data);
+          cachedSavedTasks = json.data;
+          hasSavedLoadedOnce = true;
         }
       } catch (e) {
         console.error("Gagal ambil tugas tersimpan", e);
@@ -57,6 +63,7 @@ export default function SavedTasksPage() {
 
   const handleRemove = async (item: SavedTaskItem) => {
     setRemovingId(item.id_saved);
+    cachedSavedTasks = cachedSavedTasks.filter((t) => t.id_saved !== item.id_saved);
     try {
       const res = await fetch("/api/saved-tasks", {
         method: "POST",

@@ -6,8 +6,10 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     cpus: 4,
+    optimizePackageImports: ["lucide-react", "date-fns", "motion/react"],
   },
   images: {
+    formats: ['image/webp'],
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",

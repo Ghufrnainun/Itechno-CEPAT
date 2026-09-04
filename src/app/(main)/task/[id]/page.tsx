@@ -110,16 +110,20 @@ interface TaskDetail {
   } | null;
 }
 
+// ─── Module-level SWR Cache ──────────────────────────────────────────────
+const taskDetailCache = new Map<string, TaskDetail>();
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function TaskDetailPage() {
   const router = useRouter();
   const { id } = useParams();
+  const taskId = typeof id === "string" ? id : Array.isArray(id) ? id[0] : "";
   const { role, user } = useCurrentRole();
   const { showToast } = useToast();
 
-  const [task, setTask] = useState<TaskDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [task, setTask] = useState<TaskDetail | null>(() => (taskId ? taskDetailCache.get(taskId) ?? null : null));
+  const [loading, setLoading] = useState(() => (taskId ? !taskDetailCache.has(taskId) : true));
   const [actionLoading, setActionLoading] = useState(false);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [applyMessage, setApplyMessage] = useState("");
@@ -137,28 +141,31 @@ export default function TaskDetailPage() {
   const [isCancelTaskModalOpen, setIsCancelTaskModalOpen] = useState(false);
   const [cancelTaskMode, setCancelTaskMode] = useState<"worker" | "requester">("worker");
 
-  // Fetch task detail dari API
+  // Fetch task detail dari API (SWR: background revalidation)
   const fetchTask = useCallback(async () => {
     try {
       const res = await fetch(`/api/tasks/${id}`);
       if (!res.ok) {
         showToast("Task tidak ditemukan.");
         setTask(null);
+        if (taskId) taskDetailCache.delete(taskId);
         return;
       }
       const data = await res.json().catch(() => ({}));
       if (data.success && data.data) {
         setTask(data.data);
+        if (taskId) taskDetailCache.set(taskId, data.data);
       } else {
         showToast(data.message || "Task tidak ditemukan.");
       }
     } catch (e) {
       showToast("Gagal memuat task.");
       setTask(null);
+      if (taskId) taskDetailCache.delete(taskId);
     } finally {
       setLoading(false);
     }
-  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [id, taskId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchTask();

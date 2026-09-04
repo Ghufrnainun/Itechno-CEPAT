@@ -31,6 +31,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { triggerHaptic } from "@/lib/utils/haptics";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -270,27 +271,37 @@ function EmptyState({ activeFilter, role }: { activeFilter: string | null; role:
   );
 }
 
+// Module-level in-memory cache for instant navigation
+let cachedRequesterTasks: Record<string, RequesterTask[]> = {};
+let hasLoadedRequesterTasksOnce = false;
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function KelolaTaskPage() {
   const { role } = useCurrentRole();
-  const [tasks, setTasks] = useState<RequesterTask[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const cacheKey = activeFilter || "all";
+  const [tasks, setTasks] = useState<RequesterTask[]>(cachedRequesterTasks[cacheKey] || []);
+  const [loading, setLoading] = useState<boolean>(!hasLoadedRequesterTasksOnce && !cachedRequesterTasks[cacheKey]);
 
-  const fetchTasks = useCallback(async () => {
-    setLoading(true);
+  const fetchTasks = useCallback(async (silent = false) => {
+    const currentKey = activeFilter || "all";
+    if (!silent && !cachedRequesterTasks[currentKey]) {
+      setLoading(true);
+    }
     try {
       const params = new URLSearchParams({ role: "requester" });
       if (activeFilter) params.set("status", activeFilter);
 
       const res = await fetch(`/api/users/me/tasks?${params.toString()}`);
       if (!res.ok) {
-        setTasks([]);
+        if (!cachedRequesterTasks[currentKey]) setTasks([]);
         return;
       }
       const data = await res.json().catch(() => ({}));
       if (data.success && Array.isArray(data.data)) {
+        cachedRequesterTasks[currentKey] = data.data;
+        hasLoadedRequesterTasksOnce = true;
         setTasks(data.data);
       }
     } catch {
@@ -301,8 +312,14 @@ export default function KelolaTaskPage() {
   }, [activeFilter]);
 
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    const currentKey = activeFilter || "all";
+    if (cachedRequesterTasks[currentKey]) {
+      setTasks(cachedRequesterTasks[currentKey]);
+      fetchTasks(true); // silent revalidate
+    } else {
+      fetchTasks(false);
+    }
+  }, [fetchTasks, activeFilter]);
 
   const filteredTasks = tasks;
 
@@ -379,7 +396,10 @@ export default function KelolaTaskPage() {
           <div className="overflow-x-auto pb-1 no-scrollbar">
             <Tabs
               value={activeFilter ?? "all"}
-              onValueChange={(val) => setActiveFilter(val === "all" ? null : val)}
+              onValueChange={(val) => {
+                triggerHaptic("light");
+                setActiveFilter(val === "all" ? null : val);
+              }}
               variant="segment"
             >
               <TabsList className="w-fit flex-nowrap">

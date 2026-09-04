@@ -33,8 +33,7 @@ export function LandingNavbar() {
       return () => {
         subscription.unsubscribe();
       };
-    } catch (e) {
-      console.error("[LandingNavbar] Auth check error:", e);
+    } catch {
       setIsLoggedIn(false);
     }
   }, []);

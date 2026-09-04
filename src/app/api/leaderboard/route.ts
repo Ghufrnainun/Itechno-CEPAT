@@ -69,11 +69,18 @@ export async function GET(request: NextRequest) {
     const topUsers = results.filter(r => r.rank <= limit);
     const currentUserStats = currentUserId ? results.find(r => r.id_user === currentUserId) : null;
 
-    return NextResponse.json({
-      success: true,
-      data: topUsers,
-      currentUser: currentUserStats || null,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: topUsers,
+        currentUser: currentUserStats || null,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
+        },
+      }
+    );
   } catch (error) {
     console.error("[GET /api/leaderboard] Error:", error);
     return NextResponse.json(

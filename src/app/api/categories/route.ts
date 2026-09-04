@@ -15,10 +15,17 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json({
-      success: true,
-      data: categories
-    })
+    return NextResponse.json(
+      {
+        success: true,
+        data: categories,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+        },
+      }
+    );
   } catch (error) {
     console.error('[GET /api/categories] Error:', error)
     return NextResponse.json(
