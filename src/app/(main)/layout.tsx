@@ -96,13 +96,15 @@ export function useCurrentRole() {
   return context;
 }
 
+let cachedLayoutUser: UserProfileData | null = null;
+
 export default function MainAppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const [role, setRoleState] = useState<Role>("worker");
-  const [user, setUser] = useState<UserProfileData | null>(null);
+  const [user, setUser] = useState<UserProfileData | null>(cachedLayoutUser);
 
   // Initialize online presence pinging (default 3 menit dengan cooldown 2 menit)
   usePresencePing();
@@ -138,6 +140,7 @@ export default function MainAppLayout({
               window.location.href = '/admin/dashboard';
               return;
             }
+            cachedLayoutUser = json.data;
             setUser(json.data);
           }
         }

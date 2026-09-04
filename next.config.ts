@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     cpus: 4,
+    optimizePackageImports: ["lucide-react", "date-fns"],
   },
   images: {
     dangerouslyAllowSVG: true,

@@ -21,6 +21,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { triggerHaptic } from "@/lib/utils/haptics";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -166,23 +167,31 @@ const WORKER_FILTERS: { label: string; appStatus: string | null; icon: React.Com
   { label: "Ditolak", appStatus: "rejected", icon: XCircle },
 ];
 
+// Module-level in-memory cache for instant navigation
+let cachedWorkerTasks: WorkerTask[] = [];
+let hasLoadedWorkerTasksOnce = false;
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function RiwayatPage() {
-  const [tasks, setTasks] = useState<WorkerTask[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [tasks, setTasks] = useState<WorkerTask[]>(cachedWorkerTasks);
+  const [loading, setLoading] = useState(!hasLoadedWorkerTasksOnce && cachedWorkerTasks.length === 0);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
-  const fetchTasks = useCallback(async () => {
-    setLoading(true);
+  const fetchTasks = useCallback(async (silent = false) => {
+    if (!silent && cachedWorkerTasks.length === 0) {
+      setLoading(true);
+    }
     try {
       const res = await fetch(`/api/users/me/tasks?role=worker`);
       if (!res.ok) {
-        setTasks([]);
+        if (cachedWorkerTasks.length === 0) setTasks([]);
         return;
       }
       const data = await res.json().catch(() => ({}));
       if (data.success && Array.isArray(data.data)) {
+        cachedWorkerTasks = data.data;
+        hasLoadedWorkerTasksOnce = true;
         setTasks(data.data);
       }
     } catch {
@@ -193,7 +202,12 @@ export default function RiwayatPage() {
   }, []);
 
   useEffect(() => {
-    fetchTasks();
+    if (cachedWorkerTasks.length > 0) {
+      setTasks(cachedWorkerTasks);
+      fetchTasks(true); // silent background revalidate
+    } else {
+      fetchTasks(false);
+    }
   }, [fetchTasks]);
 
   const filteredTasks = activeFilter
@@ -250,7 +264,10 @@ export default function RiwayatPage() {
               return (
                 <button
                   key={f.label}
-                  onClick={() => setActiveFilter(f.appStatus)}
+                  onClick={() => {
+                    triggerHaptic("light");
+                    setActiveFilter(f.appStatus);
+                  }}
                   className={cn(
                     "flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors duration-150 cursor-pointer shrink-0",
                     activeFilter === f.appStatus

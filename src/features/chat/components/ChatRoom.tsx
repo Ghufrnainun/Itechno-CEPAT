@@ -218,7 +218,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
         setIsOnline(isOtherUserOnline);
       })
       .on(
-        'postgres_changes',
+        'postgres_changes' as any,
         {
           event: 'INSERT',
           schema: 'public',
@@ -266,7 +266,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
         }
       )
       .on(
-        'postgres_changes',
+        'postgres_changes' as any,
         {
           event: 'UPDATE',
           schema: 'public',

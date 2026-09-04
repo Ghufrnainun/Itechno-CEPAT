@@ -91,7 +91,7 @@ export const notificationService = {
       type: { notIn: adminTypes },
     }
 
-    const [notifications, total, unreadCount, totalCount] = await Promise.all([
+    const [notifications, total, unreadCount, separateTotal] = await Promise.all([
       prisma.notifications.findMany({
         where: whereCondition,
         orderBy: { created_at: 'desc' },
@@ -102,10 +102,12 @@ export const notificationService = {
       prisma.notifications.count({
         where: unreadWhereCondition,
       }),
-      prisma.notifications.count({
-        where: allWhereCondition,
-      }),
+      unreadOnly
+        ? prisma.notifications.count({ where: allWhereCondition })
+        : Promise.resolve(null),
     ])
+
+    const totalCount = unreadOnly ? (separateTotal ?? total) : total
 
     return {
       notifications: notifications.map((n) => ({

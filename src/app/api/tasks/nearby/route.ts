@@ -9,6 +9,7 @@ const searchSchema = z.object({
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
   radius: z.coerce.number().min(1).max(50000).default(2000), // Default 2km
+  limit: z.coerce.number().min(1).max(100).default(20), // Default 20
   q: z.string().nullish(),
 })
 
@@ -44,9 +45,10 @@ export async function GET(request: NextRequest) {
     const lat = url.searchParams.get('lat')
     const lng = url.searchParams.get('lng')
     const radius = url.searchParams.get('radius')
+    const limit = url.searchParams.get('limit')
     const q = url.searchParams.get('q')
 
-    const parsed = searchSchema.safeParse({ lat, lng, radius, q })
+    const parsed = searchSchema.safeParse({ lat, lng, radius, limit, q })
     
     if (!parsed.success) {
       return NextResponse.json(
@@ -55,7 +57,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { lat: latitude, lng: longitude, radius: radiusMeters, q: query } = parsed.data
+    const { lat: latitude, lng: longitude, radius: radiusMeters, limit: queryLimit, q: query } = parsed.data
     const userCondition = userId 
       ? Prisma.sql`AND t.id_requester != ${userId}` 
       : Prisma.empty
@@ -88,6 +90,7 @@ export async function GET(request: NextRequest) {
           ${radiusMeters}
         )
         ${searchCondition}
+      LIMIT ${queryLimit}
     `
 
     return NextResponse.json({

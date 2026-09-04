@@ -19,13 +19,25 @@ import {
   BellOff,
   ChevronRight,
   Loader2,
+  RotateCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { triggerHaptic } from "@/lib/utils/haptics";
 
 export default function NotificationsPage() {
   const router = useRouter();
   const { showToast } = useToast();
-  const { notifications, unreadCount, totalCount, readCount, isLoading, markAsRead, markAllAsRead } = useNotifications();
+  const {
+    notifications,
+    unreadCount,
+    totalCount,
+    readCount,
+    isLoading,
+    isRefreshing,
+    refetch,
+    markAsRead,
+    markAllAsRead,
+  } = useNotifications();
   const [filterTab, setFilterTab] = useState<"all" | "unread" | "read">("all");
 
   const handleMarkAllAsRead = async () => {
@@ -128,6 +140,7 @@ export default function NotificationsPage() {
   };
 
   const handleNotificationClick = async (notif: NotificationItem) => {
+    triggerHaptic("light");
     if (!notif.isRead) {
       await markAsRead(notif.id);
     }
@@ -157,81 +170,94 @@ export default function NotificationsPage() {
             Tinjau pembaruan status lamaran, ulasan, dan transfer poin secara real-time.
           </p>
         </div>
-        {unreadCount > 0 && (
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleMarkAllAsRead}
-            icon={<CheckCheck className="w-4 h-4" />}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic("light");
+              refetch(true);
+            }}
+            disabled={isRefreshing}
+            className="p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer disabled:opacity-50"
+            title="Muat ulang notifikasi"
+            aria-label="Muat ulang notifikasi"
           >
-            Tandai Dibaca
-          </Button>
-        )}
-      </header>
-
-      {/* Sticky Filter Navigation Tabs */}
-      <div className="shrink-0 bg-surface-container-lowest border-b border-card-border z-10">
-        <div className="max-w-4xl mx-auto w-full px-3.5 sm:px-6">
-          <div className="grid grid-cols-3 sm:flex sm:items-center sm:gap-6 w-full -mb-[1px]">
-            <button
-              type="button"
-              onClick={() => setFilterTab("all")}
-              className={cn(
-                "tab-underline font-bold text-[11px] sm:text-xs py-2.5 px-1 sm:px-3 flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 cursor-pointer transition-colors duration-150 border-b-2 text-center sm:text-left",
-                filterTab === "all"
-                  ? "text-primary border-b-primary active"
-                  : "text-on-surface-variant hover:text-on-surface border-b-transparent"
-              )}
+            <RotateCw className={cn("w-4 h-4", isRefreshing && "animate-spin text-primary")} />
+          </button>
+          {unreadCount > 0 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleMarkAllAsRead}
+              icon={<CheckCheck className="w-4 h-4" />}
             >
-              <span className="truncate">Semua</span>
-              <span className="text-[10px] sm:text-xs font-mono opacity-80 tabular-nums shrink-0">
-                ({displayTotal})
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterTab("unread")}
-              className={cn(
-                "tab-underline font-bold text-[11px] sm:text-xs py-2.5 px-1 sm:px-3 flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 cursor-pointer transition-colors duration-150 border-b-2 text-center sm:text-left",
-                filterTab === "unread"
-                  ? "text-primary border-b-primary active"
-                  : "text-on-surface-variant hover:text-on-surface border-b-transparent"
-              )}
-            >
-              <span className="truncate">Belum Dibaca</span>
-              {displayUnread > 0 ? (
-                <span className="bg-primary text-on-primary text-[9px] sm:text-[10px] font-bold px-1.5 py-0.2 rounded-md font-mono tabular-nums shrink-0">
-                  {displayUnread}
-                </span>
-              ) : (
-                <span className="text-[10px] sm:text-xs font-mono opacity-80 tabular-nums shrink-0">(0)</span>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterTab("read")}
-              className={cn(
-                "tab-underline font-bold text-[11px] sm:text-xs py-2.5 px-1 sm:px-3 flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 cursor-pointer transition-colors duration-150 border-b-2 text-center sm:text-left",
-                filterTab === "read"
-                  ? "text-primary border-b-primary active"
-                  : "text-on-surface-variant hover:text-on-surface border-b-transparent"
-              )}
-            >
-              <span className="truncate">Sudah Dibaca</span>
-              <span className="text-[10px] sm:text-xs font-mono opacity-80 tabular-nums shrink-0">
-                ({displayRead})
-              </span>
-            </button>
-          </div>
+              Tandai Dibaca
+            </Button>
+          )}
         </div>
-      </div>
+      </header>
 
       {/* Main Content with Scroll Container & Clearance */}
       <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar [scrollbar-gutter:stable]">
         <div className="max-w-4xl mx-auto w-full p-4 md:p-6 lg:p-8 flex flex-col gap-5 pb-36 lg:pb-12">
+          {/* Filter Navigation Tabs */}
+          <div className="sticky top-0 z-10 bg-surface/95 backdrop-blur-xs -mt-1 pt-1 pb-2 sm:static sm:bg-transparent sm:backdrop-blur-none sm:mt-0 sm:pt-0 border-b border-card-border flex items-center justify-between">
+            <div className="grid grid-cols-3 sm:flex sm:items-center gap-1 sm:gap-3 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic("light");
+                  setFilterTab("all");
+                }}
+                className={cn(
+                  "tab-underline font-bold !font-sans text-[11px] sm:!font-mono sm:text-xs py-1.5 px-1 sm:px-2 flex items-center justify-center sm:justify-start gap-1 cursor-pointer transition-colors duration-150 text-center sm:text-left",
+                  filterTab === "all" ? "text-primary active" : "text-on-surface-variant hover:text-on-surface"
+                )}
+              >
+                <span>Semua</span>
+                <span className="font-mono text-[10px] sm:text-xs tabular-nums">
+                  ({displayTotal})
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic("light");
+                  setFilterTab("unread");
+                }}
+                className={cn(
+                  "tab-underline font-bold !font-sans text-[11px] sm:!font-mono sm:text-xs py-1.5 px-1 sm:px-2 flex items-center justify-center sm:justify-start gap-1 cursor-pointer transition-colors duration-150 text-center sm:text-left",
+                  filterTab === "unread" ? "text-primary active" : "text-on-surface-variant hover:text-on-surface"
+                )}
+              >
+                <span>Belum Dibaca</span>
+                {displayUnread > 0 && (
+                  <span className="bg-primary text-on-primary text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md font-mono tabular-nums">
+                    {displayUnread}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic("light");
+                  setFilterTab("read");
+                }}
+                className={cn(
+                  "tab-underline font-bold !font-sans text-[11px] sm:!font-mono sm:text-xs py-1.5 px-1 sm:px-2 flex items-center justify-center sm:justify-start gap-1 cursor-pointer transition-colors duration-150 text-center sm:text-left",
+                  filterTab === "read" ? "text-primary active" : "text-on-surface-variant hover:text-on-surface"
+                )}
+              >
+                <span>Sudah Dibaca</span>
+                <span className="font-mono text-[10px] sm:text-xs tabular-nums">
+                  ({displayRead})
+                </span>
+              </button>
+            </div>
+          </div>
 
           {/* Notifications Card List */}
-          <div className="bg-surface-container-lowest border border-card-border rounded-xl divide-y divide-card-border overflow-hidden shadow-xs">
+          <div className="bg-surface-container-lowest border border-card-border rounded-xl divide-y divide-card-border overflow-hidden shadow-xs animate-in fade-in-50 duration-200">
             {isLoading ? (
               <div className="p-12 text-center flex flex-col items-center justify-center gap-3">
                 <Loader2 className="w-7 h-7 text-primary animate-spin" />
@@ -246,6 +272,19 @@ export default function NotificationsPage() {
                 <p className="font-body-sm text-xs text-on-surface-variant max-w-xs">
                   {filterTab === "unread" ? "Semua notifikasi sudah Anda baca." : "Tidak ada notifikasi yang sesuai dengan filter ini."}
                 </p>
+                {filterTab !== "all" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 text-xs"
+                    onClick={() => {
+                      triggerHaptic("light");
+                      setFilterTab("all");
+                    }}
+                  >
+                    Lihat Semua Notifikasi
+                  </Button>
+                )}
               </div>
             ) : (
               filteredNotifications.map((notif: NotificationItem) => (

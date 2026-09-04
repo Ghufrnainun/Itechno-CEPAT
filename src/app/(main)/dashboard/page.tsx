@@ -38,22 +38,30 @@ import {
 import { cn } from "@/lib/utils";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 
+// Module-level in-memory cache for instant dashboard transitions
+let cachedTasks: any[] = [];
+let cachedRecommendedTasks: any[] = [];
+let cachedFeaturedTask: any | null = null;
+let cachedMyActiveTasks: any[] = [];
+let cachedScheduledCount = 0;
+let hasDashboardLoadedOnce = false;
+
 export default function DashboardPage() {
   const { role, user, toggleRole } = useCurrentRole();
   const { coords } = useGeolocation();
   const { canInstall, promptInstall } = usePwaInstall();
 
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [recommendedTasks, setRecommendedTasks] = useState<any[]>([]);
-  const [featuredTask, setFeaturedTask] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [myActiveTasks, setMyActiveTasks] = useState<any[]>([]);
-  const [scheduledCount, setScheduledCount] = useState<number>(0);
-  const hasLoadedOnce = useRef(false);
+  const [tasks, setTasks] = useState<any[]>(cachedTasks);
+  const [recommendedTasks, setRecommendedTasks] = useState<any[]>(cachedRecommendedTasks);
+  const [featuredTask, setFeaturedTask] = useState<any | null>(cachedFeaturedTask);
+  const [loading, setLoading] = useState(!hasDashboardLoadedOnce);
+  const [myActiveTasks, setMyActiveTasks] = useState<any[]>(cachedMyActiveTasks);
+  const [scheduledCount, setScheduledCount] = useState<number>(cachedScheduledCount);
+  const hasLoadedOnce = useRef(hasDashboardLoadedOnce);
 
   useEffect(() => {
     async function loadData() {
-      if (!hasLoadedOnce.current) {
+      if (!hasLoadedOnce.current && !hasDashboardLoadedOnce) {
         setLoading(true);
       }
       try {
@@ -68,43 +76,56 @@ export default function DashboardPage() {
         feedUrl.searchParams.append("limit", "6");
         feedUrl.searchParams.append("sort", "distance_asc");
 
-        const [mapRes, feedRes, activityRes, schedRes] = await Promise.all([
-          fetch(mapUrl.toString(), { cache: "no-store" }),
-          fetch(feedUrl.toString(), { cache: "no-store" }),
-          fetch("/api/users/me/tasks?role=worker", { cache: "no-store" }),
-          fetch("/api/tasks/scheduled", { cache: "no-store" }).catch(() => null),
-        ]);
+        // Fetch all in parallel, but handle individually for faster progressive rendering
+        const mapPromise = fetch(mapUrl.toString(), { cache: "no-store" })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((mapJson) => {
+            if (mapJson?.data) {
+              setTasks(mapJson.data);
+              cachedTasks = mapJson.data;
+            }
+          })
+          .catch(() => null);
 
-        if (mapRes.ok) {
-          const mapJson = await mapRes.json().catch(() => ({}));
-          setTasks(mapJson.data || []);
-        }
+        const feedPromise = fetch(feedUrl.toString(), { cache: "no-store" })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((feedJson) => {
+            if (feedJson?.data && feedJson.data.length > 0) {
+              setFeaturedTask(feedJson.data[0]);
+              cachedFeaturedTask = feedJson.data[0];
+              setRecommendedTasks(feedJson.data.slice(1, 5));
+              cachedRecommendedTasks = feedJson.data.slice(1, 5);
+            }
+          })
+          .catch(() => null);
 
-        if (feedRes.ok) {
-          const feedJson = await feedRes.json().catch(() => ({}));
-          if (feedJson.data && feedJson.data.length > 0) {
-            setFeaturedTask(feedJson.data[0]);
-            setRecommendedTasks(feedJson.data.slice(1, 5));
-          }
-        }
+        const activityPromise = fetch("/api/users/me/tasks?role=worker", { cache: "no-store" })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((activityJson) => {
+            if (activityJson?.success && Array.isArray(activityJson.data)) {
+              setMyActiveTasks(activityJson.data);
+              cachedMyActiveTasks = activityJson.data;
+            }
+          })
+          .catch(() => null);
 
-        if (activityRes.ok) {
-          const activityJson = await activityRes.json().catch(() => ({}));
-          if (activityJson.success && Array.isArray(activityJson.data)) {
-            setMyActiveTasks(activityJson.data);
-          }
-        }
+        const schedPromise = fetch("/api/tasks/scheduled?count_only=true", { cache: "no-store" })
+          .then((res) => (res?.ok ? res.json() : null))
+          .then((schedJson) => {
+            if (schedJson?.success) {
+              const count = typeof schedJson.count === "number" ? schedJson.count : (schedJson.data?.length ?? 0);
+              setScheduledCount(count);
+              cachedScheduledCount = count;
+            }
+          })
+          .catch(() => null);
 
-        if (schedRes && schedRes.ok) {
-          const schedJson = await schedRes.json().catch(() => ({}));
-          if (schedJson.success && Array.isArray(schedJson.data)) {
-            setScheduledCount(schedJson.data.length);
-          }
-        }
+        await Promise.allSettled([mapPromise, feedPromise, activityPromise, schedPromise]);
       } catch (err) {
         console.error("Dashboard data load error:", err);
       } finally {
         hasLoadedOnce.current = true;
+        hasDashboardLoadedOnce = true;
         setLoading(false);
       }
     }
@@ -346,7 +367,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {loading ? (
+            {loading && !user ? (
               <Skeleton className="h-10 w-2/3 rounded-lg mb-4" />
             ) : (
               <div className="text-3xl sm:text-4xl font-extrabold text-on-surface tracking-tight font-mono tabular-nums mb-3">

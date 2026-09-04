@@ -17,7 +17,7 @@ if (typeof window !== "undefined") {
       animate: "shimmer",
       shimmerColor: "oklch(0.97 0.005 155 / 0.9)",
       darkShimmerColor: "oklch(0.32 0.005 155 / 0.9)",
-      speed: "1.8s",
+      speed: "0.85s",
       transition: true,
     });
   } catch {
