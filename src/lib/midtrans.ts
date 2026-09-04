@@ -99,6 +99,8 @@ export async function createSnapTransaction(params: {
  * SHA512(order_id + status_code + gross_amount + server_key)
  */
 export function verifySignatureKey(notification: MidtransNotification): boolean {
+  if (!notification.signature_key) return false
+
   const crypto = require('crypto')
   const expectedSignature = crypto
     .createHash('sha512')
@@ -110,7 +112,13 @@ export function verifySignatureKey(notification: MidtransNotification): boolean 
     )
     .digest('hex')
 
-  return expectedSignature === notification.signature_key
+  const expectedBuf = Buffer.from(expectedSignature, 'utf-8')
+  const actualBuf = Buffer.from(notification.signature_key, 'utf-8')
+
+  return (
+    expectedBuf.length === actualBuf.length &&
+    crypto.timingSafeEqual(expectedBuf, actualBuf)
+  )
 }
 
 /**

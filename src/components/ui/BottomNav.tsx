@@ -122,7 +122,8 @@ function BottomNavContent({ role }: BottomNavProps) {
       </Link>
 
       <Link
-        href="/profile/me"
+        href={user?.id_user ? `/profile/${user.id_user}` : "/profile/me"}
+        prefetch={true}
         aria-label="Profil Saya"
         className={cn(
           "flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 rounded-lg text-[11px] font-medium transition-[color,transform] duration-150 active:scale-90 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none",

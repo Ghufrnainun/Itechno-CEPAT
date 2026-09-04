@@ -5,18 +5,25 @@ import Link from "next/link";
 import { Task } from "@/types/database";
 import { SdgBadge } from "@/components/ui/SdgBadge";
 import { formatCurrency, formatDistance } from "@/lib/utils/format";
-import { Navigation, Gavel, Calendar, Flag } from "lucide-react";
+import { Navigation, Gavel, Calendar, Flag, Bookmark } from "lucide-react";
 import { ReportModal } from "@/components/ui/ReportModal";
 import { cn } from "@/lib/utils";
 
 interface TaskCardProps {
   task: Task & { distance?: number };
   isSelected?: boolean;
+  isSaved?: boolean;
   onClick?: () => void;
   className?: string;
 }
 
-export function TaskCard({ task, isSelected = false, onClick, className }: TaskCardProps) {
+export const TaskCard = React.memo(function TaskCard({
+  task,
+  isSelected = false,
+  isSaved = false,
+  onClick,
+  className,
+}: TaskCardProps) {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   const cardBody = (
@@ -31,7 +38,7 @@ export function TaskCard({ task, isSelected = false, onClick, className }: TaskC
         }
       }}
       className={cn(
-        "group p-4 sm:p-5 feed-card w-full rounded-2xl bg-surface-container-lowest border border-card-border/80 shadow-2xs animate-card-cascade",
+        "group p-4 sm:p-5 feed-card w-full rounded-2xl bg-surface-container-lowest border border-card-border/80 shadow-2xs",
         "transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out flex flex-col justify-between min-h-[140px]",
         "hover:border-primary/40 hover:shadow-xs active:scale-[0.985] active:brightness-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer",
         isSelected && "border-primary bg-primary/5 shadow-xs ring-1 ring-primary/20",
@@ -49,12 +56,19 @@ export function TaskCard({ task, isSelected = false, onClick, className }: TaskC
               </span>
             )}
           </h3>
-          {task.distance !== undefined && (
-            <span className="font-mono text-xs font-semibold text-primary tabular-nums shrink-0 flex items-center gap-1 mt-0.5 bg-primary/5 px-2 py-0.5 rounded-lg border border-primary/15">
-              <Navigation className="w-3 h-3 fill-primary/20" />
-              {formatDistance(task.distance)}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+            {isSaved && (
+              <span title="Tugas Tersimpan" className="text-primary p-1 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Bookmark className="w-3 h-3 fill-primary text-primary" />
+              </span>
+            )}
+            {task.distance !== undefined && (
+              <span className="font-mono text-xs font-semibold text-primary tabular-nums shrink-0 flex items-center gap-1 bg-primary/5 px-2 py-0.5 rounded-lg border border-primary/15">
+                <Navigation className="w-3 h-3 fill-primary/20" />
+                {formatDistance(task.distance)}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Description */}
@@ -106,4 +120,4 @@ export function TaskCard({ task, isSelected = false, onClick, className }: TaskC
       />
     </>
   );
-}
+});

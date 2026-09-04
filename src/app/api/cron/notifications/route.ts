@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { notificationService } from '@/services/notification.service'
 import { taskService } from '@/services/task.service'
@@ -234,9 +234,21 @@ export async function GET(request: NextRequest) {
     console.error('[Cron] Auto-purge error:', error)
   }
 
+  // ─── 5. Auto-Purge XPLog Lama (> 1 tahun) ──────────────────────────────────
+  let purgedXpLogsCount = 0
+  try {
+    const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
+    const purgedXp = await prisma.xPLog.deleteMany({
+      where: { created_at: { lt: oneYearAgo } },
+    })
+    purgedXpLogsCount = purgedXp.count
+  } catch (error) {
+    console.error('[Cron] XPLog purge error:', error)
+  }
+
   return NextResponse.json({
     success: true,
     message: 'Cron notifications processed.',
-    data: { ...results, purgedOldNotifications: purgedCount },
+    data: { ...results, purgedOldNotifications: purgedCount, purgedOldXPLogs: purgedXpLogsCount },
   })
 }

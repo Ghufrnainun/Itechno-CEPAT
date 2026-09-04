@@ -127,6 +127,11 @@ model Task {
   applicants      TaskApplicants[]
   requirements    TaskRequirements[]
   saved_by        SavedTask[]
+
+  @@index([id_requester])
+  @@index([id_status_task])
+  @@index([id_category])
+  @@index([created_at(sort: Desc)])
 }
 
 /// Tugas yang disimpan (bookmark) oleh user — muncul di halaman "Tugas Tersimpan".
@@ -151,6 +156,8 @@ model Transactions {
   deskripsi       String?
   created_at      DateTime            @default(now())
   user            User                @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+
+  @@index([id_user, created_at(sort: Desc)])
 }
 
 model PortfolioItem {
@@ -162,12 +169,16 @@ model PortfolioItem {
   related_task  String?  // optional link ke id_tasks
   created_at    DateTime @default(now())
   user          User     @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+
+  @@index([id_user, created_at(sort: Desc)])
 }
 
 model SkillsUser {
   id_skills_user       String       @id @default(uuid())
   id_user              String
   id_skills_master     String
+  certificate_url      String?
+  deskripsi_pengalaman String?
   skills_master        SkillsMaster @relation(fields: [id_skills_master], references: [id_skill_master], onDelete: Cascade)
   user                 User         @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
 
@@ -184,6 +195,9 @@ model Notifications {
   is_read          Boolean  @default(false)
   created_at       DateTime @default(now())
   user             User     @relation(fields: [user_id], references: [id_user], onDelete: Cascade)
+
+  @@index([user_id, is_read])
+  @@index([created_at(sort: Desc)])
 }
 
 model TaskRequirements {
@@ -209,6 +223,11 @@ model TaskApplicants {
   status_applicant          StatusTaskApplicants @relation(fields: [id_status_task_applicants], references: [id_status_task_applicants])
   task                      Task                 @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)
   worker                    User                 @relation("WorkerApplications", fields: [id_worker], references: [id_user], onDelete: Cascade)
+
+  @@index([id_tasks, id_worker])
+  @@index([id_tasks])
+  @@index([id_worker])
+  @@index([id_status_task_applicants])
 }
 
 model Reviews {
@@ -223,6 +242,9 @@ model Reviews {
   ratee      User     @relation("RateeReviews", fields: [id_ratee], references: [id_user], onDelete: Cascade)
   rater      User     @relation("RaterReviews", fields: [id_rater], references: [id_user], onDelete: Cascade)
   task       Task     @relation(fields: [id_tasks], references: [id_tasks], onDelete: Cascade)
+
+  @@index([id_ratee, created_at(sort: Desc)])
+  @@index([id_rater])
 }
 
 model ChatRoom {
@@ -253,6 +275,8 @@ model Message {
   created_at              DateTime @default(now())
   chat_room               ChatRoom @relation(fields: [id_chat_room], references: [id_chat_room], onDelete: Cascade)
   sender                  User     @relation("UserMessages", fields: [id_sender], references: [id_user], onDelete: Cascade)
+
+  @@index([id_chat_room, created_at(sort: Asc)])
 }
 
 model Badge {
@@ -294,6 +318,8 @@ model XPLog {
   source      String?  
   created_at  DateTime @default(now())
   user        User     @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+
+  @@index([id_user, created_at(sort: Desc)])
 }
 
 model PaymentTransaction {
@@ -309,6 +335,9 @@ model PaymentTransaction {
   created_at        DateTime      @default(now())
   updated_at        DateTime      @updatedAt
   user              User          @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+
+  @@index([id_user])
+  @@index([status])
 }
 
 enum PaymentStatus {

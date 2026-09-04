@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { prisma } from '@/lib/prisma'
 import { registerSchema, formatZodErrors } from '@/lib/validations'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
@@ -116,8 +117,11 @@ export async function POST(request: NextRequest) {
     } catch (prismaError) {
       // Cleanup: hapus Supabase Auth user agar tidak menjadi orphan
       try {
-        await supabase.auth.admin.deleteUser(authData.user.id)
-      } catch (_) { /* best-effort cleanup */ }
+        const adminClient = createAdminClient()
+        await adminClient.auth.admin.deleteUser(authData.user.id)
+      } catch (cleanErr) {
+        console.error('[register] Cleanup orphan auth user error:', cleanErr)
+      }
       throw prismaError
     }
 

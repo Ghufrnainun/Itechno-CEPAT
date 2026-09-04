@@ -22,7 +22,10 @@ export async function GET(
       include: {
         role: true,
         skills_user: {
-          include: {
+          select: {
+            id_skills_user: true,
+            id_user: true,
+            id_skills_master: true,
             skills_master: true,
           },
         },

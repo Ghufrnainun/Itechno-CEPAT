@@ -388,15 +388,18 @@ function OnboardingContent() {
     <main className="min-h-screen w-full flex flex-col bg-white font-sans">
       {/* ── TOP NAV — logo only, no auth links ── */}
       <header className="flex items-center justify-center px-6 py-4 border-b border-outline-variant/30">
-        <Link href="/" aria-label="Beranda">
+        <Link href="/" aria-label="Beranda" className="flex items-center gap-2">
           <Image
             src="/logo.svg"
             alt="CEPAT"
-            width={100}
-            height={28}
-            className="logo-img h-7 w-auto"
+            width={32}
+            height={32}
+            className="h-8 w-8 object-contain"
             priority
           />
+          <span className="font-headline font-extrabold text-xl text-primary tracking-tight">
+            CEPAT
+          </span>
         </Link>
       </header>
 

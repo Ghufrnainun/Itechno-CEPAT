@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
             }
           },
           orderBy: { created_at: 'desc' },
-          take: 100, // fetch enough to compute unread and get the latest non-cleared message
+          take: 1, // Hanya ambil pesan terakhir untuk preview
         }
       },
       orderBy: {
@@ -66,30 +66,43 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    const roomIds = chatRooms.map((r) => r.id_chat_room);
+
+    // Agregasi unread count langsung via database index tanpa memuat seluruh pesan ke RAM
+    const unreadGroups = roomIds.length > 0 ? await prisma.message.groupBy({
+      by: ['id_chat_room'],
+      where: {
+        id_chat_room: { in: roomIds },
+        id_sender: { not: currentUser.id_user },
+        is_read: false,
+        NOT: { deleted_by: { has: currentUser.id_user } },
+      },
+      _count: { _all: true },
+    }) : [];
+
+    const unreadMap = new Map<string, number>();
+    for (const g of unreadGroups) {
+      unreadMap.set(g.id_chat_room, g._count._all);
+    }
+
     // Process each room to compute unread counts and filter cleared messages
     const processedRooms = chatRooms.reduce((acc, room) => {
       const isRequester = room.id_requester === currentUser.id_user;
       const clearedAt = isRequester ? room.cleared_at_requester : room.cleared_at_worker;
 
-      // Filter messages that are newer than cleared_at
-      const validMessages = room.messages.filter(msg => {
-        if (!clearedAt) return true;
-        return msg.created_at > clearedAt;
-      });
+      const latestMsg = room.messages[0];
+      const hasValidMessage = latestMsg && (!clearedAt || latestMsg.created_at > clearedAt);
 
-      // HIDE THE ROOM if it has been cleared and there are no new messages
-      if (clearedAt && validMessages.length === 0) {
+      // Sembunyikan kamar jika telah dibersihkan (cleared) dan belum ada pesan baru
+      if (clearedAt && !hasValidMessage) {
         return acc;
       }
 
-      // Calculate unread count (messages from OTHER user that are unread)
-      const unreadCount = validMessages.filter(msg => 
-        msg.id_sender !== currentUser.id_user && msg.is_read === false
-      ).length;
+      const unreadCount = hasValidMessage ? (unreadMap.get(room.id_chat_room) || 0) : 0;
 
       acc.push({
         ...room,
-        messages: validMessages.slice(0, 1), // Only keep the latest valid message for preview
+        messages: hasValidMessage ? [latestMsg] : [],
         unreadCount
       });
       return acc;

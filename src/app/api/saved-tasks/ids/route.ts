@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 /**
  * GET /api/saved-tasks/ids?ids=a,b,c
  * Mengembalikan daftar id_tasks yang sudah disimpan user login — buat cek status bookmark bulk.
@@ -51,10 +54,19 @@ export async function GET(request: NextRequest) {
       select: { id_tasks: true },
     });
 
-    return NextResponse.json({
-      success: true,
-      data: saved.map((s) => s.id_tasks),
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: saved.map((s) => s.id_tasks),
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    );
   } catch (error) {
     console.error("[GET /api/saved-tasks/ids] Error:", error);
     return NextResponse.json(

@@ -199,7 +199,7 @@ function OAuthConsentContent() {
           </div>
 
           <div className="w-12 h-12 rounded-xl bg-surface-container border border-card-border flex items-center justify-center shadow-xs">
-            <Image src="/logo.svg" alt="CEPAT" width={38} height={32} className="object-contain" />
+            <Image src="/logo.svg" alt="CEPAT" width={32} height={32} className="w-8 h-8 object-contain" />
           </div>
         </div>
 

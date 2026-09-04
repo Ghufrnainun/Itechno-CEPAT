@@ -1259,7 +1259,16 @@ export const taskService = {
       })();
 
       if (acceptedWorkers.length > 0) {
-        await prisma.$transaction(async (tx) => {
+        const txResult = await prisma.$transaction(async (tx) => {
+          // 1. Kunci baris Task dengan FOR UPDATE untuk mencegah race condition / double payout
+          const lockedTask = await tx.$queryRaw<Array<{ id_status_task: string }>>`
+            SELECT id_status_task FROM "Task" WHERE id_tasks = ${taskId} FOR UPDATE
+          `;
+          const currentDbStatusId = lockedTask[0]?.id_status_task;
+          if (currentDbStatusId === newStatusId) {
+            return { alreadyHandled: true };
+          }
+
           for (const workerApp of acceptedWorkers) {
             const payoutAmount =
               typeof slotHeldMap[workerApp.id_task_applicants] === 'number'
@@ -1307,7 +1316,13 @@ export const taskService = {
             where: { id_tasks: taskId },
             data: updateData,
           });
+
+          return { alreadyHandled: false };
         });
+
+        if (txResult?.alreadyHandled) {
+          return { success: true, message: 'Task sudah diselesaikan sebelumnya.' };
+        }
 
         // Notifications & Gamification hooks (post-transaction)
         for (const workerApp of acceptedWorkers) {
@@ -1338,9 +1353,17 @@ export const taskService = {
           }
         }
       } else {
-        await prisma.task.update({
-          where: { id_tasks: taskId },
-          data: updateData,
+        await prisma.$transaction(async (tx) => {
+          const lockedTask = await tx.$queryRaw<Array<{ id_status_task: string }>>`
+            SELECT id_status_task FROM "Task" WHERE id_tasks = ${taskId} FOR UPDATE
+          `;
+          if (lockedTask[0]?.id_status_task === newStatusId) {
+            return;
+          }
+          await tx.task.update({
+            where: { id_tasks: taskId },
+            data: updateData,
+          });
         });
       }
     } else if (newStatus === 'cancelled') {
@@ -1371,7 +1394,15 @@ export const taskService = {
         totalRefund += unfilledSlots * task.kompensasi;
       }
 
-      await prisma.$transaction(async (tx) => {
+      const txResult = await prisma.$transaction(async (tx) => {
+        const lockedTask = await tx.$queryRaw<Array<{ id_status_task: string }>>`
+          SELECT id_status_task FROM "Task" WHERE id_tasks = ${taskId} FOR UPDATE
+        `;
+        const currentDbStatusId = lockedTask[0]?.id_status_task;
+        if (currentDbStatusId === newStatusId) {
+          return { alreadyHandled: true };
+        }
+
         if (totalRefund > 0) {
           await tx.user.update({
             where: { id_user: task.id_requester },
@@ -1393,7 +1424,13 @@ export const taskService = {
           where: { id_tasks: taskId },
           data: updateData,
         });
+
+        return { alreadyHandled: false };
       });
+
+      if (txResult?.alreadyHandled) {
+        return { success: true, message: 'Task sudah dibatalkan sebelumnya.' };
+      }
 
       try {
         await notificationService.createNotification({

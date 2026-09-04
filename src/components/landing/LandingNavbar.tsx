@@ -36,12 +36,14 @@ export function LandingNavbar() {
             <Image
               src="/logo.svg"
               alt="CEPAT Logo"
-              width={100}
+              width={32}
               height={32}
-              className="h-8 w-auto logo-img"
-              style={{ width: 'auto' }}
+              className="h-8 w-8 object-contain rounded-lg group-hover:scale-105 transition-transform"
               priority
             />
+            <span className="font-headline font-extrabold text-xl text-primary tracking-tight">
+              CEPAT
+            </span>
           </Link>
 
           {/* Desktop Links */}

@@ -84,8 +84,8 @@ function CariTugasPageContent() {
   const refreshUserData = useCallback(async () => {
     try {
       const [appRes, savedRes] = await Promise.all([
-        fetch("/api/tasks/applications/me"),
-        fetch("/api/saved-tasks"),
+        fetch("/api/tasks/applications/me", { cache: "no-store" }),
+        fetch("/api/saved-tasks", { cache: "no-store" }),
       ]);
 
       if (appRes.ok) {
@@ -104,6 +104,16 @@ function CariTugasPageContent() {
     } catch (e) {
       console.error("Gagal load data pelamar/tersimpan:", e);
     }
+  }, []);
+
+  const handleToggleSaveTask = useCallback((taskId: string, saved: boolean) => {
+    setSavedTaskIds((prev) => {
+      if (saved) {
+        return prev.includes(taskId) ? prev : [...prev, taskId];
+      } else {
+        return prev.filter((id) => id !== taskId);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -130,7 +140,7 @@ function CariTugasPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [coords, radius, debouncedSearch, selectedCategory, viewMode, showToast]);
+  }, [coords.latitude, coords.longitude, radius, debouncedSearch, selectedCategory, viewMode, showToast]);
 
   useEffect(() => {
     if (!locLoading) {
@@ -379,6 +389,7 @@ function CariTugasPageContent() {
                       key={task.id_task}
                       task={task}
                       isSelected={selectedTask?.id_task === task.id_task}
+                      isSaved={savedTaskIds.includes(task.id_task)}
                       onClick={() => setSelectedTask(task)}
                     />
                   ))}
@@ -394,6 +405,8 @@ function CariTugasPageContent() {
                   onClose={() => setSelectedTask(null)}
                   onApply={() => handleApply(selectedTask.id_task)}
                   isApplied={appliedTaskIds.includes(selectedTask.id_task)}
+                  isSaved={savedTaskIds.includes(selectedTask.id_task)}
+                  onToggleSave={handleToggleSaveTask}
                 />
               </div>
             )}
@@ -413,6 +426,8 @@ function CariTugasPageContent() {
                     onClose={() => setSelectedTask(null)}
                     onApply={() => handleApply(selectedTask.id_task)}
                     isApplied={appliedTaskIds.includes(selectedTask.id_task)}
+                    isSaved={savedTaskIds.includes(selectedTask.id_task)}
+                    onToggleSave={handleToggleSaveTask}
                   />
                 </div>
               </div>
@@ -469,6 +484,7 @@ function CariTugasPageContent() {
                     <TaskCard
                       task={selectedTask}
                       isSelected={true}
+                      isSaved={savedTaskIds.includes(selectedTask.id_task)}
                       onClick={() => {
                         router.push(`/task/${selectedTask.id_task}`);
                       }}

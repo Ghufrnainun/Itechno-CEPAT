@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 /**
  * GET /api/saved-tasks — daftar tugas yang disimpan user yang login.
  * POST /api/saved-tasks — toggle bookmark: body { id_tasks }.
@@ -82,7 +85,16 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json(
+      { success: true, data },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    );
   } catch (error) {
     console.error("[GET /api/saved-tasks] Error:", error);
     return NextResponse.json(
@@ -153,7 +165,14 @@ export async function POST(request: NextRequest) {
           id_tasks,
         },
       });
-      return NextResponse.json({ success: true, saved: true });
+      return NextResponse.json(
+        { success: true, saved: true },
+        {
+          headers: {
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          },
+        }
+      );
     } catch (createError) {
       const err = createError as { code?: string };
       if (err?.code === "P2002") {
@@ -166,7 +185,14 @@ export async function POST(request: NextRequest) {
             },
           },
         });
-        return NextResponse.json({ success: true, saved: false });
+        return NextResponse.json(
+          { success: true, saved: false },
+          {
+            headers: {
+              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+            },
+          }
+        );
       }
       throw createError;
     }

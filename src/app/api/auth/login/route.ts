@@ -83,7 +83,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // --- 2. Cek status penangguhan (Ban) ---
+    // --- 2. Login via Supabase Auth (Verifikasi Password Terlebih Dahulu) ---
+    const supabase = await createClient()
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: userProfile.email,
+      password,
+    })
+
+    if (authError || !authData.session) {
+      return NextResponse.json(
+        { success: false, message: 'Email atau password salah.' },
+        { status: 401 }
+      )
+    }
+
+    // --- 3. Cek status penangguhan (Ban) setelah password terverifikasi benar ---
     if (userProfile.is_banned) {
       const now = new Date()
       // Cek jika Temporary Ban sudah kedaluwarsa
@@ -115,6 +129,11 @@ export async function POST(request: NextRequest) {
           }
         }
       } else {
+        // Sign out dari Supabase session karena akun ter-ban
+        try {
+          await supabase.auth.signOut()
+        } catch (_) {}
+
         // Masih ter-ban: Tolak login dan kembalikan detail rincian ban
         return NextResponse.json(
           {
@@ -131,20 +150,6 @@ export async function POST(request: NextRequest) {
           { status: 403 }
         )
       }
-    }
-
-    // --- 3. Login via Supabase Auth ---
-    const supabase = await createClient()
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: userProfile.email,
-      password,
-    })
-
-    if (authError || !authData.session) {
-      return NextResponse.json(
-        { success: false, message: 'Email atau password salah.' },
-        { status: 401 }
-      )
     }
 
     const isOnboarded = Boolean(

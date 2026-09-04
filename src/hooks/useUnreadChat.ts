@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
 export function useUnreadChat() {
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchUnreadCount = useCallback(async () => {
     try {
@@ -33,14 +34,36 @@ export function useUnreadChat() {
     }
   }, []);
 
+  // Debounced version to prevent thundering herd
+  const debouncedFetchUnreadCount = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      // Don't refetch if tab is in background
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchUnreadCount();
+    }, 800);
+  }, [fetchUnreadCount]);
+
   useEffect(() => {
-    fetchUnreadCount();
+    // Initial fetch scheduled asynchronously to prevent React 19 cascading renders
+    const initialTimer = setTimeout(() => {
+      fetchUnreadCount();
+    }, 0);
 
     const handleCustomUpdate = () => {
-      fetchUnreadCount();
+      debouncedFetchUnreadCount();
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        debouncedFetchUnreadCount();
+      }
     };
 
     window.addEventListener("chat-unread-updated", handleCustomUpdate);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     const supabase = createClient();
     let channel: RealtimeChannel | null = null;
@@ -52,7 +75,7 @@ export function useUnreadChat() {
       } = await supabase.auth.getUser();
       if (!user || !isMounted) return;
 
-      const uniqueChannelName = `global-chat-unread-${user.id}-${Math.random().toString(36).substring(2, 9)}`;
+      const uniqueChannelName = `user-chat-unread-${user.id}-${Math.random().toString(36).substring(2, 9)}`;
       channel = supabase
         .channel(uniqueChannelName)
         .on(
@@ -64,7 +87,7 @@ export function useUnreadChat() {
           },
           () => {
             if (isMounted) {
-              fetchUnreadCount();
+              debouncedFetchUnreadCount();
             }
           }
         )
@@ -75,12 +98,15 @@ export function useUnreadChat() {
 
     return () => {
       isMounted = false;
+      clearTimeout(initialTimer);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       window.removeEventListener("chat-unread-updated", handleCustomUpdate);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (channel) {
         supabase.removeChannel(channel);
       }
     };
-  }, [fetchUnreadCount]);
+  }, [fetchUnreadCount, debouncedFetchUnreadCount]);
 
   return {
     unreadCount,

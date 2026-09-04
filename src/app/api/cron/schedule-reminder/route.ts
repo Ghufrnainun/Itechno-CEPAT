@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { notificationService } from '@/services/notification.service';
 
@@ -61,10 +61,10 @@ export async function GET(request: NextRequest) {
           user_id: task.id_requester,
           type: 'reminder',
           created_at: { gte: new Date(now.getTime() - (timeDiffHours <= 1.5 ? 2 : 24) * 60 * 60 * 1000) },
-          data: {
-            path: ['taskId'],
-            equals: task.id_tasks,
-          },
+          OR: [
+            { data: { path: ['task_id'], equals: task.id_tasks } },
+            { data: { path: ['taskId'], equals: task.id_tasks } },
+          ],
         },
       });
 
@@ -74,33 +74,45 @@ export async function GET(request: NextRequest) {
           type: 'reminder',
           title: '⏰ Pengingat Jadwal Tugas',
           message: `Tugas "${task.judul_tugas}" dijadwalkan ${timeLabel}. Pastikan Anda siap memantau progresnya.`,
-          data: { taskId: task.id_tasks, window: reminderWindow, scheduled_at: task.scheduled_at.toISOString() },
+          data: {
+            task_id: task.id_tasks,
+            taskId: task.id_tasks,
+            window: reminderWindow,
+            scheduled_at: task.scheduled_at.toISOString(),
+          },
         });
         remindersSent++;
       }
 
-      // Reminder ke Worker (jika sudah ada worker yang diterima)
-      const acceptedWorker = task.applicants[0]?.worker;
-      if (acceptedWorker) {
+      // Reminder ke SELURUH Worker yang diterima (mendukung task multi-worker)
+      for (const applicant of task.applicants) {
+        const workerUser = applicant.worker;
+        if (!workerUser) continue;
+
         const alreadySentWorker = await prisma.notifications.findFirst({
           where: {
-            user_id: acceptedWorker.id_user,
+            user_id: workerUser.id_user,
             type: 'reminder',
             created_at: { gte: new Date(now.getTime() - (timeDiffHours <= 1.5 ? 2 : 24) * 60 * 60 * 1000) },
-            data: {
-              path: ['taskId'],
-              equals: task.id_tasks,
-            },
+            OR: [
+              { data: { path: ['task_id'], equals: task.id_tasks } },
+              { data: { path: ['taskId'], equals: task.id_tasks } },
+            ],
           },
         });
 
         if (!alreadySentWorker) {
           await notificationService.createNotification({
-            userId: acceptedWorker.id_user,
+            userId: workerUser.id_user,
             type: 'reminder',
             title: '⏰ Pengingat Tugas Terjadwal',
             message: `Tugas "${task.judul_tugas}" dari ${task.requester.nama_lengkap} dijadwalkan ${timeLabel}. Siapkan diri Anda!`,
-            data: { taskId: task.id_tasks, window: reminderWindow, scheduled_at: task.scheduled_at.toISOString() },
+            data: {
+              task_id: task.id_tasks,
+              taskId: task.id_tasks,
+              window: reminderWindow,
+              scheduled_at: task.scheduled_at.toISOString(),
+            },
           });
           remindersSent++;
         }
