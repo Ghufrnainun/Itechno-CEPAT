@@ -26,9 +26,13 @@ import {
   Bookmark,
   Sparkles,
   Download,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ReportModal } from "@/components/ui/ReportModal";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 
 interface SidebarProps {
@@ -52,6 +56,7 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
   const [loggingOut, setLoggingOut] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const displayName = user?.nama_lengkap || user?.username || "Pengguna CEPAT";
   const initials = displayName
@@ -413,7 +418,7 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
           {isExpanded && "Bantuan & Laporan"}
         </button>
         <button
-          onClick={handleLogout}
+          onClick={() => setIsLogoutModalOpen(true)}
           disabled={loggingOut}
           title={!isExpanded ? "Keluar" : undefined}
           aria-label="Keluar dari akun"
@@ -432,6 +437,55 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
       />
+
+      {/* Modal Konfirmasi Logout */}
+      {isLogoutModalOpen && (
+        <Modal
+          isOpen={isLogoutModalOpen}
+          onClose={() => !loggingOut && setIsLogoutModalOpen(false)}
+          title="Konfirmasi Keluar Akun"
+        >
+          <div className="flex flex-col gap-4 p-2">
+            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-error-container/20 border border-error/30 text-error">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <p className="text-xs leading-relaxed font-medium">
+                Apakah Anda yakin ingin keluar dari akun CEPAT di perangkat ini?
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-card-border/60">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsLogoutModalOpen(false)}
+                disabled={loggingOut}
+                className="text-xs"
+              >
+                Batal
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="text-xs bg-error hover:bg-error/90 text-white font-bold border-none"
+              >
+                {loggingOut ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                    <span>Sedang Keluar...</span>
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="w-3.5 h-3.5 mr-1.5" />
+                    <span>Ya, Keluar Akun</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </aside>
   );
 }
