@@ -39,7 +39,7 @@ export default function SavedTasksPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/saved-tasks");
+        const res = await fetch("/api/saved-tasks", { cache: "no-store" });
         const json = await res.json();
         if (!cancelled && json.success) {
           setItems(json.data);

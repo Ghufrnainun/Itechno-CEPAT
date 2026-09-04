@@ -263,7 +263,7 @@ export default function LeaderboardPage() {
             )}
           >
             <Zap className="w-4 h-4 text-amber-500" />
-            <span>Riwayat & Aktivitas XP</span>
+            <span>Riwayat &amp; Aktivitas XP</span>
           </button>
         </div>
 
@@ -883,7 +883,7 @@ export default function LeaderboardPage() {
               <Flame className="w-4 h-4 text-tertiary" />
               Tingkat Bonus Streak Harian
             </h3>
-            <p className="mb-2">Jaga konsistensi login & penyelesaian tugas setiap hari untuk bonus XP:</p>
+            <p className="mb-2">Jaga konsistensi login &amp; penyelesaian tugas setiap hari untuk bonus XP:</p>
             <ul className="space-y-1 font-mono text-xs">
               <li>• 3–6 hari berturut-turut: <strong>+10 XP</strong></li>
               <li>• 7–13 hari berturut-turut: <strong>+25 XP</strong></li>

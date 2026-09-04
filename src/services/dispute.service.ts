@@ -723,58 +723,160 @@ export const disputeService = {
         ? DisputeStatus.RESOLVED_FAVOR_WORKER
         : DisputeStatus.RESOLVED_FAVOR_REQUESTER;
 
-    // Eksekusi mutasi saldo escrow & status sengketa
-    if (favor === 'WORKER') {
-      if (!workerId) {
-        throw new Error('Pekerja yang disetujui tidak ditemukan pada tugas ini.');
-      }
-      // Cairkan escrow ke worker
-      await walletService.releaseEscrow(
-        requesterId,
-        workerId,
-        compensationAmount,
-        `Penyelesaian Sengketa: ${task.judul_tugas}`
-      );
+    const [completedStatus, openStatus, rejectedApplicantStatus] = await Promise.all([
+      prisma.statusTask.findFirst({ where: { nama_status: { equals: 'COMPLETED', mode: 'insensitive' } } }),
+      prisma.statusTask.findFirst({ where: { nama_status: { equals: 'OPEN', mode: 'insensitive' } } }),
+      prisma.statusTaskApplicants.findFirst({ where: { nama_status: { equals: 'REJECTED', mode: 'insensitive' } } }),
+    ]);
 
-      // Update status task ke COMPLETED
-      const completedStatus = await prisma.statusTask.findFirst({
-        where: { nama_status: { equals: 'COMPLETED', mode: 'insensitive' } },
+    // Eksekusi mutasi saldo escrow, status lamaran, status task & sengketa dalam 1 transaksi atomik
+    const updatedDispute = await prisma.$transaction(async (tx) => {
+      // 1. Pessimistic row locking pada Dispute dan Task
+      await tx.$queryRaw`SELECT 1 FROM "Dispute" WHERE id_dispute = ${disputeId} FOR UPDATE`;
+      const lockedTask = await tx.$queryRaw<Array<{ id_status_task: string; held_slots_json: string | null }>>`
+        SELECT id_status_task, held_slots_json FROM "Task" WHERE id_tasks = ${task.id_tasks} FOR UPDATE
+      `;
+
+      // 2. Tentukan nominal hold per slot yang akurat
+      const slotHeldMap: Record<string, number> = (() => {
+        try {
+          return JSON.parse(lockedTask[0]?.held_slots_json ?? task.held_slots_json ?? '{}') as Record<string, number>;
+        } catch {
+          return {};
+        }
+      })();
+
+      const workerApplicant = await tx.taskApplicants.findFirst({
+        where: {
+          id_tasks: task.id_tasks,
+          id_worker: workerId,
+        },
+        select: { id_task_applicants: true, bid_amount: true },
       });
-      if (completedStatus) {
-        await prisma.task.update({
-          where: { id_tasks: task.id_tasks },
+
+      const compensationAmount =
+        workerApplicant && typeof slotHeldMap[workerApplicant.id_task_applicants] === 'number'
+          ? slotHeldMap[workerApplicant.id_task_applicants]
+          : (workerApplicant?.bid_amount ?? task.kompensasi);
+
+      // Bersihkan slot dari held_slots_json
+      if (workerApplicant) {
+        delete slotHeldMap[workerApplicant.id_task_applicants];
+      }
+      const updatedHeldSlotsJson = Object.keys(slotHeldMap).length > 0 ? JSON.stringify(slotHeldMap) : null;
+
+      // 3. Cek apakah masih ada worker aktif lain pada task ini
+      const otherActiveWorkersCount = await tx.taskApplicants.count({
+        where: {
+          id_tasks: task.id_tasks,
+          id_worker: { not: workerId },
+          status_applicant: { nama_status: { in: ['ACCEPTED', 'accepted', 'IN_PROGRESS', 'in_progress'] } },
+        },
+      });
+
+      // 4. Eksekusi mutasi saldo dan status
+      if (favor === 'WORKER') {
+        // Cairkan escrow ke worker
+        await tx.user.update({
+          where: { id_user: requesterId },
           data: {
-            id_status_task: completedStatus.id_status_task,
-            completed_at: new Date(),
+            total_balance: { decrement: compensationAmount },
+            held_balance: { decrement: compensationAmount },
           },
         });
-      }
-    } else {
-      // Kembalikan escrow (refund) ke requester
-      await walletService.refundEscrow(
-        requesterId,
-        compensationAmount,
-        `Pengembalian Sengketa: ${task.judul_tugas}`
-      );
 
-      // Update status task ke CANCELLED
-      const cancelledStatus = await prisma.statusTask.findFirst({
-        where: { nama_status: { equals: 'CANCELLED', mode: 'insensitive' } },
-      });
-      if (cancelledStatus) {
-        await prisma.task.update({
-          where: { id_tasks: task.id_tasks },
+        await tx.transactions.create({
           data: {
-            id_status_task: cancelledStatus.id_status_task,
+            id_user: requesterId,
+            nominal: compensationAmount,
+            tipe_transaksi: 'KELUAR',
+            sub_type: 'task_payment',
+            deskripsi: `Penyelesaian Sengketa (Pemberian Hak): ${task.judul_tugas}`,
           },
         });
-      }
-    }
 
-    // Update entri Dispute
-    let updatedDispute: any = null;
-    if (typeof (prisma as any).dispute?.update === 'function') {
-      updatedDispute = await (prisma as any).dispute.update({
+        await tx.user.update({
+          where: { id_user: workerId },
+          data: { total_balance: { increment: compensationAmount } },
+        });
+
+        await tx.transactions.create({
+          data: {
+            id_user: workerId,
+            nominal: compensationAmount,
+            tipe_transaksi: 'MASUK',
+            sub_type: 'task_earning',
+            deskripsi: `Penyelesaian Sengketa (Hak Diterima): ${task.judul_tugas}`,
+          },
+        });
+
+        // Task hanya berstatus COMPLETED jika seluruh worker aktif lainnya telah selesai
+        if (otherActiveWorkersCount === 0 && completedStatus) {
+          await tx.task.update({
+            where: { id_tasks: task.id_tasks },
+            data: {
+              id_status_task: completedStatus.id_status_task,
+              completed_at: new Date(),
+              held_slots_json: updatedHeldSlotsJson,
+            },
+          });
+        } else {
+          await tx.task.update({
+            where: { id_tasks: task.id_tasks },
+            data: { held_slots_json: updatedHeldSlotsJson },
+          });
+        }
+      } else {
+        // Favor === 'REQUESTER': Refund escrow porsi worker tersebut ke saldo requester
+        await tx.user.update({
+          where: { id_user: requesterId },
+          data: { held_balance: { decrement: compensationAmount } },
+        });
+
+        await tx.transactions.create({
+          data: {
+            id_user: requesterId,
+            nominal: compensationAmount,
+            tipe_transaksi: 'MASUK',
+            sub_type: 'refund',
+            deskripsi: `Pengembalian Sengketa: ${task.judul_tugas}`,
+          },
+        });
+
+        // Update status pelamar yang bersengketa menjadi REJECTED
+        if (workerApplicant && rejectedApplicantStatus) {
+          await tx.taskApplicants.update({
+            where: { id_task_applicants: workerApplicant.id_task_applicants },
+            data: {
+              id_status_task_applicants: rejectedApplicantStatus.id_status_task_applicants,
+              alasan_penolakan: `Sengketa diputuskan memenangkan pembuat tugas: ${resolution}`,
+              worker_confirmed: false,
+            },
+          });
+        }
+
+        // Jika tidak ada worker lain tersisa, kembalikan status task ke OPEN agar bisa menerima pelamar baru
+        if (otherActiveWorkersCount === 0 && openStatus) {
+          await tx.task.update({
+            where: { id_tasks: task.id_tasks },
+            data: {
+              id_status_task: openStatus.id_status_task,
+              accepted_at: null,
+              worker_started: false,
+              requester_started: false,
+              held_slots_json: updatedHeldSlotsJson,
+            },
+          });
+        } else {
+          await tx.task.update({
+            where: { id_tasks: task.id_tasks },
+            data: { held_slots_json: updatedHeldSlotsJson },
+          });
+        }
+      }
+
+      // 5. Update entri Dispute
+      return tx.dispute.update({
         where: { id_dispute: disputeId },
         data: {
           status: newStatus,
@@ -783,18 +885,7 @@ export const disputeService = {
           resolved_at: new Date(),
         },
       });
-    } else {
-      await prisma.$executeRaw`
-        UPDATE "Dispute"
-        SET status = ${newStatus}::"DisputeStatus",
-            resolution = ${resolution},
-            resolved_by = ${adminId},
-            resolved_at = NOW(),
-            updated_at = NOW()
-        WHERE id_dispute = ${disputeId}
-      `;
-      updatedDispute = { ...dispute, status: newStatus, resolution, resolved_by: adminId, resolved_at: new Date() };
-    }
+    });
 
     // Kirim notifikasi hasil keputusan admin ke kedua belah pihak
     const decisionText =

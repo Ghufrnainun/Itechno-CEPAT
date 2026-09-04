@@ -118,8 +118,8 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "reviews" | "portfolio">("overview");
 
   // Portfolio state
-  const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
-  const [loadingPortfolio, setLoadingPortfolio] = useState(true);
+  const [portfolio, setPortfolio] = useState<PortfolioItem[]>(initialData?.portfolio_items || []);
+  const [loadingPortfolio, setLoadingPortfolio] = useState(!initialData?.portfolio_items);
   const [isAddPortfolioOpen, setIsAddPortfolioOpen] = useState(false);
   const [previewPortfolio, setPreviewPortfolio] = useState<PortfolioItem | null>(null);
 
@@ -163,8 +163,8 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
   const [isDeletingPortfolio, setIsDeletingPortfolio] = useState(false);
 
   // Reviews from API
-  const [reviews, setReviews] = useState<ReviewData[]>([]);
-  const [loadingReviews, setLoadingReviews] = useState(true);
+  const [reviews, setReviews] = useState<ReviewData[]>(initialData?.reviews_received || []);
+  const [loadingReviews, setLoadingReviews] = useState(!initialData?.reviews_received);
 
   // Logout state
   const [loggingOut, setLoggingOut] = useState(false);
@@ -231,20 +231,16 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
           icon: su.skills_master?.icon || su.icon || null,
         })) || initialData?.skills || []
       );
+      if (initialData.portfolio_items) {
+        setPortfolio(initialData.portfolio_items);
+        setLoadingPortfolio(false);
+      }
+      if (initialData.reviews_received) {
+        setReviews(initialData.reviews_received);
+        setLoadingReviews(false);
+      }
     }
   }, [initialData]);
-
-  // Load available skills master
-  useEffect(() => {
-    fetch("/api/skills")
-      .then((res) => (res.ok ? res.json() : { success: false, data: [] }))
-      .then((data) => {
-        if (data.success && Array.isArray(data.data)) {
-          setAvailableSkills(data.data);
-        }
-      })
-      .catch((err) => console.error("Gagal memuat master skills:", err));
-  }, []);
 
   // Sync / Fetch user profile from API if initialData not complete
   useEffect(() => {
@@ -291,9 +287,13 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
   // Load Reviews
   useEffect(() => {
     async function loadReviews() {
+      if (initialData?.reviews_received) {
+        setLoadingReviews(false);
+        return;
+      }
       try {
         setLoadingReviews(true);
-        const targetId = isCurrentUser ? "me" : targetProfileId || userId;
+        const targetId = isCurrentUser ? (user?.id_user || initialData?.id_user || "me") : targetProfileId || userId;
         const res = await fetch(`/api/reviews/user/${targetId}`);
         if (!res.ok) {
           setReviews([]);
@@ -315,11 +315,15 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
     }
 
     loadReviews();
-  }, [userId, isCurrentUser, targetProfileId]);
+  }, [userId, isCurrentUser, targetProfileId, initialData?.reviews_received, user?.id_user, initialData?.id_user]);
 
   // Load Portfolio
   useEffect(() => {
     async function loadPortfolio() {
+      if (initialData?.portfolio_items) {
+        setLoadingPortfolio(false);
+        return;
+      }
       try {
         setLoadingPortfolio(true);
         const targetId = isCurrentUser ? user?.id_user || initialData?.id_user : targetProfileId || userId;
@@ -337,7 +341,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
       }
     }
     loadPortfolio();
-  }, [userId, isCurrentUser, targetProfileId, user?.id_user, initialData?.id_user]);
+  }, [userId, isCurrentUser, targetProfileId, user?.id_user, initialData?.id_user, initialData?.portfolio_items]);
 
   // Rating breakdown stats
   const ratingStats = useMemo(() => {
@@ -407,6 +411,17 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
     setEditTagline(tagline);
     setEditSkills(skills);
     setIsEditOpen(true);
+
+    if (availableSkills.length === 0) {
+      fetch("/api/skills")
+        .then((res) => (res.ok ? res.json() : { success: false, data: [] }))
+        .then((data) => {
+          if (data.success && Array.isArray(data.data)) {
+            setAvailableSkills(data.data);
+          }
+        })
+        .catch((err) => console.error("Gagal memuat master skills:", err));
+    }
   };
 
   const handleAddPortfolio = async () => {

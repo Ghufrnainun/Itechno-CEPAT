@@ -219,7 +219,7 @@ export const taskService = {
           t.deskripsi_tugas,
           t.estimasi_waktu,
           t.kompensasi,
-          getFrontendStatusName(st.nama_status) AS status,
+          st.nama_status AS status,
           t.created_at,
           t.id_requester,
           u.nama_lengkap AS requester_name,
@@ -237,7 +237,10 @@ export const taskService = {
         ORDER BY distance_m ASC
         LIMIT 50
       `;
-      return tasks;
+      return tasks.map((t) => ({
+        ...t,
+        status: getFrontendStatusName(t.status),
+      }));
     }
 
     // Tanpa koordinat: filter biasa
@@ -561,16 +564,35 @@ export const taskService = {
       );
     }
 
-    // Kuota pelamar: task bidding terbuka untuk banyak penawar (sealed bids),
-    // task harga tetap mengikuti kuota worker. Cap bidding mencegah spam.
+    // Kuota pelamar: task bidding terbuka untuk banyak penawar (sealed bids, max 25).
+    // Untuk task harga tetap: cek apakah kuota pekerja yang diterima (accepted) sudah penuh.
+    // Jika belum penuh, izinkan pelamar baru mendaftar (dengan batas antrean pending 25).
     const BIDDING_APPLICANT_CAP = 25;
     if (!existing) {
       if (isBidding) {
         if (task._count.applicants >= BIDDING_APPLICANT_CAP) {
           throw new Error(`Task ini sudah menerima jumlah penawaran maksimal (${BIDDING_APPLICANT_CAP} bid).`);
         }
-      } else if (task._count.applicants >= maxApplicants) {
-        throw new Error(`Tugas ini sudah mencapai kuota maksimal (${maxApplicants} pelamar).`);
+      } else {
+        const acceptedCount = await prisma.taskApplicants.count({
+          where: {
+            id_tasks: taskId,
+            status_applicant: { nama_status: { equals: 'ACCEPTED', mode: 'insensitive' } },
+          },
+        });
+        if (acceptedCount >= maxApplicants) {
+          throw new Error(`Tugas ini sudah memiliki pekerja yang cukup (${maxApplicants} pekerja telah diterima).`);
+        }
+
+        const pendingCount = await prisma.taskApplicants.count({
+          where: {
+            id_tasks: taskId,
+            status_applicant: { nama_status: { equals: 'PENDING', mode: 'insensitive' } },
+          },
+        });
+        if (pendingCount >= 25) {
+          throw new Error('Tugas ini sedang meninjau batas maksimal antrean pelamar (25 pelamar).');
+        }
       }
     }
 
@@ -1259,7 +1281,16 @@ export const taskService = {
       })();
 
       if (acceptedWorkers.length > 0) {
-        await prisma.$transaction(async (tx) => {
+        const txResult = await prisma.$transaction(async (tx) => {
+          // 1. Kunci baris Task dengan FOR UPDATE untuk mencegah race condition / double payout
+          const lockedTask = await tx.$queryRaw<Array<{ id_status_task: string }>>`
+            SELECT id_status_task FROM "Task" WHERE id_tasks = ${taskId} FOR UPDATE
+          `;
+          const currentDbStatusId = lockedTask[0]?.id_status_task;
+          if (currentDbStatusId === newStatusId) {
+            return { alreadyHandled: true };
+          }
+
           for (const workerApp of acceptedWorkers) {
             const payoutAmount =
               typeof slotHeldMap[workerApp.id_task_applicants] === 'number'
@@ -1307,7 +1338,13 @@ export const taskService = {
             where: { id_tasks: taskId },
             data: updateData,
           });
+
+          return { alreadyHandled: false };
         });
+
+        if (txResult?.alreadyHandled) {
+          return { success: true, message: 'Task sudah diselesaikan sebelumnya.' };
+        }
 
         // Notifications & Gamification hooks (post-transaction)
         for (const workerApp of acceptedWorkers) {
@@ -1338,14 +1375,20 @@ export const taskService = {
           }
         }
       } else {
-        await prisma.task.update({
-          where: { id_tasks: taskId },
-          data: updateData,
+        await prisma.$transaction(async (tx) => {
+          const lockedTask = await tx.$queryRaw<Array<{ id_status_task: string }>>`
+            SELECT id_status_task FROM "Task" WHERE id_tasks = ${taskId} FOR UPDATE
+          `;
+          if (lockedTask[0]?.id_status_task === newStatusId) {
+            return;
+          }
+          await tx.task.update({
+            where: { id_tasks: taskId },
+            data: updateData,
+          });
         });
       }
     } else if (newStatus === 'cancelled') {
-      // Refund escrow ke requester: slot yang sudah diterima dikembalikan sesuai
-      // jumlah hold per slot (bid untuk task bidding), slot kosong sebesar kompensasi.
       const rawTaskConfig = await prisma.$queryRaw<Array<{ max_applicants: number; held_slots_json: string | null }>>`
         SELECT max_applicants, held_slots_json FROM "Task" WHERE id_tasks = ${taskId}
       `;
@@ -1358,6 +1401,113 @@ export const taskService = {
         }
       })();
 
+      // ─── SKENARIO 1: WORKER MEMBATALKAN / MENGUNDURKAN DIRI ───
+      // Jika pemanggil adalah Worker (bukan Requester), worker hanya mengundurkan diri
+      // dari lamaran miliknya. Task TIDAK dibatalkan secara keseluruhan untuk worker lain.
+      if (isWorker && !isRequester) {
+        const myApp = acceptedWorkers.find((a) => a.id_worker === userId);
+        if (!myApp) {
+          throw new Error('Anda bukan pekerja yang diterima pada tugas ini.');
+        }
+
+        const mySlotRefund =
+          typeof cancelSlotMap[myApp.id_task_applicants] === 'number'
+            ? cancelSlotMap[myApp.id_task_applicants]
+            : task.kompensasi;
+
+        const rejectedStatusId = await getApplicantStatusId('rejected');
+        const remainingWorkers = acceptedWorkers.filter((w) => w.id_worker !== userId);
+        delete cancelSlotMap[myApp.id_task_applicants];
+        const updatedHeldSlotsJson = Object.keys(cancelSlotMap).length > 0 ? JSON.stringify(cancelSlotMap) : null;
+
+        await prisma.$transaction(async (tx) => {
+          // Lock baris task
+          await tx.$queryRaw`SELECT 1 FROM "Task" WHERE id_tasks = ${taskId} FOR UPDATE`;
+
+          // 1. Update status lamaran worker yang bersangkutan menjadi rejected (mengundurkan diri)
+          await tx.taskApplicants.update({
+            where: { id_task_applicants: myApp.id_task_applicants },
+            data: {
+              id_status_task_applicants: rejectedStatusId,
+              alasan_penolakan: 'Pekerja mengundurkan diri',
+              worker_confirmed: false,
+            },
+          });
+
+          // 2. Refund porsi escrow untuk slot worker tersebut saja ke requester
+          if (mySlotRefund > 0) {
+            await tx.user.update({
+              where: { id_user: task.id_requester },
+              data: { held_balance: { decrement: mySlotRefund } },
+            });
+
+            await tx.transactions.create({
+              data: {
+                id_user: task.id_requester,
+                nominal: mySlotRefund,
+                tipe_transaksi: 'MASUK',
+                sub_type: 'refund',
+                deskripsi: `Pengembalian dana slot pekerja mengundurkan diri (${myApp.worker.nama_lengkap}): ${task.judul_tugas}`,
+              },
+            });
+          }
+
+          // 3. Tentukan status task selanjutnya:
+          // Jika masih ada worker yang aktif, task TETAP berjalan (tidak dibatalkan!)
+          // Jika tidak ada worker tersisa sama sekali, kembalikan status task ke 'open' agar bisa menerima pelamar baru
+          if (remainingWorkers.length > 0) {
+            await tx.task.update({
+              where: { id_tasks: taskId },
+              data: {
+                held_slots_json: updatedHeldSlotsJson,
+              },
+            });
+          } else {
+            const openStatusId = await getStatusId('open');
+            await tx.task.update({
+              where: { id_tasks: taskId },
+              data: {
+                id_status_task: openStatusId,
+                accepted_at: null,
+                worker_started: false,
+                requester_started: false,
+                held_slots_json: updatedHeldSlotsJson,
+              },
+            });
+          }
+        });
+
+        // Notifikasi ke Requester
+        try {
+          await notificationService.createNotification({
+            userId: task.id_requester,
+            type: 'cancel',
+            title: 'Pekerja Mengundurkan Diri ⚠️',
+            message: `${myApp.worker.nama_lengkap} telah mengundurkan diri dari task "${task.judul_tugas}". Dana escrow slot (${mySlotRefund.toLocaleString('id-ID')} poin) telah dikembalikan ke saldo kamu, dan slot tugas telah dibuka kembali.`,
+            data: { task_id: taskId, resigned_worker_id: userId },
+          });
+        } catch (_) {}
+
+        // Notifikasi konfirmasi ke Worker yang mengundurkan diri
+        try {
+          await notificationService.createNotification({
+            userId,
+            type: 'cancel',
+            title: 'Pengunduran Diri Berhasil ℹ️',
+            message: `Kamu telah berhasil mengundurkan diri dari task "${task.judul_tugas}".`,
+            data: { task_id: taskId },
+          });
+        } catch (_) {}
+
+        return {
+          success: true,
+          message: 'Berhasil mengundurkan diri dari tugas. Slot telah dikembalikan.',
+          new_status: remainingWorkers.length > 0 ? currentStatus : 'open',
+        };
+      }
+
+      // ─── SKENARIO 2: REQUESTER MEMBATALKAN TUGAS ───
+      // Requester membatalkan seluruh tugas dan me-refund semua escrow yang tersisa.
       let totalRefund = 0;
       for (const workerApp of acceptedWorkers) {
         totalRefund +=
@@ -1371,7 +1521,31 @@ export const taskService = {
         totalRefund += unfilledSlots * task.kompensasi;
       }
 
-      await prisma.$transaction(async (tx) => {
+      const rejectedStatusId = await getApplicantStatusId('rejected');
+
+      const txResult = await prisma.$transaction(async (tx) => {
+        const lockedTask = await tx.$queryRaw<Array<{ id_status_task: string }>>`
+          SELECT id_status_task FROM "Task" WHERE id_tasks = ${taskId} FOR UPDATE
+        `;
+        const currentDbStatusId = lockedTask[0]?.id_status_task;
+        if (currentDbStatusId === newStatusId) {
+          return { alreadyHandled: true };
+        }
+
+        // Tolak semua lamaran yang tersisa (accepted maupun pending)
+        await tx.taskApplicants.updateMany({
+          where: {
+            id_tasks: taskId,
+            status_applicant: {
+              nama_status: { in: ['ACCEPTED', 'PENDING', 'accepted', 'pending'] },
+            },
+          },
+          data: {
+            id_status_task_applicants: rejectedStatusId,
+            alasan_penolakan: 'Tugas dibatalkan oleh pemberi tugas (Requester)',
+          },
+        });
+
         if (totalRefund > 0) {
           await tx.user.update({
             where: { id_user: task.id_requester },
@@ -1393,7 +1567,13 @@ export const taskService = {
           where: { id_tasks: taskId },
           data: updateData,
         });
+
+        return { alreadyHandled: false };
       });
+
+      if (txResult?.alreadyHandled) {
+        return { success: true, message: 'Task sudah dibatalkan sebelumnya.' };
+      }
 
       try {
         await notificationService.createNotification({

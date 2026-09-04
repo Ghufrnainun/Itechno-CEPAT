@@ -133,18 +133,28 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
       {/* User Profile Card */}
       <div className={cn("flex flex-col gap-2 p-2.5 bg-surface-container-low border border-card-border rounded-xl shadow-xs w-full", !isExpanded && "items-center px-1")}>
         <div className={cn("flex items-center", isExpanded ? "gap-2.5" : "justify-center")}>
-          <div className="w-9 h-9 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-xs shrink-0 shadow-xs relative overflow-hidden" title={!isExpanded ? displayName : undefined}>
+          <Link
+            href={user?.id_user ? `/profile/${user.id_user}` : "/profile/me"}
+            prefetch={true}
+            className="w-9 h-9 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-xs shrink-0 shadow-xs relative overflow-hidden hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+            title={!isExpanded ? displayName : "Lihat Profil"}
+          >
             {user?.avatar_url ? (
               <Image src={user.avatar_url} alt={displayName} fill className="object-cover" sizes="36px" />
             ) : (
               initials
             )}
-          </div>
+          </Link>
           {isExpanded && (
             <div className="flex flex-col overflow-hidden min-w-0">
-              <span className="font-sans font-bold text-xs text-on-surface truncate">
+              <Link
+                href={user?.id_user ? `/profile/${user.id_user}` : "/profile/me"}
+                prefetch={true}
+                className="font-sans font-bold text-xs text-on-surface truncate hover:text-primary transition-colors cursor-pointer"
+                title="Lihat Profil"
+              >
                 {displayName}
-              </span>
+              </Link>
               <Link
                 href="/wallet"
                 className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-primary tabular-nums hover:underline transition-all cursor-pointer"
@@ -310,7 +320,8 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
 
         {/* 6. Profil Saya */}
         <Link
-          href="/profile/me"
+          href={user?.id_user ? `/profile/${user.id_user}` : "/profile/me"}
+          prefetch={true}
           title={!isExpanded ? "Profil Saya" : undefined}
           aria-current={isMyProfileActive ? "page" : undefined}
           className={cn(

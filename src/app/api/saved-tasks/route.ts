@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 /**
  * GET /api/saved-tasks — daftar tugas yang disimpan user yang login.
  * POST /api/saved-tasks — toggle bookmark: body { id_tasks }.
@@ -10,33 +13,38 @@ import { createClient } from "@/lib/supabase/server";
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
+    let userId = request.headers.get("x-user-db-id");
 
-    if (authError || !authUser?.email) {
-      return NextResponse.json(
-        { success: false, message: "Tidak terautentikasi." },
-        { status: 401 }
-      );
-    }
+    if (!userId) {
+      const supabase = await createClient();
+      const {
+        data: { user: authUser },
+        error: authError,
+      } = await supabase.auth.getUser();
 
-    const user = await prisma.user.findUnique({
-      where: { email: authUser.email },
-      select: { id_user: true },
-    });
+      if (authError || !authUser?.email) {
+        return NextResponse.json(
+          { success: false, message: "Tidak terautentikasi." },
+          { status: 401 }
+        );
+      }
 
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "User tidak ditemukan." },
-        { status: 404 }
-      );
+      const user = await prisma.user.findUnique({
+        where: { email: authUser.email },
+        select: { id_user: true },
+      });
+
+      if (!user) {
+        return NextResponse.json(
+          { success: false, message: "User tidak ditemukan." },
+          { status: 404 }
+        );
+      }
+      userId = user.id_user;
     }
 
     const savedTasks = await prisma.savedTask.findMany({
-      where: { id_user: user.id_user },
+      where: { id_user: userId },
       orderBy: { created_at: "desc" },
       include: {
         task: {
@@ -82,7 +90,16 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json(
+      { success: true, data },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    );
   } catch (error) {
     console.error("[GET /api/saved-tasks] Error:", error);
     return NextResponse.json(
@@ -153,7 +170,14 @@ export async function POST(request: NextRequest) {
           id_tasks,
         },
       });
-      return NextResponse.json({ success: true, saved: true });
+      return NextResponse.json(
+        { success: true, saved: true },
+        {
+          headers: {
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          },
+        }
+      );
     } catch (createError) {
       const err = createError as { code?: string };
       if (err?.code === "P2002") {
@@ -166,7 +190,14 @@ export async function POST(request: NextRequest) {
             },
           },
         });
-        return NextResponse.json({ success: true, saved: false });
+        return NextResponse.json(
+          { success: true, saved: false },
+          {
+            headers: {
+              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+            },
+          }
+        );
       }
       throw createError;
     }

@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { notificationService } from '@/services/notification.service'
 import { taskService } from '@/services/task.service'
@@ -47,15 +47,13 @@ export async function GET(request: NextRequest) {
         applicants: {
           where: { status_applicant: { nama_status: 'ACCEPTED' } },
           include: { worker: { select: { id_user: true, nama_lengkap: true } } },
-          take: 1,
         },
         reviews: { select: { id_rater: true } },
       },
     })
 
     for (const task of completedTasks) {
-      const acceptedWorker = task.applicants[0]
-      if (!acceptedWorker) continue
+      if (!task.applicants || task.applicants.length === 0) continue
 
       const reviewerIds = task.reviews.map((r) => r.id_rater)
 
@@ -71,39 +69,42 @@ export async function GET(request: NextRequest) {
             },
           })
           if (!existingReminder) {
+            const workerNames = task.applicants.map((a) => a.worker.nama_lengkap).join(', ')
             await notificationService.createNotification({
               userId: task.requester.id_user,
               type: 'reminder',
               title: 'Jangan Lupa Beri Ulasan! ⭐',
-              message: `Kamu belum memberikan ulasan untuk ${acceptedWorker.worker.nama_lengkap} di task "${task.judul_tugas}". Rating membantu komunitas CEPAT!`,
-              data: { task_id: task.id_tasks, reviewee_id: acceptedWorker.id_worker },
+              message: `Kamu belum memberikan ulasan untuk pekerja (${workerNames}) di task "${task.judul_tugas}". Rating membantu komunitas CEPAT!`,
+              data: { task_id: task.id_tasks },
             })
             results.reviewReminders++
           }
         } catch (_) { /* non-blocking */ }
       }
 
-      // Cek apakah worker sudah review
-      if (!reviewerIds.includes(acceptedWorker.id_worker)) {
-        try {
-          const existingReminder = await prisma.notifications.findFirst({
-            where: {
-              user_id: acceptedWorker.id_worker,
-              type: 'reminder',
-              data: { path: ['task_id'], equals: task.id_tasks },
-            },
-          })
-          if (!existingReminder) {
-            await notificationService.createNotification({
-              userId: acceptedWorker.id_worker,
-              type: 'reminder',
-              title: 'Jangan Lupa Beri Ulasan! ⭐',
-              message: `Kamu belum memberikan ulasan untuk ${task.requester.nama_lengkap} di task "${task.judul_tugas}". Rating membantu komunitas CEPAT!`,
-              data: { task_id: task.id_tasks, reviewee_id: task.requester.id_user },
+      // Cek dan kirim reminder ke SELURUH worker yang diterima (mendukung multi-worker)
+      for (const acceptedWorker of task.applicants) {
+        if (!reviewerIds.includes(acceptedWorker.id_worker)) {
+          try {
+            const existingReminder = await prisma.notifications.findFirst({
+              where: {
+                user_id: acceptedWorker.id_worker,
+                type: 'reminder',
+                data: { path: ['task_id'], equals: task.id_tasks },
+              },
             })
-            results.reviewReminders++
-          }
-        } catch (_) { /* non-blocking */ }
+            if (!existingReminder) {
+              await notificationService.createNotification({
+                userId: acceptedWorker.id_worker,
+                type: 'reminder',
+                title: 'Jangan Lupa Beri Ulasan! ⭐',
+                message: `Kamu belum memberikan ulasan untuk ${task.requester.nama_lengkap} di task "${task.judul_tugas}". Rating membantu komunitas CEPAT!`,
+                data: { task_id: task.id_tasks, reviewee_id: task.requester.id_user },
+              })
+              results.reviewReminders++
+            }
+          } catch (_) { /* non-blocking */ }
+        }
       }
     }
   } catch (error) {
@@ -234,9 +235,21 @@ export async function GET(request: NextRequest) {
     console.error('[Cron] Auto-purge error:', error)
   }
 
+  // ─── 5. Auto-Purge XPLog Lama (> 1 tahun) ──────────────────────────────────
+  let purgedXpLogsCount = 0
+  try {
+    const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
+    const purgedXp = await prisma.xPLog.deleteMany({
+      where: { created_at: { lt: oneYearAgo } },
+    })
+    purgedXpLogsCount = purgedXp.count
+  } catch (error) {
+    console.error('[Cron] XPLog purge error:', error)
+  }
+
   return NextResponse.json({
     success: true,
     message: 'Cron notifications processed.',
-    data: { ...results, purgedOldNotifications: purgedCount },
+    data: { ...results, purgedOldNotifications: purgedCount, purgedOldXPLogs: purgedXpLogsCount },
   })
 }

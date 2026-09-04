@@ -1,30 +1,35 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
-    // 1. Authenticate user session
-    const supabase = await createClient()
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+    let workerId = request.headers.get('x-user-db-id')
 
-    if (authError || !authUser || !authUser.email) {
-      return NextResponse.json(
-        { success: false, message: 'Tidak terautentikasi. Silakan login terlebih dahulu.' },
-        { status: 401 }
-      )
-    }
+    if (!workerId) {
+      // 1. Authenticate user session
+      const supabase = await createClient()
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
 
-    // 2. Retrieve user profile mapping
-    const dbUser = await prisma.user.findUnique({
-      where: { auth_id: authUser.id }
-    })
+      if (authError || !authUser || !authUser.email) {
+        return NextResponse.json(
+          { success: false, message: 'Tidak terautentikasi. Silakan login terlebih dahulu.' },
+          { status: 401 }
+        )
+      }
 
-    if (!dbUser) {
-      return NextResponse.json(
-        { success: false, message: 'Profil pengguna tidak ditemukan.' },
-        { status: 404 }
-      )
+      // 2. Retrieve user profile mapping
+      const dbUser = await prisma.user.findUnique({
+        where: { auth_id: authUser.id }
+      })
+
+      if (!dbUser) {
+        return NextResponse.json(
+          { success: false, message: 'Profil pengguna tidak ditemukan.' },
+          { status: 404 }
+        )
+      }
+      workerId = dbUser.id_user
     }
 
     // 3. Extract optional query parameters
@@ -33,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     // 4. Construct Prisma query payload
     const whereClause: any = {
-      id_worker: dbUser.id_user
+      id_worker: workerId
     }
 
     if (statusFilter) {

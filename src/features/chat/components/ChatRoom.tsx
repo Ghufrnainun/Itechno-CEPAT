@@ -224,7 +224,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
           schema: 'public',
           table: 'Message'
         },
-        async (payload) => {
+        async (payload: any) => {
           const newMessageRaw = payload.new as any;
           if (newMessageRaw.id_chat_room !== roomId) return;
           
@@ -272,7 +272,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
           schema: 'public',
           table: 'Message'
         },
-        (payload) => {
+        (payload: any) => {
           const updatedMessage = payload.new as any;
           if (updatedMessage.id_chat_room !== roomId) return;
           
@@ -297,7 +297,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
           if (onMessageAdded) onMessageAdded();
         }
       )
-      .subscribe(async (status, err) => {
+      .subscribe(async (status: any, err?: any) => {
         if (status === 'SUBSCRIBED') {
           await channel.track({ online_at: new Date().toISOString() });
         }

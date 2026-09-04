@@ -22,11 +22,11 @@ export function LandingNavbar() {
   useEffect(() => {
     try {
       const supabase = createClient();
-      supabase.auth.getUser().then(({ data }) => {
-        setIsLoggedIn(Boolean(data?.user));
+      supabase.auth.getUser().then((res: any) => {
+        setIsLoggedIn(Boolean(res?.data?.user));
       });
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
         setIsLoggedIn(Boolean(session?.user));
       });
 
@@ -58,12 +58,14 @@ export function LandingNavbar() {
             <Image
               src="/logo.svg"
               alt="CEPAT Logo"
-              width={100}
+              width={32}
               height={32}
-              className="h-8 w-auto logo-img"
-              style={{ width: 'auto' }}
+              className="h-8 w-8 object-contain rounded-lg group-hover:scale-105 transition-transform"
               priority
             />
+            <span className="font-headline font-extrabold text-xl text-primary tracking-tight">
+              CEPAT
+            </span>
           </Link>
 
           {/* Desktop Links */}

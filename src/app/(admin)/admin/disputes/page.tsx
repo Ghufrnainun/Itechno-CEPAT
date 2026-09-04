@@ -150,6 +150,24 @@ export default function AdminDisputesPage() {
   // Lightbox Image Preview Modal
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
+  const openDrawer = useCallback(async (disputeId: string) => {
+    setLoadingDetail(true);
+    try {
+      const res = await fetch(`/api/disputes/${disputeId}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          setSelectedDispute(json.data);
+          setResolutionNote('');
+        }
+      }
+    } catch {
+      setToast({ type: 'error', message: 'Gagal memuat detail sengketa.' });
+    } finally {
+      setLoadingDetail(false);
+    }
+  }, []);
+
   const fetchDisputes = useCallback(async (selectTargetId?: string) => {
     setLoading(true);
     try {
@@ -184,29 +202,11 @@ export default function AdminDisputesPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, searchTerm]);
+  }, [page, statusFilter, searchTerm, openDrawer]);
 
   useEffect(() => {
     fetchDisputes();
   }, [fetchDisputes]);
-
-  const openDrawer = async (disputeId: string) => {
-    setLoadingDetail(true);
-    try {
-      const res = await fetch(`/api/disputes/${disputeId}`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && json.data) {
-          setSelectedDispute(json.data);
-          setResolutionNote('');
-        }
-      }
-    } catch {
-      setToast({ type: 'error', message: 'Gagal memuat detail sengketa.' });
-    } finally {
-      setLoadingDetail(false);
-    }
-  };
 
   const handleResolveDispute = async () => {
     if (!selectedDispute) return;

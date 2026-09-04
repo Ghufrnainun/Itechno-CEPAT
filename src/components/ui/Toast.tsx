@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo, useRef, ReactNode } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -12,16 +12,22 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<string | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const showToast = (message: string) => {
+  const showToast = useCallback((message: string) => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
     setToast(message);
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       setToast(null);
     }, 3000);
-  };
+  }, []);
+
+  const value = useMemo(() => ({ showToast }), [showToast]);
 
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={value}>
       {children}
       <AnimatePresence>
         {toast && (

@@ -38,22 +38,42 @@ interface TaskInspectorProps {
   onApply?: () => void;
   isApplied?: boolean;
   applicationStatus?: string;
+  isSaved?: boolean;
+  onToggleSave?: (taskId: string, newSavedStatus: boolean) => void;
 }
 
-export function TaskInspector({ task, onClose, onApply, isApplied, applicationStatus }: TaskInspectorProps) {
+export function TaskInspector({
+  task,
+  onClose,
+  onApply,
+  isApplied,
+  applicationStatus,
+  isSaved: propIsSaved,
+  onToggleSave,
+}: TaskInspectorProps) {
   const router = useRouter();
   const { showToast } = useToast();
   const [isStartingChat, setIsStartingChat] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
+  const [isSaved, setIsSaved] = useState(propIsSaved ?? false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Cek status bookmark saat komponen mount
+  // Sync state if prop changes from parent
   useEffect(() => {
+    if (propIsSaved !== undefined) {
+      setIsSaved(propIsSaved);
+    }
+  }, [propIsSaved]);
+
+  // Cek status bookmark via API hanya jika propIsSaved tidak diberikan oleh parent
+  useEffect(() => {
+    if (propIsSaved !== undefined) return;
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`/api/saved-tasks/ids?ids=${encodeURIComponent(task.id_task)}`);
+        const res = await fetch(`/api/saved-tasks/ids?ids=${encodeURIComponent(task.id_task)}`, {
+          cache: "no-store",
+        });
         const json = await res.json();
         if (!cancelled && json.success) {
           setIsSaved(json.data.includes(task.id_task));
@@ -65,7 +85,7 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
     return () => {
       cancelled = true;
     };
-  }, [task.id_task]);
+  }, [task.id_task, propIsSaved]);
 
   const handleShare = async () => {
     const shareUrl = `${window.location.origin}/task/${task.id_task}`;
@@ -99,6 +119,12 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
   const handleToggleSave = async () => {
     if (isSaving) return;
     setIsSaving(true);
+    const nextSavedState = !isSaved;
+
+    // Optimistic instant feedback
+    setIsSaved(nextSavedState);
+    onToggleSave?.(task.id_task, nextSavedState);
+
     try {
       const res = await fetch("/api/saved-tasks", {
         method: "POST",
@@ -108,11 +134,20 @@ export function TaskInspector({ task, onClose, onApply, isApplied, applicationSt
       const json = await res.json();
       if (json.success) {
         setIsSaved(json.saved);
+        if (json.saved !== nextSavedState) {
+          onToggleSave?.(task.id_task, json.saved);
+        }
         showToast(json.saved ? "Tugas disimpan!" : "Tugas dihapus dari tersimpan.");
       } else {
+        // Rollback on failure
+        setIsSaved(!nextSavedState);
+        onToggleSave?.(task.id_task, !nextSavedState);
         showToast(json.message || "Gagal menyimpan tugas.");
       }
     } catch (e) {
+      // Rollback on network error
+      setIsSaved(!nextSavedState);
+      onToggleSave?.(task.id_task, !nextSavedState);
       console.error("Gagal toggle bookmark", e);
       showToast("Gagal menyimpan tugas.");
     } finally {

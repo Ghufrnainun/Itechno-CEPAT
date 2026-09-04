@@ -104,7 +104,10 @@ export async function proxy(request: NextRequest) {
   ]
   const isProtectedRoute = protectedPrefixes.some((prefix) => request.nextUrl.pathname.startsWith(prefix))
 
-  if (user) {
+  let dbUserId: string | null = null
+
+  // Query database hanya dieksekusi saat user mengakses rute yang terproteksi
+  if (user && isProtectedRoute) {
     try {
       const orConditions: Array<{ auth_id: string } | { email: string }> = [{ auth_id: user.id }]
       if (user.email) {
@@ -123,8 +126,12 @@ export async function proxy(request: NextRequest) {
         },
       })
 
+      if (dbUser) {
+        dbUserId = dbUser.id_user
+      }
+
       // Admin role is strictly forbidden from accessing main worker dashboard
-      if (dbUser?.role?.nama_role === 'Admin' && isProtectedRoute) {
+      if (dbUser?.role?.nama_role === 'Admin') {
         return NextResponse.redirect(new URL('/admin/dashboard', request.url))
       }
 
@@ -172,7 +179,31 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  return supabaseResponse
+  // Forward user authentication identity to downstream Server Components & API routes
+  const requestHeaders = new Headers(request.headers)
+  // Keamanan: Hapus header identitas yang mungkin disuntikkan secara ilegal oleh client
+  requestHeaders.delete('x-auth-user-id')
+  requestHeaders.delete('x-auth-user-email')
+  requestHeaders.delete('x-user-db-id')
+
+  if (user) {
+    requestHeaders.set('x-auth-user-id', user.id)
+    if (user.email) requestHeaders.set('x-auth-user-email', user.email)
+    if (dbUserId) requestHeaders.set('x-user-db-id', dbUserId)
+  }
+
+  const responseWithHeaders = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
+
+  // Transfer any cookies set during Supabase operations
+  supabaseResponse.cookies.getAll().forEach((cookie) => {
+    responseWithHeaders.cookies.set(cookie.name, cookie.value, cookie)
+  })
+
+  return responseWithHeaders
 }
 
 export const middleware = proxy

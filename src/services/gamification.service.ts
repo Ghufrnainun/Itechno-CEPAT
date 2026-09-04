@@ -34,19 +34,6 @@ export class GamificationService {
         },
       });
 
-      // Auto-Cleanup: Hapus log yang umurnya lebih dari 1 tahun
-      const now = new Date();
-      const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-      
-      // Fire and forget cleanup
-      prisma.xPLog.deleteMany({
-        where: {
-          created_at: {
-            lt: oneYearAgo,
-          },
-        },
-      }).catch((e: unknown) => console.error("[GamificationService] Cleanup error:", e));
-
       return updatedUser;
     } catch (error) {
       console.error("[GamificationService] Failed to add XP:", error);

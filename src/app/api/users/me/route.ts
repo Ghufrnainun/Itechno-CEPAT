@@ -5,25 +5,48 @@ import { notificationService } from "@/services/notification.service";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const headerDbUserId = request.headers.get("x-user-db-id");
+    const headerAuthEmail = request.headers.get("x-auth-user-email");
+    const headerAuthId = request.headers.get("x-auth-user-id");
 
-    if (authError || !authUser?.email) {
-      return NextResponse.json(
-        { success: false, message: "Tidak terautentikasi." },
-        { status: 401 }
-      );
+    let authUser: { id: string; email?: string; user_metadata?: any } | null = null;
+
+    if (headerAuthId && (headerAuthEmail || headerDbUserId)) {
+      authUser = {
+        id: headerAuthId,
+        email: headerAuthEmail || undefined,
+      };
+    } else {
+      const supabase = await createClient();
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        return NextResponse.json(
+          { success: false, message: "Tidak terautentikasi." },
+          { status: 401 }
+        );
+      }
+      authUser = user;
     }
 
-    const dbUser = await prisma.user.findUnique({
-      where: { email: authUser.email },
+    const whereClause = headerDbUserId
+      ? { id_user: headerDbUserId }
+      : authUser.email
+      ? { email: authUser.email }
+      : { auth_id: authUser.id };
+
+    const dbUser = await prisma.user.findFirst({
+      where: whereClause as any,
       include: {
         role: true,
         skills_user: {
-          include: {
+          select: {
+            id_skills_user: true,
+            id_user: true,
+            id_skills_master: true,
             skills_master: true,
           },
         },
@@ -50,7 +73,8 @@ export async function GET(request: NextRequest) {
         });
         dbUser.is_banned = false;
       } else {
-        await supabase.auth.signOut();
+        const supabaseClient = await createClient();
+        await supabaseClient.auth.signOut();
         return NextResponse.json(
           {
             success: false,
@@ -72,14 +96,15 @@ export async function GET(request: NextRequest) {
       const fallbackName =
         authUser.user_metadata?.nama_lengkap ||
         authUser.user_metadata?.full_name ||
-        authUser.email.split("@")[0];
+        authUser.email?.split("@")[0] ||
+        "Pengguna";
 
       return NextResponse.json({
         success: true,
         data: {
           id_user: authUser.id,
           nama_lengkap: fallbackName,
-          email: authUser.email,
+          email: authUser.email || "",
           username: authUser.user_metadata?.username || fallbackName.toLowerCase().replace(/\s+/g, ""),
           bio: "",
           total_balance: 0,

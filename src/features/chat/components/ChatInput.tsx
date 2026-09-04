@@ -1,8 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
-import EmojiPicker from 'emoji-picker-react';
+import dynamic from 'next/dynamic';
 import { AlertTriangle, X, ImagePlus, Smile, Send, Loader2 } from 'lucide-react';
+
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-[320px] h-[400px] bg-surface-container-low flex items-center justify-center rounded-2xl">
+      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+    </div>
+  ),
+});
 
 interface ChatInputProps {
   onSendMessage: (text: string | null, imageUrl: string | null) => Promise<void>;
