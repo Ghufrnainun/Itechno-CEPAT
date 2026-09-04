@@ -650,26 +650,16 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                 </>
               ) : (
                 <>
-                  {waUrl && (
-                    <a
-                      href={waUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs min-h-[40px] shadow-2xs transition-all"
+                  <Link href="/chat">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      icon={<MessageSquare className="w-3.5 h-3.5" />}
+                      className="min-h-[40px] text-xs font-bold shadow-xs"
                     >
-                      <MessageCircle className="w-4 h-4" />
-                      <span>WhatsApp</span>
-                    </a>
-                  )}
-                  {email && email !== "[Disembunyikan]" && (
-                    <a
-                      href={`mailto:${email}`}
-                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-surface-container-low border border-card-border hover:border-primary/40 active:scale-95 text-on-surface font-bold text-xs min-h-[40px] transition-all"
-                    >
-                      <Mail className="w-4 h-4 text-primary" />
-                      <span>Email</span>
-                    </a>
-                  )}
+                      Kirim Pesan
+                    </Button>
+                  </Link>
                   <Button
                     variant="secondary"
                     size="sm"
@@ -832,68 +822,105 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
                   </h3>
 
                   <div className="flex flex-col gap-3 font-sans text-xs">
-                    {/* Email */}
-                    <div className="p-3 rounded-xl bg-surface-container-low/60 border border-card-border flex items-center justify-between">
-                      <div className="flex flex-col gap-0.5 min-w-0 pr-2">
-                        <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider font-bold">
-                          Email
-                        </span>
-                        <span className="font-medium text-on-surface truncate">{email || "-"}</span>
-                      </div>
-                      {email && email !== "[Disembunyikan]" && (
-                        <button
-                          type="button"
-                          onClick={() => copyToClipboard(email, "email", "Email")}
-                          className="p-1.5 rounded-lg text-on-surface-variant hover:text-primary transition-colors shrink-0"
-                          title="Salin Email"
-                        >
-                          {copiedField === "email" ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Phone */}
-                    <div className="p-3 rounded-xl bg-surface-container-low/60 border border-card-border flex items-center justify-between">
-                      <div className="flex flex-col gap-0.5 min-w-0 pr-2">
-                        <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider font-bold">
-                          No. WhatsApp / HP
-                        </span>
-                        <span className="font-medium text-on-surface truncate">{phone || "-"}</span>
-                      </div>
-                      {phone && phone !== "[Disembunyikan]" && phone !== "-" && (
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard(phone, "phone", "No. Telepon")}
-                            className="p-1.5 rounded-lg text-on-surface-variant hover:text-primary transition-colors"
-                            title="Salin No. Telepon"
-                          >
-                            {copiedField === "phone" ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                          </button>
-                          {waUrl && (
-                            <a
-                              href={waUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-500/10 transition-colors"
-                              title="Buka WhatsApp"
+                    {isCurrentUser ? (
+                      <>
+                        {/* Email */}
+                        <div className="p-3 rounded-xl bg-surface-container-low/60 border border-card-border flex items-center justify-between">
+                          <div className="flex flex-col gap-0.5 min-w-0 pr-2">
+                            <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider font-bold">
+                              Email
+                            </span>
+                            <span className="font-medium text-on-surface truncate">{email || "-"}</span>
+                          </div>
+                          {email && (
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(email, "email", "Email")}
+                              className="p-1.5 rounded-lg text-on-surface-variant hover:text-primary transition-colors shrink-0"
+                              title="Salin Email"
                             >
-                              <MessageCircle className="w-4 h-4" />
-                            </a>
+                              {copiedField === "email" ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                            </button>
                           )}
                         </div>
-                      )}
-                    </div>
 
-                    {/* Address */}
-                    <div className="p-3 rounded-xl bg-surface-container-low/60 border border-card-border">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider font-bold">
-                          Domisili / Alamat
-                        </span>
-                        <span className="font-medium text-on-surface leading-relaxed">{alamat || "-"}</span>
-                      </div>
-                    </div>
+                        {/* Phone */}
+                        <div className="p-3 rounded-xl bg-surface-container-low/60 border border-card-border flex items-center justify-between">
+                          <div className="flex flex-col gap-0.5 min-w-0 pr-2">
+                            <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider font-bold">
+                              No. WhatsApp / HP
+                            </span>
+                            <span className="font-medium text-on-surface truncate">{phone || "-"}</span>
+                          </div>
+                          {phone && phone !== "-" && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(phone, "phone", "No. Telepon")}
+                                className="p-1.5 rounded-lg text-on-surface-variant hover:text-primary transition-colors"
+                                title="Salin No. Telepon"
+                              >
+                                {copiedField === "phone" ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                              </button>
+                              {waUrl && (
+                                <a
+                                  href={waUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-500/10 transition-colors"
+                                  title="Buka WhatsApp"
+                                >
+                                  <MessageCircle className="w-4 h-4" />
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Address */}
+                        <div className="p-3 rounded-xl bg-surface-container-low/60 border border-card-border">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider font-bold">
+                              Domisili / Alamat
+                            </span>
+                            <span className="font-medium text-on-surface leading-relaxed">{alamat || "-"}</span>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Domisili / Wilayah Publik */}
+                        <div className="p-3 rounded-xl bg-surface-container-low/60 border border-card-border flex items-start gap-2.5">
+                          <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                          <div className="flex flex-col gap-0.5 min-w-0">
+                            <span className="text-[10px] text-on-surface-variant font-mono uppercase tracking-wider font-bold">
+                              Domisili / Wilayah
+                            </span>
+                            <span className="font-bold text-on-surface leading-snug">
+                              {alamat && alamat !== "[Disembunyikan]" ? alamat : "Semarang, Jawa Tengah"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Kontak Privat Card */}
+                        <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 flex flex-col gap-2.5">
+                          <div className="flex items-center gap-2 text-primary font-bold text-xs">
+                            <ShieldCheck className="w-4 h-4 shrink-0" />
+                            <span>Kontak Privat Terlindungi</span>
+                          </div>
+                          <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                            Nomor telepon &amp; email disembunyikan demi keamanan &amp; privasi. Untuk koordinasi dan kesepakatan tugas, silakan gunakan fitur Chat resmi CEPAT.
+                          </p>
+                          <Link
+                            href="/chat"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-on-primary font-bold text-xs shadow-xs hover:bg-primary/90 transition-colors"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            Buka Fitur Chat
+                          </Link>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
