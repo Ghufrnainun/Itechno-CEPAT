@@ -68,7 +68,7 @@ Itechno/
 │   └── migrations/              # SQL migrasi RLS policies, storage bucket, triggers & PostGIS
 │
 ├── docs/                        # Dokumentasi menyeluruh proyek
-│   ├── api-cepat/               # Bruno API testing collections
+│   ├── postman/                 # Postman API testing collection (v2.1)
 │   └── *.md
 │
 ├── src/

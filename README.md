@@ -173,7 +173,7 @@ Deployment   : Vercel Serverless Edge Network
 Automation   : Vercel Cron Jobs (/api/cron/schedule-reminder)
 Push Notif   : Firebase Cloud Messaging (FCM Web SDK v12 & Firebase Admin v14)
 Payment      : Midtrans Snap & Core API (Sandbox / Production)
-API Testing  : Bruno API Client (Koleksi lengkap di docs/api-cepat/)
+API Testing  : Postman (Koleksi lengkap di docs/postman/)
 Linting      : ESLint 9 (Flat Config) & Next.js ESLint Plugin
 ```
 
@@ -276,7 +276,7 @@ Itechno/
 ├── supabase/
 │   └── migrations/             # Skrip SQL kebijakan RLS & inisialisasi PostGIS
 ├── docs/                       # Dokumentasi arsitektur, API, & panduan lengkap
-│   ├── api-cepat/              # Koleksi pengujian otomatis Bruno API
+│   ├── postman/                # Koleksi pengujian resmi Postman (v2.1)
 │   └── *.md
 ├── src/
 │   ├── proxy.ts                # Next.js Middleware (Admin & Supabase Auth Guards)
@@ -380,7 +380,7 @@ npx prisma db execute --file=supabase/migrations/20260901_fix_comprehensive_rls.
 npm run db:seed
 ```
 
-Semua akun demo telah terkonfigurasi dengan kata sandi default `DemoCepat2026!#` (dapat diubah melalui variabel `SEED_AUTH_PASSWORD`):
+Semua akun demo telah terkonfigurasi dengan kata sandi default `Password123!` (dapat diubah melalui variabel `SEED_AUTH_PASSWORD`):
 
 | Nama Akun     | Email Demo       | Peran Utama               |
 | ------------- | ---------------- | ------------------------- |
@@ -547,15 +547,15 @@ console.log(result);
 
 ## 🧪 Testing
 
-### Running API Tests (Bruno Client)
+### Running API Tests (Postman)
 
-Pengujian fungsionalitas seluruh alur REST Route Handlers disediakan dalam bentuk koleksi otomatis **Bruno API Client** di direktori [`docs/api-cepat/`](docs/api-cepat):
+Pengujian fungsionalitas seluruh alur REST Route Handlers disediakan dalam bentuk berkas koleksi resmi **Postman (v2.1)** di direktori [`docs/postman/`](docs/postman/) dengan panduan lengkap di [`docs/api-testing-postman.md`](docs/api-testing-postman.md):
 
 ```bash
-# 1. Buka aplikasi Bruno (https://www.usebruno.com/)
-# 2. Open Collection -> Pilih folder docs/api-cepat/
-# 3. Pilih environment 'Local' (http://localhost:3000/api)
-# 4. Jalankan pengujian otomatis untuk Authentication, Tasks, Bidding, dan Payment
+# 1. Buka aplikasi Postman (https://www.postman.com/downloads/)
+# 2. Klik Import -> Pilih berkas docs/postman/CEPAT.postman_collection.json
+# 3. Eksekusi 'Authentication -> Login (Otomatis Simpan Token)'
+# 4. Jalankan rangkaian tes untuk Tasks, Bidding, Wallet/Midtrans, Chat, dan Dispute
 ```
 
 ### Code Quality & Validation

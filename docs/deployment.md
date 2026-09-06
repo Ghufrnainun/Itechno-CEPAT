@@ -3,6 +3,7 @@
 ## 1. Arsitektur Hosting
 
 ### Vercel (Frontend, Route Handlers & Cron Jobs)
+
 - **Platform**: Vercel (Sesuai panduan resmi ITechno Cup 2026).
 - **Framework Preset**: Next.js 16 (App Router auto-detected).
 - **Domain**: `cepat.vercel.app` atau URL deployment pratinjau otomatis per pull request.
@@ -10,6 +11,7 @@
 - **Automated Cron Jobs**: Dikonfigurasi untuk mengeksekusi `/api/cron/schedule-reminder` secara berkala guna memicu pengingat penugasan.
 
 ### Supabase (Database PostgreSQL + PostGIS + Storage + Realtime)
+
 - **Region**: Southeast Asia (Singapore / `ap-southeast-1`) untuk latensi koneksi minimal.
 - **PostGIS Extension**: Wajib diaktifkan di SQL editor Supabase (`CREATE EXTENSION IF NOT EXISTS postgis;`).
 - **Connection Pooling**: Menggunakan PgBouncer port 6543 (`DATABASE_URL`) untuk serverless handler dan direct port 5432 (`DIRECT_URL`) untuk Prisma migrations.
@@ -78,7 +80,7 @@ MIDTRANS_IS_PRODUCTION=false
 NEXT_PUBLIC_BASE_URL=https://cepat-steel.vercel.app
 NEXT_PUBLIC_DEFAULT_RADIUS=2000
 CRON_SECRET=super-secret-cron-key-123
-SEED_AUTH_PASSWORD="DemoCepat2026!#"
+SEED_AUTH_PASSWORD="Password123!"
 ```
 
 ---
@@ -106,14 +108,14 @@ Untuk menjadwalkan eksekusi otomatis pada Vercel Serverless:
 
 ## 5. Scripts Resmi `package.json`
 
-| Perintah | Fungsi |
-|---|---|
-| `npm run dev` | Menjalankan server Next.js lokal pada port 3000. |
-| `npm run build` | Melakukan kompilasi produksi Next.js. |
-| `npm run start` | Menjalankan build produksi secara lokal. |
-| `npm run lint` | Menjalankan pemeriksaan ESLint. |
-| `npm run db:seed` | Mengisi database dengan seed data realistis untuk pengujian & demo (`prisma/seed.mjs`). |
-| `npm run postinstall`| Menjalankan `prisma generate` otomatis setelah pemasangan package. |
+| Perintah              | Fungsi                                                                                  |
+| --------------------- | --------------------------------------------------------------------------------------- |
+| `npm run dev`         | Menjalankan server Next.js lokal pada port 3000.                                        |
+| `npm run build`       | Melakukan kompilasi produksi Next.js.                                                   |
+| `npm run start`       | Menjalankan build produksi secara lokal.                                                |
+| `npm run lint`        | Menjalankan pemeriksaan ESLint.                                                         |
+| `npm run db:seed`     | Mengisi database dengan seed data realistis untuk pengujian & demo (`prisma/seed.mjs`). |
+| `npm run postinstall` | Menjalankan `prisma generate` otomatis setelah pemasangan package.                      |
 
 ---
 
