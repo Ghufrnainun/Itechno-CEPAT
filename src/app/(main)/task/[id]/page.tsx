@@ -599,7 +599,19 @@ export default function TaskDetailPage() {
   }
 
   const taskStatus = task.status;
-  const isRequester = role === "requester";
+
+  // ✅ FIX: isRequester ditentukan berdasarkan kepemilikan task aktual (task.id_requester),
+  // BUKAN dari role global UI (localStorage). Ini mencegah bug di mana worker yang ganti
+  // role ke "Requester" bisa melihat panel Requester task orang lain — termasuk kebocoran
+  // data sealed bid dari pelamar lain (privasi breach).
+  // Requester asli task ini SELALU melihat tampilan Requester, terlepas dari role global-nya.
+  const isActualRequester = !!user?.id_user && user.id_user === task.id_requester;
+  const isRequester = isActualRequester;
+
+  // True jika user sedang dalam mode Requester global tapi bukan pemilik task ini.
+  // Digunakan untuk menampilkan banner orientasi.
+  const viewingAsWorkerButRoleIsRequester = !isActualRequester && role === "requester";
+
   const taskForMap = task.latitude && task.longitude
     ? [{ id_task: task.id_tasks, title: task.judul_tugas, latitude: task.latitude, longitude: task.longitude, compensation: task.kompensasi, status: task.status, description: task.deskripsi_tugas, duration_estimate: task.estimasi_waktu ?? "", created_at: task.created_at, updated_at: task.created_at, id_requester: task.id_requester }]
     : [];
@@ -635,6 +647,21 @@ export default function TaskDetailPage() {
       </div>
 
       <EscrowBanner />
+
+      {/* Banner Orientasi: user mode Requester tapi bukan pemilik task ini */}
+      {viewingAsWorkerButRoleIsRequester && (
+        <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-700 text-xs font-medium">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span className="leading-relaxed">
+            Anda sedang melihat task ini sebagai <strong>Worker</strong> — Anda bukan pemberi tugas ini.
+            Untuk mengelola task Anda sendiri, gunakan menu{" "}
+            <a href="/tugas" className="font-bold underline underline-offset-2 hover:text-amber-900 transition-colors">
+              Tugas Saya
+            </a>
+            .
+          </span>
+        </div>
+      )}
 
       {/* Main Details and Map grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
