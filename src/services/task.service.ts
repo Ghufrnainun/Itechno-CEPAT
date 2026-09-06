@@ -75,7 +75,23 @@ export const taskService = {
     // Cari kategori yang sesuai — atau gunakan default (kategori pertama)
     let categoryId: string;
     if (id_category) {
-      categoryId = id_category;
+      const keyword = id_category.replace(/^cat-|-01$/g, '').replace(/-/g, ' ');
+      const cat = await prisma.taskCategory.findFirst({
+        where: {
+          OR: [
+            { id_category },
+            { nama_kategori: { contains: keyword, mode: 'insensitive' } },
+          ],
+        },
+      });
+      if (cat) {
+        categoryId = cat.id_category;
+      } else {
+        const defaultCat = await prisma.taskCategory.findFirst();
+        if (!defaultCat)
+          throw new Error('Tidak ada kategori task yang tersedia di database.');
+        categoryId = defaultCat.id_category;
+      }
     } else if (kategori) {
       const cat = await prisma.taskCategory.findFirst({
         where: { nama_kategori: { contains: kategori, mode: 'insensitive' } },
@@ -513,7 +529,7 @@ export const taskService = {
     if (!task) throw new Error('Task tidak ditemukan.');
     if (task.status_task.nama_status.toLowerCase() !== 'open')
       throw new Error('Task sudah tidak menerima lamaran.');
-    if (task.id_requester === workerId)
+    if (task.id_requester === workerId && process.env.NODE_ENV === 'production' && !process.env.ALLOW_SELF_APPLY)
       throw new Error('Anda tidak bisa melamar task milik sendiri.');
 
     // Cek duplikasi / status lamaran sebelumnya

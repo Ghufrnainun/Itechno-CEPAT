@@ -28,7 +28,9 @@ export async function proxy(request: NextRequest) {
       return NextResponse.next()
     }
 
-    const token = request.cookies.get('admin_token')?.value
+    const authHeader = request.headers.get('authorization')
+    const bearerToken = authHeader?.replace(/^Bearer\s+/i, '').trim()
+    const token = request.cookies.get('admin_token')?.value || bearerToken
     if (!token) {
       if (pathname.startsWith('/api/admin')) {
         return NextResponse.json(

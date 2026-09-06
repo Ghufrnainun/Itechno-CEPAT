@@ -6,11 +6,11 @@ import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const searchSchema = z.object({
-  lat: z.coerce.number().min(-90).max(90),
-  lng: z.coerce.number().min(-180).max(180),
-  radius: z.coerce.number().min(1).max(50000).default(2000), // Default 2km
-  limit: z.coerce.number().min(1).max(100).default(20), // Default 20
-  q: z.string().nullish(),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  radius: z.number().min(1).max(50000).default(2000), // Default 2km
+  limit: z.number().min(1).max(100).default(20), // Default 20
+  q: z.string().optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -42,13 +42,19 @@ export async function GET(request: NextRequest) {
 
     // Validate and parse incoming query parameters
     const url = new URL(request.url)
-    const lat = url.searchParams.get('lat')
-    const lng = url.searchParams.get('lng')
-    const radius = url.searchParams.get('radius')
-    const limit = url.searchParams.get('limit')
+    const rawLat = url.searchParams.get('lat')
+    const rawLng = url.searchParams.get('lng')
+    const rawRadius = url.searchParams.get('radius')
+    const rawLimit = url.searchParams.get('limit')
     const q = url.searchParams.get('q')
 
-    const parsed = searchSchema.safeParse({ lat, lng, radius, limit, q })
+    const parsed = searchSchema.safeParse({
+      lat: rawLat !== null && rawLat !== '' ? parseFloat(rawLat) : undefined,
+      lng: rawLng !== null && rawLng !== '' ? parseFloat(rawLng) : undefined,
+      radius: rawRadius !== null && rawRadius !== '' ? parseFloat(rawRadius) : undefined,
+      limit: rawLimit !== null && rawLimit !== '' ? parseInt(rawLimit, 10) : undefined,
+      q: q || undefined,
+    })
     
     if (!parsed.success) {
       return NextResponse.json(

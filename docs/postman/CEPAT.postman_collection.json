@@ -35,6 +35,21 @@
       "key": "admin_token",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "reg_email",
+      "value": "worker_{{$timestamp}}@cepat.com",
+      "type": "string"
+    },
+    {
+      "key": "reg_username",
+      "value": "worker_{{$timestamp}}",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -53,7 +68,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"worker.baru@cepat.com\",\n  \"password\": \"Password123!\",\n  \"nama_lengkap\": \"Ahmad Fauzi\",\n  \"username\": \"ahmadfauzi\"\n}"
+              "raw": "{\n  \"email\": \"{{reg_email}}\",\n  \"password\": \"Password123!\",\n  \"nama_lengkap\": \"Ahmad Fauzi\",\n  \"username\": \"{{reg_username}}\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/register",
@@ -66,7 +81,41 @@
               ]
             },
             "description": "Mendaftarkan pengguna baru dengan sanitasi email disposable dan validasi Zod."
-          }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate email & username unik tiap test agar tidak terjadi 409 Conflict",
+                  "const rand = Date.now().toString().slice(-6) + Math.floor(Math.random() * 900 + 100);",
+                  "const dynEmail = 'worker.' + rand + '@cepat.com';",
+                  "const dynUsername = 'worker_' + rand;",
+                  "pm.variables.set('reg_email', dynEmail);",
+                  "pm.collectionVariables.set('reg_email', dynEmail);",
+                  "pm.variables.set('reg_username', dynUsername);",
+                  "pm.collectionVariables.set('reg_username', dynUsername);",
+                  "console.log('Registering with:', dynEmail, dynUsername);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created or 200 OK\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "const res = pm.response.json();",
+                  "pm.test(\"Pendaftaran berhasil\", function () {",
+                  "    pm.expect(res.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Login (Otomatis Simpan Token)",
@@ -496,7 +545,22 @@
               ]
             },
             "description": "Membuat order top-up baru dan mengembalikan token Snap Midtrans untuk pembayaran QRIS/VA."
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.success && response.data?.order_id) {",
+                  "    pm.collectionVariables.set('order_id', response.data.order_id);",
+                  "    console.log('Order ID berhasil disimpan:', response.data.order_id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Cek Status Pembayaran",
@@ -509,7 +573,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/payment/status?order_id=TOPUP-1725500000-abcd",
+              "raw": "{{base_url}}/payment/status?order_id={{order_id}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -520,7 +584,7 @@
               "query": [
                 {
                   "key": "order_id",
-                  "value": "TOPUP-1725500000-abcd"
+                  "value": "{{order_id}}"
                 }
               ]
             },
