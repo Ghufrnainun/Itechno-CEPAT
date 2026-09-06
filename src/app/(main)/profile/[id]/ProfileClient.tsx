@@ -381,6 +381,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
     try {
       const formData = new FormData();
       formData.append("avatar", file);
+      formData.append("file", file);
 
       const res = await fetch("/api/users/avatar", {
         method: "POST",
@@ -388,9 +389,14 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
       });
 
       const data = await res.json();
-      if (res.ok && data.success) {
-        setAvatarUrl(data.avatar_url);
+      const newAvatarUrl = data.avatar_url || data.data?.avatar_url;
+      if (res.ok && data.success && newAvatarUrl) {
+        setAvatarUrl(newAvatarUrl);
         showFeedback("Foto profil berhasil diperbarui!");
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("avatar-updated", { detail: newAvatarUrl }));
+          window.dispatchEvent(new Event("user-profile-updated"));
+        }
       } else {
         showFeedback(data.message || "Gagal mengunggah foto profil.");
       }
@@ -399,6 +405,7 @@ export default function ProfileClient({ initialData }: ProfileClientProps) {
       showFeedback("Terjadi kesalahan koneksi.");
     } finally {
       setIsUploading(false);
+      e.target.value = "";
     }
   };
 

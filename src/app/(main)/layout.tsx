@@ -149,6 +149,15 @@ export default function MainAppLayout({
       }
     }
     fetchUser();
+
+    const handleProfileUpdated = () => {
+      fetchUser();
+    };
+
+    window.addEventListener("user-profile-updated", handleProfileUpdated);
+    return () => {
+      window.removeEventListener("user-profile-updated", handleProfileUpdated);
+    };
   }, []);
 
   const setRole = (newRole: Role) => {
