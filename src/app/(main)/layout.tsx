@@ -8,6 +8,8 @@ import { useFCM } from "@/hooks/useFCM";
 import { usePresencePing } from "@/hooks/usePresencePing";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useUnreadChat } from "@/hooks/useUnreadChat";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { BellRing } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PwaInstallBanner } from "@/components/ui/PwaInstallBanner";
@@ -170,6 +172,9 @@ export default function MainAppLayout({
     setRole(newRole);
   };
 
+  const pathname = usePathname();
+  const isChat = pathname === "/chat";
+
   return (
     <RoleContext.Provider value={{ role, setRole, toggleRole, user, unreadCount, chatUnreadCount }}>
       <ToastProvider>
@@ -186,7 +191,12 @@ export default function MainAppLayout({
           <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden relative">
             <main
               id="main-content"
-              className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar [scrollbar-gutter:stable] pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] lg:pb-0"
+              className={cn(
+                "flex-1 min-h-0 flex flex-col overflow-x-hidden",
+                isChat
+                  ? "h-full overflow-hidden pb-0 lg:pb-0"
+                  : "overflow-y-auto custom-scrollbar [scrollbar-gutter:stable] pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] lg:pb-0"
+              )}
               tabIndex={-1}
             >
               {children}

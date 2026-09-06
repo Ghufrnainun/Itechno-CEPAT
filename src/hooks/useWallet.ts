@@ -78,6 +78,7 @@ export function useWallet() {
   const [isLoading, setIsLoading] = useState(!hasLoadedWalletOnce);
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [isWithdrawLoading, setIsWithdrawLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // ── Fetch balance ────────────────────────────────────────────────────────
@@ -291,6 +292,47 @@ export function useWallet() {
     [checkPaymentStatus]
   );
 
+  // ── Penarikan Saldo (Withdrawal) ─────────────────────────────────────────
+
+  /**
+   * Mengajukan permintaan penarikan saldo ke rekening bank / e-wallet.
+   * Saldo akan masuk ke status held_balance sampai dikonfirmasi oleh admin.
+   * @returns error message string jika gagal, undefined jika sukses.
+   */
+  const requestWithdrawal = useCallback(
+    async (params: {
+      amount: number;
+      bank: string;
+      accountNumber: string;
+      accountName: string;
+    }): Promise<string | undefined> => {
+      setIsWithdrawLoading(true);
+      try {
+        const res = await fetch("/api/wallet/withdraw", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(params),
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          return data.message || "Gagal mengajukan penarikan saldo.";
+        }
+
+        triggerHaptic("success");
+        // Refresh balance & history agar held_balance terupdate di UI
+        await Promise.all([fetchBalance(), fetchHistory()]);
+        return undefined;
+      } catch {
+        return "Terjadi kesalahan koneksi. Silakan coba lagi.";
+      } finally {
+        setIsWithdrawLoading(false);
+      }
+    },
+    [fetchBalance, fetchHistory]
+  );
+
   // ── Refresh all ──────────────────────────────────────────────────────────
 
   const refresh = useCallback(async () => {
@@ -306,8 +348,10 @@ export function useWallet() {
     isLoading,
     isTopUpLoading,
     isPaymentLoading,
+    isWithdrawLoading,
     error,
     topUp,
+    requestWithdrawal,
     createPayment,
     checkPaymentStatus,
     refresh,

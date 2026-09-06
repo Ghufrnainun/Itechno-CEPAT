@@ -18,7 +18,6 @@ import {
   Info,
   Receipt,
   CreditCard,
-  Zap,
   AlertCircle,
   ArrowDownToLine,
   Building,
@@ -36,9 +35,25 @@ const PRESET_AMOUNTS = [
   { label: "Rp500.000", value: 500_000 },
 ];
 
+const BANK_OPTIONS = [
+  { label: "Bank BNI", value: "BNI" },
+  { label: "Bank BCA", value: "BCA" },
+  { label: "Bank Mandiri", value: "Mandiri" },
+  { label: "Bank BRI", value: "BRI" },
+  { label: "SeaBank", value: "SeaBank" },
+  { label: "Bank Jago", value: "Bank Jago" },
+  { label: "GoPay", value: "GoPay" },
+  { label: "DANA", value: "DANA" },
+  { label: "OVO", value: "OVO" },
+  { label: "ShopeePay", value: "ShopeePay" },
+];
+
 // ─── UI Helpers ──────────────────────────────────────────────────────────────
 
-function getBadgeStyle(subType: TransactionSubType): string {
+function getBadgeStyle(subType: TransactionSubType, description?: string | null): string {
+  if (description?.toLowerCase().includes("penarikan")) {
+    return "bg-rose-500/10 text-rose-600 border border-rose-500/20";
+  }
   switch (subType) {
     case "topup":
     case "task_earning":
@@ -52,7 +67,10 @@ function getBadgeStyle(subType: TransactionSubType): string {
   }
 }
 
-function getSubTypeLabel(subType: TransactionSubType): string {
+function getSubTypeLabel(subType: TransactionSubType, description?: string | null): string {
+  if (description?.toLowerCase().includes("penarikan")) {
+    return "Penarikan";
+  }
   switch (subType) {
     case "topup":
       return "Top Up";
@@ -105,18 +123,24 @@ function WalletPageInner() {
     isLoading,
     isTopUpLoading,
     isPaymentLoading,
+    isWithdrawLoading,
     error,
-    topUp,
     createPayment,
+    requestWithdrawal,
     refresh,
   } = useWallet();
 
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState("");
-  const [topUpMode, setTopUpMode] = useState<"midtrans" | "simulasi">("midtrans");
   const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
   const [filterType, setFilterType] = useState<string>("all");
+
+  // State untuk form penarikan saldo
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawBank, setWithdrawBank] = useState("BNI");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountName, setAccountName] = useState("");
 
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
@@ -165,28 +189,6 @@ function WalletPageInner() {
     setTopUpAmount(String(value));
   };
 
-  const handleSimulasiTopUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const amountVal = parseInt(topUpAmount, 10);
-    if (isNaN(amountVal) || amountVal <= 0) {
-      showToast("Masukkan nominal top up yang valid!");
-      return;
-    }
-
-    const errorMsg = await topUp(amountVal);
-    if (errorMsg) {
-      showToast(errorMsg);
-      return;
-    }
-
-    setIsTopUpOpen(false);
-    setTopUpAmount("");
-    setSelectedPreset(null);
-    showToast(
-      `Berhasil top up Rp ${amountVal.toLocaleString("id-ID")}! (Simulasi)`
-    );
-  };
-
   const handleMidtransTopUp = async (e: React.FormEvent) => {
     e.preventDefault();
     const amountVal = parseInt(topUpAmount, 10);
@@ -218,6 +220,45 @@ function WalletPageInner() {
       showToast(errorMsg);
       setIsTopUpOpen(true);
     }
+  };
+
+  const handleWithdrawSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amountVal = parseInt(withdrawAmount, 10);
+    if (isNaN(amountVal) || amountVal < 20000) {
+      showToast("Nominal penarikan minimal Rp 20.000!");
+      return;
+    }
+    if (amountVal > availableBalance) {
+      showToast("Nominal melebihi saldo yang dapat ditarik!");
+      return;
+    }
+    if (!accountNumber.trim()) {
+      showToast("Nomor rekening / e-wallet harus diisi!");
+      return;
+    }
+    if (!accountName.trim()) {
+      showToast("Nama pemilik rekening harus diisi!");
+      return;
+    }
+
+    const errorMsg = await requestWithdrawal({
+      amount: amountVal,
+      bank: withdrawBank,
+      accountNumber: accountNumber.trim(),
+      accountName: accountName.trim(),
+    });
+
+    if (errorMsg) {
+      showToast(errorMsg);
+      return;
+    }
+
+    setIsWithdrawOpen(false);
+    setWithdrawAmount("");
+    setAccountNumber("");
+    setAccountName("");
+    showToast("Permintaan penarikan berhasil dikirim! Menunggu konfirmasi admin.");
   };
 
   const availableBalance = balance?.balance ?? 0;
@@ -386,16 +427,16 @@ function WalletPageInner() {
                         className="hover:bg-surface-container-low/50 transition-colors duration-150"
                       >
                         <td className="px-4 py-3 font-medium text-on-surface">
-                          {tx.description || getSubTypeLabel(tx.sub_type)}
+                          {tx.description || getSubTypeLabel(tx.sub_type, tx.description)}
                         </td>
                         <td className="px-4 py-3">
                           <span
                             className={cn(
                               "inline-block px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider font-mono",
-                              getBadgeStyle(tx.sub_type)
+                              getBadgeStyle(tx.sub_type, tx.description)
                             )}
                           >
-                            {getSubTypeLabel(tx.sub_type)}
+                            {getSubTypeLabel(tx.sub_type, tx.description)}
                           </span>
                         </td>
                         <td
@@ -430,39 +471,9 @@ function WalletPageInner() {
           title="Top Up Saldo"
         >
           <form
-            onSubmit={topUpMode === "midtrans" ? handleMidtransTopUp : handleSimulasiTopUp}
+            onSubmit={handleMidtransTopUp}
             className="flex flex-col gap-4 font-sans text-xs"
           >
-            {/* Mode Tabs */}
-            <div className="flex gap-1 p-1 bg-surface-container-low border border-card-border rounded-lg">
-              <button
-                type="button"
-                onClick={() => setTopUpMode("midtrans")}
-                className={cn(
-                  "flex-1 py-1.5 px-3 rounded-md font-bold transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5",
-                  topUpMode === "midtrans"
-                    ? "bg-surface-container-lowest text-on-surface shadow-xs"
-                    : "text-on-surface-variant hover:text-on-surface"
-                )}
-              >
-                <CreditCard className="w-3.5 h-3.5" />
-                Midtrans Payment
-              </button>
-              <button
-                type="button"
-                onClick={() => setTopUpMode("simulasi")}
-                className={cn(
-                  "flex-1 py-1.5 px-3 rounded-md font-bold transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5",
-                  topUpMode === "simulasi"
-                    ? "bg-surface-container-lowest text-on-surface shadow-xs"
-                    : "text-on-surface-variant hover:text-on-surface"
-                )}
-              >
-                <Zap className="w-3.5 h-3.5" />
-                Simulasi Instan
-              </button>
-            </div>
-
             {/* Preset Amounts */}
             <div>
               <p className="font-semibold text-on-surface-variant mb-2">
@@ -498,19 +509,11 @@ function WalletPageInner() {
                 setSelectedPreset(null);
               }}
               required
-              min={topUpMode === "midtrans" ? "1000" : "1"}
+              min="1000"
             />
 
             <p className="text-[11px] text-on-surface-variant leading-relaxed">
-              {topUpMode === "midtrans" ? (
-                <>
-                  *Pembayaran diproses via <strong>Midtrans Sandbox</strong> (QRIS / GoPay / Bank Transfer).
-                </>
-              ) : (
-                <>
-                  *Simulasi pengisian saldo instan untuk keperluan demo aplikasi.
-                </>
-              )}
+              *Pembayaran diproses secara aman melalui <strong>Midtrans Payment Gateway</strong> (QRIS, GoPay, Transfer Bank BCA/BNI/BRI/Mandiri).
             </p>
 
             <div className="flex justify-end gap-2 border-t border-card-border pt-3 mt-1">
@@ -529,27 +532,26 @@ function WalletPageInner() {
               <Button
                 type="submit"
                 size="sm"
-                disabled={isTopUpLoading || isPaymentLoading}
+                disabled={isPaymentLoading}
               >
-                {isTopUpLoading || isPaymentLoading ? (
-                  "Memproses..."
-                ) : topUpMode === "midtrans" ? (
-                  "Bayar via Midtrans"
-                ) : (
-                  "Konfirmasi Top Up"
-                )}
+                {isPaymentLoading ? "Memproses..." : "Bayar via Midtrans"}
               </Button>
             </div>
           </form>
         </Modal>
 
-        {/* Withdrawal Info Modal */}
+        {/* Withdrawal Modal */}
         <Modal
           isOpen={isWithdrawOpen}
-          onClose={() => setIsWithdrawOpen(false)}
+          onClose={() => {
+            if (!isWithdrawLoading) {
+              setIsWithdrawOpen(false);
+            }
+          }}
           title="Penarikan Saldo (Payout)"
         >
-          <div className="flex flex-col gap-4 font-sans text-xs">
+          <form onSubmit={handleWithdrawSubmit} className="flex flex-col gap-4 font-sans text-xs">
+            {/* Saldo Tersedia Card */}
             <div className="p-4 rounded-xl bg-surface-container-low border border-card-border flex items-center justify-between">
               <div>
                 <span className="text-[11px] font-bold text-on-surface-variant uppercase font-mono">
@@ -564,39 +566,99 @@ function WalletPageInner() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-2 bg-surface-container-lowest p-3.5 rounded-xl border border-card-border">
-              <h4 className="font-headline font-bold text-xs text-on-surface flex items-center gap-1.5">
-                <Info className="w-3.5 h-3.5 text-primary" />
-                Informasi Penarikan Dana
-              </h4>
-              <p className="text-xs text-on-surface-variant leading-relaxed">
-                Penarikan saldo otomatis ditransfer ke rekening bank terdaftar (BCA/Mandiri/BRI) atau e-wallet (GoPay/DANA/OVO) dalam 1x24 jam kerja.
-              </p>
-              <p className="text-[11px] text-on-surface-variant font-mono">
-                Minimal penarikan: Rp 20.000 • Biaya admin: Bebas biaya
+            {/* Input Nominal */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <label className="font-semibold text-on-surface">Nominal Penarikan (Rp)</label>
+                <button
+                  type="button"
+                  onClick={() => setWithdrawAmount(String(availableBalance))}
+                  className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
+                >
+                  Tarik Semua
+                </button>
+              </div>
+              <Input
+                type="number"
+                placeholder="Minimal Rp 20.000"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                min="20000"
+                max={String(availableBalance)}
+                required
+              />
+              <p className="text-[11px] text-on-surface-variant">
+                Minimal penarikan: Rp 20.000 • Bebas biaya admin
               </p>
             </div>
 
-            <div className="flex justify-end gap-2 border-t border-card-border pt-3">
+            {/* Pilihan Bank / E-Wallet */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-semibold text-on-surface">Tujuan Transfer Bank / E-Wallet</label>
+              <select
+                value={withdrawBank}
+                onChange={(e) => setWithdrawBank(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl bg-surface-container-lowest border border-card-border text-on-surface font-sans text-xs focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                required
+              >
+                {BANK_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Nomor Rekening / E-Wallet */}
+            <Input
+              label="Nomor Rekening / No. E-Wallet"
+              type="text"
+              placeholder="Contoh: 0123456789 atau 081234567890"
+              value={accountNumber}
+              onChange={(e) => setAccountNumber(e.target.value)}
+              required
+            />
+
+            {/* Nama Pemilik Rekening */}
+            <Input
+              label="Nama Pemilik Rekening (Atas Nama)"
+              type="text"
+              placeholder="Contoh: Budi Santoso (harus sesuai buku tabungan/akun)"
+              value={accountName}
+              onChange={(e) => setAccountName(e.target.value)}
+              required
+            />
+
+            {/* Informasi & Catatan */}
+            <div className="flex flex-col gap-1 bg-surface-container-lowest p-3 rounded-xl border border-card-border">
+              <h4 className="font-headline font-bold text-[11px] text-on-surface flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5 text-primary" />
+                Catatan Penarikan Dana
+              </h4>
+              <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                Permintaan penarikan akan diverifikasi oleh Admin. Saldo Anda akan ditahan sementara hingga admin menyelesaikan transfer ke rekening Anda.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-card-border pt-3 mt-1">
               <Button
+                type="button"
                 variant="secondary"
                 size="sm"
                 onClick={() => setIsWithdrawOpen(false)}
+                disabled={isWithdrawLoading}
               >
-                Tutup
+                Batal
               </Button>
               <Button
+                type="submit"
                 size="sm"
-                onClick={() => {
-                  setIsWithdrawOpen(false);
-                  showToast("Permintaan penarikan saldo Anda telah dicatat.");
-                }}
-                disabled={availableBalance < 20000}
+                disabled={availableBalance < 20000 || isWithdrawLoading}
               >
-                Ajukan Penarikan
+                {isWithdrawLoading ? "Mengajukan..." : "Ajukan Penarikan"}
               </Button>
             </div>
-          </div>
+          </form>
         </Modal>
         </div>
       </div>

@@ -21,7 +21,12 @@ import {
   Sparkles,
   Command,
   CheckCheck,
+  Banknote,
+  Copy,
+  Check,
+  Building2,
 } from 'lucide-react';
+import { Modal } from '@/components/ui/Modal';
 import { useFCM } from '@/hooks/useFCM';
 import { onFcmForegroundMessage } from '@/lib/firebase/client';
 
@@ -104,6 +109,15 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
+
+  // Admin withdrawal modal state
+  const [selectedWithdrawal, setSelectedWithdrawal] = useState<AdminNotification | null>(null);
+  const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
+  const [withdrawalActionLoading, setWithdrawalActionLoading] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [showRejectInput, setShowRejectInput] = useState(false);
+  const [copiedAccount, setCopiedAccount] = useState(false);
+  const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -274,6 +288,17 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
       fetchNotifications();
     } catch (_) {}
 
+    // Jika ini adalah notifikasi penarikan saldo, buka modal detail penarikan
+    if (notif.data?.subType === 'withdrawal') {
+      setSelectedWithdrawal(notif);
+      setIsWithdrawalModalOpen(true);
+      setShowRejectInput(false);
+      setRejectionReason('');
+      setActionSuccessMsg(null);
+      setCopiedAccount(false);
+      return;
+    }
+
     const reportId = notif.data?.report_id;
     if (reportId) {
       router.push(`/admin/reports?id=${reportId}`);
@@ -281,6 +306,56 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
       router.push(notif.data.link);
     } else {
       router.push('/admin/reports');
+    }
+  };
+
+  const handleWithdrawalAction = async (action: 'approve' | 'reject') => {
+    if (!selectedWithdrawal) return;
+    if (action === 'reject' && !showRejectInput) {
+      setShowRejectInput(true);
+      return;
+    }
+
+    setWithdrawalActionLoading(true);
+    try {
+      const res = await fetch('/api/admin/withdrawals/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notificationId: selectedWithdrawal.id,
+          action,
+          rejectionReason: action === 'reject' ? rejectionReason : undefined,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        setActionSuccessMsg(
+          action === 'approve'
+            ? 'Penarikan berhasil disetujui! Saldo user telah dipotong dan notifikasi telah dikirim.'
+            : 'Penarikan telah ditolak dan saldo telah dikembalikan ke user.'
+        );
+        fetchNotifications();
+        setSelectedWithdrawal((prev) =>
+          prev
+            ? {
+                ...prev,
+                data: {
+                  ...prev.data,
+                  status: action === 'approve' ? 'completed' : 'rejected',
+                  rejection_reason: action === 'reject' ? rejectionReason : undefined,
+                },
+              }
+            : null
+        );
+      } else {
+        alert(json.message || 'Gagal memproses aksi penarikan.');
+      }
+    } catch (err) {
+      console.error('[AdminTopbar] Error processing withdrawal:', err);
+      alert('Terjadi kesalahan koneksi server saat memproses penarikan.');
+    } finally {
+      setWithdrawalActionLoading(false);
     }
   };
 
@@ -360,7 +435,8 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
   let currentIndexTracker = 0;
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-surface-container-lowest border-b border-card-border shadow-2xs">
+    <>
+      <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-surface-container-lowest border-b border-card-border shadow-2xs">
       {/* Title / Breadcrumb */}
       <div className="flex items-center gap-3">
         <h1 className="font-headline font-bold text-lg text-on-surface tracking-tight">
@@ -684,13 +760,46 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
                         !notif.is_read ? 'bg-primary/10/30 font-semibold' : ''
                       }`}
                     >
-                      <div className="p-2 rounded-lg bg-rose-50 text-rose-600 shrink-0 mt-0.5 border border-rose-100">
-                        <Flag className="w-3.5 h-3.5" />
+                      <div
+                        className={`p-2 rounded-lg shrink-0 mt-0.5 border ${
+                          notif.data?.subType === 'withdrawal'
+                            ? notif.data?.status === 'completed'
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                              : notif.data?.status === 'rejected'
+                              ? 'bg-rose-50 text-rose-600 border-rose-200'
+                              : 'bg-amber-50 text-amber-600 border-amber-200'
+                            : 'bg-rose-50 text-rose-600 border-rose-100'
+                        }`}
+                      >
+                        {notif.data?.subType === 'withdrawal' ? (
+                          <Banknote className="w-3.5 h-3.5" />
+                        ) : (
+                          <Flag className="w-3.5 h-3.5" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-on-surface truncate">
-                          {notif.title}
-                        </p>
+                        <div className="flex items-center justify-between gap-1.5">
+                          <p className="text-xs font-bold text-on-surface truncate">
+                            {notif.title}
+                          </p>
+                          {notif.data?.subType === 'withdrawal' && (
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold shrink-0 ${
+                                notif.data?.status === 'completed'
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : notif.data?.status === 'rejected'
+                                  ? 'bg-rose-100 text-rose-700'
+                                  : 'bg-amber-100 text-amber-800 animate-pulse'
+                              }`}
+                            >
+                              {notif.data?.status === 'completed'
+                                ? 'Selesai'
+                                : notif.data?.status === 'rejected'
+                                ? 'Ditolak'
+                                : 'Perlu Transfer'}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] text-on-surface-variant line-clamp-2 mt-0.5">
                           {notif.message}
                         </p>
@@ -755,5 +864,165 @@ export default function AdminTopbar({ title = 'Dashboard', adminUser }: AdminTop
         </div>
       </div>
     </header>
+
+    {/* Modal Konfirmasi Penarikan Dana (Payout) */}
+    {selectedWithdrawal && (
+      <Modal
+        isOpen={isWithdrawalModalOpen}
+        onClose={() => {
+          if (!withdrawalActionLoading) {
+            setIsWithdrawalModalOpen(false);
+            setSelectedWithdrawal(null);
+          }
+        }}
+        title="Konfirmasi Penarikan Dana (Payout)"
+      >
+        <div className="flex flex-col gap-4 font-sans text-xs">
+          {/* Status Banner */}
+          {selectedWithdrawal.data?.status === 'completed' && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-emerald-800">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span className="font-semibold">Penarikan ini sudah disetujui & ditransfer.</span>
+            </div>
+          )}
+          {selectedWithdrawal.data?.status === 'rejected' && (
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-rose-800">
+              <X className="w-4 h-4 text-rose-600 shrink-0" />
+              <span className="font-semibold">
+                Penarikan ini telah ditolak. Alasan: {selectedWithdrawal.data?.rejection_reason || '-'}
+              </span>
+            </div>
+          )}
+          {actionSuccessMsg && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-emerald-800">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span className="font-semibold">{actionSuccessMsg}</span>
+            </div>
+          )}
+
+          {/* Nominal Card */}
+          <div className="p-4 rounded-xl bg-surface-container-low border border-card-border flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-on-surface-variant uppercase font-mono">
+                Nominal yang harus ditransfer
+              </span>
+              <div className="text-2xl font-extrabold text-on-surface font-mono tabular-nums mt-0.5">
+                Rp {(Number(selectedWithdrawal.data?.amount) || 0).toLocaleString('id-ID')}
+              </div>
+            </div>
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+              <Banknote className="w-6 h-6" />
+            </div>
+          </div>
+
+          {/* Detail Pemohon & Rekening */}
+          <div className="bg-surface-container-lowest border border-card-border rounded-xl p-3.5 flex flex-col gap-2.5">
+            <div className="flex items-center justify-between py-1 border-b border-card-border/60">
+              <span className="text-on-surface-variant font-medium">Pemohon (User)</span>
+              <span className="font-bold text-on-surface">
+                {selectedWithdrawal.data?.requester_name || '-'}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between py-1 border-b border-card-border/60">
+              <span className="text-on-surface-variant font-medium">Tujuan Transfer</span>
+              <span className="font-bold text-on-surface flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-primary" />
+                {selectedWithdrawal.data?.bank || '-'}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between py-1 border-b border-card-border/60">
+              <span className="text-on-surface-variant font-medium">Nomor Rekening / E-Wallet</span>
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-bold text-sm text-on-surface tabular-nums">
+                  {selectedWithdrawal.data?.account_number || '-'}
+                </span>
+                {selectedWithdrawal.data?.account_number && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(String(selectedWithdrawal.data?.account_number));
+                      setCopiedAccount(true);
+                      setTimeout(() => setCopiedAccount(false), 2000);
+                    }}
+                    className="p-1 rounded-md hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
+                    title="Salin Nomor Rekening"
+                  >
+                    {copiedAccount ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between py-1">
+              <span className="text-on-surface-variant font-medium">Atas Nama (a.n)</span>
+              <span className="font-bold text-on-surface">
+                {selectedWithdrawal.data?.account_name || '-'}
+              </span>
+            </div>
+          </div>
+
+          {/* Input Alasan Penolakan */}
+          {showRejectInput && selectedWithdrawal.data?.status === 'pending' && (
+            <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-rose-50/60 border border-rose-200">
+              <label className="font-bold text-rose-800 text-[11px]">
+                Alasan Penolakan (akan dikirimkan ke notifikasi user):
+              </label>
+              <input
+                type="text"
+                placeholder="Contoh: Nomor rekening salah / tidak terdaftar"
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-rose-300 text-on-surface text-xs focus:outline-none focus:ring-1 focus:ring-rose-500"
+                autoFocus
+              />
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-end gap-2 border-t border-card-border pt-3 mt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setIsWithdrawalModalOpen(false);
+                setSelectedWithdrawal(null);
+              }}
+              disabled={withdrawalActionLoading}
+              className="px-3.5 py-2 rounded-xl border border-card-border text-on-surface-variant font-bold text-xs hover:bg-surface-container transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              Tutup
+            </button>
+
+            {selectedWithdrawal.data?.status === 'pending' && !actionSuccessMsg && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleWithdrawalAction('reject')}
+                  disabled={withdrawalActionLoading}
+                  className="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold text-xs hover:bg-rose-100 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {withdrawalActionLoading ? 'Memproses...' : showRejectInput ? 'Konfirmasi Tolak' : 'Tolak Penarikan'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleWithdrawalAction('approve')}
+                  disabled={withdrawalActionLoading}
+                  className="px-4 py-2 rounded-xl bg-[var(--primary)] text-white font-bold text-xs hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {withdrawalActionLoading ? 'Memproses...' : 'Tandai Sudah Ditransfer'}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </Modal>
+    )}
+  </>
   );
 }

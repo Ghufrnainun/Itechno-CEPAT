@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ChatList } from "@/features/chat/components/ChatList";
 import { ChatRoom } from "@/features/chat/components/ChatRoom";
 import { createClient } from "@/lib/supabase/client";
@@ -14,6 +14,7 @@ let cachedCurrentChatUserId = "";
 let hasChatLoadedOnce = false;
 
 function ChatContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialRoomId = searchParams.get('room');
   
@@ -22,6 +23,22 @@ function ChatContent() {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(initialRoomId);
   const [currentUserId, setCurrentUserId] = useState<string>(cachedCurrentChatUserId);
   const supabase = createClient();
+
+  const handleSelectRoom = (roomId: string | null) => {
+    setSelectedRoomId(roomId);
+    if (roomId) {
+      router.push(`/chat?room=${roomId}`, { scroll: false });
+    } else {
+      router.push('/chat', { scroll: false });
+    }
+  };
+
+  useEffect(() => {
+    const roomParam = searchParams.get('room');
+    if (roomParam !== selectedRoomId) {
+      setSelectedRoomId(roomParam);
+    }
+  }, [searchParams]);
 
   const fetchRooms = async () => {
     try {
@@ -62,6 +79,7 @@ function ChatContent() {
             );
             if (matchedRoom) {
               setSelectedRoomId(matchedRoom.id_chat_room);
+              router.replace(`/chat?room=${matchedRoom.id_chat_room}`, { scroll: false });
             }
           }
           
@@ -110,7 +128,7 @@ function ChatContent() {
   const selectedRoomInfo = rooms.find(r => r.id_chat_room === selectedRoomId);
 
   return (
-    <div className="flex flex-col h-[100dvh] lg:h-full w-full bg-surface font-sans">
+    <div className="flex flex-col h-full w-full max-w-full min-h-0 overflow-hidden bg-surface font-sans">
       {/* Page Header (Desktop only - clean native layout on mobile) */}
       <header className="hidden md:block shrink-0 bg-surface-container-lowest border-b border-card-border px-6 py-5">
         <div>
@@ -121,17 +139,17 @@ function ChatContent() {
         </div>
       </header>
 
-      <div className="flex flex-1 w-full overflow-hidden">
+      <div className="flex flex-1 w-full max-w-full min-h-0 min-w-0 overflow-hidden">
         {/* Left Panel: Contact List */}
         <div 
-          className={`w-full md:w-[320px] lg:w-[380px] bg-surface-container-lowest border-r border-card-border flex flex-col flex-shrink-0
-            ${selectedRoomId ? 'hidden md:flex' : 'flex'}`}
+          className={`w-full md:w-[320px] lg:w-[380px] bg-surface-container-lowest md:border-r border-card-border flex flex-col flex-shrink-0 min-h-0 min-w-0 max-w-full
+            ${selectedRoomId ? 'hidden md:flex' : 'flex h-full pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0'}`}
         >
           <ChatList 
             rooms={rooms}
             selectedRoomId={selectedRoomId}
             currentUserId={currentUserId}
-            onSelectRoom={setSelectedRoomId}
+            onSelectRoom={handleSelectRoom}
             isLoading={isLoading}
             onActionComplete={fetchRooms}
           />
@@ -139,7 +157,7 @@ function ChatContent() {
 
         {/* Right Panel: Chat Area */}
         <div 
-          className={`flex-1 flex flex-col bg-surface relative
+          className={`flex-1 flex flex-col bg-surface relative w-full min-w-0 h-full min-h-0 overflow-hidden
             ${!selectedRoomId ? 'hidden md:flex' : 'flex'}`}
         >
           {!selectedRoomId ? (
@@ -154,7 +172,7 @@ function ChatContent() {
             <ChatRoom 
               roomId={selectedRoomId}
               currentUserId={currentUserId}
-              onBack={() => setSelectedRoomId(null)}
+              onBack={() => handleSelectRoom(null)}
               roomInfo={{
                 title: selectedRoomInfo.task.judul_tugas,
                 otherUserName: selectedRoomInfo.requester.id_user === currentUserId 

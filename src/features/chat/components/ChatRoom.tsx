@@ -439,10 +439,10 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
   };
 
   return (
-    <div className="flex flex-row h-full w-full relative overflow-hidden font-sans">
+    <div className="flex flex-row h-full w-full max-w-full min-w-0 min-h-0 relative overflow-hidden font-sans">
       {/* Main Chat Area */}
       <div 
-        className="flex flex-col flex-1 h-full bg-surface-container-lowest relative border-r border-card-border"
+        className="flex flex-col flex-1 h-full min-w-0 min-h-0 w-full max-w-full bg-surface-container-lowest relative md:border-r border-card-border overflow-hidden"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -458,7 +458,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
       )}
 
       {/* Header */}
-      <div className="h-[72px] px-6 border-b border-card-border flex items-center gap-3 bg-surface-container-lowest shadow-xs z-10 flex-shrink-0">
+      <div className="h-14 sm:h-16 md:h-[72px] px-3 sm:px-4 md:px-6 border-b border-card-border flex items-center gap-2 sm:gap-3 bg-surface-container-lowest shadow-xs z-10 shrink-0 w-full max-w-full min-w-0">
         {isSelectionMode ? (
           <>
             <button 
@@ -467,11 +467,11 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
                 setSelectedMessages([]);
               }}
               aria-label="Batalkan pilihan pesan"
-              className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-surface-container-low transition-colors shrink-0 cursor-pointer"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center hover:bg-surface-container-low transition-colors shrink-0 cursor-pointer"
             >
               <X className="w-5 h-5 text-on-surface-variant" />
             </button>
-            <div className="flex-1 font-headline font-bold text-sm text-on-surface">
+            <div className="flex-1 font-headline font-bold text-xs sm:text-sm text-on-surface truncate">
               {selectedMessages.length} Terpilih
             </div>
             {selectedMessages.length > 0 && (
@@ -479,9 +479,9 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
                 onClick={handleDeleteSelected}
                 disabled={isActionLoading}
                 aria-label="Hapus pesan terpilih"
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-error hover:bg-error-container/30 transition-colors shrink-0 cursor-pointer disabled:opacity-50"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-error hover:bg-error-container/30 transition-colors shrink-0 cursor-pointer disabled:opacity-50"
               >
-                <Trash2 className="w-5 h-5" />
+                <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             )}
           </>
@@ -490,43 +490,42 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
             <button 
               onClick={onBack}
               aria-label="Kembali ke daftar obrolan"
-              className="md:hidden w-9 h-9 rounded-xl flex items-center justify-center hover:bg-surface-container-low transition-colors shrink-0 cursor-pointer"
+              className="md:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center hover:bg-surface-container-low transition-colors shrink-0 cursor-pointer -ml-1 sm:ml-0"
             >
               <ArrowLeft className="w-5 h-5 text-on-surface-variant" />
             </button>
-            <Link href={`/profile/${roomInfo.otherUserId}`} className="flex items-center gap-3 hover:bg-surface-container-low/60 p-1.5 rounded-xl transition-colors min-w-0">
-              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden relative border border-primary/20">
+            <Link href={`/profile/${roomInfo.otherUserId}`} className="flex-1 min-w-0 flex items-center gap-2.5 sm:gap-3 hover:bg-surface-container-low/60 p-1 sm:p-1.5 rounded-xl transition-colors">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden relative border border-primary/20">
                 {roomInfo.otherUserAvatarUrl ? (
                   <Image src={roomInfo.otherUserAvatarUrl} alt={roomInfo.otherUserName} fill className="object-cover" />
                 ) : (
-                  <User className="w-5 h-5" />
+                  <User className="w-4 h-4 sm:w-5 sm:h-5" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-headline font-bold text-xs text-on-surface truncate hover:text-primary transition-colors">{roomInfo.otherUserName}</h3>
+                <h3 className="font-headline font-bold text-xs sm:text-sm text-on-surface truncate hover:text-primary transition-colors">{roomInfo.otherUserName}</h3>
                 {isOnline ? (
-                  <span className="text-xs text-primary flex items-center gap-1 font-mono">
+                  <span className="text-[11px] sm:text-xs text-primary flex items-center gap-1 font-mono">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
                     Online
                   </span>
                 ) : lastSeenFormatted ? (
-                  <span className="text-xs text-on-surface-variant flex items-center gap-1 font-mono truncate">
+                  <span className="text-[10px] sm:text-xs text-on-surface-variant flex items-center gap-1 font-mono truncate">
                     {lastSeenFormatted}
                   </span>
                 ) : (
-                  <span className="text-xs text-on-surface-variant flex items-center gap-1 font-mono truncate">
+                  <span className="text-[10px] sm:text-xs text-on-surface-variant flex items-center gap-1 font-mono truncate">
                     Offline
                   </span>
                 )}
               </div>
             </Link>
             
-            <div className="flex-1"></div>
-            <div className="flex gap-2 text-on-surface-variant shrink-0 relative">
+            <div className="flex gap-1 sm:gap-2 text-on-surface-variant shrink-0 relative">
               <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 aria-label="Menu obrolan"
-                className="w-9 h-9 rounded-xl hover:bg-surface-container-low flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl hover:bg-surface-container-low flex items-center justify-center transition-colors cursor-pointer"
               >
                 <MoreVertical className="w-5 h-5" />
               </button>
@@ -566,7 +565,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3 custom-scrollbar bg-surface/50">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-5 flex flex-col gap-2.5 sm:gap-3 custom-scrollbar bg-surface/50 w-full max-w-full">
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center text-primary">
             <Loader2 className="w-7 h-7 animate-spin" />
@@ -585,11 +584,11 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
               <div 
                 key={msg.id_message} 
                 id={`msg-${msg.id_message}`}
-                className={`flex w-full items-center gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'} transition-colors duration-300`}
+                className={`flex w-full max-w-full min-w-0 items-end gap-2 sm:gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'} transition-colors duration-300`}
               >
                 {isSelectionMode && (
                   <div 
-                    className={`flex shrink-0 items-center justify-center p-2 ${msg.is_deleted_for_everyone ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    className={`flex shrink-0 items-center justify-center p-1.5 sm:p-2 ${msg.is_deleted_for_everyone ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     onClick={() => { if (!msg.is_deleted_for_everyone) toggleMessageSelection(msg.id_message) }}
                   >
                     <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary text-on-primary' : 'border-card-border bg-surface-container-low'}`}>
@@ -599,11 +598,11 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
                 )}
                 
                 <div 
-                  className={`flex flex-col max-w-[75%] sm:max-w-[65%] ${isMe ? 'items-end' : 'items-start'} ${isSelectionMode && !msg.is_deleted_for_everyone ? 'cursor-pointer hover:opacity-80' : ''}`}
+                  className={`flex flex-col max-w-[85%] sm:max-w-[70%] md:max-w-[65%] min-w-0 ${isMe ? 'items-end' : 'items-start'} ${isSelectionMode && !msg.is_deleted_for_everyone ? 'cursor-pointer hover:opacity-80' : ''}`}
                   onClick={() => { if (isSelectionMode && !msg.is_deleted_for_everyone) toggleMessageSelection(msg.id_message) }}
                 >
                   <div 
-                    className={`p-3 rounded-2xl shadow-xs text-xs relative transition-colors duration-200 ${
+                    className={`p-2.5 sm:p-3 rounded-2xl shadow-xs text-xs relative transition-colors duration-200 break-words [overflow-wrap:anywhere] max-w-full overflow-hidden ${
                       isSelected
                         ? 'bg-primary/20 border border-primary text-on-surface'
                         : highlightedMessageId === msg.id_message 
@@ -621,27 +620,29 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
                         <p>Pesan ini telah dihapus</p>
                       </div>
                     ) : msg.image_url ? (
-                      <div className="flex flex-col gap-2">
-                        <Image 
-                          src={msg.image_url} 
-                          alt="Lampiran chat" 
-                          width={260}
-                          height={260}
-                          className="rounded-xl object-cover border border-card-border cursor-pointer hover:opacity-90 transition-opacity" 
-                          onClick={(e) => {
-                            if (!isSelectionMode) window.open(msg.image_url!, '_blank');
-                            else e.preventDefault();
-                          }}
-                        />
-                        {msg.teks_pesan && <p className="leading-relaxed whitespace-pre-wrap break-words">{msg.teks_pesan}</p>}
+                      <div className="flex flex-col gap-2 max-w-full">
+                        <div className="relative w-full max-w-[240px] sm:max-w-[260px] aspect-square rounded-xl overflow-hidden border border-card-border">
+                          <Image 
+                            src={msg.image_url} 
+                            alt="Lampiran chat" 
+                            fill
+                            sizes="(max-width: 640px) 240px, 260px"
+                            className="object-cover cursor-pointer hover:opacity-90 transition-opacity" 
+                            onClick={(e) => {
+                              if (!isSelectionMode) window.open(msg.image_url!, '_blank');
+                              else e.preventDefault();
+                            }}
+                          />
+                        </div>
+                        {msg.teks_pesan && <p className="leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{msg.teks_pesan}</p>}
                       </div>
                     ) : (
-                      <p className="leading-relaxed whitespace-pre-wrap break-words">{msg.teks_pesan}</p>
+                      <p className="leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{msg.teks_pesan}</p>
                     )}
                   </div>
                   
                   {/* Timestamp & Status */}
-                  <div className={`flex items-center gap-1 mt-1 text-xs font-mono ${isSelectionMode && isSelected ? 'text-primary font-medium' : 'text-on-surface-variant'}`}>
+                  <div className={`flex items-center gap-1 mt-1 text-[10px] sm:text-xs font-mono ${isSelectionMode && isSelected ? 'text-primary font-medium' : 'text-on-surface-variant'}`}>
                     <span className="tabular-nums">
                       {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
@@ -668,8 +669,8 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
 
       {/* Right Sidebar for Search */}
       {isSearchSidebarOpen && (
-        <div className="w-full md:w-80 h-full flex flex-col bg-surface-container-lowest z-50 absolute md:relative right-0 top-0 shadow-xl md:shadow-none border-l border-card-border">
-          <div className="h-[72px] px-5 border-b border-card-border flex items-center justify-between bg-surface-container-lowest shrink-0">
+        <div className="w-full md:w-80 h-full flex flex-col bg-surface-container-lowest z-50 absolute md:relative right-0 top-0 shadow-xl md:shadow-none border-l border-card-border overflow-hidden">
+          <div className="h-14 sm:h-16 md:h-[72px] px-4 sm:px-5 border-b border-card-border flex items-center justify-between bg-surface-container-lowest shrink-0">
             <h3 className="font-headline text-sm font-bold text-on-surface">Cari Pesan</h3>
             <button 
               onClick={() => setIsSearchSidebarOpen(false)}
@@ -688,7 +689,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
                 placeholder="Cari dalam chat..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-9 pl-9 pr-3.5 bg-surface-container-lowest border border-card-border rounded-xl text-xs text-on-surface focus:outline-none focus:border-primary transition-all font-sans"
+                className="w-full h-9 pl-9 pr-3.5 bg-surface-container-lowest border border-card-border rounded-xl text-base sm:text-xs text-on-surface focus:outline-none focus:border-primary transition-all font-sans"
                 autoFocus
               />
             </div>
@@ -731,7 +732,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
       
       {/* Custom Dialog / Modal */}
       {dialog.isOpen && (
-        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
           <div className="bg-surface-container-lowest border border-card-border rounded-2xl p-6 shadow-2xl w-full max-w-sm flex flex-col gap-4 animate-in zoom-in-95 duration-200 font-sans text-xs">
             <div>
               <h3 className="font-headline font-bold text-sm text-on-surface mb-1.5">{dialog.title}</h3>

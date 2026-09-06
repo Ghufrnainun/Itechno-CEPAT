@@ -123,7 +123,7 @@ export function ChatList({ rooms, selectedRoomId, currentUserId, onSelectRoom, i
   return (
     <div className="flex flex-col h-full w-full font-sans text-xs">
       {/* Header Action & Search */}
-      <div className="p-4 border-b border-card-border flex flex-col gap-3 shrink-0 bg-surface-container-lowest">
+      <div className="p-3 sm:p-4 border-b border-card-border flex flex-col gap-2.5 sm:gap-3 shrink-0 bg-surface-container-lowest w-full max-w-full">
         {isSelectionMode ? (
           <div className="flex justify-between items-center relative h-[36px]">
             <div className="flex items-center gap-3">
@@ -191,7 +191,7 @@ export function ChatList({ rooms, selectedRoomId, currentUserId, onSelectRoom, i
           <input 
             type="text" 
             placeholder="Cari pesan atau nama..." 
-            className="w-full bg-surface-container-low border border-card-border rounded-xl py-2 pl-9 pr-3.5 text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-all font-sans"
+            className="w-full bg-surface-container-low border border-card-border rounded-xl py-2 pl-9 pr-3.5 text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-all font-sans"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -199,7 +199,7 @@ export function ChatList({ rooms, selectedRoomId, currentUserId, onSelectRoom, i
       </div>
 
       {/* Contacts */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar w-full">
         {filteredRooms.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center h-full opacity-70">
             <MessageSquare className="w-10 h-10 text-primary/40 mb-2" />
@@ -241,7 +241,7 @@ export function ChatList({ rooms, selectedRoomId, currentUserId, onSelectRoom, i
                     onSelectRoom(room.id_chat_room);
                   }
                 }}
-                className={`flex items-center p-3 cursor-pointer border-b border-card-border/40 transition-all duration-200 ${
+                className={`flex items-center p-3 cursor-pointer border-b border-card-border/40 transition-all duration-200 w-full max-w-full min-w-0 ${
                   isSelected ? 'bg-primary/10 border-l-2 border-l-primary' : 'hover:bg-surface-container-low/60'
                 }`}
               >
