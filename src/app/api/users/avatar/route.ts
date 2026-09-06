@@ -1,5 +1,6 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 
@@ -8,33 +9,42 @@ export async function POST(request: NextRequest) {
     // Rate limiting
     const clientIP = getClientIP(request.headers);
     const rateLimit = checkRateLimit(clientIP, "api:users:avatar", {
-      maxRequests: 10,
+      maxRequests: 20,
       windowSeconds: 60,
     });
     if (!rateLimit.allowed) {
       return NextResponse.json(
-        { success: false, message: "Terlalu banyak permintaan unggah. Silakan tunggu." },
+        { success: false, message: "Terlalu banyak permintaan unggah. Silakan tunggu sebentar." },
         { status: 429 }
       );
     }
 
-    const supabase = await createClient();
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
+    let authUserId = request.headers.get("x-auth-user-id");
+    let authUserEmail = request.headers.get("x-auth-user-email");
+    const userDbId = request.headers.get("x-user-db-id");
 
-    if (authError || !authUser?.email) {
-      return NextResponse.json(
-        { success: false, message: "Tidak terautentikasi." },
-        { status: 401 }
-      );
+    if (!authUserId || !authUserEmail) {
+      const supabase = await createClient();
+      const {
+        data: { user: authUser },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !authUser?.email) {
+        return NextResponse.json(
+          { success: false, message: "Tidak terautentikasi." },
+          { status: 401 }
+        );
+      }
+      authUserId = authUser.id;
+      authUserEmail = authUser.email;
     }
 
     const formData = await request.formData();
-    const file = formData.get("file") as File | null;
+    // Mendukung field name "avatar", "file", atau "image" agar kompatibel dengan seluruh frontend
+    const file = (formData.get("avatar") || formData.get("file") || formData.get("image")) as File | null;
 
-    if (!file) {
+    if (!file || !(file instanceof File) || file.size === 0) {
       return NextResponse.json(
         { success: false, message: "File foto profil tidak ditemukan." },
         { status: 400 }
@@ -66,34 +76,60 @@ export async function POST(request: NextRequest) {
 
     const ext = isJpeg ? "jpg" : isPng ? "png" : "webp";
     const fileId = crypto.randomUUID();
-    const fileName = `${authUser.id}/${fileId}.${ext}`;
+    const fileName = `${authUserId}/${fileId}.${ext}`;
 
-    const { error: uploadError } = await supabase.storage
+    // Gunakan Supabase Admin Client untuk bypass RLS storage
+    const supabaseAdmin = createAdminClient();
+
+    let { error: uploadError } = await supabaseAdmin.storage
       .from("avatars")
       .upload(fileName, buffer, {
         contentType: isJpeg ? "image/jpeg" : isPng ? "image/png" : "image/webp",
-        upsert: false,
+        upsert: true,
       });
 
-    // Fail closed — never store base64 data URLs in DB
+    // Auto-create bucket jika belum ada dan coba lagi
+    if (
+      uploadError &&
+      (uploadError.message?.toLowerCase().includes("not found") ||
+        (uploadError as any).statusCode === "404" ||
+        (uploadError as any).error === "Bucket not found")
+    ) {
+      await supabaseAdmin.storage.createBucket("avatars", { public: true }).catch(() => null);
+      const retry = await supabaseAdmin.storage
+        .from("avatars")
+        .upload(fileName, buffer, {
+          contentType: isJpeg ? "image/jpeg" : isPng ? "image/png" : "image/webp",
+          upsert: true,
+        });
+      uploadError = retry.error;
+    }
+
     if (uploadError) {
       console.error("[POST /api/users/avatar] Storage upload failed:", uploadError);
       return NextResponse.json(
-        { success: false, message: "Gagal menyimpan foto profil ke storage. Silakan coba lagi." },
+        { success: false, message: `Gagal menyimpan foto profil ke storage: ${uploadError.message}` },
         { status: 500 }
       );
     }
 
-    const { data } = supabase.storage.from("avatars").getPublicUrl(fileName);
+    const { data } = supabaseAdmin.storage.from("avatars").getPublicUrl(fileName);
 
-    const updatedUser = await prisma.user.update({
-      where: { email: authUser.email },
-      data: { avatar_url: data.publicUrl },
-    });
+    const updatedUser = userDbId
+      ? await prisma.user.update({
+          where: { id_user: userDbId },
+          data: { avatar_url: data.publicUrl },
+        })
+      : await prisma.user.update({
+          where: { email: authUserEmail },
+          data: { avatar_url: data.publicUrl },
+        });
 
     return NextResponse.json({
       success: true,
+      avatar_url: updatedUser.avatar_url,
       data: { avatar_url: updatedUser.avatar_url },
+      message: "Foto profil berhasil diperbarui.",
     });
   } catch (error) {
     console.error("[POST /api/users/avatar] Error:", error);
