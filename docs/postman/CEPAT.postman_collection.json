@@ -57,8 +57,13 @@
             },
             "url": {
               "raw": "{{base_url}}/auth/register",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "register"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
             },
             "description": "Mendaftarkan pengguna baru dengan sanitasi email disposable dan validasi Zod."
           }
@@ -96,8 +101,13 @@
             },
             "url": {
               "raw": "{{base_url}}/auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             },
             "description": "Login pengguna. Test script otomatis menangkap `access_token` dan menyimpannya ke variable collection `auth_token`."
           }
@@ -114,8 +124,13 @@
             ],
             "url": {
               "raw": "{{base_url}}/auth/me",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "me"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
             },
             "description": "Mengambil data profil pengguna yang sedang terautentikasi beserta role, saldo, dan skills."
           }
@@ -132,8 +147,13 @@
             ],
             "url": {
               "raw": "{{base_url}}/auth/logout",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "logout"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
             },
             "description": "Membatalkan sesi Supabase Auth."
           }
@@ -150,11 +170,21 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/tasks?page=1&limit=10",
-              "host": ["{{base_url}}"],
-              "path": ["tasks"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
               ]
             },
             "description": "Mendapatkan daftar tugas aktif secara publik."
@@ -167,12 +197,26 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/tasks/nearby?lat=-6.2088&lng=106.8456&radius=2000",
-              "host": ["{{base_url}}"],
-              "path": ["tasks", "nearby"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "nearby"
+              ],
               "query": [
-                { "key": "lat", "value": "-6.2088" },
-                { "key": "lng", "value": "106.8456" },
-                { "key": "radius", "value": "2000" }
+                {
+                  "key": "lat",
+                  "value": "-6.2088"
+                },
+                {
+                  "key": "lng",
+                  "value": "106.8456"
+                },
+                {
+                  "key": "radius",
+                  "value": "2000"
+                }
               ]
             },
             "description": "Query geospasial PostGIS ST_DWithin untuk mencari tugas mikro dalam radius terdekat pengguna."
@@ -213,8 +257,12 @@
             },
             "url": {
               "raw": "{{base_url}}/tasks",
-              "host": ["{{base_url}}"],
-              "path": ["tasks"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks"
+              ]
             },
             "description": "Membuat tugas baru fixed price dan mengunci saldo escrow sebesar kompensasi * kuota."
           }
@@ -253,8 +301,12 @@
             },
             "url": {
               "raw": "{{base_url}}/tasks",
-              "host": ["{{base_url}}"],
-              "path": ["tasks"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks"
+              ]
             },
             "description": "Membuat tugas lelang tertutup dengan rentang budget min-max. Escrow menahan plafon budget_max."
           }
@@ -266,8 +318,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/tasks/{{task_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["tasks", "{{task_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "{{task_id}}"
+              ]
             },
             "description": "Mengambil detail tugas spesifik berdasarkan ID."
           }
@@ -292,8 +349,14 @@
             },
             "url": {
               "raw": "{{base_url}}/tasks/{{task_id}}/apply",
-              "host": ["{{base_url}}"],
-              "path": ["tasks", "{{task_id}}", "apply"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "{{task_id}}",
+                "apply"
+              ]
             },
             "description": "Worker mengajukan lamaran dengan pesan pitch dan nominal sealed-bid."
           }
@@ -310,8 +373,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/tasks/{{task_id}}/bids",
-              "host": ["{{base_url}}"],
-              "path": ["tasks", "{{task_id}}", "bids"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "{{task_id}}",
+                "bids"
+              ]
             },
             "description": "Requester memeriksa seluruh penawaran masuk dari worker."
           }
@@ -336,8 +405,14 @@
             },
             "url": {
               "raw": "{{base_url}}/tasks/{{task_id}}/status",
-              "host": ["{{base_url}}"],
-              "path": ["tasks", "{{task_id}}", "status"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "{{task_id}}",
+                "status"
+              ]
             },
             "description": "Memperbarui siklus pengerjaan tugas (start_work, submit_work, complete_task, cancel_task). Saat complete_task, escrow cair dan reward XP diberikan."
           }
@@ -354,8 +429,13 @@
             ],
             "url": {
               "raw": "{{base_url}}/tasks/scheduled",
-              "host": ["{{base_url}}"],
-              "path": ["tasks", "scheduled"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "scheduled"
+              ]
             },
             "description": "Mengambil daftar tugas terjadwal untuk ditampilkan pada kalender."
           }
@@ -377,8 +457,12 @@
             ],
             "url": {
               "raw": "{{base_url}}/wallet",
-              "host": ["{{base_url}}"],
-              "path": ["wallet"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "wallet"
+              ]
             },
             "description": "Mengambil saldo aktif, saldo ditahan (escrow), dan histori mutasi saldo."
           }
@@ -403,8 +487,13 @@
             },
             "url": {
               "raw": "{{base_url}}/payment/create",
-              "host": ["{{base_url}}"],
-              "path": ["payment", "create"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payment",
+                "create"
+              ]
             },
             "description": "Membuat order top-up baru dan mengembalikan token Snap Midtrans untuk pembayaran QRIS/VA."
           }
@@ -421,10 +510,18 @@
             ],
             "url": {
               "raw": "{{base_url}}/payment/status?order_id=TOPUP-1725500000-abcd",
-              "host": ["{{base_url}}"],
-              "path": ["payment", "status"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payment",
+                "status"
+              ],
               "query": [
-                { "key": "order_id", "value": "TOPUP-1725500000-abcd" }
+                {
+                  "key": "order_id",
+                  "value": "TOPUP-1725500000-abcd"
+                }
               ]
             },
             "description": "Pengecekan status pembayaran transaksi Midtrans."
@@ -447,8 +544,12 @@
             ],
             "url": {
               "raw": "{{base_url}}/disputes",
-              "host": ["{{base_url}}"],
-              "path": ["disputes"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "disputes"
+              ]
             },
             "description": "Mengambil daftar seluruh tiket sengketa pengguna."
           }
@@ -473,11 +574,32 @@
             },
             "url": {
               "raw": "{{base_url}}/disputes",
-              "host": ["{{base_url}}"],
-              "path": ["disputes"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "disputes"
+              ]
             },
             "description": "Membuka sengketa baru untuk tugas yang bermasalah."
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.success && response.data?.id_dispute) {",
+                  "    pm.collectionVariables.set('dispute_id', response.data.id_dispute);",
+                  "    console.log('Dispute ID berhasil disimpan ke variable dispute_id:', response.data.id_dispute);",
+                  "} else if (response.data?.id) {",
+                  "    pm.collectionVariables.set('dispute_id', response.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Kirim Bukti Sengketa (Evidence)",
@@ -499,8 +621,14 @@
             },
             "url": {
               "raw": "{{base_url}}/disputes/{{dispute_id}}/evidence",
-              "host": ["{{base_url}}"],
-              "path": ["disputes", "{{dispute_id}}", "evidence"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "disputes",
+                "{{dispute_id}}",
+                "evidence"
+              ]
             },
             "description": "Mengunggah bukti foto atau teks sanggahan."
           }
@@ -525,8 +653,14 @@
             },
             "url": {
               "raw": "{{base_url}}/disputes/{{dispute_id}}/messages",
-              "host": ["{{base_url}}"],
-              "path": ["disputes", "{{dispute_id}}", "messages"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "disputes",
+                "{{dispute_id}}",
+                "messages"
+              ]
             },
             "description": "Mengirimkan pesan pada ruang mediasi resmi."
           }
@@ -543,11 +677,21 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/leaderboard?period=weekly&limit=20",
-              "host": ["{{base_url}}"],
-              "path": ["leaderboard"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leaderboard"
+              ],
               "query": [
-                { "key": "period", "value": "weekly" },
-                { "key": "limit", "value": "20" }
+                {
+                  "key": "period",
+                  "value": "weekly"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
               ]
             },
             "description": "Mengambil peringkat pekerja terbaik berdasarkan skor pembobotan berimbang."
@@ -565,8 +709,12 @@
             ],
             "url": {
               "raw": "{{base_url}}/xp",
-              "host": ["{{base_url}}"],
-              "path": ["xp"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "xp"
+              ]
             },
             "description": "Mengambil metrik level, riwayat XP, streak harian, dan lencana pencapaian."
           }
@@ -588,11 +736,33 @@
             ],
             "url": {
               "raw": "{{base_url}}/chat",
-              "host": ["{{base_url}}"],
-              "path": ["chat"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chat"
+              ]
             },
             "description": "Mengambil daftar percakapan aktif pengguna."
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.success && Array.isArray(response.data) && response.data.length > 0) {",
+                  "    const roomId = response.data[0].id_chat_room || response.data[0].id;",
+                  "    if (roomId) {",
+                  "        pm.collectionVariables.set('chat_room_id', roomId);",
+                  "        console.log('Chat Room ID berhasil disimpan ke variable chat_room_id:', roomId);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Kirim Pesan Chat",
@@ -614,8 +784,13 @@
             },
             "url": {
               "raw": "{{base_url}}/chat/{{chat_room_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["chat", "{{chat_room_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chat",
+                "{{chat_room_id}}"
+              ]
             },
             "description": "Mengirimkan pesan teks atau gambar ke ruang obrolan tugas."
           }
@@ -632,8 +807,12 @@
             ],
             "url": {
               "raw": "{{base_url}}/saved-tasks",
-              "host": ["{{base_url}}"],
-              "path": ["saved-tasks"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "saved-tasks"
+              ]
             },
             "description": "Melihat daftar tugas yang dibookmark."
           }
@@ -658,8 +837,12 @@
             },
             "url": {
               "raw": "{{base_url}}/saved-tasks",
-              "host": ["{{base_url}}"],
-              "path": ["saved-tasks"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "saved-tasks"
+              ]
             },
             "description": "Menyimpan atau menghapus bookmark tugas."
           }
@@ -685,21 +868,52 @@
             },
             "url": {
               "raw": "{{base_url}}/admin/auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "auth", "login"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "auth",
+                "login"
+              ]
             },
             "description": "Portal autentikasi khusus pengurus admin."
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.success && response.data?.token) {",
+                  "    pm.collectionVariables.set('admin_token', response.data.token);",
+                  "    console.log('Token berhasil disimpan ke variable admin_token:', response.data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Get Admin Overview Stats (KPI)",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/admin/stats",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "stats"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "stats"
+              ]
             },
             "description": "Mengambil metrik 5 KPI utama dashboard pengelola."
           }
@@ -708,14 +922,30 @@
           "name": "Get Admin Users List",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/admin/users?page=1&limit=10",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "users"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
               ]
             },
             "description": "Daftar pengguna dengan status akun dan peran."
@@ -725,14 +955,30 @@
           "name": "Get Admin Tasks List",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/admin/tasks?page=1&limit=10",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "tasks"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "tasks"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
               ]
             },
             "description": "Daftar pemantauan seluruh tugas."
@@ -742,13 +988,26 @@
           "name": "Get Admin Reports List",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/admin/reports?status=pending",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "reports"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "reports"
+              ],
               "query": [
-                { "key": "status", "value": "pending" }
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
               ]
             },
             "description": "Daftar tiket aduan laporan pengguna."
@@ -758,11 +1017,21 @@
           "name": "Get Admin Disputes List",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/admin/disputes",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "disputes"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "disputes"
+              ]
             },
             "description": "Daftar sengketa aktif yang menunggu putusan admin."
           }
@@ -771,13 +1040,26 @@
           "name": "Global Search Admin (Ctrl+K)",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/admin/search?q=foto",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "search"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "search"
+              ],
               "query": [
-                { "key": "q", "value": "foto" }
+                {
+                  "key": "q",
+                  "value": "foto"
+                }
               ]
             },
             "description": "Pencarian cepat di seluruh menu, user, task, dan kategori."

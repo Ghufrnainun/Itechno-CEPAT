@@ -5,20 +5,30 @@ import { disputeService } from '@/services/dispute.service';
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit';
 import { z } from 'zod';
 
-const singleDisputeSchema = z.object({
-  taskId: z.string().min(1, 'ID Tugas wajib diisi.'),
-  respondentId: z.string().min(1).optional(),
-  reason: z.string().min(3, 'Alasan minimal 3 karakter.').max(100, 'Alasan maksimal 100 karakter.'),
-  description: z.string().min(10, 'Deskripsi permasalahan minimal 10 karakter.').max(2000, 'Deskripsi maksimal 2000 karakter.'),
-  evidence: z
-    .array(
-      z.object({
-        type: z.enum(['text', 'image']),
-        content: z.string().min(1),
-      })
-    )
-    .optional(),
-});
+const singleDisputeSchema = z.preprocess(
+  (val: any) => {
+    if (typeof val !== 'object' || val === null) return val;
+    return {
+      ...val,
+      taskId: val.taskId ?? val.id_task,
+      respondentId: val.respondentId ?? val.id_respondent,
+    };
+  },
+  z.object({
+    taskId: z.string().min(1, 'ID Tugas wajib diisi.'),
+    respondentId: z.string().min(1).optional(),
+    reason: z.string().min(3, 'Alasan minimal 3 karakter.').max(100, 'Alasan maksimal 100 karakter.'),
+    description: z.string().min(10, 'Deskripsi permasalahan minimal 10 karakter.').max(2000, 'Deskripsi maksimal 2000 karakter.'),
+    evidence: z
+      .array(
+        z.object({
+          type: z.enum(['text', 'image']),
+          content: z.string().min(1),
+        })
+      )
+      .optional(),
+  })
+);
 
 const batchDisputeItemSchema = z.object({
   respondentId: z.string().min(1, 'ID Pihak Terlapor wajib diisi.'),
