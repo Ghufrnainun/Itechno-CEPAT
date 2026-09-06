@@ -16,8 +16,10 @@ import {
   Check,
   Ban,
   CheckCheck,
+  CheckSquare,
   Search,
   Loader2,
+  AlertCircle,
 } from 'lucide-react';
 
 interface Message {
@@ -35,31 +37,50 @@ interface Message {
   };
 }
 
+export interface RoomMetadata {
+  title: string;
+  otherUserName: string;
+  otherUserId: string;
+  otherUserAvatarUrl?: string | null;
+  otherUserLastSeen?: string | Date | null;
+}
+
 interface ChatRoomProps {
   roomId: string;
   currentUserId: string;
   onBack: () => void;
-  roomInfo: {
-    title: string;
-    otherUserName: string;
-    otherUserId: string;
-    otherUserAvatarUrl?: string | null;
-    otherUserLastSeen?: string | Date | null;
-  };
+  roomInfo?: RoomMetadata;
   onMessageAdded?: () => void;
 }
 
 export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdded }: ChatRoomProps) {
   const { showToast } = useToast();
+  const [activeInfo, setActiveInfo] = useState<RoomMetadata | undefined>(roomInfo);
+  const [isNotFound, setIsNotFound] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedFile, setDraggedFile] = useState<File | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
-  const [lastSeenTimestamp, setLastSeenTimestamp] = useState<string | Date | null>(roomInfo.otherUserLastSeen || null);
+  const [lastSeenTimestamp, setLastSeenTimestamp] = useState<string | Date | null>(roomInfo?.otherUserLastSeen || null);
   const [lastSeenFormatted, setLastSeenFormatted] = useState('');
   const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    if (roomInfo) {
+      setActiveInfo(roomInfo);
+      if (roomInfo.otherUserLastSeen) {
+        setLastSeenTimestamp(roomInfo.otherUserLastSeen);
+      }
+    }
+  }, [roomInfo]);
+
+  const otherUserId = activeInfo?.otherUserId || '';
+  const otherUserName = activeInfo?.otherUserName || 'Pengguna';
+  const otherUserAvatarUrl = activeInfo?.otherUserAvatarUrl;
+  const otherUserLastSeen = activeInfo?.otherUserLastSeen;
+  const title = activeInfo?.title || 'Detail Tugas';
   
   // Search state
   const [isSearchSidebarOpen, setIsSearchSidebarOpen] = useState(false);
@@ -131,10 +152,10 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
 
   useEffect(() => {
     // Poll the user API every 2 minutes to get fresh last_seen_at
-    if (isOnline) return; // No need to poll if they are currently online
+    if (isOnline || !otherUserId) return;
     const pollInterval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/users/${roomInfo.otherUserId}`);
+        const res = await fetch(`/api/users/${otherUserId}`);
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data?.last_seen_at) {
@@ -144,11 +165,11 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
       } catch (e) {}
     }, 120000); // 2 minutes
     return () => clearInterval(pollInterval);
-  }, [roomInfo.otherUserId, isOnline]);
+  }, [otherUserId, isOnline]);
 
   useEffect(() => {
-    setLastSeenTimestamp(roomInfo.otherUserLastSeen || null);
-  }, [roomInfo.otherUserLastSeen, roomInfo.otherUserId]);
+    setLastSeenTimestamp(otherUserLastSeen || null);
+  }, [otherUserLastSeen, otherUserId]);
 
   useEffect(() => {
     if (!lastSeenTimestamp) {
@@ -180,12 +201,35 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
   }, [lastSeenTimestamp, tick]);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchMessages = async () => {
       try {
+        setIsLoading(true);
         const res = await fetch(`/api/chat/${roomId}`);
+        if (!isMounted) return;
+        if (!res.ok) {
+          if (res.status === 404 || res.status === 403) {
+            setIsNotFound(true);
+          }
+          return;
+        }
         const data = await res.json();
         if (data.success) {
-          setMessages(data.data);
+          setMessages(data.data || []);
+          if (data.room) {
+            const isRequester = data.room.id_requester === currentUserId;
+            const other = isRequester ? data.room.worker : data.room.requester;
+            setActiveInfo((prev) => prev || {
+              title: data.room.task?.judul_tugas || "Detail Tugas",
+              otherUserName: other?.nama_lengkap || "Pengguna",
+              otherUserId: other?.id_user || "",
+              otherUserAvatarUrl: other?.avatar_url,
+              otherUserLastSeen: other?.last_seen_at
+            });
+            if (other?.last_seen_at) {
+              setLastSeenTimestamp(other.last_seen_at);
+            }
+          }
           setTimeout(scrollToBottom, 100);
           fetch(`/api/chat/${roomId}`, { method: 'PUT' })
             .then(() => {
@@ -194,11 +238,14 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
               }
             })
             .catch(console.error);
+        } else {
+          setIsNotFound(true);
         }
       } catch (error) {
+        if (!isMounted) return;
         console.error("Gagal mengambil pesan:", error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
     
@@ -208,13 +255,13 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
       .channel(`room_${roomId}`, {
         config: {
           presence: {
-            key: currentUserId,
+            key: currentUserId || 'anon',
           },
         },
       })
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
-        const isOtherUserOnline = Object.keys(state).includes(roomInfo.otherUserId);
+        const isOtherUserOnline = Boolean(otherUserId && Object.keys(state).includes(otherUserId));
         setIsOnline(isOtherUserOnline);
       })
       .on(
@@ -243,7 +290,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
                 : newMessageRaw.created_at,
               sender: {
                 id_user: newMessageRaw.id_sender,
-                nama_lengkap: newMessageRaw.id_sender === currentUserId ? "Anda" : roomInfo.otherUserName,
+                nama_lengkap: newMessageRaw.id_sender === currentUserId ? "Anda" : otherUserName,
                 avatar_url: null
               }
             };
@@ -307,7 +354,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [roomId, supabase, currentUserId, roomInfo.otherUserName]);
+  }, [roomId, supabase, currentUserId, otherUserName, otherUserId]);
 
   const handleSendMessage = async (text: string | null, imageUrl: string | null) => {
     try {
@@ -418,6 +465,9 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
             setMessages([]);
             setIsMenuOpen(false);
             setDialog(prev => ({ ...prev, isOpen: false }));
+            if (onMessageAdded) {
+              onMessageAdded();
+            }
           } else {
             setDialog({ isOpen: true, title: "Gagal Membersihkan", message: "Terjadi kesalahan saat membersihkan obrolan. Silakan coba lagi.", type: 'alert' });
           }
@@ -437,6 +487,41 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
       prev.includes(id) ? prev.filter(mId => mId !== id) : [...prev, id]
     );
   };
+
+  if (isNotFound) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 p-8 bg-surface h-full font-sans">
+        <AlertCircle className="w-14 h-14 text-error mb-2" />
+        <h2 className="font-headline font-bold text-base text-on-surface">Obrolan tidak ditemukan</h2>
+        <p className="font-body-sm text-xs text-on-surface-variant max-w-sm leading-relaxed">
+          Ruang obrolan ini mungkin sudah dihapus atau Anda tidak memiliki akses.
+        </p>
+        <Button onClick={onBack} variant="primary" size="sm" className="mt-2">
+          Kembali ke Daftar Obrolan
+        </Button>
+      </div>
+    );
+  }
+
+  if (isLoading && !activeInfo) {
+    return (
+      <div className="flex-1 flex flex-col h-full bg-surface font-sans">
+        <div className="h-16 px-4 border-b border-card-border bg-surface-container-lowest flex items-center gap-3 animate-pulse">
+          <div className="w-8 h-8 rounded-xl bg-surface-container-high md:hidden"></div>
+          <div className="w-10 h-10 rounded-full bg-surface-container-high shrink-0"></div>
+          <div className="flex-1 flex flex-col gap-2 min-w-0">
+            <div className="w-32 h-3.5 rounded bg-surface-container-high"></div>
+            <div className="w-48 h-2.5 rounded bg-surface-container"></div>
+          </div>
+          <div className="w-8 h-8 rounded-xl bg-surface-container-high"></div>
+        </div>
+        <div className="flex-1 p-5 flex flex-col justify-center items-center gap-3 overflow-hidden bg-surface/40">
+          <Loader2 className="w-7 h-7 animate-spin text-primary" />
+          <span className="text-xs text-on-surface-variant">Memuat obrolan...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-row h-full w-full relative overflow-hidden font-sans">
@@ -494,16 +579,16 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
             >
               <ArrowLeft className="w-5 h-5 text-on-surface-variant" />
             </button>
-            <Link href={`/profile/${roomInfo.otherUserId}`} className="flex items-center gap-3 hover:bg-surface-container-low/60 p-1.5 rounded-xl transition-colors min-w-0">
+            <Link href={otherUserId ? `/profile/${otherUserId}` : '#'} className="flex items-center gap-3 hover:bg-surface-container-low/60 p-1.5 rounded-xl transition-colors min-w-0">
               <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden relative border border-primary/20">
-                {roomInfo.otherUserAvatarUrl ? (
-                  <Image src={roomInfo.otherUserAvatarUrl} alt={roomInfo.otherUserName} fill className="object-cover" />
+                {otherUserAvatarUrl ? (
+                  <Image src={otherUserAvatarUrl} alt={otherUserName} fill sizes="40px" className="object-cover" />
                 ) : (
                   <User className="w-5 h-5" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-headline font-bold text-xs text-on-surface truncate hover:text-primary transition-colors">{roomInfo.otherUserName}</h3>
+                <h3 className="font-headline font-bold text-xs text-on-surface truncate hover:text-primary transition-colors">{otherUserName}</h3>
                 {isOnline ? (
                   <span className="text-xs text-primary flex items-center gap-1 font-mono">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
@@ -532,33 +617,45 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
               </button>
               
               {isMenuOpen && (
-                <div className="absolute right-0 top-11 w-48 bg-surface-container-lowest border border-card-border rounded-xl shadow-xl py-1.5 z-50 text-xs font-sans">
-                  <button 
-                    className="w-full text-left px-4 py-2 hover:bg-surface-container-low text-on-surface transition-colors cursor-pointer" 
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      setIsSearchSidebarOpen(true);
-                    }}
-                  >
-                    Cari Pesan
-                  </button>
-                  <button 
-                    className="w-full text-left px-4 py-2 hover:bg-surface-container-low text-on-surface transition-colors cursor-pointer" 
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      setIsSelectionMode(true);
-                    }}
-                  >
-                    Pilih Pesan
-                  </button>
-                  <button 
-                    className="w-full text-left px-4 py-2 hover:bg-surface-container-low text-error transition-colors cursor-pointer" 
-                    onClick={handleClearChat}
-                    disabled={isActionLoading}
-                  >
-                    Kosongkan Obrolan
-                  </button>
-                </div>
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setIsMenuOpen(false)} 
+                  />
+                  <div className="absolute right-0 top-11 w-52 bg-surface-container-lowest/95 backdrop-blur-md border border-card-border rounded-2xl shadow-xl p-1.5 flex flex-col gap-0.5 z-50 text-xs font-sans animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
+                    <button 
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer flex items-center gap-2.5" 
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setIsSearchSidebarOpen(true);
+                      }}
+                    >
+                      <Search className="w-4 h-4 text-on-surface-variant shrink-0" />
+                      <span>Cari Pesan</span>
+                    </button>
+                    <button 
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer flex items-center gap-2.5" 
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setIsSelectionMode(true);
+                      }}
+                    >
+                      <CheckSquare className="w-4 h-4 text-on-surface-variant shrink-0" />
+                      <span>Pilih Pesan</span>
+                    </button>
+                    <button 
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-error hover:bg-error-container/20 transition-colors cursor-pointer flex items-center gap-2.5" 
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        handleClearChat();
+                      }}
+                      disabled={isActionLoading}
+                    >
+                      <Trash2 className="w-4 h-4 text-error shrink-0" />
+                      <span>Kosongkan Obrolan</span>
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </>
@@ -714,7 +811,7 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
                   >
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-xs font-bold text-primary truncate max-w-[120px]">
-                        {msg.id_sender === currentUserId ? "Anda" : roomInfo.otherUserName}
+                        {msg.id_sender === currentUserId ? "Anda" : otherUserName}
                       </span>
                       <span className="text-xs text-on-surface-variant font-mono tabular-nums">
                         {new Date(msg.created_at).toLocaleDateString()}

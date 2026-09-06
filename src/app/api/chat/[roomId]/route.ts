@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
@@ -14,32 +14,65 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const resolvedParams = await params;
     const roomId = resolvedParams.roomId;
-    const supabase = await createClient()
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-    if (authError || !authUser || !authUser.email) {
-      return NextResponse.json({ success: false, message: 'Tidak terautentikasi.' }, { status: 401 })
+
+    let currentUserId = request.headers.get('x-user-db-id');
+
+    if (!currentUserId) {
+      const supabase = await createClient()
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+      if (authError || !authUser || !authUser.email) {
+        return NextResponse.json({ success: false, message: 'Tidak terautentikasi.' }, { status: 401 })
+      }
+
+      const currentUser = await prisma.user.findUnique({
+        where: { email: authUser.email },
+        select: { id_user: true }
+      })
+      
+      if (!currentUser) {
+        return NextResponse.json({ success: false, message: 'Pengguna tidak ditemukan.' }, { status: 404 })
+      }
+      currentUserId = currentUser.id_user;
     }
 
-    const currentUser = await prisma.user.findUnique({
-      where: { email: authUser.email },
-      select: { id_user: true }
-    })
-    
-    if (!currentUser) {
-      return NextResponse.json({ success: false, message: 'Pengguna tidak ditemukan.' }, { status: 404 })
-    }
-
-    // Verify user is part of the chat room
+    // Verify user is part of the chat room and retrieve metadata
     const chatRoom = await prisma.chatRoom.findUnique({
       where: { id_chat_room: roomId },
-      select: { id_requester: true, id_worker: true, cleared_at_requester: true, cleared_at_worker: true }
+      include: {
+        task: {
+          select: {
+            id_tasks: true,
+            judul_tugas: true,
+          }
+        },
+        requester: {
+          select: {
+            id_user: true,
+            nama_lengkap: true,
+            avatar_url: true,
+            last_seen_at: true
+          }
+        },
+        worker: {
+          select: {
+            id_user: true,
+            nama_lengkap: true,
+            avatar_url: true,
+            last_seen_at: true
+          }
+        }
+      }
     })
 
-    if (!chatRoom || (chatRoom.id_requester !== currentUser.id_user && chatRoom.id_worker !== currentUser.id_user)) {
-       return NextResponse.json({ success: false, message: 'Akses ditolak.' }, { status: 403 })
+    if (!chatRoom) {
+      return NextResponse.json({ success: false, message: 'Ruang obrolan tidak ditemukan.' }, { status: 404 })
     }
 
-    const isRequester = chatRoom.id_requester === currentUser.id_user;
+    if (chatRoom.id_requester !== currentUserId && chatRoom.id_worker !== currentUserId) {
+      return NextResponse.json({ success: false, message: 'Akses ditolak.' }, { status: 403 })
+    }
+
+    const isRequester = chatRoom.id_requester === currentUserId;
     // Note: cleared_at fields are from the newly generated Prisma Client
     const clearedAt = isRequester ? (chatRoom as any).cleared_at_requester : (chatRoom as any).cleared_at_worker;
 
@@ -49,7 +82,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         ...(clearedAt ? { created_at: { gt: clearedAt } } : {}),
         NOT: {
           deleted_by: {
-            has: currentUser.id_user
+            has: currentUserId
           }
         }
       },
@@ -65,7 +98,24 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     })
 
-    return NextResponse.json({ success: true, data: messages })
+    const lastMsg = messages.length > 0 ? [messages[messages.length - 1]] : [];
+
+    return NextResponse.json({ 
+      success: true, 
+      data: messages,
+      room: {
+        id_chat_room: chatRoom.id_chat_room,
+        id_tasks: chatRoom.id_tasks,
+        id_requester: chatRoom.id_requester,
+        id_worker: chatRoom.id_worker,
+        task: chatRoom.task,
+        requester: chatRoom.requester,
+        worker: chatRoom.worker,
+        messages: lastMsg,
+        unreadCount: 0,
+        created_at: chatRoom.created_at,
+      }
+    })
   } catch (error) {
     console.error(`[GET /api/chat/[roomId]] Error:`, error)
     return NextResponse.json(
