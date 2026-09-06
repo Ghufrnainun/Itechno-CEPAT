@@ -66,6 +66,7 @@ export function Avatar({
           className="object-cover"
           onError={() => setHasError(true)}
           referrerPolicy="no-referrer"
+          unoptimized={typeof src === 'string' && (src.includes('dicebear.com') || src.includes('.svg'))}
         />
       ) : (
         <span>{initial}</span>

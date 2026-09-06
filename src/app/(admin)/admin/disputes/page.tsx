@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import DataTable, { Column } from '@/components/admin/DataTable';
@@ -8,6 +8,7 @@ import AdminDrawer from '@/components/admin/AdminDrawer';
 import KPICard from '@/components/admin/KPICard';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Avatar } from '@/components/ui/Avatar';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
 import {
   ShieldAlert,
@@ -25,6 +26,11 @@ import {
   ExternalLink,
   Maximize2,
   X,
+  Folder,
+  FolderOpen,
+  ChevronDown,
+  ChevronUp,
+  List,
 } from 'lucide-react';
 
 interface DisputeUser {
@@ -50,8 +56,10 @@ interface DisputeItem {
     id_tasks: string;
     judul_tugas: string;
     kompensasi: number;
+    is_bidding?: boolean;
     status_task: { nama_status: string };
   };
+  kompensasi_dispute?: number;
   reporter: DisputeUser;
   respondent: DisputeUser;
   _count: {
@@ -133,6 +141,56 @@ export default function AdminDisputesPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState({ total: 0, open: 0, inReview: 0, resolvedWorker: 0, resolvedRequester: 0 });
+  const [viewMode, setViewMode] = useState<'folder' | 'table'>('folder');
+  const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({});
+
+  const groupedDisputes = useMemo(() => {
+    const map: Record<
+      string,
+      {
+        taskId: string;
+        taskTitle: string;
+        taskKompensasi: number;
+        taskStatus: string;
+        disputes: DisputeItem[];
+        activeCount: number;
+        resolvedCount: number;
+      }
+    > = {};
+
+    for (const d of disputes) {
+      const tId = d.id_task;
+      if (!map[tId]) {
+        map[tId] = {
+          taskId: tId,
+          taskTitle: d.task?.judul_tugas || 'Tugas Tanpa Judul',
+          taskKompensasi: d.task?.kompensasi || 0,
+          taskStatus: d.task?.status_task?.nama_status || 'in_progress',
+          disputes: [],
+          activeCount: 0,
+          resolvedCount: 0,
+        };
+      }
+      map[tId].disputes.push(d);
+      if (d.status === 'OPEN' || d.status === 'IN_REVIEW') {
+        map[tId].activeCount += 1;
+      } else {
+        map[tId].resolvedCount += 1;
+      }
+    }
+
+    return Object.values(map).sort((a, b) => {
+      if (b.activeCount !== a.activeCount) return b.activeCount - a.activeCount;
+      return b.disputes.length - a.disputes.length;
+    });
+  }, [disputes]);
+
+  const toggleFolderCollapse = (taskId: string) => {
+    setCollapsedFolders((prev) => ({
+      ...prev,
+      [taskId]: !prev[taskId],
+    }));
+  };
 
   const [selectedDispute, setSelectedDispute] = useState<any | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -293,7 +351,8 @@ export default function AdminDisputesPage() {
             {row.task.judul_tugas}
           </span>
           <span className="font-mono text-[11px] font-bold text-primary">
-            {formatCurrency(row.task.kompensasi)}
+            {formatCurrency(row.kompensasi_dispute ?? row.task.kompensasi)}
+            {row.task.is_bidding && ' (Bid)'}
           </span>
         </div>
       ),
@@ -385,36 +444,238 @@ export default function AdminDisputesPage() {
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <label className="text-xs font-semibold text-on-surface-variant shrink-0">
-              Filter Status:
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPage(1);
-              }}
-              className="px-3 py-2 text-xs bg-surface-container-low text-on-surface rounded-xl border border-card-border focus:border-primary focus:outline-none"
-            >
-              <option value="ALL">Semua Status</option>
-              <option value="OPEN">Menunggu Respon (OPEN)</option>
-              <option value="IN_REVIEW">Dalam Mediasi (IN_REVIEW)</option>
-              <option value="RESOLVED_FAVOR_WORKER">Menang Pekerja</option>
-              <option value="RESOLVED_FAVOR_REQUESTER">Menang Pemberi Tugas</option>
-            </select>
+          <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+            {/* View Mode Switcher: Folder vs Table */}
+            <div className="inline-flex p-1 rounded-xl bg-surface-container-low border border-card-border">
+              <button
+                type="button"
+                onClick={() => setViewMode('folder')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  viewMode === 'folder'
+                    ? 'bg-surface-container-lowest text-primary shadow-xs font-bold'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+                title="Kelompokkan per Folder Tugas"
+              >
+                <Folder className="w-3.5 h-3.5" />
+                <span>Folder Tugas</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('table')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  viewMode === 'table'
+                    ? 'bg-surface-container-lowest text-primary shadow-xs font-bold'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+                title="Tabel Sengketa Lengkap"
+              >
+                <List className="w-3.5 h-3.5" />
+                <span>Tabel</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-semibold text-on-surface-variant shrink-0">
+                Filter Status:
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="px-3 py-2 text-xs bg-surface-container-low text-on-surface rounded-xl border border-card-border focus:border-primary focus:outline-none cursor-pointer"
+              >
+                <option value="ALL">Semua Status</option>
+                <option value="OPEN">Menunggu Respon (OPEN)</option>
+                <option value="IN_REVIEW">Dalam Mediasi (IN_REVIEW)</option>
+                <option value="RESOLVED_FAVOR_WORKER">Menang Pekerja</option>
+                <option value="RESOLVED_FAVOR_REQUESTER">Menang Pemberi Tugas</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* ──── Data Table ──── */}
-        <div className="bg-surface-container-lowest rounded-2xl border border-card-border overflow-hidden">
-          <DataTable
-            columns={columns}
-            data={disputes}
-            pageSize={15}
-            emptyMessage="Tidak ada sengketa yang sesuai dengan kriteria filter."
-          />
-        </div>
+        {/* ──── VIEW 1: FOLDER / GROUPED BY TASK ──── */}
+        {viewMode === 'folder' && (
+          <div className="flex flex-col gap-5">
+            {groupedDisputes.length === 0 ? (
+              <div className="p-12 rounded-3xl bg-surface-container-lowest border border-card-border text-center flex flex-col items-center justify-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-surface-container text-on-surface-variant flex items-center justify-center">
+                  <ShieldCheck className="w-7 h-7 text-emerald-600" />
+                </div>
+                <h3 className="font-headline font-bold text-base text-on-surface">
+                  Tidak Ada Sengketa
+                </h3>
+                <p className="text-xs text-on-surface-variant max-w-sm">
+                  Tidak ada sengketa yang sesuai dengan kriteria filter saat ini.
+                </p>
+              </div>
+            ) : (
+              groupedDisputes.map((group) => {
+                const isCollapsed = collapsedFolders[group.taskId] ?? false;
+
+                return (
+                  <div
+                    key={group.taskId}
+                    className="rounded-3xl bg-surface-container-lowest border border-card-border shadow-xs overflow-hidden transition-all"
+                  >
+                    {/* Folder Header */}
+                    <div
+                      onClick={() => toggleFolderCollapse(group.taskId)}
+                      className="p-5 sm:p-6 bg-surface-container-low/50 border-b border-card-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-surface-container-low/80 transition-colors"
+                    >
+                      <div className="flex items-start gap-3.5 min-w-0">
+                        <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20 shadow-2xs">
+                          {isCollapsed ? (
+                            <Folder className="w-5 h-5" />
+                          ) : (
+                            <FolderOpen className="w-5 h-5 text-primary" />
+                          )}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
+                              Folder Tugas #{group.taskId.substring(0, 8)}
+                            </span>
+                            <span className="text-[11px] text-on-surface-variant">
+                              • Status Task: <strong className="uppercase">{group.taskStatus}</strong>
+                            </span>
+                            <span className="text-[11px] font-mono font-bold text-primary">
+                              • {formatCurrency(group.taskKompensasi)}
+                            </span>
+                          </div>
+                          <h3 className="font-headline font-bold text-base sm:text-lg text-on-surface mt-1 truncate">
+                            {group.taskTitle}
+                          </h3>
+                        </div>
+                      </div>
+
+                      {/* Right badge & counters */}
+                      <div className="flex items-center gap-2.5 sm:gap-3 self-start sm:self-auto shrink-0 flex-wrap sm:flex-nowrap">
+                        {group.resolvedCount > 0 && (
+                          <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 text-xs font-bold font-mono">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>{group.resolvedCount}/{group.disputes.length} Selesai</span>
+                          </div>
+                        )}
+                        {group.activeCount > 0 ? (
+                          <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-600 text-xs font-bold font-mono">
+                            <ShieldAlert className="w-3.5 h-3.5" />
+                            <span>{group.activeCount} Aktif Menunggu</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-500/10 border border-slate-500/20 text-slate-600 text-xs font-bold font-mono">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Semua Selesai</span>
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors"
+                        >
+                          {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Folder Items */}
+                    {!isCollapsed && (
+                      <div className="p-4 sm:p-5 flex flex-col gap-3 bg-surface-container-lowest/60">
+                        {group.disputes.map((dispute) => (
+                          <div
+                            key={dispute.id_dispute}
+                            className="p-4 rounded-2xl bg-surface-container-low/60 border border-card-border hover:border-primary/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                          >
+                            <div className="flex items-start gap-3.5 min-w-0">
+                              <Avatar
+                                src={dispute.respondent.avatar_url}
+                                name={dispute.respondent.nama_lengkap}
+                                size="md"
+                                shape="rounded"
+                              />
+                              <div className="flex flex-col min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-bold text-xs text-on-surface truncate">
+                                    Terlapor: {dispute.respondent.nama_lengkap}
+                                  </span>
+                                  <span className="text-[11px] text-on-surface-variant">
+                                    vs Pelapor: <strong>{dispute.reporter.nama_lengkap}</strong>
+                                  </span>
+                                  <span className="text-[10px] font-mono text-on-surface-variant">
+                                    • #{dispute.id_dispute.substring(0, 8)}
+                                  </span>
+                                  <DisputeStatusBadge status={dispute.status} />
+                                  <span className="font-mono text-xs font-bold text-primary tabular-nums">
+                                    • {formatCurrency(dispute.kompensasi_dispute ?? dispute.task.kompensasi)}
+                                    {dispute.task.is_bidding && ' (Bid)'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs text-on-surface mt-1 font-semibold">
+                                  <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                  <span className="truncate">{dispute.reason}</span>
+                                </div>
+                                <p className="text-[11px] text-on-surface-variant mt-0.5 line-clamp-1">
+                                  {dispute.description}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Action Buttons & Counters */}
+                            <div className="flex items-center gap-3 self-end sm:self-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-card-border/50 w-full sm:w-auto justify-between sm:justify-end">
+                              <div className="flex items-center gap-3 text-[11px] text-on-surface-variant font-mono">
+                                <span className="flex items-center gap-1">
+                                  <Paperclip className="w-3 h-3 text-primary" />
+                                  {dispute._count.evidences}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MessageSquare className="w-3 h-3 text-primary" />
+                                  {dispute._count.messages}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openDrawer(dispute.id_dispute)}
+                                  className="text-xs"
+                                >
+                                  Tinjau &amp; Putuskan
+                                </Button>
+                                <Link
+                                  href={`/admin/disputes/${dispute.id_dispute}`}
+                                  className="p-1.5 rounded-lg border border-card-border hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
+                                  title="Buka Halaman Penuh"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                </Link>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+
+        {/* ──── VIEW 2: DATA TABLE ──── */}
+        {viewMode === 'table' && (
+          <div className="bg-surface-container-lowest rounded-2xl border border-card-border overflow-hidden">
+            <DataTable
+              columns={columns}
+              data={disputes}
+              pageSize={15}
+              emptyMessage="Tidak ada sengketa yang sesuai dengan kriteria filter."
+            />
+          </div>
+        )}
 
       </main>
 
@@ -460,7 +721,10 @@ export default function AdminDisputesPage() {
               <div className="flex items-center justify-between mt-2 p-3 bg-surface-container-low rounded-xl border border-card-border font-mono">
                 <span className="text-on-surface-variant">Nilai Kompensasi Escrow:</span>
                 <span className="text-primary font-bold text-sm">
-                  {formatCurrency(selectedDispute.task?.kompensasi || 0)}
+                  {formatCurrency(selectedDispute.kompensasi_dispute ?? selectedDispute.task?.kompensasi ?? 0)}
+                  {selectedDispute.task?.is_bidding && (
+                    <span className="ml-1.5 text-[10px] text-primary/70 font-sans font-semibold">(Penawaran)</span>
+                  )}
                 </span>
               </div>
             </div>
@@ -497,6 +761,43 @@ export default function AdminDisputesPage() {
                 </span>
               </div>
             </div>
+
+            {/* Related disputes on same task switchers in Drawer */}
+            {selectedDispute.relatedDisputes && selectedDispute.relatedDisputes.length > 0 && (
+              <div className="p-3.5 rounded-2xl bg-surface-container-low border border-card-border flex flex-col gap-2">
+                <span className="text-[10px] font-mono font-bold uppercase text-primary">
+                  Sengketa Lain pada Tugas Ini ({selectedDispute.relatedDisputes.length})
+                </span>
+                <div className="flex flex-col gap-1.5">
+                  {selectedDispute.relatedDisputes.map((rel: any) => (
+                    <button
+                      key={rel.id_dispute}
+                      type="button"
+                      onClick={() => openDrawer(rel.id_dispute)}
+                      className="p-2 rounded-xl bg-surface-container-lowest hover:bg-surface-container border border-card-border flex items-center justify-between text-left transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Avatar
+                          src={rel.respondent?.avatar_url}
+                          name={rel.respondent?.nama_lengkap}
+                          size="sm"
+                          shape="rounded"
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-bold text-xs text-on-surface truncate">
+                            Terlapor: {rel.respondent?.nama_lengkap}
+                          </span>
+                          <span className="text-[10px] text-on-surface-variant truncate">
+                            {rel.reason}
+                          </span>
+                        </div>
+                      </div>
+                      <DisputeStatusBadge status={rel.status} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Dispute Statement */}
             <div className="flex flex-col gap-2">

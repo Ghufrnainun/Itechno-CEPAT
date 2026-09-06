@@ -25,6 +25,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Avatar } from "@/components/ui/Avatar";
 import {
   compressImage,
   formatFileSize,
@@ -47,10 +48,12 @@ interface DisputeDetailData {
     judul_tugas: string;
     deskripsi_tugas: string;
     kompensasi: number;
+    is_bidding?: boolean;
     status_task: { nama_status: string };
     kategori: { nama_kategori: string; icon: string | null };
     requester: { id_user: string; nama_lengkap: string; avatar_url: string | null };
   };
+  kompensasi_dispute?: number;
   reporter: {
     id_user: string;
     nama_lengkap: string;
@@ -78,6 +81,14 @@ interface DisputeDetailData {
     message: string;
     is_admin: boolean;
     created_at: string;
+  }>;
+  relatedDisputes?: Array<{
+    id_dispute: string;
+    status: "OPEN" | "IN_REVIEW" | "RESOLVED_FAVOR_WORKER" | "RESOLVED_FAVOR_REQUESTER" | "CLOSED";
+    reason: string;
+    created_at: string;
+    reporter: { id_user: string; nama_lengkap: string; avatar_url: string | null };
+    respondent: { id_user: string; nama_lengkap: string; avatar_url: string | null };
   }>;
 }
 
@@ -587,9 +598,16 @@ export default function DisputeDetailPage() {
                   <div className="border-t border-dashed border-card-border my-1" />
 
                   <div className="flex items-center justify-between text-sm font-bold">
-                    <span>Dana Ditahan (Escrow):</span>
+                    <div>
+                      <span>Dana Ditahan (Escrow):</span>
+                      {dispute.task.is_bidding && (
+                        <span className="block text-[10px] text-on-surface-variant font-normal">
+                          Berdasarkan nilai penawaran pekerja yang bersengketa
+                        </span>
+                      )}
+                    </div>
                     <span className="font-mono text-primary text-base">
-                      {formatCurrency(dispute.task.kompensasi)}
+                      {formatCurrency(dispute.kompensasi_dispute ?? dispute.task.kompensasi)}
                     </span>
                   </div>
                 </div>
@@ -653,6 +671,78 @@ export default function DisputeDetailPage() {
                 </div>
               </div>
             </div>
+
+            {/* Related Disputes on the same task */}
+            {dispute.relatedDisputes && dispute.relatedDisputes.length > 0 && (
+              <div className="p-1 rounded-[1.75rem] bg-gradient-to-b from-card-border/70 to-card-border/30 border border-card-border/60 shadow-xs">
+                <div className="bg-surface-container-lowest rounded-[calc(1.75rem-0.25rem)] p-5 sm:p-6 flex flex-col gap-3.5">
+                  <div className="border-b border-card-border/60 pb-3 flex items-center justify-between">
+                    <div>
+                      <h3 className="font-headline font-bold text-sm text-on-surface">
+                        Sengketa Lain pada Tugas Ini
+                      </h3>
+                      <span className="text-[11px] text-on-surface-variant">
+                        {dispute.relatedDisputes.length} berkas sengketa pekerja lainnya
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2.5">
+                    {dispute.relatedDisputes.map((rel) => {
+                      const counterpart = user?.id_user === rel.reporter.id_user ? rel.respondent : rel.reporter;
+                      return (
+                        <Link
+                          key={rel.id_dispute}
+                          href={`/disputes/${rel.id_dispute}`}
+                          className="p-3 rounded-xl bg-surface-container-low hover:bg-surface-container border border-card-border hover:border-primary/40 transition-all flex items-center justify-between gap-3 group"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <Avatar
+                              src={counterpart.avatar_url}
+                              name={counterpart.nama_lengkap}
+                              size="sm"
+                              shape="rounded"
+                            />
+                            <div className="flex flex-col min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-xs text-on-surface truncate group-hover:text-primary transition-colors">
+                                  {counterpart.nama_lengkap}
+                                </span>
+                                <span className="text-[10px] font-mono text-on-surface-variant">
+                                  #{rel.id_dispute.substring(0, 6)}
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-on-surface-variant truncate">
+                                {rel.reason}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0">
+                            {rel.status === "OPEN" && (
+                              <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20 text-[10px] font-bold font-mono">
+                                Menunggu
+                              </span>
+                            )}
+                            {rel.status === "IN_REVIEW" && (
+                              <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 border border-blue-500/20 text-[10px] font-bold font-mono">
+                                Mediasi
+                              </span>
+                            )}
+                            {(rel.status === "RESOLVED_FAVOR_WORKER" || rel.status === "RESOLVED_FAVOR_REQUESTER" || rel.status === "CLOSED") && (
+                              <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-bold font-mono">
+                                Selesai
+                              </span>
+                            )}
+                            <ExternalLink className="w-3.5 h-3.5 text-on-surface-variant group-hover:text-primary transition-colors ml-1" />
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
 
           </div>
 

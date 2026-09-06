@@ -168,8 +168,8 @@ export function BantuanContent() {
   useEffect(() => {
     try {
       const supabase = createClient();
-      supabase.auth.getUser().then((res: any) => {
-        setIsLoggedIn(Boolean(res?.data?.user));
+      supabase.auth.getUser().then(({ data }: { data: any }) => {
+        setIsLoggedIn(Boolean(data?.user));
       });
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {

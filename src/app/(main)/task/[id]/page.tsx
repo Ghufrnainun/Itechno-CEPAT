@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useCurrentRole } from "@/app/(main)/layout";
 import { TaskStatus } from "@/types/database";
@@ -140,6 +141,64 @@ export default function TaskDetailPage() {
   const [reviewComment, setReviewComment] = useState("");
   const [isCancelTaskModalOpen, setIsCancelTaskModalOpen] = useState(false);
   const [cancelTaskMode, setCancelTaskMode] = useState<"worker" | "requester">("worker");
+  const [taskDisputes, setTaskDisputes] = useState<Array<{
+    id_dispute: string;
+    id_respondent: string;
+    id_reporter: string;
+    status: string;
+    reason?: string;
+    kompensasi_dispute?: number;
+  }>>([]);
+  const [selectedDisputeWorkerId, setSelectedDisputeWorkerId] = useState<string | undefined>(undefined);
+
+  // Helper buka dispute spesifik untuk seorang worker
+  const handleOpenDisputeForWorker = (workerUserId: string) => {
+    setSelectedDisputeWorkerId(workerUserId);
+    setIsDisputeModalOpen(true);
+  };
+
+  // Helper buka chat spesifik dengan seorang worker
+  const handleOpenChatWithWorker = async (workerUserId: string) => {
+    if (!task) return;
+    try {
+      const resInit = await fetch('/api/chat/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_tasks: task.id_tasks,
+          id_worker: workerUserId,
+        }),
+      });
+      const dataInit = await resInit.json().catch(() => ({}));
+      if (dataInit.success && dataInit.data?.id_chat_room) {
+        router.push(`/chat?room=${dataInit.data.id_chat_room}`);
+      } else {
+        router.push(`/chat?userId=${workerUserId}`);
+      }
+    } catch {
+      router.push(`/chat?userId=${workerUserId}`);
+    }
+  };
+
+  // Fetch disputes untuk task ini
+  const fetchTaskDisputes = useCallback(async () => {
+    try {
+      const res = await fetch("/api/disputes");
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          const matching = json.data.filter((d: any) => d.id_task === id);
+          setTaskDisputes(matching);
+        }
+      }
+    } catch (_) {}
+  }, [id]);
+
+  const disputedWorkerIds = useMemo(() => {
+    return taskDisputes
+      .filter((d) => d.status === "OPEN" || d.status === "IN_REVIEW")
+      .map((d) => (task && d.id_reporter === task.id_requester ? d.id_respondent : d.id_reporter));
+  }, [taskDisputes, task]);
 
   // Fetch task detail dari API (SWR: background revalidation)
   const fetchTask = useCallback(async () => {
@@ -169,7 +228,8 @@ export default function TaskDetailPage() {
 
   useEffect(() => {
     fetchTask();
-  }, [fetchTask]);
+    fetchTaskDisputes();
+  }, [fetchTask, fetchTaskDisputes]);
 
   // ── Worker: Apply ──────────────────────────────────────────────────────────
   // Mode edit: task bidding + lamaran masih pending → PATCH perbarui bid
@@ -846,7 +906,15 @@ export default function TaskDetailPage() {
                             </p>
                           </div>
                         </div>
-                        <Badge status={app.status === "accepted" ? "accepted" : app.status === "rejected" ? "rejected" : "open"} />
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {disputedWorkerIds.includes(app.id_worker) && (
+                            <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/25 text-[10px] font-mono font-bold flex items-center gap-1">
+                              <ShieldAlert className="w-3 h-3" />
+                              Sengketa Aktif
+                            </span>
+                          )}
+                          <Badge status={app.status === "accepted" ? "accepted" : app.status === "rejected" ? "rejected" : "open"} />
+                        </div>
                       </div>
 
                       {/* Harga penawaran (task bidding) — hanya requester yang melihat halaman ini */}
@@ -924,6 +992,202 @@ export default function TaskDetailPage() {
               )}
             </div>
           )}
+
+          {/* Tim Pekerja & Status Pengerjaan (Accepted, In Progress, Completed) */}
+          {(taskStatus === "accepted" || taskStatus === "in_progress" || taskStatus === "completed") && (() => {
+            const assignedWorkers = task.applicants.filter(a => 
+              a.status === "accepted" || 
+              taskDisputes.some(d => d.id_respondent === a.id_worker || d.id_reporter === a.id_worker)
+            );
+
+            // Active workers yang masih mengerjakan normal (belum sengketa yang terselesaikan)
+            const activeWorkingWorkers = assignedWorkers.filter(a => {
+              const d = taskDisputes.find(disp => disp.id_respondent === a.id_worker || disp.id_reporter === a.id_worker);
+              if (d && ["RESOLVED_FAVOR_WORKER", "RESOLVED_FAVOR_REQUESTER", "CLOSED"].includes(d.status)) {
+                return false;
+              }
+              return a.status === "accepted";
+            });
+
+            return (
+              <div className="flex flex-col gap-4 bg-surface-container-lowest border border-card-border rounded-2xl p-4 sm:p-6 shadow-xs">
+                <div className="flex justify-between items-center border-b border-card-border pb-3">
+                  <h3 className="font-headline text-sm font-extrabold text-on-surface flex items-center gap-2">
+                    <Users className="w-4 h-4 text-primary" />
+                    <span>Tim Pekerja &amp; Status Pengerjaan ({assignedWorkers.length})</span>
+                  </h3>
+                  <span className="font-mono text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-2.5 py-0.5 rounded-md">
+                    {activeWorkingWorkers.length} Aktif Mengerjakan
+                  </span>
+                </div>
+
+                {assignedWorkers.length === 0 ? (
+                  <p className="font-body-sm text-xs text-on-surface-variant py-4 text-center">
+                    Belum ada data pekerja yang terdaftar untuk tugas ini.
+                  </p>
+                ) : (
+                  <div className="flex flex-col divide-y divide-card-border/60">
+                    {assignedWorkers.map((app) => {
+                      const dispute = taskDisputes.find(
+                        d => d.id_respondent === app.id_worker || d.id_reporter === app.id_worker
+                      );
+                      const disputeActive = dispute && (dispute.status === "OPEN" || dispute.status === "IN_REVIEW");
+                      const disputeFavorWorker = dispute?.status === "RESOLVED_FAVOR_WORKER";
+                      const disputeFavorRequester = dispute?.status === "RESOLVED_FAVOR_REQUESTER";
+
+                      const workerComp = (task.is_bidding && app.bid_amount != null)
+                        ? app.bid_amount
+                        : task.kompensasi;
+
+                      return (
+                        <div key={app.id_task_applicants} className="py-3.5 flex flex-col gap-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            {/* Worker Profile Info */}
+                            <div className="flex items-center gap-3">
+                              <Avatar
+                                src={app.worker.avatar_url}
+                                name={app.worker.nama_lengkap}
+                                size="md"
+                                shape="rounded"
+                              />
+                              <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-sans text-xs font-bold text-on-surface">
+                                    {app.worker.nama_lengkap}
+                                  </span>
+                                  {user?.id_user === app.worker.id_user && (
+                                    <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-semibold">
+                                      Anda
+                                    </span>
+                                  )}
+                                  <div className="flex items-center gap-0.5 text-amber-500 font-mono text-[11px] font-bold">
+                                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                    <span>{app.worker.rating_avg.toFixed(1)}</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 mt-0.5 text-[11px] text-on-surface-variant flex-wrap">
+                                  <span className="font-mono font-bold text-primary">
+                                    {formatCurrency(workerComp)}
+                                    {task.is_bidding && <span className="font-sans font-normal text-[10px] text-primary/70 ml-1">(Penawaran)</span>}
+                                  </span>
+                                  <span>•</span>
+                                  <span>{app.worker.total_completed} tugas selesai</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Status Badge */}
+                            <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+                              {disputeActive ? (
+                                <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/20 text-xs font-bold font-mono flex items-center gap-1.5">
+                                  <ShieldAlert className="w-3.5 h-3.5" />
+                                  Dalam Sengketa
+                                </span>
+                              ) : disputeFavorWorker ? (
+                                <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-bold font-mono flex items-center gap-1.5">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  Selesai via Sengketa (Hak Dicairkan)
+                                </span>
+                              ) : disputeFavorRequester ? (
+                                <span className="px-2.5 py-1 rounded-lg bg-error-container/40 text-error border border-error/25 text-xs font-bold font-mono flex items-center gap-1.5">
+                                  <XCircle className="w-3.5 h-3.5" />
+                                  Selesai via Sengketa (Dana Refund)
+                                </span>
+                              ) : app.status === "accepted" ? (
+                                taskStatus === "completed" ? (
+                                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-bold font-mono flex items-center gap-1.5">
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    Tugas Selesai
+                                  </span>
+                                ) : taskStatus === "in_progress" ? (
+                                  <span className="px-2.5 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20 text-xs font-bold font-mono flex items-center gap-1.5">
+                                    <PlayCircle className="w-3.5 h-3.5" />
+                                    Sedang Mengerjakan
+                                  </span>
+                                ) : (
+                                  <span className="px-2.5 py-1 rounded-lg bg-secondary-container/50 text-secondary border border-secondary/30 text-xs font-bold font-mono">
+                                    {app.worker_confirmed ? "Siap Mulai (Terkonfirmasi)" : "Menunggu Konfirmasi"}
+                                  </span>
+                                )
+                              ) : (
+                                <span className="px-2.5 py-1 rounded-lg bg-surface-container text-on-surface-variant text-xs font-medium">
+                                  {app.status}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Action Buttons for Worker Row */}
+                          <div className="flex items-center justify-end gap-2 pt-1 border-t border-card-border/40">
+                            {/* Tombol Chat spesifik ke worker ini */}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenChatWithWorker(app.worker.id_user)}
+                              className="text-xs h-8 px-3 flex items-center gap-1.5"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" />
+                              <span>Chat Pekerja</span>
+                            </Button>
+
+                            {/* Tombol Dispute / Lihat Sengketa */}
+                            {dispute ? (
+                              <Link href={`/disputes/${dispute.id_dispute}`}>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-xs h-8 px-3 text-amber-600 hover:bg-amber-500/10 border border-amber-500/30 flex items-center gap-1.5"
+                                >
+                                  <ShieldAlert className="w-3.5 h-3.5" />
+                                  <span>{disputeActive ? "Ruang Sengketa" : "Detail Putusan Sengketa"}</span>
+                                </Button>
+                              </Link>
+                            ) : (
+                              isRequester && (taskStatus === "in_progress" || taskStatus === "accepted") && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleOpenDisputeForWorker(app.worker.id_user)}
+                                  className="text-xs h-8 px-3 text-amber-600 hover:bg-amber-500/10 border border-amber-500/30 flex items-center gap-1.5"
+                                >
+                                  <ShieldAlert className="w-3.5 h-3.5" />
+                                  <span>Laporkan Pekerja Ini</span>
+                                </Button>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Info Konfirmasi Selesai untuk Requester jika ada worker aktif yang sedang mengerjakan */}
+                {isRequester && taskStatus === "in_progress" && activeWorkingWorkers.length > 0 && (
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex flex-col gap-2 mt-2">
+                    <div className="flex items-center gap-2 text-primary font-bold text-xs">
+                      <CheckCircle2 className="w-4 h-4" />
+                      Konfirmasi Penyelesaian Tugas
+                    </div>
+                    <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+                      Terdapat <strong>{activeWorkingWorkers.length} pekerja aktif</strong> yang sedang mengerjakan tugas ini. Jika pekerjaan mereka telah selesai dan Anda telah memeriksa hasilnya, klik tombol di bawah untuk mencairkan kompensasi escrow kepada pekerja yang aktif.
+                    </p>
+                    <Button
+                      onClick={handleConfirmCompletion}
+                      disabled={actionLoading}
+                      variant="primary"
+                      className="w-full sm:w-auto py-2.5 text-xs font-bold self-start"
+                    >
+                      Konfirmasi Selesai ({activeWorkingWorkers.length} Pekerja Aktif)
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Reviews (jika task completed) */}
           {taskStatus === "completed" && task.reviews.length > 0 && (
@@ -1569,15 +1833,34 @@ export default function TaskDetailPage() {
       {/* Modal: Ajukan Mediasi Sengketa */}
       <DisputeModal
         isOpen={isDisputeModalOpen}
-        onClose={() => setIsDisputeModalOpen(false)}
+        onClose={() => {
+          setIsDisputeModalOpen(false);
+          setSelectedDisputeWorkerId(undefined);
+        }}
         taskId={task.id_tasks}
         taskTitle={task.judul_tugas}
         userRole={role}
+        preselectedWorkerId={selectedDisputeWorkerId}
+        acceptedWorkers={
+          task.applicants
+            .filter((a) => ["accepted", "in_progress"].includes(a.status?.toLowerCase()))
+            .map((a) => ({
+              id_user: a.worker.id_user,
+              nama_lengkap: a.worker.nama_lengkap,
+              avatar_url: a.worker.avatar_url,
+              rating_avg: a.worker.rating_avg,
+              bid_amount: a.bid_amount,
+            }))
+        }
+        existingDisputedWorkerIds={disputedWorkerIds}
         counterpartName={
           role === "requester"
-            ? task.applicants.find((a) => a.status === "accepted")?.worker?.nama_lengkap
+            ? task.applicants.find((a) => ["accepted", "in_progress"].includes(a.status?.toLowerCase()))?.worker?.nama_lengkap
             : task.requester?.nama_lengkap
         }
+        onSuccess={() => {
+          fetchTaskDisputes();
+        }}
       />
 
       <ReportModal

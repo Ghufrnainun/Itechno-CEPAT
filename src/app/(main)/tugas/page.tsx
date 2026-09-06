@@ -45,6 +45,7 @@ interface RequesterTask {
   completed_at: string | null;
   applicant_count: number;
   accepted_worker: { id_user: string; nama_lengkap: string; avatar_url: string | null } | null;
+  accepted_workers?: Array<{ id_user: string; nama_lengkap: string; avatar_url: string | null; bid_amount?: number | null }>;
   received_rating: number | null;
 }
 
@@ -140,7 +141,26 @@ function TaskManagementCard({ task, onRefresh }: { task: RequesterTask; onRefres
         </div>
 
         {/* Worker chip */}
-        {task.accepted_worker && (
+        {task.accepted_workers && task.accepted_workers.length > 1 ? (
+          <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-card-border/40">
+            <span className="font-sans text-[11px] text-on-surface-variant font-semibold">
+              Worker ({task.accepted_workers.length}):
+            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {task.accepted_workers.map((w) => (
+                <div
+                  key={w.id_user}
+                  className="flex items-center gap-1.5 bg-surface-container-lowest rounded-lg px-2 py-0.5 border border-card-border"
+                >
+                  <Avatar src={w.avatar_url} name={w.nama_lengkap} size="xs" />
+                  <span className="font-sans text-[11px] font-medium text-on-surface">
+                    {w.nama_lengkap}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : task.accepted_worker ? (
           <div className="flex items-center gap-2 bg-surface-container-lowest rounded-lg px-2.5 py-1 border border-card-border self-start">
             <Avatar
               src={task.accepted_worker.avatar_url}
@@ -157,7 +177,7 @@ function TaskManagementCard({ task, onRefresh }: { task: RequesterTask; onRefres
               </span>
             )}
           </div>
-        )}
+        ) : null}
 
         {/* Footer actions */}
         {task.status === "open" && (
