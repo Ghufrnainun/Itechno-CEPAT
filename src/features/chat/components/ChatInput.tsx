@@ -124,10 +124,10 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
   };
 
   return (
-    <div className="p-3 sm:p-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] bg-surface-container-lowest border-t border-card-border flex flex-col gap-2.5 relative font-sans">
+    <div className="p-2 sm:p-3.5 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] bg-surface-container-lowest border-t border-card-border flex flex-col gap-2 relative font-sans w-full max-w-full shrink-0 overflow-x-hidden">
       {/* Error Alert */}
       {errorMsg && (
-        <div className="absolute top-[-44px] left-1/2 -translate-x-1/2 bg-amber-500/10 border border-amber-500/30 text-amber-600 px-4 py-2 text-xs font-semibold z-50 rounded-xl shadow-lg animate-in fade-in slide-in-from-bottom-2 whitespace-nowrap flex items-center gap-2">
+        <div className="absolute top-[-44px] left-1/2 -translate-x-1/2 max-w-[90vw] bg-amber-500/10 border border-amber-500/30 text-amber-600 px-3.5 py-1.5 text-xs font-semibold z-50 rounded-xl shadow-lg animate-in fade-in slide-in-from-bottom-2 text-center whitespace-normal break-words flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           {errorMsg}
         </div>
@@ -135,7 +135,7 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
 
       {/* Image Preview Container */}
       {previewUrl && (
-        <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-card-border ml-12 shadow-xs">
+        <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden border border-card-border ml-10 sm:ml-12 shadow-xs">
           <Image src={previewUrl} alt="Preview" fill className="object-cover" unoptimized />
           <button
             onClick={clearSelectedFile}
@@ -148,7 +148,7 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
         </div>
       )}
 
-      <div className="flex items-center gap-2.5 w-full z-20">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 w-full z-20 min-w-0">
         <input
           type="file"
           accept="image/*"
@@ -161,7 +161,7 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
           disabled={disabled || isUploading}
           onClick={() => fileInputRef.current?.click()}
           aria-label="Unggah Gambar"
-          className="min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors cursor-pointer disabled:opacity-50"
+          className="min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] shrink-0 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors cursor-pointer disabled:opacity-50"
         >
           {isUploading ? (
             <Loader2 className="w-5 h-5 animate-spin text-primary" />
@@ -176,7 +176,7 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
             disabled={disabled || isUploading}
             onClick={() => setShowEmojiPicker(prev => !prev)}
             aria-label="Pilih Emoji"
-            className="min-w-[40px] min-h-[40px] rounded-xl items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors cursor-pointer hidden sm:flex disabled:opacity-50"
+            className="min-w-[40px] min-h-[40px] rounded-xl items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors cursor-pointer hidden sm:flex disabled:opacity-50 shrink-0"
           >
             <Smile className="w-5 h-5" />
           </button>
@@ -195,7 +195,7 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
 
         <form 
           onSubmit={handleSendForm} 
-          className="flex-1 flex items-center gap-2 bg-surface-container-low rounded-2xl px-3.5 py-1.5 sm:py-2 border border-card-border focus-within:border-primary focus-within:bg-surface-container-lowest transition-all min-h-[44px]"
+          className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2 bg-surface-container-low rounded-2xl px-3 py-1.5 sm:px-3.5 sm:py-2 border border-card-border focus-within:border-primary focus-within:bg-surface-container-lowest transition-all min-h-[42px] sm:min-h-[44px]"
         >
           <input 
             type="text"
@@ -203,13 +203,13 @@ export function ChatInput({ onSendMessage, disabled, externalFile, onExternalFil
             onChange={(e) => setText(e.target.value)}
             disabled={disabled || isUploading}
             placeholder={isUploading ? "Mengirim pesan..." : (selectedFile ? "Tambah keterangan..." : "Ketik pesan...")}
-            className="flex-1 bg-transparent border-none focus:outline-none text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 disabled:opacity-50 font-sans"
+            className="flex-1 min-w-0 w-full bg-transparent border-none focus:outline-none text-base sm:text-xs text-on-surface placeholder:text-on-surface-variant/50 disabled:opacity-50 font-sans"
           />
           <button 
             type="submit" 
             disabled={(!text.trim() && !selectedFile) || disabled || isUploading}
             aria-label="Kirim Pesan"
-            className={`min-w-[36px] min-h-[36px] flex items-center justify-center transition-colors rounded-xl ${((text.trim() || selectedFile) && !disabled && !isUploading) ? 'text-primary hover:bg-primary/10 cursor-pointer active:scale-95' : 'text-on-surface-variant/30 cursor-not-allowed'}`}
+            className={`min-w-[34px] min-h-[34px] sm:min-w-[36px] sm:min-h-[36px] shrink-0 flex items-center justify-center transition-colors rounded-xl ${((text.trim() || selectedFile) && !disabled && !isUploading) ? 'text-primary hover:bg-primary/10 cursor-pointer active:scale-95' : 'text-on-surface-variant/30 cursor-not-allowed'}`}
           >
             <Send className="w-4 h-4" />
           </button>

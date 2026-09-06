@@ -74,6 +74,13 @@ function ChatContent() {
     loadCurrentUser();
   }, []);
 
+  useEffect(() => {
+    const roomParam = searchParams.get('room');
+    if (roomParam !== selectedRoomId) {
+      setSelectedRoomId(roomParam);
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const fetchRooms = async () => {
     try {
       if (!hasChatLoadedOnce) setIsLoading(true);
@@ -111,7 +118,7 @@ function ChatContent() {
   const selectedRoomInfo = selectedRoomId ? rooms.find(r => r.id_chat_room === selectedRoomId) : undefined;
 
   return (
-    <div className="flex flex-col h-[100dvh] lg:h-full w-full bg-surface font-sans">
+    <div className="flex flex-col h-full w-full max-w-full min-h-0 overflow-hidden bg-surface font-sans">
       {/* Page Header (Desktop only - clean native layout on mobile) */}
       <header className="hidden md:block shrink-0 bg-surface-container-lowest border-b border-card-border px-6 py-5">
         <div>
@@ -122,11 +129,11 @@ function ChatContent() {
         </div>
       </header>
 
-      <div className="flex flex-1 w-full overflow-hidden">
+      <div className="flex flex-1 w-full max-w-full min-h-0 min-w-0 overflow-hidden">
         {/* Left Panel: Contact List */}
         <div 
-          className={`w-full md:w-[320px] lg:w-[380px] bg-surface-container-lowest border-r border-card-border flex flex-col flex-shrink-0
-            ${selectedRoomId ? 'hidden md:flex' : 'flex'}`}
+          className={`w-full md:w-[320px] lg:w-[380px] bg-surface-container-lowest md:border-r border-card-border flex flex-col flex-shrink-0 min-h-0 min-w-0 max-w-full
+            ${selectedRoomId ? 'hidden md:flex' : 'flex h-full pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0'}`}
         >
           <ChatList 
             rooms={rooms}
@@ -140,7 +147,7 @@ function ChatContent() {
 
         {/* Right Panel: Chat Area */}
         <div 
-          className={`flex-1 flex flex-col bg-surface relative
+          className={`flex-1 flex flex-col bg-surface relative w-full min-w-0 h-full min-h-0 overflow-hidden
             ${!selectedRoomId ? 'hidden md:flex' : 'flex'}`}
         >
           {!selectedRoomId ? (
