@@ -21,8 +21,8 @@ Dokumen ini menjelaskan cara efektif menggunakan file-file di folder `docs/` unt
 | `migrations.md`     | Urutan migrasi Prisma, SQL triggers, RLS     | Setup database baru, migrasi schema, seeding data            |
 | `deployment.md`     | Vercel, Supabase, Firebase setup & scripts   | Deploy, environment setup, CI/CD, pre-submission checklist   |
 | `strategy.md`       | Penilaian, narasi SDG, USP, demo scenario    | README, landing page, presentasi, strategi kompetisi         |
-| `api-testing-bruno.md` | Panduan pengujian endpoint API via Bruno  | Testing interaktif endpoint, simulasi cookie auth lokal      |
-| `api-cepat/`        | Koleksi request Bruno berbasis file          | Membuka dan mengeksekusi request test di Bruno               |
+| `api-testing-postman.md` | Panduan pengujian endpoint API via Postman | Testing interaktif endpoint, simulasi token auth & runner  |
+| `postman/`          | Koleksi request Postman Collection (v2.1)    | Import dan eksekusi otomatis testing di Postman            |
 | `implementation_plan.md` | Checklist dan status implementasi teknis | Meninjau roadmap fitur, integrasi sistem, dan checklist      |
 
 ---

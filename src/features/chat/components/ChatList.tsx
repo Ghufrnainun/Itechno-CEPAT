@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { X, MoreVertical, SquarePen, Search, MessageSquare, Check, User, Image as ImageIcon } from 'lucide-react';
+import { X, MoreVertical, SquarePen, Search, MessageSquare, Check, User, Image as ImageIcon, CheckSquare, CheckCheck, Trash2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 interface ChatRoomData {
@@ -82,12 +82,15 @@ export function ChatList({ rooms, selectedRoomId, currentUserId, onSelectRoom, i
   };
 
   const filteredRooms = rooms.filter(room => {
+    if (!room) return false;
     if (!searchQuery) return true;
-    const isRequester = room.requester.id_user === currentUserId;
+    const isRequester = room.requester?.id_user === currentUserId;
     const otherUser = isRequester ? room.worker : room.requester;
     const query = searchQuery.toLowerCase();
-    return otherUser.nama_lengkap.toLowerCase().includes(query) || 
-           room.task.judul_tugas.toLowerCase().includes(query);
+    const otherUserName = otherUser?.nama_lengkap || "";
+    const taskTitle = room.task?.judul_tugas || "";
+    return otherUserName.toLowerCase().includes(query) || 
+           taskTitle.toLowerCase().includes(query);
   });
 
   const hasAnyUnread = rooms.some(r => (r.unreadCount || 0) > 0);
@@ -149,14 +152,47 @@ export function ChatList({ rooms, selectedRoomId, currentUserId, onSelectRoom, i
             </button>
 
             {isSelectionMenuOpen && (
-              <div className="absolute right-0 top-9 w-48 bg-surface-container-lowest border border-card-border rounded-xl shadow-xl py-1 z-50">
-                {hasUnreadSelected ? (
-                  <button className="w-full text-left px-4 py-2 hover:bg-surface-container-low text-on-surface transition-colors cursor-pointer" onClick={() => handleAction('mark_read')}>Tandai dibaca</button>
-                ) : (
-                  <button className="w-full text-left px-4 py-2 hover:bg-surface-container-low text-on-surface transition-colors cursor-pointer" onClick={() => handleAction('mark_unread')}>Tandai belum dibaca</button>
-                )}
-                <button className="w-full text-left px-4 py-2 hover:bg-surface-container-low text-error transition-colors cursor-pointer" onClick={() => { setShowClearConfirm(true); setIsSelectionMenuOpen(false); }}>Hapus chat terpilih</button>
-              </div>
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setIsSelectionMenuOpen(false)} 
+                />
+                <div className="absolute right-0 top-10 w-52 bg-surface-container-lowest/95 backdrop-blur-md border border-card-border rounded-2xl shadow-xl p-1.5 flex flex-col gap-0.5 z-50 animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
+                  {hasUnreadSelected ? (
+                    <button 
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer flex items-center gap-2.5" 
+                      onClick={() => {
+                        setIsSelectionMenuOpen(false);
+                        handleAction('mark_read');
+                      }}
+                    >
+                      <CheckCheck className="w-4 h-4 text-primary shrink-0" />
+                      <span>Tandai dibaca</span>
+                    </button>
+                  ) : (
+                    <button 
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer flex items-center gap-2.5" 
+                      onClick={() => {
+                        setIsSelectionMenuOpen(false);
+                        handleAction('mark_unread');
+                      }}
+                    >
+                      <Mail className="w-4 h-4 text-on-surface-variant shrink-0" />
+                      <span>Tandai belum dibaca</span>
+                    </button>
+                  )}
+                  <button 
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-error hover:bg-error-container/20 transition-colors cursor-pointer flex items-center gap-2.5" 
+                    onClick={() => { 
+                      setShowClearConfirm(true); 
+                      setIsSelectionMenuOpen(false); 
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4 text-error shrink-0" />
+                    <span>Hapus chat terpilih</span>
+                  </button>
+                </div>
+              </>
             )}
           </div>
         ) : (
@@ -171,18 +207,48 @@ export function ChatList({ rooms, selectedRoomId, currentUserId, onSelectRoom, i
             </button>
 
             {isMenuOpen && (
-              <div className="absolute right-0 top-9 w-48 bg-surface-container-lowest border border-card-border rounded-xl shadow-xl py-1 z-50">
-                <button className="w-full text-left px-4 py-2 hover:bg-surface-container-low text-on-surface transition-colors cursor-pointer" onClick={() => {
-                  setIsMenuOpen(false);
-                  setIsSelectionMode(true);
-                  setSelectedChats([]);
-                }}>Pilih obrolan</button>
-                {hasAnyUnread ? (
-                  <button className="w-full text-left px-4 py-2 hover:bg-surface-container-low text-on-surface transition-colors cursor-pointer" onClick={() => handleAction('mark_read', rooms.map(r => r.id_chat_room))}>Tandai semua dibaca</button>
-                ) : (
-                  <button className="w-full text-left px-4 py-2 hover:bg-surface-container-low text-on-surface transition-colors cursor-pointer" onClick={() => handleAction('mark_unread', rooms.map(r => r.id_chat_room))}>Tandai semua belum dibaca</button>
-                )}
-              </div>
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setIsMenuOpen(false)} 
+                />
+                <div className="absolute right-0 top-10 w-56 bg-surface-container-lowest/95 backdrop-blur-md border border-card-border rounded-2xl shadow-xl p-1.5 flex flex-col gap-0.5 z-50 animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
+                  <button 
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer flex items-center gap-2.5" 
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsSelectionMode(true);
+                      setSelectedChats([]);
+                    }}
+                  >
+                    <CheckSquare className="w-4 h-4 text-on-surface-variant shrink-0" />
+                    <span>Pilih obrolan</span>
+                  </button>
+                  {hasAnyUnread ? (
+                    <button 
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer flex items-center gap-2.5" 
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        handleAction('mark_read', rooms.map(r => r.id_chat_room));
+                      }}
+                    >
+                      <CheckCheck className="w-4 h-4 text-primary shrink-0" />
+                      <span>Tandai semua dibaca</span>
+                    </button>
+                  ) : (
+                    <button 
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer flex items-center gap-2.5" 
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        handleAction('mark_unread', rooms.map(r => r.id_chat_room));
+                      }}
+                    >
+                      <Mail className="w-4 h-4 text-on-surface-variant shrink-0" />
+                      <span>Tandai semua belum dibaca</span>
+                    </button>
+                  )}
+                </div>
+              </>
             )}
           </div>
         )}
@@ -209,10 +275,12 @@ export function ChatList({ rooms, selectedRoomId, currentUserId, onSelectRoom, i
         ) : (
           filteredRooms.map(room => {
             const isSelected = selectedRoomId === room.id_chat_room;
-            const lastMessage = room.messages[0];
+            const lastMessage = Array.isArray(room.messages) ? room.messages[0] : undefined;
             
-            const isRequester = room.requester.id_user === currentUserId;
+            const isRequester = room.requester?.id_user === currentUserId;
             const otherUser = isRequester ? room.worker : room.requester;
+            const otherUserName = otherUser?.nama_lengkap || "Pengguna";
+            const otherUserAvatar = otherUser?.avatar_url;
             
             let displayMessage = "Belum ada pesan";
             let msgTime = "";
@@ -223,8 +291,10 @@ export function ChatList({ rooms, selectedRoomId, currentUserId, onSelectRoom, i
               else if (lastMessage.image_url) displayMessage = "📷 Mengirim gambar";
               else if (lastMessage.teks_pesan) displayMessage = lastMessage.teks_pesan;
               
-              const d = new Date(lastMessage.created_at);
-              msgTime = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              if (lastMessage.created_at) {
+                const d = new Date(lastMessage.created_at);
+                msgTime = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              }
             }
 
             return (
@@ -259,8 +329,8 @@ export function ChatList({ rooms, selectedRoomId, currentUserId, onSelectRoom, i
                 )}
                 
                 <div className="relative shrink-0 mr-3">
-                  {otherUser.avatar_url ? (
-                    <Image src={otherUser.avatar_url} alt="Profile" width={44} height={44} className="w-11 h-11 rounded-full object-cover border border-card-border" referrerPolicy="no-referrer" />
+                  {otherUserAvatar ? (
+                    <Image src={otherUserAvatar} alt="Profile" width={44} height={44} className="w-11 h-11 rounded-full object-cover border border-card-border" referrerPolicy="no-referrer" />
                   ) : (
                     <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
                       <User className="w-5 h-5" />
@@ -275,7 +345,7 @@ export function ChatList({ rooms, selectedRoomId, currentUserId, onSelectRoom, i
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center mb-1">
-                    <h3 className="font-headline font-bold text-xs text-on-surface truncate">{otherUser.nama_lengkap}</h3>
+                    <h3 className="font-headline font-bold text-xs text-on-surface truncate">{otherUserName}</h3>
                     <span className="text-[10px] text-on-surface-variant font-mono tabular-nums shrink-0">{msgTime}</span>
                   </div>
                   <p className={`text-xs truncate ${unread > 0 ? 'text-on-surface font-bold' : 'text-on-surface-variant'}`}>

@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import React, { useEffect, useState, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { ChatList } from "@/features/chat/components/ChatList";
 import { ChatRoom } from "@/features/chat/components/ChatRoom";
-import { createClient } from "@/lib/supabase/client";
-import { MessageSquare, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { MessageSquare } from "lucide-react";
 
 // Module-level SWR Cache for Chat
 let cachedChatRooms: any[] = [];
@@ -14,7 +12,6 @@ let cachedCurrentChatUserId = "";
 let hasChatLoadedOnce = false;
 
 function ChatContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const initialRoomId = searchParams.get('room');
   
@@ -22,23 +19,67 @@ function ChatContent() {
   const [isLoading, setIsLoading] = useState(!hasChatLoadedOnce);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(initialRoomId);
   const [currentUserId, setCurrentUserId] = useState<string>(cachedCurrentChatUserId);
-  const supabase = createClient();
 
-  const handleSelectRoom = (roomId: string | null) => {
+  // Synchronize selectedRoomId and the browser URL cleanly without fighting
+  const handleSelectRoom = useCallback((roomId: string | null) => {
     setSelectedRoomId(roomId);
-    if (roomId) {
-      router.push(`/chat?room=${roomId}`, { scroll: false });
-    } else {
-      router.push('/chat', { scroll: false });
+
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (roomId) {
+        url.searchParams.set("room", roomId);
+        url.searchParams.delete("userId");
+      } else {
+        url.searchParams.delete("room");
+        url.searchParams.delete("userId");
+      }
+      const newQuery = url.searchParams.toString();
+      const newPath = url.pathname + (newQuery ? `?${newQuery}` : "");
+      window.history.replaceState(null, "", newPath);
     }
-  };
+  }, []);
+
+  // Handle browser Back/Forward (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const room = params.get("room");
+      setSelectedRoomId(room);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  // Load current user profile ID
+  useEffect(() => {
+    async function loadCurrentUser() {
+      if (cachedCurrentChatUserId) {
+        setCurrentUserId(cachedCurrentChatUserId);
+        return;
+      }
+      try {
+        const resMe = await fetch('/api/users/me');
+        if (resMe.ok) {
+          const json = await resMe.json();
+          if (json.success && json.data?.id_user) {
+            setCurrentUserId(json.data.id_user);
+            cachedCurrentChatUserId = json.data.id_user;
+          }
+        }
+      } catch (err) {
+        console.error("Gagal load profil user:", err);
+      }
+    }
+    loadCurrentUser();
+  }, []);
 
   useEffect(() => {
     const roomParam = searchParams.get('room');
     if (roomParam !== selectedRoomId) {
       setSelectedRoomId(roomParam);
     }
-  }, [searchParams]);
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchRooms = async () => {
     try {
@@ -46,86 +87,35 @@ function ChatContent() {
       const res = await fetch('/api/chat');
       const data = await res.json();
       
-      if (data.success) {
+      if (data.success && Array.isArray(data.data)) {
         setRooms(data.data);
         cachedChatRooms = data.data;
         hasChatLoadedOnce = true;
+
+        // Cek target userId jika membuka chat berdasarkan user target
+        const targetUserId = searchParams.get('userId');
+        if (targetUserId && !selectedRoomId) {
+          const matchedRoom = data.data.find(
+            (r: any) => r.worker?.id_user === targetUserId || r.requester?.id_user === targetUserId
+          );
+          if (matchedRoom) {
+            handleSelectRoom(matchedRoom.id_chat_room);
+          }
+        }
       }
     } catch (error) {
-      console.error("Gagal meload daftar chat", error);
+      console.error("Gagal meload daftar chat:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    async function loadInitialData() {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        
-        const res = await fetch('/api/chat');
-        const data = await res.json();
-        
-        if (data.success) {
-          setRooms(data.data);
-          cachedChatRooms = data.data;
-          hasChatLoadedOnce = true;
+    fetchRooms();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-          const targetUserId = searchParams.get('userId');
-          if (targetUserId && !initialRoomId) {
-            const matchedRoom = data.data.find(
-              (r: any) => r.worker?.id_user === targetUserId || r.requester?.id_user === targetUserId
-            );
-            if (matchedRoom) {
-              setSelectedRoomId(matchedRoom.id_chat_room);
-              router.replace(`/chat?room=${matchedRoom.id_chat_room}`, { scroll: false });
-            }
-          }
-          
-          if (data.data.length > 0) {
-            const firstRoom = data.data[0];
-            if (firstRoom.requester.id_user === user.id) {
-               setCurrentUserId(user.id);
-               cachedCurrentChatUserId = user.id;
-            } else {
-               const resMe = await fetch('/api/users/me').catch(() => null);
-               if (resMe && resMe.ok) {
-                 const resMeData = await resMe.json();
-                 if (resMeData.success) {
-                   setCurrentUserId(resMeData.data.id_user);
-                   cachedCurrentChatUserId = resMeData.data.id_user;
-                 }
-               }
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Gagal meload daftar chat", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    
-    loadInitialData();
-  }, [supabase.auth]);
-
-  useEffect(() => {
-     if (currentUserId === "") {
-        supabase.auth.getUser().then(async (res: { data: { user: any } }) => {
-           const user = res?.data?.user;
-           if (user) {
-              const resMe = await fetch('/api/users/me').catch(() => null);
-              if (resMe && resMe.ok) {
-                 const json = await resMe.json();
-                 if (json.success) setCurrentUserId(json.data.id_user);
-              }
-           }
-        })
-     }
-  }, [currentUserId, supabase.auth]);
-
-  const selectedRoomInfo = rooms.find(r => r.id_chat_room === selectedRoomId);
+  const selectedRoomInfo = selectedRoomId ? rooms.find(r => r.id_chat_room === selectedRoomId) : undefined;
 
   return (
     <div className="flex flex-col h-full w-full max-w-full min-h-0 overflow-hidden bg-surface font-sans">
@@ -168,48 +158,29 @@ function ChatContent() {
                 Gunakan fitur chat untuk berdiskusi mengenai detail tugas, negosiasi, atau mengabarkan status pekerjaan Anda.
               </p>
             </div>
-          ) : selectedRoomInfo ? (
+          ) : (
             <ChatRoom 
+              key={selectedRoomId}
               roomId={selectedRoomId}
               currentUserId={currentUserId}
               onBack={() => handleSelectRoom(null)}
-              roomInfo={{
-                title: selectedRoomInfo.task.judul_tugas,
-                otherUserName: selectedRoomInfo.requester.id_user === currentUserId 
-                  ? selectedRoomInfo.worker.nama_lengkap 
-                  : selectedRoomInfo.requester.nama_lengkap,
-                otherUserId: selectedRoomInfo.requester.id_user === currentUserId 
-                  ? selectedRoomInfo.worker.id_user 
-                  : selectedRoomInfo.requester.id_user,
-                otherUserAvatarUrl: selectedRoomInfo.requester.id_user === currentUserId 
-                  ? selectedRoomInfo.worker.avatar_url 
-                  : selectedRoomInfo.requester.avatar_url,
-                otherUserLastSeen: selectedRoomInfo.requester.id_user === currentUserId 
-                  ? selectedRoomInfo.worker.last_seen_at 
-                  : selectedRoomInfo.requester.last_seen_at
-              }}
+              roomInfo={selectedRoomInfo ? {
+                title: selectedRoomInfo.task?.judul_tugas || "Detail Tugas",
+                otherUserName: selectedRoomInfo.requester?.id_user === currentUserId 
+                  ? selectedRoomInfo.worker?.nama_lengkap || "Pengguna"
+                  : selectedRoomInfo.requester?.nama_lengkap || "Pengguna",
+                otherUserId: selectedRoomInfo.requester?.id_user === currentUserId 
+                  ? selectedRoomInfo.worker?.id_user 
+                  : selectedRoomInfo.requester?.id_user,
+                otherUserAvatarUrl: selectedRoomInfo.requester?.id_user === currentUserId 
+                  ? selectedRoomInfo.worker?.avatar_url 
+                  : selectedRoomInfo.requester?.avatar_url,
+                otherUserLastSeen: selectedRoomInfo.requester?.id_user === currentUserId 
+                  ? selectedRoomInfo.worker?.last_seen_at 
+                  : selectedRoomInfo.requester?.last_seen_at
+              } : undefined}
               onMessageAdded={fetchRooms}
             />
-          ) : isLoading ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-              <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-            </div>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 p-8">
-               <AlertCircle className="w-14 h-14 text-error mb-2" />
-               <h2 className="font-headline font-bold text-base text-on-surface">Obrolan tidak ditemukan</h2>
-               <p className="font-body-sm text-xs text-on-surface-variant max-w-sm leading-relaxed">
-                 Ruang obrolan ini mungkin sudah dihapus atau Anda tidak memiliki akses.
-               </p>
-               <Button 
-                 onClick={() => setSelectedRoomId(null)} 
-                 variant="primary"
-                 size="sm"
-                 className="mt-2"
-               >
-                 Kembali ke Daftar Obrolan
-               </Button>
-            </div>
           )}
         </div>
       </div>

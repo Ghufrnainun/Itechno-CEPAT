@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import { headers } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 
@@ -9,14 +10,18 @@ export interface AdminTokenPayload {
 }
 
 /**
- * Verifikasi admin session token dari cookie.
+ * Verifikasi admin session token dari cookie atau Authorization Bearer header.
  * Digunakan sebagai guard di semua admin API routes.
  */
 export async function verifyAdminToken(
   request: NextRequest
 ): Promise<AdminTokenPayload> {
   try {
-    const token = request.cookies.get('admin_token')?.value
+    const headerList = await headers()
+    const authHeader =
+      headerList.get('authorization') || request.headers.get('authorization')
+    const bearerToken = authHeader?.replace(/^Bearer\s+/i, '').trim()
+    const token = request.cookies.get('admin_token')?.value || bearerToken
 
     if (!token) {
       return { valid: false }
@@ -39,6 +44,7 @@ export async function verifyAdminToken(
     })
 
     if (!session) {
+      console.log('[verifyAdminToken] Session not found for hashed token');
       return { valid: false }
     }
 
