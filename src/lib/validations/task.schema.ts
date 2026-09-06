@@ -2,21 +2,39 @@ import { z } from 'zod'
 
 export const createTaskSchema = z.preprocess((val: any) => {
   if (typeof val !== 'object' || val === null) return val;
+  const isBidding = val.is_bidding ?? val.isBidding ?? false;
+  const budgetMax = val.budget_max ?? val.budgetMax ?? undefined;
+
+  let comp =
+    typeof val.kompensasi === 'number'
+      ? val.kompensasi
+      : typeof val.compensation === 'number'
+      ? val.compensation
+      : parseFloat(val.compensation || val.kompensasi || '0');
+
+  // Jika mode bidding aktif dan kompensasi tidak ditentukan, default ke budget_max (plafon escrow)
+  if (isBidding && (!comp || comp <= 0) && budgetMax) {
+    comp = typeof budgetMax === 'number' ? budgetMax : parseFloat(budgetMax);
+  }
+
+  const rawLat = val.latitude ?? val.lat ?? val.lokasi_lat;
+  const rawLng = val.longitude ?? val.lng ?? val.lokasi_lng;
+
   return {
     judul_tugas: val.judul_tugas ?? val.title,
     deskripsi_tugas: val.deskripsi_tugas ?? val.description,
     estimasi_waktu: val.estimasi_waktu ?? (val.duration ? (typeof val.duration === 'string' && val.duration.includes('Jam') ? val.duration : `${val.duration} Jam`) : '1 Jam'),
-    kompensasi: typeof val.kompensasi === 'number' ? val.kompensasi : typeof val.compensation === 'number' ? val.compensation : parseFloat(val.compensation || val.kompensasi || '0'),
-    latitude: typeof val.latitude === 'number' ? val.latitude : typeof val.lat === 'number' ? val.lat : parseFloat(val.latitude || val.lat || '0'),
-    longitude: typeof val.longitude === 'number' ? val.longitude : typeof val.lng === 'number' ? val.lng : parseFloat(val.longitude || val.lng || '0'),
+    kompensasi: comp,
+    latitude: typeof rawLat === 'number' ? rawLat : parseFloat(rawLat || '0'),
+    longitude: typeof rawLng === 'number' ? rawLng : parseFloat(rawLng || '0'),
     id_category: val.id_category ?? val.categoryId,
     kategori: val.kategori ?? val.category,
     skill_requirements: val.skill_requirements ?? val.skills ?? [],
     max_applicants: typeof val.max_applicants === 'number' ? val.max_applicants : typeof val.maxApplicants === 'number' ? val.maxApplicants : parseInt(val.max_applicants || val.maxApplicants || '1', 10),
     max_apply_attempts: typeof val.max_apply_attempts === 'number' ? val.max_apply_attempts : typeof val.maxApplyAttempts === 'number' ? val.maxApplyAttempts : parseInt(val.max_apply_attempts || val.maxApplyAttempts || '3', 10),
-    is_bidding: val.is_bidding ?? val.isBidding ?? false,
+    is_bidding: isBidding,
     budget_min: val.budget_min ?? val.budgetMin ?? undefined,
-    budget_max: val.budget_max ?? val.budgetMax ?? undefined,
+    budget_max: budgetMax,
     scheduled_at: val.scheduled_at ?? val.scheduledAt ?? undefined,
     scheduled_end: val.scheduled_end ?? val.scheduledEnd ?? undefined,
   };

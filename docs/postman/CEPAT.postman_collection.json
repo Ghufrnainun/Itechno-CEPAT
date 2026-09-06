@@ -1,0 +1,1152 @@
+{
+  "info": {
+    "_postman_id": "c3e9a1b0-7f2e-4b8c-9a3d-1f6e2b4c5d6e",
+    "name": "CEPAT API - Official Collection",
+    "description": "Koleksi resmi pengujian REST API platform CEPAT (Cari Entry Pekerjaan Area Terdekat) - ITECHNO CUP 2026.\nMencakup modul: Authentication, Tasks, PostGIS Nearby, Sealed Bidding, Wallet, Midtrans Payment, Disputes, Gamification, Chat, dan Admin Console.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "task_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "dispute_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "chat_room_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reg_email",
+      "value": "worker_{{$timestamp}}@cepat.com",
+      "type": "string"
+    },
+    {
+      "key": "reg_username",
+      "value": "worker_{{$timestamp}}",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register User Baru",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{reg_email}}\",\n  \"password\": \"Password123!\",\n  \"nama_lengkap\": \"Ahmad Fauzi\",\n  \"username\": \"{{reg_username}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Mendaftarkan pengguna baru dengan sanitasi email disposable dan validasi Zod."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate email & username unik tiap test agar tidak terjadi 409 Conflict",
+                  "const rand = Date.now().toString().slice(-6) + Math.floor(Math.random() * 900 + 100);",
+                  "const dynEmail = 'worker.' + rand + '@cepat.com';",
+                  "const dynUsername = 'worker_' + rand;",
+                  "pm.variables.set('reg_email', dynEmail);",
+                  "pm.collectionVariables.set('reg_email', dynEmail);",
+                  "pm.variables.set('reg_username', dynUsername);",
+                  "pm.collectionVariables.set('reg_username', dynUsername);",
+                  "console.log('Registering with:', dynEmail, dynUsername);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created or 200 OK\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "const res = pm.response.json();",
+                  "pm.test(\"Pendaftaran berhasil\", function () {",
+                  "    pm.expect(res.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (Otomatis Simpan Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.success && response.data?.session?.access_token) {",
+                  "    pm.collectionVariables.set('auth_token', response.data.session.access_token);",
+                  "    console.log('Token berhasil disimpan ke variable auth_token:', response.data.session.access_token);",
+                  "} else if (response.session?.access_token) {",
+                  "    pm.collectionVariables.set('auth_token', response.session.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"andi@cepat.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login pengguna. Test script otomatis menangkap `access_token` dan menyimpannya ke variable collection `auth_token`."
+          }
+        },
+        {
+          "name": "Get Profil Saya (Me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Mengambil data profil pengguna yang sedang terautentikasi beserta role, saldo, dan skills."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Membatalkan sesi Supabase Auth."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Tasks & Geolocation (PostGIS)",
+      "item": [
+        {
+          "name": "Get All Tasks (Feed Publik)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tasks?page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Mendapatkan daftar tugas aktif secara publik."
+          }
+        },
+        {
+          "name": "Get Nearby Tasks (PostGIS Radius 2km)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tasks/nearby?lat=-6.2088&lng=106.8456&radius=2000",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "nearby"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "-6.2088"
+                },
+                {
+                  "key": "lng",
+                  "value": "106.8456"
+                },
+                {
+                  "key": "radius",
+                  "value": "2000"
+                }
+              ]
+            },
+            "description": "Query geospasial PostGIS ST_DWithin untuk mencari tugas mikro dalam radius terdekat pengguna."
+          }
+        },
+        {
+          "name": "Buat Task Baru (Fixed Price + Escrow)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.success && response.data?.id_tasks) {",
+                  "    pm.collectionVariables.set('task_id', response.data.id_tasks);",
+                  "    console.log('Task ID berhasil disimpan ke variable task_id:', response.data.id_tasks);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"judul_tugas\": \"Bantu Entri Data Inventaris UMKM\",\n  \"deskripsi_tugas\": \"Input 50 data nota fisik ke dalam spreadsheet Excel di lokasi toko.\",\n  \"id_category\": \"cat-data-entry-01\",\n  \"estimasi_waktu\": \"2 Jam\",\n  \"kompensasi\": 50000,\n  \"lokasi_lat\": -6.2088,\n  \"lokasi_lng\": 106.8456,\n  \"max_applicants\": 1,\n  \"is_bidding\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tasks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks"
+              ]
+            },
+            "description": "Membuat tugas baru fixed price dan mengunci saldo escrow sebesar kompensasi * kuota."
+          }
+        },
+        {
+          "name": "Buat Task Bidding (Sealed-Bid Lelang)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.success && response.data?.id_tasks) {",
+                  "    pm.collectionVariables.set('task_id', response.data.id_tasks);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"judul_tugas\": \"Foto 15 Produk Menu Kafe\",\n  \"deskripsi_tugas\": \"Membutuhkan foto katalog menu baru dengan lighting dan kamera berkualitas.\",\n  \"id_category\": \"cat-fotografi-01\",\n  \"estimasi_waktu\": \"3 Jam\",\n  \"lokasi_lat\": -6.2088,\n  \"lokasi_lng\": 106.8456,\n  \"max_applicants\": 1,\n  \"is_bidding\": true,\n  \"budget_min\": 80000,\n  \"budget_max\": 120000,\n  \"scheduled_at\": \"2026-09-10T09:00:00.000Z\",\n  \"scheduled_end\": \"2026-09-10T12:00:00.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tasks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks"
+              ]
+            },
+            "description": "Membuat tugas lelang tertutup dengan rentang budget min-max. Escrow menahan plafon budget_max."
+          }
+        },
+        {
+          "name": "Get Detail Task",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "{{task_id}}"
+              ]
+            },
+            "description": "Mengambil detail tugas spesifik berdasarkan ID."
+          }
+        },
+        {
+          "name": "Ajukan Lamaran / Bid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pesan\": \"Saya mahasiswa DKV dengan pengalaman foto produk makanan. Portofolio siap ditinjau.\",\n  \"bid_amount\": 95000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}/apply",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "{{task_id}}",
+                "apply"
+              ]
+            },
+            "description": "Worker mengajukan lamaran dengan pesan pitch dan nominal sealed-bid."
+          }
+        },
+        {
+          "name": "Get Daftar Bids (Requester Only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}/bids",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "{{task_id}}",
+                "bids"
+              ]
+            },
+            "description": "Requester memeriksa seluruh penawaran masuk dari worker."
+          }
+        },
+        {
+          "name": "Update Status Task (Batalkan / Mulai / Selesai)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "const res = pm.response.json();",
+                  "pm.test(\"Status task berhasil diperbarui\", function () {",
+                  "    pm.expect(res.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"cancel_task\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "{{task_id}}",
+                "status"
+              ]
+            },
+            "description": "Memperbarui siklus pengerjaan tugas (start_work, submit_work, complete_task, cancel_task). Pada task yang masih OPEN, action cancel_task membatalkan tugas dan mengembalikan dana escrow ke requester secara otomatis."
+          }
+        },
+        {
+          "name": "Get Scheduled Tasks (Kalender)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tasks/scheduled",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "scheduled"
+              ]
+            },
+            "description": "Mengambil daftar tugas terjadwal untuk ditampilkan pada kalender."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Wallet & Midtrans Payment",
+      "item": [
+        {
+          "name": "Get Wallet Saldo & Transaksi",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wallet",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "wallet"
+              ]
+            },
+            "description": "Mengambil saldo aktif, saldo ditahan (escrow), dan histori mutasi saldo."
+          }
+        },
+        {
+          "name": "Create Top-up Midtrans Snap Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/create",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payment",
+                "create"
+              ]
+            },
+            "description": "Membuat order top-up baru dan mengembalikan token Snap Midtrans untuk pembayaran QRIS/VA."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.success && response.data?.order_id) {",
+                  "    pm.collectionVariables.set('order_id', response.data.order_id);",
+                  "    console.log('Order ID berhasil disimpan:', response.data.order_id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cek Status Pembayaran",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payment/status?order_id={{order_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payment",
+                "status"
+              ],
+              "query": [
+                {
+                  "key": "order_id",
+                  "value": "{{order_id}}"
+                }
+              ]
+            },
+            "description": "Pengecekan status pembayaran transaksi Midtrans."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Dispute & Resolution Center",
+      "item": [
+        {
+          "name": "Get User Disputes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/disputes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "disputes"
+              ]
+            },
+            "description": "Mengambil daftar seluruh tiket sengketa pengguna."
+          }
+        },
+        {
+          "name": "Buka Tiket Sengketa Baru",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_task\": \"{{task_id}}\",\n  \"reason\": \"Hasil pengerjaan tidak lengkap\",\n  \"description\": \"Pekerja hanya memfoto 5 produk dari total 15 produk yang disepakati.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/disputes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "disputes"
+              ]
+            },
+            "description": "Membuka sengketa baru untuk tugas yang bermasalah."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.success && response.data?.id_dispute) {",
+                  "    pm.collectionVariables.set('dispute_id', response.data.id_dispute);",
+                  "    console.log('Dispute ID berhasil disimpan ke variable dispute_id:', response.data.id_dispute);",
+                  "} else if (response.data?.id) {",
+                  "    pm.collectionVariables.set('dispute_id', response.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Kirim Bukti Sengketa (Evidence)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"image\",\n  \"content\": \"https://example.com/bukti-tugas.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/disputes/{{dispute_id}}/evidence",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "disputes",
+                "{{dispute_id}}",
+                "evidence"
+              ]
+            },
+            "description": "Mengunggah bukti foto atau teks sanggahan."
+          }
+        },
+        {
+          "name": "Kirim Pesan Mediasi Sengketa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Mohon maaf, file 10 foto lainnya sempat terselip dan sudah saya kirimkan ulang.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/disputes/{{dispute_id}}/messages",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "disputes",
+                "{{dispute_id}}",
+                "messages"
+              ]
+            },
+            "description": "Mengirimkan pesan pada ruang mediasi resmi."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Gamification & Leaderboard",
+      "item": [
+        {
+          "name": "Get Leaderboard Peringkat",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/leaderboard?period=weekly&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leaderboard"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "weekly"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Mengambil peringkat pekerja terbaik berdasarkan skor pembobotan berimbang."
+          }
+        },
+        {
+          "name": "Get User XP, Level & Badges",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/xp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "xp"
+              ]
+            },
+            "description": "Mengambil metrik level, riwayat XP, streak harian, dan lencana pencapaian."
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Chat & Saved Tasks",
+      "item": [
+        {
+          "name": "Get Daftar Kamar Chat",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chat"
+              ]
+            },
+            "description": "Mengambil daftar percakapan aktif pengguna."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.success && Array.isArray(response.data) && response.data.length > 0) {",
+                  "    const roomId = response.data[0].id_chat_room || response.data[0].id;",
+                  "    if (roomId) {",
+                  "        pm.collectionVariables.set('chat_room_id', roomId);",
+                  "        console.log('Chat Room ID berhasil disimpan ke variable chat_room_id:', roomId);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Kirim Pesan Chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teks_pesan\": \"Halo, saya sudah sampai di lokasi toko sesuai titik map.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/chat/{{chat_room_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chat",
+                "{{chat_room_id}}"
+              ]
+            },
+            "description": "Mengirimkan pesan teks atau gambar ke ruang obrolan tugas."
+          }
+        },
+        {
+          "name": "Get Tugas Tersimpan (Bookmarks)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/saved-tasks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "saved-tasks"
+              ]
+            },
+            "description": "Melihat daftar tugas yang dibookmark."
+          }
+        },
+        {
+          "name": "Toggle Bookmark Tugas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_tasks\": \"{{task_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/saved-tasks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "saved-tasks"
+              ]
+            },
+            "description": "Menyimpan atau menghapus bookmark tugas."
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Admin Console",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@cepat.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Portal autentikasi khusus pengurus admin."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.success && response.data?.token) {",
+                  "    pm.collectionVariables.set('admin_token', response.data.token);",
+                  "    console.log('Token berhasil disimpan ke variable admin_token:', response.data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Admin Overview Stats (KPI)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "stats"
+              ]
+            },
+            "description": "Mengambil metrik 5 KPI utama dashboard pengelola."
+          }
+        },
+        {
+          "name": "Get Admin Users List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users?page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Daftar pengguna dengan status akun dan peran."
+          }
+        },
+        {
+          "name": "Get Admin Tasks List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/tasks?page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "tasks"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Daftar pemantauan seluruh tugas."
+          }
+        },
+        {
+          "name": "Get Admin Reports List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/reports?status=pending",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "reports"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            },
+            "description": "Daftar tiket aduan laporan pengguna."
+          }
+        },
+        {
+          "name": "Get Admin Disputes List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/disputes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "disputes"
+              ]
+            },
+            "description": "Daftar sengketa aktif yang menunggu putusan admin."
+          }
+        },
+        {
+          "name": "Global Search Admin (Ctrl+K)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/search?q=foto",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "foto"
+                }
+              ]
+            },
+            "description": "Pencarian cepat di seluruh menu, user, task, dan kategori."
+          }
+        }
+      ]
+    }
+  ]
+}

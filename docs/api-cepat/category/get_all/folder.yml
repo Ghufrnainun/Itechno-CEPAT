@@ -1,7 +1,0 @@
-info:
-  name: get_all
-  type: folder
-  seq: 1
-
-request:
-  auth: inherit

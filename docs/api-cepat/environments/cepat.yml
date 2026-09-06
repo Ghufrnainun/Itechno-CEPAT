@@ -1,4 +1,0 @@
-name: cepat
-variables:
-  - name: access_token
-    value: "[REDACTED_ACCESS_TOKEN]"

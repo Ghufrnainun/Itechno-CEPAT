@@ -90,11 +90,12 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // 4. Set httpOnly cookie dengan raw token
+    // 4. Set httpOnly cookie dengan raw token & kembalikan token di response
     const response = NextResponse.json({
       success: true,
       message: 'Login berhasil.',
       data: {
+        token: rawToken,
         admin: {
           id: userProfile.id_user,
           email: userProfile.email,

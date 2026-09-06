@@ -22,12 +22,22 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ success: false, message: 'Profil pengguna tidak ditemukan.' }, { status: 404 })
     }
 
-    // Validasi body
-    const body = await request.json()
-    const parsed = updateTaskStatusSchema.safeParse(body)
+    // Validasi body (mendukung field status maupun action dari Postman)
+    const body = await request.json().catch(() => ({}))
+    const actionMap: Record<string, string> = {
+      complete_task: 'completed',
+      submit_work: 'completed',
+      start_work: 'start',
+      confirm_start: 'confirm_start',
+      cancel_task: 'cancelled',
+    }
+    const resolvedStatus =
+      body.status || (body.action ? actionMap[body.action] || body.action : undefined)
+
+    const parsed = updateTaskStatusSchema.safeParse({ status: resolvedStatus })
     if (!parsed.success) {
       return NextResponse.json(
-        { success: false, message: parsed.error.issues[0]?.message || 'Data tidak valid.' },
+        { success: false, message: parsed.error.issues[0]?.message || 'Data status tidak valid.' },
         { status: 400 }
       )
     }
@@ -41,4 +51,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     console.error('[PATCH /api/tasks/[id]/status] Error:', error)
     return NextResponse.json({ success: false, message: errMessage }, { status: 400 })
   }
+}
+
+// POST alias untuk kompatibilitas REST client (seperti Postman)
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  return PATCH(request, context)
 }
