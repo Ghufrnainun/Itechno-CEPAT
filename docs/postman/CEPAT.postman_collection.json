@@ -435,7 +435,24 @@
           }
         },
         {
-          "name": "Update Status Task (Mulai / Selesai / Batal)",
+          "name": "Update Status Task (Batalkan / Mulai / Selesai)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "const res = pm.response.json();",
+                  "pm.test(\"Status task berhasil diperbarui\", function () {",
+                  "    pm.expect(res.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -450,7 +467,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"action\": \"complete_task\"\n}"
+              "raw": "{\n  \"action\": \"cancel_task\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/tasks/{{task_id}}/status",
@@ -463,7 +480,7 @@
                 "status"
               ]
             },
-            "description": "Memperbarui siklus pengerjaan tugas (start_work, submit_work, complete_task, cancel_task). Saat complete_task, escrow cair dan reward XP diberikan."
+            "description": "Memperbarui siklus pengerjaan tugas (start_work, submit_work, complete_task, cancel_task). Pada task yang masih OPEN, action cancel_task membatalkan tugas dan mengembalikan dana escrow ke requester secara otomatis."
           }
         },
         {
