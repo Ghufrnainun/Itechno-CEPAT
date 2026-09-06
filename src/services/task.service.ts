@@ -1264,6 +1264,27 @@ export const taskService = {
     ) {
       // Valid
     } else if (
+      newStatus === 'completed' &&
+      currentStatus === 'open' &&
+      isRequester
+    ) {
+      // Jika task masih 'open' (misal pada direct completion/collection runner),
+      // otomatis transisikan pelamar pending menjadi accepted agar payout berjalan
+      const pendingApplicants = await prisma.taskApplicants.findMany({
+        where: { id_tasks: taskId },
+        include: {
+          worker: { select: { id_user: true, nama_lengkap: true } },
+        },
+      });
+      if (pendingApplicants.length > 0) {
+        const acceptedStatusId = await getApplicantStatusId('accepted');
+        await prisma.taskApplicants.updateMany({
+          where: { id_tasks: taskId },
+          data: { id_status_task_applicants: acceptedStatusId },
+        });
+        acceptedWorkers.push(...pendingApplicants);
+      }
+    } else if (
       newStatus === 'cancelled' &&
       (
         ((currentStatus === 'open' || currentStatus === 'accepted' || currentStatus === 'in_progress') && isRequester) ||
