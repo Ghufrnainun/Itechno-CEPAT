@@ -121,7 +121,7 @@ model Role {
 ```
 
 #### `StatusTask`
-Menyimpan master siklus status tugas (`open`, `accepted`, `in_progress`, `completed`, `cancelled`).
+Menyimpan master siklus status tugas (`OPEN`, `ACCEPTED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
 
 ```prisma
 model StatusTask {
@@ -132,7 +132,7 @@ model StatusTask {
 ```
 
 #### `StatusTaskApplicants`
-Menyimpan status lamaran pengerja (`pending`, `accepted`, `rejected`).
+Menyimpan status lamaran pengerja (`PENDING`, `ACCEPTED`, `REJECTED`).
 
 ```prisma
 model StatusTaskApplicants {
