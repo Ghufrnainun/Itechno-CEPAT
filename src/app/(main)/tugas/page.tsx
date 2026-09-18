@@ -293,20 +293,29 @@ function EmptyState({ activeFilter, role }: { activeFilter: string | null; role:
 
 // Module-level in-memory cache for instant navigation
 let cachedRequesterTasks: Record<string, RequesterTask[]> = {};
+let cachedRequesterUserId: string | null = null;
 let hasLoadedRequesterTasksOnce = false;
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function KelolaTaskPage() {
-  const { role } = useCurrentRole();
+  const { role, user } = useCurrentRole();
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const cacheKey = activeFilter || "all";
-  const [tasks, setTasks] = useState<RequesterTask[]>(cachedRequesterTasks[cacheKey] || []);
-  const [loading, setLoading] = useState<boolean>(!hasLoadedRequesterTasksOnce && !cachedRequesterTasks[cacheKey]);
+
+  const currentUserId = user?.id_user;
+  const isCacheValid = cachedRequesterUserId === currentUserId;
+
+  const [tasks, setTasks] = useState<RequesterTask[]>(
+    isCacheValid && cachedRequesterTasks[cacheKey] ? cachedRequesterTasks[cacheKey] : []
+  );
+  const [loading, setLoading] = useState<boolean>(
+    !isCacheValid || (!hasLoadedRequesterTasksOnce && !cachedRequesterTasks[cacheKey])
+  );
 
   const fetchTasks = useCallback(async (silent = false) => {
     const currentKey = activeFilter || "all";
-    if (!silent && !cachedRequesterTasks[currentKey]) {
+    if (!silent && (!isCacheValid || !cachedRequesterTasks[currentKey])) {
       setLoading(true);
     }
     try {
@@ -315,11 +324,15 @@ export default function KelolaTaskPage() {
 
       const res = await fetch(`/api/users/me/tasks?${params.toString()}`);
       if (!res.ok) {
-        if (!cachedRequesterTasks[currentKey]) setTasks([]);
+        if (!isCacheValid || !cachedRequesterTasks[currentKey]) setTasks([]);
         return;
       }
       const data = await res.json().catch(() => ({}));
       if (data.success && Array.isArray(data.data)) {
+        if (cachedRequesterUserId !== user?.id_user) {
+          cachedRequesterTasks = {};
+          cachedRequesterUserId = user?.id_user ?? null;
+        }
         cachedRequesterTasks[currentKey] = data.data;
         hasLoadedRequesterTasksOnce = true;
         setTasks(data.data);
@@ -329,17 +342,17 @@ export default function KelolaTaskPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeFilter]);
+  }, [activeFilter, isCacheValid, user?.id_user]);
 
   useEffect(() => {
     const currentKey = activeFilter || "all";
-    if (cachedRequesterTasks[currentKey]) {
+    if (isCacheValid && cachedRequesterTasks[currentKey]) {
       setTasks(cachedRequesterTasks[currentKey]);
       fetchTasks(true); // silent revalidate
     } else {
       fetchTasks(false);
     }
-  }, [fetchTasks, activeFilter]);
+  }, [fetchTasks, activeFilter, isCacheValid]);
 
   const filteredTasks = tasks;
 

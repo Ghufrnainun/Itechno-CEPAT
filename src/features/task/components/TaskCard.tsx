@@ -37,8 +37,8 @@ export const TaskCard = React.memo(function TaskCard({
         }
       }}
       className={cn(
-        "group p-4 sm:p-5 feed-card w-full rounded-2xl bg-surface-container-lowest border border-card-border/80 shadow-2xs",
-        "transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out flex flex-col min-h-[140px] overflow-hidden",
+        "group p-4 feed-card w-full rounded-2xl bg-surface-container-lowest border border-card-border/80 shadow-2xs shrink-0",
+        "transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out flex flex-col justify-between min-h-[140px] h-auto overflow-hidden",
         "hover:border-primary/40 hover:shadow-xs active:scale-[0.985] active:brightness-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer",
         isSelected && "border-primary bg-primary/5 shadow-xs ring-1 ring-primary/20",
         className

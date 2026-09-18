@@ -42,28 +42,35 @@ import { usePwaInstall } from "@/hooks/usePwaInstall";
 let cachedTasks: any[] = [];
 let cachedRecommendedTasks: any[] = [];
 let cachedFeaturedTask: any | null = null;
+let cachedActivityUserId: string | null = null;
+let cachedActivityRole: string | null = null;
 let cachedMyActiveTasks: any[] = [];
 let cachedScheduledCount = 0;
-let hasDashboardLoadedOnce = false;
+let hasPublicLoadedOnce = false;
 
 export default function DashboardPage() {
   const { role, user, toggleRole } = useCurrentRole();
   const { coords } = useGeolocation();
   const { canInstall, promptInstall } = usePwaInstall();
 
+  const currentUserId = user?.id_user;
+  const isActivityCacheValid =
+    cachedActivityUserId === currentUserId && cachedActivityRole === role;
+
   const [tasks, setTasks] = useState<any[]>(cachedTasks);
   const [recommendedTasks, setRecommendedTasks] = useState<any[]>(cachedRecommendedTasks);
   const [featuredTask, setFeaturedTask] = useState<any | null>(cachedFeaturedTask);
-  const [loading, setLoading] = useState(!hasDashboardLoadedOnce);
-  const [myActiveTasks, setMyActiveTasks] = useState<any[]>(cachedMyActiveTasks);
+  const [loading, setLoading] = useState(!hasPublicLoadedOnce || !isActivityCacheValid);
+  const [myActiveTasks, setMyActiveTasks] = useState<any[]>(
+    isActivityCacheValid ? cachedMyActiveTasks : []
+  );
   const [scheduledCount, setScheduledCount] = useState<number>(cachedScheduledCount);
-  const hasLoadedOnce = useRef(hasDashboardLoadedOnce);
 
+  // 1. Fetch public radar map and feed tasks based on coordinates
   useEffect(() => {
-    async function loadData() {
-      if (!hasLoadedOnce.current && !hasDashboardLoadedOnce) {
-        setLoading(true);
-      }
+    let isCancelled = false;
+
+    async function loadPublicData() {
       try {
         const mapUrl = new URL("/api/tasks/nearby", window.location.origin);
         mapUrl.searchParams.append("lat", coords.latitude.toString());
@@ -76,61 +83,84 @@ export default function DashboardPage() {
         feedUrl.searchParams.append("limit", "6");
         feedUrl.searchParams.append("sort", "distance_asc");
 
-        // Fetch all in parallel, but handle individually for faster progressive rendering
-        const mapPromise = fetch(mapUrl.toString(), { cache: "no-store" })
-          .then((res) => (res.ok ? res.json() : null))
-          .then((mapJson) => {
-            if (mapJson?.data) {
-              setTasks(mapJson.data);
-              cachedTasks = mapJson.data;
-            }
-          })
-          .catch(() => null);
+        const [mapRes, feedRes] = await Promise.allSettled([
+          fetch(mapUrl.toString(), { cache: "no-store" }).then((res) => (res.ok ? res.json() : null)),
+          fetch(feedUrl.toString(), { cache: "no-store" }).then((res) => (res.ok ? res.json() : null)),
+        ]);
 
-        const feedPromise = fetch(feedUrl.toString(), { cache: "no-store" })
-          .then((res) => (res.ok ? res.json() : null))
-          .then((feedJson) => {
-            if (feedJson?.data && feedJson.data.length > 0) {
-              setFeaturedTask(feedJson.data[0]);
-              cachedFeaturedTask = feedJson.data[0];
-              setRecommendedTasks(feedJson.data.slice(1, 5));
-              cachedRecommendedTasks = feedJson.data.slice(1, 5);
-            }
-          })
-          .catch(() => null);
+        if (isCancelled) return;
 
-        const activityPromise = fetch("/api/users/me/tasks?role=worker", { cache: "no-store" })
-          .then((res) => (res.ok ? res.json() : null))
-          .then((activityJson) => {
-            if (activityJson?.success && Array.isArray(activityJson.data)) {
-              setMyActiveTasks(activityJson.data);
-              cachedMyActiveTasks = activityJson.data;
-            }
-          })
-          .catch(() => null);
+        if (mapRes.status === "fulfilled" && mapRes.value?.data) {
+          setTasks(mapRes.value.data);
+          cachedTasks = mapRes.value.data;
+        }
 
-        const schedPromise = fetch("/api/tasks/scheduled?count_only=true", { cache: "no-store" })
-          .then((res) => (res?.ok ? res.json() : null))
-          .then((schedJson) => {
-            if (schedJson?.success) {
-              const count = typeof schedJson.count === "number" ? schedJson.count : (schedJson.data?.length ?? 0);
-              setScheduledCount(count);
-              cachedScheduledCount = count;
-            }
-          })
-          .catch(() => null);
+        if (feedRes.status === "fulfilled" && feedRes.value?.data && feedRes.value.data.length > 0) {
+          setFeaturedTask(feedRes.value.data[0]);
+          cachedFeaturedTask = feedRes.value.data[0];
+          setRecommendedTasks(feedRes.value.data.slice(1, 5));
+          cachedRecommendedTasks = feedRes.value.data.slice(1, 5);
+        }
 
-        await Promise.allSettled([mapPromise, feedPromise, activityPromise, schedPromise]);
+        hasPublicLoadedOnce = true;
       } catch (err) {
-        console.error("Dashboard data load error:", err);
-      } finally {
-        hasLoadedOnce.current = true;
-        hasDashboardLoadedOnce = true;
-        setLoading(false);
+        console.error("Dashboard public data load error:", err);
       }
     }
-    loadData();
-  }, [coords]);
+
+    loadPublicData();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [coords.latitude, coords.longitude]);
+
+  // 2. Fetch user-specific active tasks based on role and current user ID
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadUserData() {
+      try {
+        const [activityRes, schedRes] = await Promise.allSettled([
+          fetch(`/api/users/me/tasks?role=${role}`, { cache: "no-store" }).then((res) =>
+            res.ok ? res.json() : null
+          ),
+          fetch("/api/tasks/scheduled?count_only=true", { cache: "no-store" }).then((res) =>
+            res?.ok ? res.json() : null
+          ),
+        ]);
+
+        if (isCancelled) return;
+
+        if (activityRes.status === "fulfilled" && activityRes.value?.success && Array.isArray(activityRes.value.data)) {
+          setMyActiveTasks(activityRes.value.data);
+          cachedMyActiveTasks = activityRes.value.data;
+          cachedActivityUserId = user?.id_user ?? null;
+          cachedActivityRole = role;
+        } else if (activityRes.status === "fulfilled" && !activityRes.value?.success) {
+          setMyActiveTasks([]);
+        }
+
+        if (schedRes.status === "fulfilled" && schedRes.value?.success) {
+          const count = typeof schedRes.value.count === "number" ? schedRes.value.count : (schedRes.value.data?.length ?? 0);
+          setScheduledCount(count);
+          cachedScheduledCount = count;
+        }
+      } catch (err) {
+        console.error("Dashboard user data load error:", err);
+      } finally {
+        if (!isCancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadUserData();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [role, user?.id_user]);
 
   const userName = user?.nama_lengkap?.split(" ")[0] || user?.username || "Pekerja";
   const nearbyCount = tasks.length;
@@ -404,14 +434,16 @@ export default function DashboardPage() {
                 {myActiveTasks.length}
               </div>
               <span className="text-xs font-semibold text-on-surface-variant">
-                {myActiveTasks.length > 0 ? "tugas dalam proses" : "tugas aktif"}
+                {role === "worker"
+                  ? (myActiveTasks.length > 0 ? "tugas dalam proses" : "tugas aktif")
+                  : (myActiveTasks.length > 0 ? "total tugas diposting" : "tugas aktif")}
               </span>
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-card-border/80">
               <span className="text-xs text-on-surface-variant font-medium">
                 {myActiveTasks.length > 0
-                  ? "Cek status perkembangan tugasmu"
+                  ? (role === "worker" ? "Cek status perkembangan tugasmu" : "Pantau pelamar & perkembangan tugasmu")
                   : "Belum ada pekerjaan aktif saat ini"}
               </span>
               {role === "worker" ? (
@@ -494,11 +526,13 @@ export default function DashboardPage() {
                     <span className="text-xs text-on-surface-variant font-medium">
                       {myActiveTasks[0].status === "open"
                         ? "Pilih worker terbaik dari daftar pelamar"
-                        : "Tugas sedang berjalan aktif"}
+                        : myActiveTasks[0].status === "in_progress" || myActiveTasks[0].status === "accepted"
+                        ? "Tugas sedang berjalan aktif"
+                        : "Tugas telah selesai"}
                     </span>
                     <Link href={`/task/${myActiveTasks[0].id_tasks || myActiveTasks[0].id_task}`}>
                       <Button variant="primary" size="sm" className="min-h-[38px] text-xs font-bold">
-                        Kelola Pelamar &amp; Tugas
+                        {myActiveTasks[0].status === "completed" ? "Lihat Rincian Tugas" : "Kelola Pelamar & Tugas"}
                       </Button>
                     </Link>
                   </div>
