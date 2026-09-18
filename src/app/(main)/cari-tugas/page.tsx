@@ -22,6 +22,10 @@ import {
   Bookmark,
   Loader2,
   X,
+  ChevronDown,
+  SlidersHorizontal,
+  Check,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +52,20 @@ function CariTugasPageContent() {
   const [tasks, setTasks] = useState<(Task & { distance?: number })[]>(cachedFeedTasks);
   const [categories, setCategories] = useState<{ id_category: string; nama_kategori: string }[]>(cachedCategories);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [isCategoryExpanded, setIsCategoryExpanded] = useState(false);
+
+  const TOP_CATEGORY_LIMIT = 5;
+  const topCategories = useMemo(() => categories.slice(0, TOP_CATEGORY_LIMIT), [categories]);
+  const hiddenCategoriesCount = Math.max(0, categories.length - TOP_CATEGORY_LIMIT);
+
+  // If a category from the hidden list is selected, track it so it displays even when collapsed
+  const selectedHiddenCategory = useMemo(() => {
+    if (selectedCategory === "all") return null;
+    const isTop = topCategories.some((c) => c.id_category === selectedCategory);
+    if (isTop) return null;
+    return categories.find((c) => c.id_category === selectedCategory) || null;
+  }, [selectedCategory, topCategories, categories]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 350);
 
@@ -333,33 +351,140 @@ function CariTugasPageContent() {
           )}
         </div>
 
-        {/* Row 3: Horizontal Category Strip */}
-        <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-0.5 -mx-1 px-1">
-          <button
-            onClick={() => setSelectedCategory("all")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer shrink-0 border min-h-[34px] flex items-center justify-center",
-              selectedCategory === "all"
-                ? "bg-primary text-on-primary border-primary font-bold shadow-2xs"
-                : "bg-surface-container-low text-on-surface-variant border-card-border/70 hover:border-primary/40"
-            )}
-          >
-            Semua Kategori
-          </button>
-          {categories.map((cat) => (
+        {/* Row 3: Smart Expanding Category Filter Tray */}
+        <div className="flex flex-col gap-1.5">
+          {/* Main Top Strip */}
+          <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-0.5 -mx-1 px-1">
+            {/* "Semua Kategori" Chip */}
             <button
-              key={cat.id_category}
-              onClick={() => setSelectedCategory(cat.id_category)}
+              type="button"
+              onClick={() => setSelectedCategory("all")}
               className={cn(
-                "px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer shrink-0 border min-h-[34px] flex items-center justify-center",
-                selectedCategory === cat.id_category
+                "px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-[background-color,border-color,color,transform] duration-150 cursor-pointer shrink-0 border min-h-[34px] flex items-center gap-1.5 active:scale-[0.96]",
+                selectedCategory === "all"
                   ? "bg-primary text-on-primary border-primary font-bold shadow-2xs"
-                  : "bg-surface-container-low text-on-surface-variant border-card-border/70 hover:border-primary/40"
+                  : "bg-surface-container-low text-on-surface-variant border-card-border/70 hover:border-primary/40 hover:text-on-surface"
               )}
             >
-              {cat.nama_kategori}
+              <Sparkles className="w-3 h-3" />
+              <span>Semua Kategori</span>
             </button>
-          ))}
+
+            {/* Top 5 Quick Access Chips */}
+            {topCategories.map((cat) => {
+              const isActive = selectedCategory === cat.id_category;
+              return (
+                <button
+                  key={cat.id_category}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.id_category)}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-[background-color,border-color,color,transform] duration-150 cursor-pointer shrink-0 border min-h-[34px] flex items-center justify-center active:scale-[0.96]",
+                    isActive
+                      ? "bg-primary text-on-primary border-primary font-bold shadow-2xs"
+                      : "bg-surface-container-low text-on-surface-variant border-card-border/70 hover:border-primary/40 hover:text-on-surface"
+                  )}
+                >
+                  {cat.nama_kategori}
+                </button>
+              );
+            })}
+
+            {/* If a category from the hidden list is selected and collapsed, show it prominently */}
+            {!isCategoryExpanded && selectedHiddenCategory && (
+              <div className="inline-flex items-center rounded-xl bg-primary text-on-primary border border-primary text-xs font-bold shadow-2xs min-h-[34px] shrink-0">
+                <span className="pl-3 py-1.5 truncate max-w-[130px]">
+                  {selectedHiddenCategory.nama_kategori}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCategory("all");
+                  }}
+                  title="Hapus filter kategori"
+                  className="pr-2.5 pl-1 py-1.5 hover:opacity-80 transition-opacity cursor-pointer"
+                  aria-label="Hapus filter"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Expand / Collapse Button */}
+            {hiddenCategoriesCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setIsCategoryExpanded(!isCategoryExpanded)}
+                aria-expanded={isCategoryExpanded}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap border min-h-[34px] flex items-center gap-1.5 transition-[background-color,border-color,color,transform] duration-150 cursor-pointer shrink-0 active:scale-[0.96]",
+                  isCategoryExpanded
+                    ? "bg-primary/10 text-primary border-primary/40 font-bold"
+                    : "bg-surface-container-low text-on-surface-variant border-card-border/70 hover:border-primary/40 hover:text-on-surface"
+                )}
+              >
+                <SlidersHorizontal className="w-3 h-3 text-primary" />
+                <span>
+                  {isCategoryExpanded ? "Tutup" : `+${hiddenCategoriesCount} Kategori`}
+                </span>
+                <ChevronDown
+                  className={cn(
+                    "w-3.5 h-3.5 transition-transform duration-200 ease-out",
+                    isCategoryExpanded && "rotate-180 text-primary"
+                  )}
+                />
+              </button>
+            )}
+          </div>
+
+          {/* Smooth Expanding Accordion Tray (All Categories in Multi-line Wrap Grid) */}
+          <div
+            className={cn(
+              "grid transition-[grid-template-rows,opacity] duration-250 ease-out",
+              isCategoryExpanded
+                ? "grid-rows-[1fr] opacity-100"
+                : "grid-rows-[0fr] opacity-0 pointer-events-none"
+            )}
+          >
+            <div className="overflow-hidden">
+              <div className="pt-2 pb-1 border-t border-card-border/60 flex flex-wrap gap-1.5 items-center">
+                <span className="text-[11px] font-bold text-on-surface-variant mr-1">
+                  Pilih Kategori:
+                </span>
+                {categories.map((cat) => {
+                  const isActive = selectedCategory === cat.id_category;
+                  return (
+                    <button
+                      key={cat.id_category}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategory(cat.id_category);
+                      }}
+                      className={cn(
+                        "px-3 py-1.5 rounded-xl text-xs font-semibold transition-[background-color,border-color,color,transform] duration-150 cursor-pointer border flex items-center gap-1 active:scale-[0.96]",
+                        isActive
+                          ? "bg-primary text-on-primary border-primary font-bold shadow-2xs"
+                          : "bg-surface-container-low text-on-surface-variant border-card-border/70 hover:border-primary/40 hover:text-on-surface"
+                      )}
+                    >
+                      {isActive && <Check className="w-3 h-3" />}
+                      <span>{cat.nama_kategori}</span>
+                    </button>
+                  );
+                })}
+                {selectedCategory !== "all" && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategory("all")}
+                    className="text-xs text-primary font-bold hover:underline px-2 py-1 ml-auto cursor-pointer"
+                  >
+                    Reset Filter
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 

@@ -53,6 +53,43 @@ interface ChatRoomProps {
   onMessageAdded?: () => void;
 }
 
+function formatChatDateSeparator(dateString: string): string {
+  try {
+    const d = new Date(dateString);
+    const now = new Date();
+    
+    // Hari Ini
+    if (
+      d.getFullYear() === now.getFullYear() &&
+      d.getMonth() === now.getMonth() &&
+      d.getDate() === now.getDate()
+    ) {
+      return "Hari Ini";
+    }
+
+    // Kemarin
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    if (
+      d.getFullYear() === yesterday.getFullYear() &&
+      d.getMonth() === yesterday.getMonth() &&
+      d.getDate() === yesterday.getDate()
+    ) {
+      return "Kemarin";
+    }
+
+    // Tanggal Lengkap Bahasa Indonesia
+    return d.toLocaleDateString("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: d.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
+    });
+  } catch {
+    return "";
+  }
+}
+
 export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdded }: ChatRoomProps) {
   const { showToast } = useToast();
   const [activeInfo, setActiveInfo] = useState<RoomMetadata | undefined>(roomInfo);
@@ -101,6 +138,18 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
     onConfirm?: () => void;
     onConfirmForEveryone?: () => void;
   }>({ isOpen: false, title: '', message: '', type: 'alert' });
+
+  // In-app image preview lightbox
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!previewImage) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPreviewImage(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [previewImage]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
@@ -673,82 +722,104 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
             <p className="text-xs font-medium">Mulai percakapan tentang tugas ini.</p>
           </div>
         ) : (
-          messages.map((msg) => {
+          messages.map((msg, index) => {
             const isMe = msg.id_sender === currentUserId;
             const isSelected = selectedMessages.includes(msg.id_message);
+            const prevMsg = index > 0 ? messages[index - 1] : null;
+            const isNewDay = !prevMsg || new Date(msg.created_at).toDateString() !== new Date(prevMsg.created_at).toDateString();
 
             return (
-              <div 
-                key={msg.id_message} 
-                id={`msg-${msg.id_message}`}
-                className={`flex w-full max-w-full min-w-0 items-end gap-2 sm:gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'} transition-colors duration-300`}
-              >
-                {isSelectionMode && (
-                  <div 
-                    className={`flex shrink-0 items-center justify-center p-1.5 sm:p-2 ${msg.is_deleted_for_everyone ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                    onClick={() => { if (!msg.is_deleted_for_everyone) toggleMessageSelection(msg.id_message) }}
-                  >
-                    <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary text-on-primary' : 'border-card-border bg-surface-container-low'}`}>
-                      {isSelected && <Check className="w-3.5 h-3.5 font-bold" />}
-                    </div>
+              <React.Fragment key={msg.id_message}>
+                {isNewDay && (
+                  <div className="flex items-center justify-center my-2.5 sticky top-1 z-10 select-none">
+                    <span className="px-3 py-1 rounded-full text-[11px] font-medium bg-surface-container-low/95 backdrop-blur-xs text-on-surface-variant border border-card-border/70 shadow-xs">
+                      {formatChatDateSeparator(msg.created_at)}
+                    </span>
                   </div>
                 )}
-                
+
                 <div 
-                  className={`flex flex-col max-w-[85%] sm:max-w-[70%] md:max-w-[65%] min-w-0 ${isMe ? 'items-end' : 'items-start'} ${isSelectionMode && !msg.is_deleted_for_everyone ? 'cursor-pointer hover:opacity-80' : ''}`}
-                  onClick={() => { if (isSelectionMode && !msg.is_deleted_for_everyone) toggleMessageSelection(msg.id_message) }}
+                  id={`msg-${msg.id_message}`}
+                  className={`flex w-full max-w-full min-w-0 items-end gap-2 sm:gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'} transition-colors duration-300`}
                 >
-                  <div 
-                    className={`p-2.5 sm:p-3 rounded-2xl shadow-xs text-xs relative transition-colors duration-200 break-words [overflow-wrap:anywhere] max-w-full overflow-hidden ${
-                      isSelected
-                        ? 'bg-primary/20 border border-primary text-on-surface'
-                        : highlightedMessageId === msg.id_message 
-                        ? 'bg-amber-500/20 border border-amber-500/40 text-on-surface' 
-                        : msg.is_deleted_for_everyone
-                          ? `bg-transparent border border-card-border text-on-surface-variant/70 italic ${isMe ? 'rounded-tr-xs' : 'rounded-tl-xs'}`
-                          : isMe 
-                            ? 'bg-primary text-on-primary rounded-tr-xs border border-primary/20' 
-                            : 'bg-surface-container-lowest text-on-surface rounded-tl-xs border border-card-border'
-                    }`}
-                  >
-                    {msg.is_deleted_for_everyone ? (
-                      <div className="flex items-center gap-1.5 text-xs">
-                        <Ban className="w-3.5 h-3.5 shrink-0" />
-                        <p>Pesan ini telah dihapus</p>
+                  {isSelectionMode && (
+                    <div 
+                      className={`flex shrink-0 items-center justify-center p-1.5 sm:p-2 ${msg.is_deleted_for_everyone ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      onClick={() => { if (!msg.is_deleted_for_everyone) toggleMessageSelection(msg.id_message) }}
+                    >
+                      <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary text-on-primary' : 'border-card-border bg-surface-container-low'}`}>
+                        {isSelected && <Check className="w-3.5 h-3.5 font-bold" />}
                       </div>
-                    ) : msg.image_url ? (
-                      <div className="flex flex-col gap-2 max-w-full">
-                        <div className="relative w-full max-w-[240px] sm:max-w-[260px] aspect-square rounded-xl overflow-hidden border border-card-border">
-                          <Image 
-                            src={msg.image_url} 
-                            alt="Lampiran chat" 
-                            fill
-                            sizes="(max-width: 640px) 240px, 260px"
-                            className="object-cover cursor-pointer hover:opacity-90 transition-opacity" 
-                            onClick={(e) => {
-                              if (!isSelectionMode) window.open(msg.image_url!, '_blank');
-                              else e.preventDefault();
-                            }}
-                          />
-                        </div>
-                        {msg.teks_pesan && <p className="leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{msg.teks_pesan}</p>}
-                      </div>
-                    ) : (
-                      <p className="leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{msg.teks_pesan}</p>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   
-                  {/* Timestamp & Status */}
-                  <div className={`flex items-center gap-1 mt-1 text-[10px] sm:text-xs font-mono ${isSelectionMode && isSelected ? 'text-primary font-medium' : 'text-on-surface-variant'}`}>
-                    <span className="tabular-nums">
-                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                    {isMe && (
-                      <CheckCheck className={`w-3.5 h-3.5 ${msg.is_read ? 'text-emerald-500' : 'text-on-surface-variant/50'}`} />
-                    )}
+                  <div 
+                    className={`flex flex-col max-w-[85%] sm:max-w-[70%] md:max-w-[65%] min-w-0 ${isMe ? 'items-end' : 'items-start'} ${isSelectionMode && !msg.is_deleted_for_everyone ? 'cursor-pointer hover:opacity-80' : ''}`}
+                    onClick={() => { if (isSelectionMode && !msg.is_deleted_for_everyone) toggleMessageSelection(msg.id_message) }}
+                  >
+                    <div 
+                      className={`p-3 sm:p-3.5 rounded-2xl shadow-xs text-sm relative transition-colors duration-200 break-words [overflow-wrap:anywhere] max-w-full overflow-hidden ${
+                        isSelected
+                          ? 'bg-primary/20 border border-primary text-on-surface'
+                          : highlightedMessageId === msg.id_message 
+                          ? 'bg-amber-500/20 border border-amber-500/40 text-on-surface' 
+                          : msg.is_deleted_for_everyone
+                            ? `bg-transparent border border-card-border text-on-surface-variant/70 italic ${isMe ? 'rounded-tr-xs' : 'rounded-tl-xs'}`
+                            : isMe 
+                              ? 'bg-primary text-on-primary rounded-tr-xs border border-primary/20' 
+                              : 'bg-surface-container-lowest text-on-surface rounded-tl-xs border border-card-border'
+                      }`}
+                    >
+                      {msg.is_deleted_for_everyone ? (
+                        <div className="flex items-center gap-1.5 text-xs sm:text-sm">
+                          <Ban className="w-4 h-4 shrink-0" />
+                          <p>Pesan ini telah dihapus</p>
+                        </div>
+                      ) : msg.image_url ? (
+                        <div className="flex flex-col gap-2 w-[220px] sm:w-[260px] max-w-full">
+                          <div className="relative w-full aspect-square rounded-xl overflow-hidden border border-card-border/40 bg-surface-container-low">
+                            <Image 
+                              src={msg.image_url} 
+                              alt="Lampiran chat" 
+                              fill
+                              sizes="(max-width: 640px) 220px, 260px"
+                              className="object-cover cursor-pointer hover:opacity-95 transition-opacity" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!isSelectionMode && msg.image_url) {
+                                  setPreviewImage(msg.image_url);
+                                }
+                              }}
+                            />
+                          </div>
+                          {msg.teks_pesan && (
+                            <p className="leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm">
+                              {msg.teks_pesan}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm">
+                          {msg.teks_pesan}
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* Timestamp & Status */}
+                    <div 
+                      title={new Date(msg.created_at).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' })}
+                      className={`flex items-center gap-1 mt-1 text-[11px] font-mono select-none cursor-default ${isSelectionMode && isSelected ? 'text-primary font-medium' : 'text-on-surface-variant'}`}
+                    >
+                      <span className="tabular-nums">
+                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      {isMe && (
+                        <CheckCheck className={`w-3.5 h-3.5 ${msg.is_read ? 'text-emerald-500' : 'text-on-surface-variant/50'}`} />
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </React.Fragment>
             );
           })
         )}
@@ -896,6 +967,33 @@ export function ChatRoom({ roomId, currentUserId, onBack, roomInfo, onMessageAdd
                 </>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Preview Lightbox Modal */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-[120] bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
+          onClick={() => setPreviewImage(null)}
+        >
+          <button
+            onClick={() => setPreviewImage(null)}
+            aria-label="Tutup pratinjau"
+            className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer border border-white/10 active:scale-95"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          
+          <div 
+            className="relative max-w-full max-h-[90vh] flex flex-col items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img 
+              src={previewImage} 
+              alt="Pratinjau gambar obrolan" 
+              className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-2xl shadow-2xl border border-white/10 select-none animate-in zoom-in-95 duration-200"
+            />
           </div>
         </div>
       )}
