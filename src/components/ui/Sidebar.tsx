@@ -77,7 +77,7 @@ export function Sidebar({ role, onRoleToggle, user }: SidebarProps) {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } finally {
-      router.replace("/login");
+      window.location.href = "/login";
     }
   };
 

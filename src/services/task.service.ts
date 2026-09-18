@@ -1693,6 +1693,7 @@ export const taskService = {
         return {
           id_tasks: t.id_tasks,
           judul_tugas: t.judul_tugas,
+          deskripsi_tugas: t.deskripsi_tugas,
           estimasi_waktu: t.estimasi_waktu,
           kompensasi: (isBidding && acceptedApp && acceptedApp.bid_amount != null)
             ? acceptedApp.bid_amount

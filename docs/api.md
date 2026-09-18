@@ -134,6 +134,16 @@ Saldo pengguna dikelola melalui kombinasi endpoint points (saldo internal), escr
 ### GET `/api/wallet/escrow`
 🔒 **Authenticated** — Mengambil nominal total saldo escrow yang sedang dikunci pada tugas berjalan.
 
+### GET `/api/wallet`
+🔒 **Authenticated** — Ringkasan saldo dompet aktif, saldo ditahan (escrow), dan mutasi terkait.
+
+### POST `/api/wallet/withdraw`
+🔒 **Authenticated** — Mengajukan penarikan saldo aktif (tahan `held_balance`), minimal Rp 20.000, rate limit 5x/menit.
+* **Payload**: `{ "amount": 50000, "bank": "BCA", "accountNumber": "1234567890", "accountName": "Budi Santoso" }`
+* Membuat notifikasi `admin_alert` ke seluruh admin; keputusan approve/reject dilakukan lewat `/api/admin/withdrawals/action`.
+
+> Catatan: `POST /api/points/topup` merupakan endpoint pengisian saldo simulasi (instant) untuk demo; pada produksi top-up memakai `POST /api/payment/create` (Midtrans Snap). Simulasi top-up dinonaktifkan di environment produksi.
+
 ### POST `/api/payment/create`
 🔒 **Authenticated** — Membuat transaksi top-up saldo via Midtrans Snap.
 * **Payload**: `{ "amount": 100000 }`
@@ -154,14 +164,8 @@ Webhook penerima notifikasi IPN (*Instant Payment Notification*) dari Midtrans.
 ### GET `/api/notifications`
 🔒 **Authenticated** — Mengambil 20 notifikasi terbaru milik pengguna beserta `unreadCount`.
 
-### POST `/api/notifications`
-🔒 **Authenticated** — Membuat entri notifikasi baru.
-
-### PATCH `/api/notifications/[id]`
+### PATCH `/api/notifications/[id]/read`
 🔒 **Authenticated** — Menandai notifikasi tertentu sebagai terbaca (`is_read: true`).
-
-### DELETE `/api/notifications/[id]`
-🔒 **Authenticated** — Menghapus notifikasi tertentu.
 
 ### PATCH `/api/notifications/read-all`
 🔒 **Authenticated** — Menandai seluruh notifikasi pengguna sebagai terbaca.
@@ -198,6 +202,9 @@ Mengambil daftar galeri hasil karya portofolio publik seorang pekerja.
 
 ### POST `/api/upload`
 🔒 **Authenticated** — Mengunggah berkas gambar (JPG, PNG, WebP maks. 5MB) ke Supabase Storage Bucket `portfolios` dan menghasilkan Public URL. Dilengkapi validasi *magic bytes header* untuk keamanan.
+
+### POST `/api/upload/dispute-evidence`
+🔒 **Authenticated** — Mengunggah berkas bukti sengketa (foto) ke bucket terpisah untuk validasi perkara dispute di admin console.
 
 ---
 
@@ -282,12 +289,12 @@ Mengambil daftar ulasan yang diterima oleh pengguna tertentu (gunakan `[id] = "m
 ### GET `/api/categories` & POST `/api/categories`
 * `GET`: Mengambil daftar master kategori tugas mikro publik.
 * `POST` 🔒 **Admin**: Menambahkan master kategori baru (`nama_kategori`, `icon`).
-* `PATCH /api/categories/[categoryId]` & `DELETE /api/categories/[categoryId]` 🔒 **Admin**: Memperbarui atau menghapus kategori.
+* `PUT /api/categories/[categoryId]` & `DELETE /api/categories/[categoryId]` 🔒 **Admin**: Memperbarui atau menghapus kategori.
 
 ### GET `/api/skills` & POST `/api/skills`
 * `GET`: Mengambil daftar master keahlian publik.
 * `POST` 🔒 **Admin**: Menambahkan master keahlian baru (`nama_skill`, `icon`).
-* `PATCH /api/skills/[skillId]` & `DELETE /api/skills/[skillId]` 🔒 **Admin**: Memperbarui atau menghapus keahlian.
+* `PUT /api/skills/[skillId]` & `DELETE /api/skills/[skillId]` 🔒 **Admin**: Memperbarui atau menghapus keahlian.
 
 ### GET `/api/roles`
 Mengambil daftar master peran (`Requester`, `Worker`, `Admin`).
@@ -296,11 +303,12 @@ Mengambil daftar master peran (`Requester`, `Worker`, `Admin`).
 Health check & keep-alive endpoint untuk verifikasi koneksi basis data Supabase PostgreSQL.
 
 ### Pengelolaan Profil User (`/api/users/*`)
-* `GET /api/users/me` & `PATCH /api/users/me`: Mengambil & memperbarui profil lengkap, auto-unban check, dan pembaruan token FCM.
+* `GET /api/users/me` & `PUT /api/users/me`: Mengambil & memperbarui profil lengkap, auto-unban check, dan pembaruan token FCM.
 * `POST /api/users/ping`: Pembaruan timestamp `last_seen_at` (presence tracker).
-* `PATCH /api/users/avatar`: Memperbarui tautan avatar pengguna.
+* `POST /api/users/avatar`: Memperbarui tautan avatar pengguna.
+* `PATCH /api/users/me/fcm-token`: Menyinkronkan token FCM device untuk push notification.
 * `GET /api/users/[id]`: Mengambil profil publik pengguna berdasarkan ID.
-* `GET /api/users/skills` & `POST /api/users/skills`: Mengambil dan menyinkronkan keahlian yang dipilih pengguna.
+* `POST /api/users/skills`: Menyinkronkan keahlian yang dipilih pengguna.
 
 ---
 
@@ -331,6 +339,7 @@ Health check & keep-alive endpoint untuk verifikasi koneksi basis data Supabase 
 | `/api/admin/disputes` | `GET` | Daftar seluruh perkara sengketa transaksi pengguna. |
 | `/api/admin/notifications` | `GET` & `PATCH` | Sinkronisasi bell counter notifikasi aduan admin dan mark as read. |
 | `/api/admin/search` | `GET` | Pencarian instan debounced (`Ctrl+K`) pada menu, user, task, dan kategori. |
+| `/api/admin/withdrawals/action` | `POST` | Menyetujui (`action: "approve"`) atau menolak (`action: "reject"`) permintaan penarikan saldo user berdasarkan `notificationId`, memproses mutasi saldo secara atomik. |
 
 ---
 

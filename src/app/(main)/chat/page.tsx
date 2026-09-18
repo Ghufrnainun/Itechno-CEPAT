@@ -11,6 +11,12 @@ let cachedChatRooms: any[] = [];
 let cachedCurrentChatUserId = "";
 let hasChatLoadedOnce = false;
 
+export function resetChatCache() {
+  cachedChatRooms = [];
+  cachedCurrentChatUserId = "";
+  hasChatLoadedOnce = false;
+}
+
 function ChatContent() {
   const searchParams = useSearchParams();
   const initialRoomId = searchParams.get('room');
@@ -51,21 +57,32 @@ function ChatContent() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  // Load current user profile ID
+  // Load current user profile ID with safe revalidation & cross-user leak protection
   useEffect(() => {
     async function loadCurrentUser() {
+      // Use cached ID initially for zero-flicker UI
       if (cachedCurrentChatUserId) {
         setCurrentUserId(cachedCurrentChatUserId);
-        return;
       }
       try {
         const resMe = await fetch('/api/users/me');
         if (resMe.ok) {
           const json = await resMe.json();
           if (json.success && json.data?.id_user) {
-            setCurrentUserId(json.data.id_user);
-            cachedCurrentChatUserId = json.data.id_user;
+            const freshUserId = json.data.id_user;
+            // Cross-user leak prevention: if user changed, immediately flush chat cache
+            if (cachedCurrentChatUserId && cachedCurrentChatUserId !== freshUserId) {
+              cachedChatRooms = [];
+              hasChatLoadedOnce = false;
+              setRooms([]);
+              setIsLoading(true);
+            }
+            setCurrentUserId(freshUserId);
+            cachedCurrentChatUserId = freshUserId;
           }
+        } else if (resMe.status === 401 || resMe.status === 403) {
+          resetChatCache();
+          setRooms([]);
         }
       } catch (err) {
         console.error("Gagal load profil user:", err);
@@ -85,6 +102,11 @@ function ChatContent() {
     try {
       if (!hasChatLoadedOnce) setIsLoading(true);
       const res = await fetch('/api/chat');
+      if (res.status === 401 || res.status === 403) {
+        resetChatCache();
+        setRooms([]);
+        return;
+      }
       const data = await res.json();
       
       if (data.success && Array.isArray(data.data)) {

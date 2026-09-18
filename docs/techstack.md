@@ -38,6 +38,8 @@
 | `prisma` / `@prisma/client` | `^7.9.1` | Single source of truth untuk skema data `public`, relasi, dan manipulasi atomik  |
 | `@prisma/adapter-pg`| `^7.9.1`     | Driver adapter Prisma untuk koneksi langsung ke PostgreSQL Supabase              |
 | `pg`                | `^8.22.0`    | PostgreSQL client driver native untuk Node.js                                    |
+| `dotenv`            | `^17.4.2`    | Memuat variabel lingkungan dari `.env` untuk tooling Prisma & skrip seed          |
+| `boneyard-js`       | `^1.9.0`     | Utilitas skeleton/loading primitives untuk tampilan state memuat data              |
 | `@supabase/supabase-js` | `^2.111.0` | SDK Supabase untuk koneksi Storage dan Realtime Channels                         |
 | `@supabase/ssr`     | `^0.12.4`    | Klien SSR Supabase terisolasi untuk Server Components, API routes, dan Middleware|
 
@@ -109,11 +111,11 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 NEXT_PUBLIC_FIREBASE_API_KEY=AIza...
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=[project-id].firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=[project-id]
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=[project-id].appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_APP_ID=1:...
 NEXT_PUBLIC_FIREBASE_VAPID_KEY=...
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-...@[project-id].iam.gserviceaccount.com
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+FIREBASE_SERVICE_ACCOUNT_KEY="..."
 
 # Midtrans Payment Gateway
 MIDTRANS_SERVER_KEY=SB-Mid-server-...
@@ -124,6 +126,10 @@ MIDTRANS_IS_PRODUCTION=false
 # App & Geolocation
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
 NEXT_PUBLIC_DEFAULT_RADIUS=2000
+
+# Seed & Cron
+SEED_AUTH_PASSWORD="Password123!"   # Wajib; script seed (prisma/seed.mjs) throw bila tak diset
+CRON_SECRET="super-secret-cron-key" # Wajib untuk endpoint cron (/api/cron/*)
 ```
 
 ---

@@ -29,7 +29,7 @@ cd Itechno
 npm install
 
 # 3. Siapkan variabel lingkungan
-cp .env.example .env.local
+cp .env .env.local
 # Lengkapi kredensial Supabase, Firebase, dan Midtrans Sandbox
 
 # 4. Generate Prisma Client & Dorong Skema ke DB
@@ -64,11 +64,11 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 NEXT_PUBLIC_FIREBASE_API_KEY=AIza...
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=[ref].firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=[ref]
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=[ref].appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_APP_ID=1:...
 NEXT_PUBLIC_FIREBASE_VAPID_KEY=...
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-...@[ref].iam.gserviceaccount.com
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+FIREBASE_SERVICE_ACCOUNT_KEY='{"type":"service_account",...}'
 
 # Midtrans Payment Gateway
 MIDTRANS_SERVER_KEY=SB-Mid-server-...
@@ -87,7 +87,7 @@ SEED_AUTH_PASSWORD="Password123!"
 
 ## 4. Konfigurasi Vercel (`vercel.json`)
 
-Untuk menjadwalkan eksekusi otomatis pada Vercel Serverless:
+File `vercel.json` **wajib dibuat di root repo** untuk menjadwalkan eksekusi cron otomatis pada Vercel Serverless (saat ini tidak ter-commit di repositori). Buat file tersebut dengan konfigurasi berikut:
 
 ```json
 {
@@ -103,6 +103,8 @@ Untuk menjadwalkan eksekusi otomatis pada Vercel Serverless:
   ]
 }
 ```
+
+> **Penting**: Kedua endpoint cron memvalidasi header `Authorization: Bearer <CRON_SECRET>` dan menolak (HTTP 401) bila `CRON_SECRET` tidak ter-set. Pastikan variabel lingkungan `CRON_SECRET` diisi di project settings Vercel agar cron tidak gagal.
 
 ---
 

@@ -39,7 +39,7 @@ Data layer dikelola secara terpadu melalui **Prisma ORM 7** sebagai *single sour
 │              SUPABASE (POSTGRESQL + POSTGIS)            │  │     EKSTERNAL SERVICES    │
 │  ┌────────────────────┐  ┌───────────────────────────┐  │  │ - Midtrans Snap (Topup)   │
 │  │ Prisma ORM Schema  │  │ PostGIS Spatial Extension │  │  │ - Firebase Admin FCM Push │
-│  │ (28 Model Tabel)   │  │ ST_DWithin Radius Query   │  │  │ - Vercel Cron (Reminders) │
+│  │ (27 Model Tabel)   │  │ ST_DWithin Radius Query   │  │  │ - Vercel Cron (Reminders) │
 │  ├────────────────────┤  ├───────────────────────────┤  │  └───────────────────────────┘
 │  │ Supabase Auth      │  │ Supabase Storage (Buckets)│  │
 │  │ (auth.users)       │  │ (portfolio & dispute docs)│  │
@@ -57,10 +57,10 @@ Itechno/
 │   ├── icons/                   # PWA icons (192x192, 512x512, maskable)
 │   ├── sw.js                    # PWA Service Worker (offline fallback & caching)
 │   ├── firebase-messaging-sw.js # FCM background push notification service worker
-│   └── images/ & assets/
+│   └── docs/                    # Screenshot fitur & aset statis lainnya
 │
 ├── prisma/
-│   ├── schema.prisma            # Single source of truth skema database (28 model)
+│   ├── schema.prisma            # Single source of truth skema database (27 model)
 │   ├── seed.mjs                 # Comprehensive seed script (data demo realistis)
 │   └── migrations/              # Riwayat migrasi skema Prisma
 │
@@ -148,11 +148,11 @@ Itechno/
 │   │   └── auth/components/     # RoleCard
 │   │
 │   ├── components/
-│   │   ├── admin/               # AdminSidebar, AdminTopbar, AdminSelect, KPICard, DataTable, Drawers
+│   │   ├── admin/               # AdminSidebar, AdminTopbar, AdminSelect, KPICard, DataTable, AdminDrawer, AdminModal, StatusBadge
 │   │   ├── landing/             # Hero, USP, SDG narrative, CTA
 │   │   ├── task/                # ReviewModal
 │   │   ├── motion/              # Motion wrappers untuk transisi halus
-│   │   └── ui/                  # Button, Modal, Drawer, Badges, Tabs, Avatar, Skeleton, StreakCalendar
+│   │   └── ui/                  # Button, Modal, Badge, Avatar, Skeleton, StreakCalendar, dan primitif lainnya
 │   │
 │   ├── services/                # Heavy business logic terisolasi
 │   │   ├── task.service.ts      # Siklus hidup task, kuota, bidding, Model C escrow

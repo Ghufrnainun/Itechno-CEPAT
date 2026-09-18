@@ -209,7 +209,11 @@ Linting      : ESLint 9 (Flat Config) & Next.js ESLint Plugin
     "motion": "^12.43.0",
     "recharts": "^3.10.1",
     "zod": "^4.4.3",
-    "tailwindcss": "^4"
+    "tailwindcss": "^4",
+    "swr": "^2.5.0",
+    "sonner": "^2.0.8",
+    "boneyard-js": "^1.9.0",
+    "dotenv": "^17.4.2"
   }
 }
 ```
@@ -244,7 +248,7 @@ Linting      : ESLint 9 (Flat Config) & Next.js ESLint Plugin
                         ▼                             ▼
 ┌───────────────────────────────────────────┐  ┌──────────────────────────────┐
 │       SUPABASE (POSTGRESQL + POSTGIS)     │  │      LAYANAN EKSTERNAL       │
-│  - Prisma ORM 7 Schema (24 Model Tabel)   │  │  - Midtrans Snap Gateway     │
+│  - Prisma ORM 7 Schema (27 Model Tabel)   │  │  - Midtrans Snap Gateway     │
 │  - PostGIS ST_DWithin Radius Geospasial   │  │  - Firebase Admin FCM Push   │
 │  - Supabase Auth & Storage Buckets        │  │  - Vercel Automated Cron    │
 └───────────────────────────────────────────┘  └──────────────────────────────┘
@@ -252,7 +256,7 @@ Linting      : ESLint 9 (Flat Config) & Next.js ESLint Plugin
 
 ### Database Schema
 
-Skema database mengelola 24 model tabel utama yang dirancang secara relasional dan aman:
+Skema database mengelola 27 model tabel utama yang dirancang secara relasional dan aman (28 total termasuk `spatial_ref_sys`, tabel sistem PostGIS):
 
 - **Entitas Inti**: `User`, `Role`, `Task`, `StatusTask`, `TaskCategory`, `SkillsMaster`, `SkillsUser`, `TaskRequirements`.
 - **Pelamar & Bidding**: `TaskApplicants`, `StatusTaskApplicants`.
@@ -270,7 +274,7 @@ Skema database mengelola 24 model tabel utama yang dirancang secara relasional d
 Itechno/
 ├── public/                     # Aset statis, ikon PWA, & firebase-messaging-sw.js
 ├── prisma/
-│   ├── schema.prisma           # Single source of truth skema database (24 model)
+│   ├── schema.prisma           # Single source of truth skema database (27 model)
 │   ├── seed.mjs                # Skrip seeder data demo realistis
 │   └── migrations/             # Riwayat migrasi skema Prisma
 ├── supabase/
@@ -326,10 +330,10 @@ npm install
 
 #### 3️⃣ Setup Environment Variables
 
-Salin file `.env.example` menjadi `.env.local` pada direktori root proyek:
+Salin file `.env` menjadi `.env.local` pada direktori root proyek, lalu isi nilai kredensial:
 
 ```bash
-cp .env.example .env.local
+cp .env .env.local
 ```
 
 Isi konfigurasi variabel lingkungan:
@@ -348,11 +352,11 @@ SUPABASE_SERVICE_ROLE_KEY="eyJ..."
 NEXT_PUBLIC_FIREBASE_API_KEY="AIza..."
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="[ref].firebaseapp.com"
 NEXT_PUBLIC_FIREBASE_PROJECT_ID="[ref]"
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="[ref].appspot.com"
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="..."
 NEXT_PUBLIC_FIREBASE_APP_ID="1:..."
 NEXT_PUBLIC_FIREBASE_VAPID_KEY="..."
-FIREBASE_CLIENT_EMAIL="firebase-adminsdk-...@[ref].iam.gserviceaccount.com"
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+FIREBASE_SERVICE_ACCOUNT_KEY='{"type":"service_account",...}'
 
 # Midtrans Payment Gateway
 MIDTRANS_SERVER_KEY="SB-Mid-server-..."
@@ -363,6 +367,10 @@ MIDTRANS_IS_PRODUCTION=false
 # App Settings
 NEXT_PUBLIC_BASE_URL="http://localhost:3000"
 NEXT_PUBLIC_DEFAULT_RADIUS=2000
+
+# Seed & Cron
+SEED_AUTH_PASSWORD="Password123!"   # Wajib; script seed (prisma/seed.mjs) gagal bila tak diset
+CRON_SECRET="super-secret-cron-key" # Wajib untuk endpoint cron (/api/cron/*) & dikonfigurasi di vercel.json
 ```
 
 #### 4️⃣ Setup Database

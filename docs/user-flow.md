@@ -112,7 +112,6 @@ Dokumen ini memetakan alur pengguna (*User Journey*), transisi antar layar (*Scr
 |---|---|---|---|---|
 | `-` | Submit Pembuatan Task | Requester | `OPEN` | Saldo Requester dipotong & ditahan sebesar `budget_max * kuota`. |
 | `OPEN` | Requester menyetujui bid Worker | Requester | `ACCEPTED` / `IN_PROGRESS` | Selisih `(budget_max - bid)` di-refund ke Requester. Sisa `bid` tetap di-hold. |
-| `IN_PROGRESS` | Worker mengirim bukti kerja | Worker | `SUBMITTED` | Dana escrow tetap terkunci aman di sistem. |
-| `SUBMITTED` | Requester menyetujui hasil kerja | Requester | `COMPLETED` | Dana escrow (`bid_amount`) dicairkan ke dompet Worker; +50 XP diberikan. |
+| `IN_PROGRESS` | Worker mengirim bukti kerja (`submit_work`) atau menyetujui penyelesaian | Worker / Requester | `COMPLETED` | Dana escrow (`bid_amount`) dicairkan ke dompet Worker; +50 XP diberikan dan streak diperbarui. |
 | `OPEN` / `ACCEPTED` | Pembatalan tugas oleh Requester / Admin | Requester / Admin | `CANCELLED` | Seluruh sisa saldo escrow yang ditahan di-refund penuh ke dompet Requester. |
 | `IN_PROGRESS` / `COMPLETED` | Eskalasi Sengketa | Worker / Requester | Dispute `OPEN` | Dana escrow dibekukan hingga ada keputusan admin di `/admin/disputes`. |
