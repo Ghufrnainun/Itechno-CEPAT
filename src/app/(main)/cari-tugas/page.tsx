@@ -484,7 +484,7 @@ function CariTugasPageContent() {
 
               {/* Floating Task Preview Card on Mobile when a Pin is Selected */}
               {selectedTask && (
-                <div className="md:hidden absolute bottom-5 left-3.5 right-3.5 z-30 animate-in slide-in-from-bottom-3">
+                <div className="md:hidden absolute bottom-5 left-3.5 right-3.5 z-40 animate-in slide-in-from-bottom-3">
                   <div className="relative">
                     <button
                       type="button"

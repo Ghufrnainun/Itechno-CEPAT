@@ -149,7 +149,7 @@ export default function MapPicker({
   }, [tasks, selectedTaskId]);
 
   return (
-    <div className="w-full h-full relative rounded-lg overflow-hidden border border-outline-variant">
+    <div className="w-full h-full relative isolate z-0 rounded-lg overflow-hidden border border-outline-variant">
       <div ref={mapRef} className="w-full h-full" style={{ minHeight: "250px" }} />
     </div>
   );

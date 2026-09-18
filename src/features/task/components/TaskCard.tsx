@@ -3,9 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Task } from "@/types/database";
-import { SdgBadge } from "@/components/ui/SdgBadge";
 import { formatCurrency, formatDistance } from "@/lib/utils/format";
-import { Navigation, Gavel, Calendar, Flag, Bookmark } from "lucide-react";
+import { Navigation, Gavel, Calendar, Bookmark } from "lucide-react";
 import { ReportModal } from "@/components/ui/ReportModal";
 import { cn } from "@/lib/utils";
 
@@ -39,16 +38,16 @@ export const TaskCard = React.memo(function TaskCard({
       }}
       className={cn(
         "group p-4 sm:p-5 feed-card w-full rounded-2xl bg-surface-container-lowest border border-card-border/80 shadow-2xs",
-        "transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out flex flex-col justify-between min-h-[140px]",
+        "transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out flex flex-col min-h-[140px] overflow-hidden",
         "hover:border-primary/40 hover:shadow-xs active:scale-[0.985] active:brightness-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer",
         isSelected && "border-primary bg-primary/5 shadow-xs ring-1 ring-primary/20",
         className
       )}
     >
-      <div>
+      <div className="flex-1 min-h-0 overflow-hidden">
         {/* Header Row: Title & Distance */}
         <div className="flex justify-between items-start gap-3 mb-1.5">
-          <h3 className="font-headline text-sm sm:text-base font-bold text-on-surface group-hover:text-primary transition-colors leading-snug flex-1">
+          <h3 className="font-headline text-sm sm:text-base font-bold text-on-surface group-hover:text-primary transition-colors leading-snug flex-1 min-w-0 break-words">
             {task.title}
             {task.is_bidding && (
               <span className="inline-flex items-center gap-1 align-middle ml-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
@@ -78,7 +77,7 @@ export const TaskCard = React.memo(function TaskCard({
       </div>
 
       {/* Footer: Price & Schedule/Duration */}
-      <div className="flex items-center justify-between border-t border-card-border/60 pt-3 mt-auto">
+      <div className="flex items-center justify-between border-t border-card-border/60 pt-3 mt-3">
         <span className="font-mono text-sm sm:text-base font-extrabold text-on-surface tracking-tight tabular-nums">
           {task.is_bidding
             ? `${formatCurrency(task.budget_min ?? 0)} – ${formatCurrency(task.budget_max ?? task.compensation)}`
